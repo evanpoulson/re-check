@@ -80,10 +80,11 @@ CREATE INDEX visit_waiting_due_idx
     WHERE status = 'waiting';
 
 -- CTAS re-check interval (FR4). Placeholder defaults for clinical review.
+-- CTAS 1 has no interval: it needs continuous care and is never in the
+-- waiting room, so its next_due_at stays NULL.
 CREATE FUNCTION ctas_interval(level smallint) RETURNS interval
 LANGUAGE sql IMMUTABLE AS $$
     SELECT CASE level
-        WHEN 1 THEN interval '5 minutes'
         WHEN 2 THEN interval '15 minutes'
         WHEN 3 THEN interval '30 minutes'
         WHEN 4 THEN interval '60 minutes'
@@ -169,6 +170,8 @@ CREATE INDEX vitals_visit_at_idx ON vitals (visit_id, at DESC);
 -- ---------------------------------------------------------------------------
 -- alert: escalations produced by the rules engine and timers
 -- Regular table (not a hypertable) because alerts are updated when acknowledged.
+-- An alert routed to more than one role (e.g. "red, escalated" goes to the
+-- charge nurse plus the physician) is written as one row per recipient.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE alert (
