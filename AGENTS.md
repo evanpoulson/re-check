@@ -10,10 +10,10 @@ The prototype is a standalone companion to Connect Care and Epic Rover. Use synt
 | --- | --- |
 | Patient and staff web screens | React, Vite, TypeScript, Tailwind CSS |
 | API, rules, scheduled checks, simulator | Python and FastAPI |
-| Database, staff sign-in, live dashboard updates | Tiga data Postgres, Auth, and Realtime |
+| Database | PostgreSQL with [TimescaleDB from Tiger Data](https://www.tigerdata.com/timescaledb) |
 | Rules tests | pytest and Hypothesis |
 
-Keep privileged database access and escalation decisions on the server. Use one observation model for patient, companion, staff, pager, and simulator inputs.
+Choose staff sign-in and live dashboard delivery separately from the database. Keep privileged database access and escalation decisions on the server. Use one observation model for patient, companion, staff, pager, and simulator inputs.
 
 ## Build scope
 
@@ -36,5 +36,5 @@ Use trunk-based development with short-lived feature branches.
 
 1. Start each task from current `main` on a small branch such as `feat/qr-check-in`, `fix/missed-check-routing`, or `docs/clinical-scope`.
 2. Keep each branch focused on one reviewable change. Open a pull request into `main` and run the checks for the affected area. Split larger features into small increments that keep `main` usable.
-3. Protect `main` on the remote. Require pull requests and passing configured checks, and block direct pushes and force pushes. Squash merge after review.
+3. Protect `main` on the remote. Require pull requests and passing configured checks, and block direct pushes and force pushes. Leave pull request approval and merging to the user.
 4. Delete the merged feature branch, sync local `main`, and branch again from the updated trunk.
