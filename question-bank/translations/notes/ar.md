@@ -9,3 +9,4 @@
 - **Clinician:** Rendered as "أحد أفراد الفريق الطبي" ("a member of the medical team"). Staff became "أحد أفراد الطاقم".
 - **Check-in:** Being registered became "تسجيل الحضور". The repeated questionnaire became "أسئلة المتابعة". titleCompanion was reworded to "دورك: مساعدة المريض في الإجابة".
 - **"Health number":** Rendered as "رقم بطاقتك الصحية" (Alberta health card number).
+- **Triage card (`triageInfo`):** The heading reuses "مستوى أولويتك في الفرز" from the privacy panel. Level names: "عاجل جدًا / عاجل / أقل إلحاحًا / غير عاجل". "تمريض الفرز" stays collective to avoid gender. The level-3 line uses "من حالتهم أشد" (those in worse condition); check that it is clear. No target times are shown on purpose; please keep it that way.

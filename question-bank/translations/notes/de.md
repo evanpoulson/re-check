@@ -8,3 +8,4 @@
 - `worst_headache` keeps the source's first person ("meines Lebens"), even in companion mode, to match the English.
 - "Health number" (Alberta PHN) is rendered "Krankenversicherungsnummer". This is the closest everyday equivalent, not a literal translation.
 - `{{estimate}}` and `{{waited}}` sit after a colon so the sentence works whatever unit format the app inserts.
+- **Triage card (`triageInfo`):** Level names: "Sehr dringend / Dringend / Weniger dringend / Nicht dringend", with "Stufe" for level, matching "Triage-Stufe". The companion heading uses "der betreuten Person". No target times are shown on purpose; please keep it that way.

@@ -10,3 +10,4 @@
 8. **Last known well**: "moving" became "ਹਿੱਲਣਾ-ਜੁਲਣਾ" (moving the body and limbs), not walking. **"Last check"** in headache_change is the generic "ਪਿਛਲੀ ਵਾਰ".
 9. **"I'm not sure"** is "ਮੈਨੂੰ ਪੱਕਾ ਨਹੀਂ ਪਤਾ" ("I don't know for sure"). It must read as unknown, not as a no.
 10. **Triage** is written "ਟ੍ਰਾਇਆਜ (triage)". Transliterations vary (ਟਰਾਈਏਜ, for example), so check what local signage uses. **Health number** became "ਹੈਲਥ ਕਾਰਡ ਨੰਬਰ".
+- **Triage card (`triageInfo`):** Level names: "ਬਹੁਤ ਜ਼ਰੂਰੀ / ਜ਼ਰੂਰੀ / ਘੱਟ ਜ਼ਰੂਰੀ / ਜ਼ਰੂਰੀ ਨਹੀਂ". The nurse sentences use the passive ("ਨਰਸ ਵੱਲੋਂ") to avoid a gendered verb. Check that "ਜ਼ਰੂਰੀ ਨਹੀਂ" (level 5) doesn't read as "you don't need care". No target times are shown on purpose; please keep it that way.

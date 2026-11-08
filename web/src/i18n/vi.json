@@ -142,5 +142,35 @@
   },
   "pages": {
     "patientEntry": "Đang mở phần kiểm tra của quý vị"
+  },
+  "triageInfo": {
+    "title": "Cách phân loại bệnh nhân hoạt động",
+    "sickestFirst": "Khoa cấp cứu khám cho người bệnh nặng nhất trước. Không phải ai đến trước được khám trước.",
+    "levels": "Khi mỗi người đến, y tá phân loại sẽ đánh giá mức độ khẩn cấp của họ. Canada dùng 5 mức. Mức 1 là khẩn cấp nhất.",
+    "checkins": "Câu trả lời kiểm tra giúp nhân viên nhận ra các thay đổi. Bác sĩ hoặc y tá sẽ quyết định bước tiếp theo.",
+    "worse": "Nếu thấy mệt hơn, hãy báo cho nhân viên ngay.",
+    "leaving": "Vui lòng báo cho nhân viên trước khi rời đi.",
+    "level": {
+      "heading": "Mức phân loại của quý vị",
+      "heading_companion": "Mức phân loại của người bệnh",
+      "label": "Mức {{level}}: {{name}}",
+      "setAtTriage": "Đây là mức do y tá phân loại đặt khi đến.",
+      "2": {
+        "name": "Rất khẩn cấp",
+        "body": "Y tá thấy có dấu hiệu cần được chăm sóc rất sớm. Nhân viên sẽ kiểm tra thường xuyên."
+      },
+      "3": {
+        "name": "Khẩn cấp",
+        "body": "Cần được chăm sóc sớm, nhưng hiện chưa nguy hiểm đến tính mạng. Người bệnh nặng hơn có thể được khám trước."
+      },
+      "4": {
+        "name": "Ít khẩn cấp",
+        "body": "Hiện đây không phải là trường hợp cấp cứu. Thời gian chờ có thể lâu. Quý vị đã đến đúng nơi."
+      },
+      "5": {
+        "name": "Không khẩn cấp",
+        "body": "Có thể chờ một cách an toàn. Thời gian chờ có thể lâu. Quý vị đã đến đúng nơi."
+      }
+    }
   }
 }

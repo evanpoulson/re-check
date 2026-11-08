@@ -7,3 +7,4 @@
 - "Check-in" (the repeated status check) is "lần kiểm tra" and enrolment is "đăng ký". Please confirm these do not suggest a medical examination.
 - "I'm not sure" is "Tôi không chắc", meaning the person does not know. "Health number" (Alberta PHN) is "số thẻ bảo hiểm y tế". "Poor/Very poor" are "Không khỏe/Rất không khỏe".
 - "Leg" is "Chân", which also covers the foot. "Arm" is "Cánh tay".
+- **Triage card (`triageInfo`):** Level names: "Rất khẩn cấp / Khẩn cấp / Ít khẩn cấp / Không khẩn cấp". "Phân loại" matches the existing triage wording. Check that "Mức" reads well as "level". No target times are shown on purpose; please keep it that way.

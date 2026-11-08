@@ -49,12 +49,13 @@ describe('triage card', () => {
     expect(screen.getByText('Level 5: Not urgent')).toBeInTheDocument()
   })
 
-  it('falls back to English in a language without a translation yet', async () => {
-    await i18n.changeLanguage('pa')
+  it('shows the card in the chosen language, right to left for Arabic', async () => {
+    await i18n.changeLanguage('ar')
     try {
       render(<PatientLayout home={home({ triage_level: 4 })}>x</PatientLayout>)
-      expect(screen.getByText('Level 4: Less urgent')).toBeInTheDocument()
-      expect(screen.getByText('How triage works')).toBeInTheDocument()
+      expect(screen.getByText('المستوى 4: أقل إلحاحًا')).toBeInTheDocument()
+      expect(screen.getByText('كيف يعمل الفرز (الترياج)')).toBeInTheDocument()
+      expect(document.documentElement.dir).toBe('rtl')
     } finally {
       await i18n.changeLanguage('en')
     }

@@ -9,3 +9,4 @@
 - "Lower back" is 허리(등 아래쪽). Korean 허리 can mean the waist, so the gloss is added.
 - The companion version of headache_change is a little long. It could be shortened.
 - exchange.takeover.who was restructured so the inserted {{who}} label needs no Korean particle.
+- **Triage card (`triageInfo`):** Level names: "매우 긴급 / 긴급 / 덜 긴급 / 비긴급", shown as "{{level}}등급". This is plain wording, not the KTAS level names (소생, 긴급, 응급, 준응급, 비응급), which Korean readers may know from home. The patient heading drops "your", which reads more naturally in Korean. No target times are shown on purpose; please keep it that way.
