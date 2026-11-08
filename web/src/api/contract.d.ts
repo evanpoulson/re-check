@@ -704,7 +704,6 @@ app_exclusion: (AppExclusion | null)
 cedis_code: (string | null)
 channel: (("phone" | "pager") | null)
 closed_at: (string | null)
-complaint_detail?: (string | null)
 complaint_group: ComplaintGroup
 /**
  * Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.
@@ -1062,7 +1061,6 @@ cedis_code?: (string | null)
  * Required unless the app is not offered.
  */
 channel?: (("phone" | "pager") | null)
-complaint_detail?: (string | null)
 complaint_group: ComplaintGroup
 /**
  * Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.

@@ -89,7 +89,7 @@ export function VisitLayout() {
             <span className="rounded-data bg-canvas px-2.5 py-1 font-semibold">
               {t('visitPage.initialCtas', { ctas: visit.ctas })}
             </span>
-            <p className="min-w-40 flex-1 wrap-anywhere text-[1.1875rem] font-medium">{visit.complaint_detail ?? t(`complaint.${visit.complaint_group}`)}</p>
+            <p className="min-w-40 flex-1 wrap-anywhere text-[1.1875rem] font-medium">{t(`complaint.${visit.complaint_group}`)}</p>
             {visit.cedis_code && (
               <span className="tabular text-muted">{t('visitPage.cedis', { code: visit.cedis_code })}</span>
             )}

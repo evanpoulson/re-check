@@ -14,7 +14,6 @@ from .common import Ctas, InputModel, OutputModel, SubmissionId, Timestamp
 PagerNumber = Annotated[str, StringConstraints(pattern=r"^[0-9]{1,6}$")]
 CedisCode = Annotated[str, StringConstraints(pattern=r"^[0-9]{3}$")]
 SiteId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9_-]{0,31}$")]
-ComplaintDetail = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=200)]
 
 
 class VisitCreate(InputModel):
@@ -26,8 +25,6 @@ class VisitCreate(InputModel):
     cedis_code: CedisCode | None = Field(
         default=None, description="CEDIS presenting complaint code, kept with its source vocabulary."
     )
-    # Preserve the fingerprint of enrolment requests recorded before this field existed.
-    complaint_detail: ComplaintDetail | None = Field(default=None, exclude_if=lambda value: value is None)
     language: Language
     app_exclusion: AppExclusion | None = Field(
         default=None,
@@ -53,15 +50,6 @@ class VisitCreate(InputModel):
             raise ValueError("pager_no is required for the pager channel")
         if self.channel is Channel.PHONE and self.pager_no is not None:
             raise ValueError("pager_no is only allowed for the pager channel")
-        return self
-
-    @model_validator(mode="after")
-    def _detail_matches_group(self) -> Self:
-        if self.complaint_detail is not None:
-            if self.complaint_group is not ComplaintGroup.GENERAL:
-                raise ValueError("complaint_detail is only allowed for Other complaint")
-            if "\x00" in self.complaint_detail:
-                raise ValueError("complaint_detail cannot contain a null character")
         return self
 
 
@@ -178,7 +166,6 @@ class VisitSummary(OutputModel):
     ctas: Ctas
     complaint_group: ComplaintGroup
     cedis_code: CedisCode | None
-    complaint_detail: ComplaintDetail | None = None
     language: Language
     app_exclusion: AppExclusion | None
     channel: Literal[Channel.PHONE, Channel.PAGER] | None
