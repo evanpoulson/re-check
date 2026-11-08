@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "Langue",
-    "departmentWait": "Pour les personnes qui arrivent maintenant, l'attente estimée à l'urgence est d'environ {{estimate}}.",
     "waitUnavailable": "Estimation non disponible.",
-    "waited": "Vous attendez depuis {{waited}}.",
-    "placeInLine": "Vos réponses ne changent jamais votre place dans la file d'attente.",
     "title": "Votre arrivée est enregistrée",
     "titleCompanion": "Vous aidez une personne à répondre au questionnaire",
     "nextCheckin": "Prochain questionnaire",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "Avertissez un membre du personnel maintenant",
     "body": "Allez voir le membre du personnel le plus proche ou appelez à l'aide à voix haute.",
-    "sent": "Votre signalement a été reçu.",
-    "queued": "Enregistré sur ce téléphone. Il sera envoyé dès que la connexion reviendra.",
     "telling": "Je préviens le personnel",
     "sending": "Envoi de votre signalement…",
-    "failed": "Votre signalement n'a pas été envoyé.",
-    "retry": "Réessayer l'envoi",
-    "followup": "Répondre à une autre question"
+    "retry": "Réessayer l'envoi"
   },
   "sent": {
     "title": "Merci, nous avons reçu vos réponses",
-    "queuedTitle": "Enregistré sur ce téléphone",
-    "queuedBody": "L'envoi se fera dès que le téléphone sera connecté.",
     "reported": "Signalé",
     "received": "Reçu par l'équipe de soins",
     "waiting": "En attente d'envoi",
@@ -76,9 +67,7 @@
     "clinician_told": "Un membre de l'équipe médicale a été avisé.",
     "leaving_info": "Veuillez avertir le personnel avant de partir. Retournez au triage immédiatement si vous vous sentez plus mal."
   },
-  "outbox": {
-    "saved": "Enregistré, l'envoi se fera à la connexion ({{count}} en attente)."
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "Ce code n'a pas fonctionné"
@@ -126,9 +115,7 @@
     "confirm": "C'est mon total"
   },
   "desk": {
-    "title": "Votre question a été transmise au personnel infirmier du triage",
-    "body": "Un membre du personnel infirmier viendra vous voir. Vous n'avez rien d'autre à faire.",
-    "notClinical": "Si vous vous sentez plus mal ou si votre santé vous inquiète, appuyez plutôt sur « J'ai besoin d'aide maintenant »."
+    "title": "Votre question a été transmise au personnel infirmier du triage"
   },
   "flow": {
     "progress": "Question {{n}} sur {{total}}",

@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "Język",
-    "departmentWait": "Obecny szacowany czas oczekiwania na oddziale dla nowo przybyłych: około {{estimate}}.",
     "waitUnavailable": "Brak szacowanego czasu.",
-    "waited": "Dotychczasowy czas oczekiwania: {{waited}}.",
-    "placeInLine": "Odpowiedzi nigdy nie zmieniają miejsca w kolejce.",
     "title": "Rejestracja potwierdzona",
     "titleCompanion": "Tryb osoby towarzyszącej",
     "nextCheckin": "Następna ankieta",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "Proszę natychmiast powiedzieć personelowi",
     "body": "Proszę podejść do najbliższej osoby z personelu lub głośno zawołać o pomoc.",
-    "sent": "Zgłoszenie zostało odebrane.",
-    "queued": "Zapisano na tym telefonie. Wysyłka nastąpi po odzyskaniu połączenia.",
     "telling": "Mówię personelowi",
     "sending": "Wysyłanie zgłoszenia…",
-    "failed": "Zgłoszenie nie zostało wysłane.",
-    "retry": "Wyślij ponownie",
-    "followup": "Odpowiedz na pytanie uzupełniające"
+    "retry": "Wyślij ponownie"
   },
   "sent": {
     "title": "Dziękujemy, odpowiedzi zostały odebrane",
-    "queuedTitle": "Zapisano na tym telefonie",
-    "queuedBody": "Wysyłka nastąpi, gdy tylko pojawi się połączenie.",
     "reported": "Zgłoszono",
     "received": "Odebrane przez zespół medyczny",
     "waiting": "Czeka na wysłanie",
@@ -76,9 +67,7 @@
     "clinician_told": "Lekarz został powiadomiony.",
     "leaving_info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia proszę natychmiast wrócić do punktu triażu."
   },
-  "outbox": {
-    "saved": "Zapisano, wysyłka po połączeniu (oczekujące: {{count}})."
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "Ten kod nie zadziałał"
@@ -126,9 +115,7 @@
     "confirm": "To mój wynik"
   },
   "desk": {
-    "title": "Pytanie trafiło do pielęgniarki triażowej",
-    "body": "Pielęgniarka triażowa podejdzie. Nie trzeba robić nic więcej.",
-    "notClinical": "W razie pogorszenia lub obaw o zdrowie proszę zamiast tego nacisnąć „Potrzebuję pomocy teraz”."
+    "title": "Pytanie trafiło do pielęgniarki triażowej"
   },
   "flow": {
     "progress": "Pytanie {{n}} z {{total}}",

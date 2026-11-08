@@ -51,6 +51,7 @@ export function Exchange() {
       <PatientLayout>
         <Card role="alert" className="space-y-2 text-center">
           <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.inactive')}</h1>
+          <p className="text-muted">{t('exchange.help')}</p>
         </Card>
       </PatientLayout>
     )
@@ -60,7 +61,7 @@ export function Exchange() {
     const { conflict, role } = state
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-5 text-center">
+        <Card className="space-y-5 text-center">
           <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
           <p className="text-muted">
             {t('exchange.takeover.who', {
@@ -85,16 +86,30 @@ export function Exchange() {
   return (
     <PatientLayout>
       <section aria-labelledby="who" className="space-y-6 pt-4">
-        <h1 id="who" className="text-center text-[2rem] font-semibold leading-tight tracking-tight">
-          {t('exchange.who')}
-        </h1>
+        <div className="space-y-3 text-center">
+          <h1 id="who" className="text-[2rem] font-semibold leading-tight tracking-tight">
+            {t('exchange.who')}
+          </h1>
+          <p className="text-base text-muted">{t('exchange.intro')}</p>
+        </div>
         <div className="grid gap-3">
           {(['patient', 'companion'] as const).map((role) => (
-            <AnswerButton key={role} selected={sending && state.role === role} disabled={sending} onClick={() => void signIn(role)}>
-              {t(`exchange.role.${role}`)}
-            </AnswerButton>
+            <div key={role} className="space-y-1">
+              <AnswerButton
+                selected={sending && state.role === role}
+                disabled={sending}
+                aria-describedby={role === 'companion' ? 'companion-hint' : undefined}
+                onClick={() => void signIn(role)}
+              >
+                {t(`exchange.role.${role}`)}
+              </AnswerButton>
+              {role === 'companion' && (
+                <p id="companion-hint" className="px-5 text-base text-muted">{t('exchange.companionHint')}</p>
+              )}
+            </div>
           ))}
         </div>
+        <p className="text-center text-base font-semibold">{t('exchange.help')}</p>
         {sending && <p role="status" className="text-center text-muted">{t('pages.patientEntry')}</p>}
         {state.name === 'failed' && (
           <p role="alert" className="rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">

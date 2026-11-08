@@ -11,8 +11,10 @@ function files(dir: string): string[] {
     return /\.tsx?$/.test(f) && !/\.test\./.test(f) ? [p] : []
   })
 }
-const has = (key: string) =>
+const lookup = (key: string) =>
   key.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], en) !== undefined
+// A plural key ("t('x', { count })") exists as x_one and x_other.
+const has = (key: string) => lookup(key) || (lookup(`${key}_one`) && lookup(`${key}_other`))
 
 describe('translations', () => {
   it('every literal t("key") used in the app exists in en.json', () => {

@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "Sprache",
-    "departmentWait": "Aktuelle Schätzung der Notaufnahme für neu Ankommende: etwa {{estimate}}.",
     "waitUnavailable": "Keine Schätzung verfügbar.",
-    "waited": "Ihre bisherige Wartezeit: {{waited}}.",
-    "placeInLine": "Ihre Antworten ändern nie Ihren Platz in der Warteschlange.",
     "title": "Sie sind angemeldet",
     "titleCompanion": "Sie helfen bei der Anmeldung",
     "nextCheckin": "Nächste Abfrage",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "Sagen Sie jetzt dem Personal Bescheid",
     "body": "Wenden Sie sich sofort an das nächste Klinikpersonal oder rufen Sie laut um Hilfe.",
-    "sent": "Ihre Meldung ist angekommen.",
-    "queued": "Auf diesem Handy gespeichert. Wird gesendet, sobald wieder eine Verbindung besteht.",
     "telling": "Ich sage es dem Personal",
     "sending": "Ihre Meldung wird gesendet…",
-    "failed": "Ihre Meldung wurde nicht gesendet.",
-    "retry": "Erneut senden",
-    "followup": "Folgefrage beantworten"
+    "retry": "Erneut senden"
   },
   "sent": {
     "title": "Danke, Ihre Antworten sind angekommen",
-    "queuedTitle": "Auf diesem Handy gespeichert",
-    "queuedBody": "Wird gesendet, sobald eine Verbindung besteht.",
     "reported": "Gemeldet",
     "received": "Vom Behandlungsteam erhalten",
     "waiting": "Wartet auf Versand",
@@ -76,9 +67,7 @@
     "clinician_told": "Eine medizinische Fachkraft wurde informiert.",
     "leaving_info": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen. Kommen Sie sofort zur Triage zurück, wenn es Ihnen schlechter geht."
   },
-  "outbox": {
-    "saved": "Gespeichert, wird bei Verbindung gesendet (wartend: {{count}})."
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "Dieser Code hat nicht funktioniert"
@@ -126,9 +115,7 @@
     "confirm": "Das ist meine Zahl"
   },
   "desk": {
-    "title": "Ihre Frage ging an die Triage-Pflegekraft",
-    "body": "Die Triage-Pflegekraft kommt zu Ihnen. Sie müssen nichts weiter tun.",
-    "notClinical": "Wenn es Ihnen schlechter geht oder Sie sich Sorgen um Ihre Gesundheit machen, tippen Sie stattdessen auf „Ich brauche jetzt Hilfe“."
+    "title": "Ihre Frage ging an die Triage-Pflegekraft"
   },
   "flow": {
     "progress": "Frage {{n}} von {{total}}",

@@ -1,3 +1,4 @@
+import type { TFunction } from 'i18next'
 import { useEffect, useState } from 'react'
 
 /** Re-renders on an interval so countdowns stay current. */
@@ -17,6 +18,28 @@ export function formatMinutes(ms: number): string {
   const h = Math.floor(total / 60)
   const m = String(total % 60).padStart(2, '0')
   return `${h} h ${m} min`
+}
+
+/** Patient wording: "1 hour 10 minutes", "45 minutes". Units are spelled out. */
+export function durationWords(minutes: number, t: TFunction): string {
+  const total = Math.max(0, Math.round(Math.abs(minutes)))
+  const h = Math.floor(total / 60)
+  const m = total % 60
+  const parts = []
+  if (h > 0) parts.push(t('duration.hours', { count: h }))
+  if (m > 0 || h === 0) parts.push(t('duration.minutes', { count: m }))
+  return parts.join(' ')
+}
+
+/**
+ * The AHS estimate as rounded words ("about 4 to 5 hours"), so nobody subtracts
+ * their own wait from a precise-looking figure.
+ */
+export function waitWords(minutes: number, t: TFunction): string {
+  if (minutes < 15) return t('waitWords.short')
+  if (minutes < 60) return t('waitWords.minutes', { n: Math.round(minutes / 10) * 10 })
+  const lo = Math.floor(minutes / 60)
+  return t('waitWords.hours', { lo, hi: lo + 1 })
 }
 
 export const sinceMs = (iso: string | null, now: number) => (iso ? now - Date.parse(iso) : null)

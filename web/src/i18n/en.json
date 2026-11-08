@@ -172,7 +172,8 @@
     "in": "in {{value}}",
     "overdue": "{{value}} overdue",
     "ago": "{{value}} ago",
-    "notApplicable": "Not applicable"
+    "notApplicable": "Not applicable",
+    "readyNow": "Ready now"
   },
   "flags": {
     "noResponse": "No response",
@@ -360,25 +361,27 @@
   },
   "patient": {
     "language": "Language",
-    "departmentWait": "The department's current estimate for new arrivals is about {{estimate}}.",
-    "waitUnavailable": "Estimate unavailable.",
-    "waited": "You've been waiting {{waited}}.",
-    "placeInLine": "Your answers never change your place in line.",
-    "title": "You are checked in",
-    "titleCompanion": "You are helping with a check-in",
+    "departmentWait": "AHS estimate right now: {{estimate}} from triage to seeing a doctor, for less urgent patients. It is not your personal wait.",
+    "waitUnavailable": "AHS wait estimate not available right now.",
+    "waited": "You have waited {{waited}} since triage.",
+    "placeInLine": "The sickest people are seen first. Staff decide the order of care, not this app.",
+    "title": "You're signed in",
+    "titleCompanion": "You're answering for someone you're with",
     "nextCheckin": "Next check-in",
     "startCheckin": "Start check-in",
-    "reportChange": "Report a change",
+    "reportChange": "Tell us about a new symptom",
     "leaving": "I'm leaving",
     "sendFailed": "That did not send. Please try again, or tell a staff member.",
     "languageNotice": "This translation is a draft. A medical translator has not checked it yet. If anything is unclear, ask a staff member.",
-    "languageMissing": "Questions are shown in English for now. Ask a staff member if you need help in another language.",
+    "languageMissing": "Questions are in English for now. Ask any staff member for an interpreter.",
     "signOut": "Sign out of this phone",
-    "signOutHelp": "This phone will stop sending check-ins. The patient keeps their place in line, and anyone can sign in again by scanning the QR code.",
+    "signOutHelp": "This phone will stop sending check-ins. You keep your place in line. To sign in again, scan the code.",
     "signOutConfirm": "Sign out",
     "signOutFailed": "This phone could not sign out. Try again.",
     "waitContext": "Waiting-room information",
-    "contactStaff": "Contact staff"
+    "contactStaff": "Contact staff",
+    "updated": "Updated {{time}}.",
+    "companionHint": "Tell us what you see or hear. Only they can tell us how they feel inside."
   },
   "pain": {
     "low": "No pain",
@@ -394,54 +397,59 @@
     "title": "Are you leaving?",
     "info": "Please tell a staff member before you go. If you feel worse, return to triage right away.",
     "confirm": "Yes, I'm leaving",
-    "cancel": "No, I'm staying"
+    "cancel": "No, I'm staying",
+    "after": "If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
   },
   "urgent": {
     "title": "Tell a staff member now",
-    "body": "Go to the nearest staff member or call out for help.",
-    "sent": "Your report was received.",
-    "queued": "Saved on this phone. It will send when you reconnect.",
-    "telling": "I'm telling staff",
+    "body": "Go to the triage desk or the nearest staff member now. Call out if you can't walk.",
+    "sent": "Staff got your message. Still tell someone now.",
+    "queued": "Not sent yet. Staff do not know. Tell a staff member now.",
+    "telling": "Close",
     "sending": "Sending your report…",
-    "failed": "Your report was not sent.",
+    "failed": "Not sent. Staff do not know. Tell a staff member now.",
     "retry": "Try sending again",
+    "bodyCompanion": "Get a staff member now, or call out. Stay with them if you can.",
+    "emergency": "Emergency:",
+    "followupAfter_one": "After you tell staff: answer 1 more question",
+    "followupAfter_other": "After you tell staff: answer {{count}} more questions",
     "followup": "Answer a follow-up"
   },
   "sent": {
     "title": "Thank you, we have your answers",
-    "queuedTitle": "Saved on this phone",
-    "queuedBody": "It will send as soon as you are connected.",
+    "queuedTitle": "Not sent yet",
+    "queuedBody": "Not sent yet. We will keep trying. If you feel worse, tell a staff member.",
     "reported": "Reported",
     "received": "Received by the care team",
     "waiting": "Waiting to send",
     "back": "Back",
-    "stillChecking": "Staff will still check on you on their own schedule."
+    "stillChecking": "Staff will keep checking on you. If you feel worse, press \"I need help now\" or go to the triage desk."
   },
   "message": {
     "none": "Staff will see your answers.",
-    "clinician_will_check": "A clinician will check on you.",
-    "clinician_told": "A clinician has been told.",
-    "leaving_info": "Please tell staff before you leave. Return to triage right away if you feel worse."
+    "clinician_will_check": "A doctor or nurse will check on you.",
+    "clinician_told": "We told a doctor or nurse.",
+    "leaving_info": "Please tell staff before you leave. If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
   },
   "outbox": {
-    "saved": "Saved, will send when connected ({{count}} waiting)."
+    "saved": "Not sent yet. We will keep trying. If you feel worse, tell a staff member now."
   },
   "exchange": {
     "invalid": {
       "title": "This code did not work"
     },
-    "askDesk": "Ask the triage desk for a new code.",
+    "askDesk": "Ask a staff member for a new code.",
     "who": "Who is using this phone?",
     "role": {
       "patient": "I'm the patient",
       "companion": "I'm with the patient"
     },
-    "inactive": "This code is no longer active. Please speak to the triage desk.",
-    "failed": "That did not work. Please try again, or speak to the triage desk.",
+    "inactive": "This code does not work anymore. Please ask a staff member for a new one.",
+    "failed": "That did not work. Try again, or ask a staff member.",
     "takeover": {
-      "title": "This will sign out the other device",
-      "who": "{{who}} has been signed in on another phone since {{time}}. Only one phone can be signed in.",
-      "confirm": "Sign out the other phone and continue",
+      "title": "Another phone is already signed in",
+      "who": "{{who}} signed in on another phone at {{time}}. Only one phone can be used. If you go on, that phone will be signed out.",
+      "confirm": "Use this phone instead",
       "cancel": "Cancel"
     },
     "signedInAs": {
@@ -451,15 +459,21 @@
     "signedOut": {
       "title": "You've been signed out.",
       "help": "If you need help now, tell a staff member. To sign in again, scan the visit's QR code."
-    }
+    },
+    "intro": "Use this page to tell ER staff if things change while you wait. It does not replace talking to staff.",
+    "help": "Feeling much worse? Tell a staff member now.",
+    "companionHint": "Family member or friend answering for them"
   },
   "privacy": {
     "title": "What we store",
     "stored1": "Your answers and when you gave them.",
-    "stored2": "Your triage level and complaint group.",
+    "stored2": "How urgent the nurse rated your visit, and the main reason you came.",
     "stored3": "What staff did in response.",
     "notStored": "We never store your name or health number.",
-    "synthetic": "This demo uses synthetic data only."
+    "synthetic": "This demo uses synthetic data only.",
+    "seen": "ER staff see your answers. This is not your medical chart.",
+    "shared": "Anyone holding this phone can see this page. Sign out before you lend it.",
+    "code": "Keep your code private."
   },
   "exclusion": {
     "child": "Child",
@@ -481,22 +495,25 @@
     "countLabel": "Number of circles",
     "fewer": "One fewer",
     "more": "One more",
-    "confirm": "That is my count"
+    "confirm": "Done",
+    "notTest": "This is not a medical test. If it's hard, staff will simply come and check on you."
   },
   "desk": {
     "title": "Your question went to the triage nurse",
-    "body": "The triage nurse will come to you. You do not need to do anything else.",
-    "notClinical": "If you feel worse or are worried about your health, press \"I need help now\" instead."
+    "body": "The triage nurse will get your question and come when they can. If you feel worse, go to the triage desk.",
+    "notClinical": "If you feel worse, press \"I'm worried I'm getting worse\". If you need help right away, press \"I need help now\" or go to the triage desk."
   },
   "flow": {
     "progress": "Question {{n}} of {{total}}",
     "next": "Next",
-    "send": "Send",
+    "send": "Send to staff",
     "back": "Back",
-    "finishLater": "Finish later",
+    "finishLater": "Stop and send what I've answered",
     "finishLaterHelp": "If you stop, we send the answers you gave so far.",
-    "sendNow": "Send warning signs now",
-    "progressLabel": "Check-in progress"
+    "sendNow": "Send to staff now",
+    "progressLabel": "Check-in progress",
+    "stopEmpty": "Stop for now",
+    "chooseAnswer": "Choose an answer, or choose \"I'm not sure\"."
   },
   "signedIn": {
     "patient": "Patient signed in since {{time}}",
@@ -641,6 +658,18 @@
       "stepConfirm": "2. Confirm the irreversible change",
       "stopHelp": "Disabled until a reason is selected and the irreversible change is confirmed."
     }
+  },
+  "waitWords": {
+    "short": "under 15 minutes",
+    "minutes": "about {{n}} minutes",
+    "hours": "about {{lo}} to {{hi}} hours"
+  },
+  "duration": {
+    "hours_one": "1 hour",
+    "hours_other": "{{count}} hours",
+    "minutes_one": "1 minute",
+    "minutes_other": "{{count}} minutes",
+    "inTime": "in {{value}}"
   },
   "triageInfo": {
     "title": "How triage works",

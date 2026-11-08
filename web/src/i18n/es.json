@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "Idioma",
-    "departmentWait": "Para las personas que llegan ahora, la espera estimada en urgencias es de unos {{estimate}}.",
     "waitUnavailable": "Estimación no disponible.",
-    "waited": "Usted lleva esperando {{waited}}.",
-    "placeInLine": "Sus respuestas nunca cambian su lugar en la fila.",
     "title": "Su llegada está registrada",
     "titleCompanion": "Usted está ayudando a una persona a responder el cuestionario",
     "nextCheckin": "Próximo cuestionario",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "Avise ahora a un miembro del personal",
     "body": "Acérquese al miembro del personal más cercano o pida ayuda en voz alta.",
-    "sent": "Su aviso fue recibido.",
-    "queued": "Guardado en este teléfono. Se enviará cuando vuelva a tener conexión.",
     "telling": "Voy a avisar al personal",
     "sending": "Enviando su aviso…",
-    "failed": "Su aviso no se envió.",
-    "retry": "Intentar enviar de nuevo",
-    "followup": "Responder una pregunta más"
+    "retry": "Intentar enviar de nuevo"
   },
   "sent": {
     "title": "Gracias, recibimos sus respuestas",
-    "queuedTitle": "Guardado en este teléfono",
-    "queuedBody": "Se enviará en cuanto haya conexión.",
     "reported": "Informado",
     "received": "Recibido por el equipo de atención",
     "waiting": "Pendiente de envío",
@@ -76,9 +67,7 @@
     "clinician_told": "Ya se avisó a un profesional de la salud.",
     "leaving_info": "Por favor, avise al personal antes de irse. Regrese a triaje de inmediato si se siente peor."
   },
-  "outbox": {
-    "saved": "Guardado, se enviará al haber conexión ({{count}} en espera)."
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "Este código no funcionó"
@@ -126,9 +115,7 @@
     "confirm": "Ese es mi total"
   },
   "desk": {
-    "title": "Su pregunta se envió al personal de enfermería de triaje",
-    "body": "Alguien del personal de enfermería se acercará a usted. No necesita hacer nada más.",
-    "notClinical": "Si se siente peor o le preocupa su salud, presione \"Necesito ayuda ahora\" en su lugar."
+    "title": "Su pregunta se envió al personal de enfermería de triaje"
   },
   "flow": {
     "progress": "Pregunta {{n}} de {{total}}",
