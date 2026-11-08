@@ -1,10 +1,10 @@
-import { Activity } from 'lucide-react'
+import { LogoMark } from './Logo'
 
 export function Brand() {
   return (
     <span className="brand">
       <span className="brand-mark">
-        <Activity size={20} aria-hidden />
+        <LogoMark className="h-[18px] w-auto" />
       </span>
       recheck<span className="brand-period">.</span>
     </span>
