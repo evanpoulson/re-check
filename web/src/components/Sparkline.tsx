@@ -7,7 +7,25 @@ import type { TrendPoint } from '@/api/types'
  */
 export function Sparkline({ trend, width = 96, height = 28 }: { trend: TrendPoint[]; width?: number; height?: number }) {
   const { t } = useTranslation()
-  if (trend.length === 0) return <span className="text-muted">{t('common.none')}</span>
+  const answered = trend.filter((p) => p.pain !== null)
+  // No pain answers: a dash, with the reason as a tooltip and for screen readers.
+  if (answered.length === 0) {
+    return (
+      <span className="text-muted" title={t('sparkline.none')}>
+        <span aria-hidden>—</span>
+        <span className="sr-only">{t('sparkline.none')}</span>
+      </span>
+    )
+  }
+  // One answer: a dot and the number, not a lone point on an empty line.
+  if (answered.length === 1) {
+    return (
+      <span className="inline-flex items-center gap-1.5" aria-label={t('sparkline.label', { values: answered[0]!.pain })} role="img">
+        <span aria-hidden className="size-2 rounded-full bg-brand-500" />
+        <span aria-hidden className="tabular font-semibold">{answered[0]!.pain}</span>
+      </span>
+    )
+  }
   const pad = 3
   const step = trend.length > 1 ? (width - pad * 2) / (trend.length - 1) : 0
   const y = (v: number) => height - pad - (v / 10) * (height - pad * 2)
@@ -24,10 +42,7 @@ export function Sparkline({ trend, width = 96, height = 28 }: { trend: TrendPoin
   })
   if (current.length > 1) segments.push(current.join(' '))
 
-  const answered = trend.filter((p) => p.pain !== null)
-  const label = answered.length
-    ? t('sparkline.label', { values: answered.map((p) => p.pain).join(', ') })
-    : t('sparkline.none')
+  const label = t('sparkline.label', { values: answered.map((p) => p.pain).join(', ') })
 
   return (
     <svg role="img" aria-label={label} width={width} height={height} className="text-brand-500">

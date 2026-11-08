@@ -64,6 +64,8 @@ export function countByLevel(items: BoardItem[]): Record<TaskLevel, number> {
 
 export interface Filters {
   needsReview: boolean
+  /** Only rows flagged at this level. */
+  level?: TaskLevel | null
   ctas: number | null
   complaint: string | null
 }
@@ -72,9 +74,34 @@ export function applyFilters(items: BoardItem[], f: Filters): BoardItem[] {
   return items.filter(
     (i) =>
       (!f.needsReview || needsReview(i)) &&
+      (!f.level || i.board.level === f.level) &&
       (f.ctas === null || i.board.ctas === f.ctas) &&
       (f.complaint === null || i.board.complaint_group === f.complaint),
   )
 }
 
+/** The visit's own reference, the same with or without a pager. */
+export const visitRef = (w: WorklistRow) => `P-${w.visit.visit_id.slice(0, 4)}`
+
 export const shortRef = (w: WorklistRow) => w.visit.pager_no ? `Pager ${w.visit.pager_no}` : `P-${w.visit.visit_id.slice(0, 4)}`
+
+/**
+ * Optional manual sorts. Each one reorders rows only; the place in line always
+ * comes from queue order, so a sort never renumbers a patient.
+ */
+export type BoardSort = 'place' | 'waiting' | 'nextCheckin' | 'reassess'
+
+const dueOrLast = (iso: string | null) => (iso ? Date.parse(iso) : Number.POSITIVE_INFINITY)
+
+export function sortRows(items: BoardItem[], by: BoardSort): BoardItem[] {
+  if (by === 'place') return items
+  const key: Record<Exclude<BoardSort, 'place'>, (i: BoardItem) => number> = {
+    // Longest wait first.
+    waiting: (i) => Date.parse(i.board.triaged_at),
+    // Soonest due first; no app or no prompt sorts last.
+    nextCheckin: (i) => (appNotOffered(i.work) ? Number.POSITIVE_INFINITY : dueOrLast(i.work.visit.next_prompt_due_at)),
+    reassess: (i) => dueOrLast(i.board.staff_reassess_due_at),
+  }
+  const k = key[by]
+  return [...items].sort((a, b) => k(a) - k(b))
+}
