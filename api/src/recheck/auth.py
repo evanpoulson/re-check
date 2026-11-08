@@ -1,12 +1,14 @@
-"""Who is calling: staff (demo role cookie) or a patient device (visit-session cookie).
+"""Who is calling: staff (signed staff cookie) or a patient device (visit-session cookie).
 
-Staff sign-in is a stand-in. The web app's demo role picker calls
-`POST /api/staff/session`; the server answers with a signed HttpOnly cookie, and
-every staff route reads the role, site and actor from it. Auth0 (or any real
-sign-in) replaces `sign_in_demo_staff` and `current_staff` without touching the
-routes.
+Staff sign in with Auth0 (`routes/staff_session.py`, `oidc.py`). The callback
+sets a signed HttpOnly cookie, and every staff route reads the user, role and
+site from it through `current_staff`. The demo role picker sets the same cookie
+when `RECHECK_DEMO_STAFF` is on.
 """
 
+import base64
+import json
+import time
 from dataclasses import dataclass
 from typing import Annotated
 from uuid import UUID
@@ -15,11 +17,13 @@ from fastapi import Depends, HTTPException, Request, Response, status
 from psycopg_pool import AsyncConnectionPool
 
 from .contract.codes import Reporter, StaffRole
-from .security import sign, token_hash, unsign
+from .security import STAFF_COOKIE_KEY, sign, token_hash, unsign
 from .settings import cookie_secure, site_id
 
 STAFF_COOKIE = "recheck_staff"
 SESSION_COOKIE = "recheck_session"
+# One shift. After this the person signs in again (Auth0 may sign them straight back in).
+STAFF_SESSION_SECONDS = 12 * 60 * 60
 
 
 def get_pool(request: Request) -> AsyncConnectionPool:
@@ -36,19 +40,49 @@ Pool = Annotated[AsyncConnectionPool, Depends(get_pool)]
 
 @dataclass(frozen=True)
 class Staff:
+    # Auth0 user ID (`google-oauth2|123`, `auth0|abc`), or `demo|<role>` from the role picker.
+    user_id: str
     role: StaffRole
     site_id: str
+    name: str | None = None
 
     @property
     def actor(self) -> str:
-        # Demo identity: the role, not a person. Real sign-in puts a user ID here.
-        return f"demo|{self.role.value}"
+        """Who the audit log and `*_by` columns record."""
+        return self.user_id
+
+
+def encode_signed(payload: dict, purpose: bytes = STAFF_COOKIE_KEY) -> str:
+    raw = base64.urlsafe_b64encode(json.dumps(payload, separators=(",", ":")).encode()).decode().rstrip("=")
+    return sign(raw, purpose)
+
+
+def decode_signed(value: str, purpose: bytes = STAFF_COOKIE_KEY) -> dict | None:
+    """The payload if the signature is good and `exp` hasn't passed; otherwise None."""
+    raw = unsign(value, purpose)
+    if raw is None:
+        return None
+    try:
+        payload = json.loads(base64.urlsafe_b64decode(raw + "=" * (-len(raw) % 4)))
+    except ValueError:
+        return None
+    if not isinstance(payload, dict) or not isinstance(payload.get("exp"), int) or payload["exp"] < time.time():
+        return None
+    return payload
 
 
 def set_staff_cookie(response: Response, staff: Staff) -> None:
+    payload = {
+        "sub": staff.user_id,
+        "role": staff.role.value,
+        "site": staff.site_id,
+        "name": staff.name,
+        "exp": int(time.time()) + STAFF_SESSION_SECONDS,
+    }
     response.set_cookie(
         STAFF_COOKIE,
-        sign(f"{staff.role.value}|{staff.site_id}"),
+        encode_signed(payload),
+        max_age=STAFF_SESSION_SECONDS,
         httponly=True,
         samesite="lax",
         secure=cookie_secure(),
@@ -61,19 +95,23 @@ def clear_staff_cookie(response: Response) -> None:
 
 
 def demo_staff(role: StaffRole) -> Staff:
-    return Staff(role=role, site_id=site_id())
+    return Staff(user_id=f"demo|{role.value}", role=role, site_id=site_id())
 
 
 def current_staff(request: Request) -> Staff:
     raw = request.cookies.get(STAFF_COOKIE)
-    value = unsign(raw) if raw else None
-    if value is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "staff sign-in required")
-    role, _, site = value.partition("|")
-    try:
-        return Staff(role=StaffRole(role), site_id=site)
-    except ValueError:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "staff sign-in required") from None
+    payload = decode_signed(raw) if raw else None
+    if payload is not None:
+        try:
+            return Staff(
+                user_id=str(payload["sub"]),
+                role=StaffRole(payload["role"]),
+                site_id=str(payload["site"]),
+                name=payload.get("name"),
+            )
+        except (KeyError, ValueError):
+            pass
+    raise HTTPException(status.HTTP_401_UNAUTHORIZED, "staff sign-in required")
 
 
 def require_staff(*roles: StaffRole):

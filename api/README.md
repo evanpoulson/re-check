@@ -88,6 +88,11 @@ RECHECK_SECRET_KEY=...                     # 32+ chars: encrypts QR tokens, sign
 RECHECK_PUBLIC_URL=http://localhost:5173   # optional: web app base for QR links ({url}/v/{token})
 RECHECK_SITE_ID=foothills-demo             # optional: the demo site staff act for
 RECHECK_COOKIE_SECURE=false                # optional: true when served over HTTPS
+AUTH0_DOMAIN=recheck.ca.auth0.com          # staff sign-in; see ../auth0/README.md
+AUTH0_CLIENT_ID=...
+AUTH0_CLIENT_SECRET=...
+AUTH0_CALLBACK_URL=...                     # optional: defaults to {RECHECK_PUBLIC_URL}/api/staff/callback
+RECHECK_DEMO_STAFF=false                   # optional: true turns on the no-account demo role picker
 ```
 
 Generate a secret with `uv run python -c "import secrets; print(secrets.token_urlsafe(32))"`.
@@ -101,6 +106,10 @@ uv run uvicorn recheck.main:app --reload --loop asyncio:SelectorEventLoop
 
 Then open `http://127.0.0.1:8000/api/health` and `http://127.0.0.1:8000/docs`. `/api/health` returns 503 if the database can't be reached. Keep `--loop`: async psycopg doesn't work on Windows' default event loop.
 
+## Staff sign-in
+
+Staff sign in with Auth0; `../auth0/README.md` sets up the tenant. The API is the OAuth client, so Auth0's tokens never reach the browser. Each account has exactly one role, from the `https://recheck/roles` ID token claim. The staff cookie carries the Auth0 user ID (`google-oauth2|…`, `auth0|…`), and it becomes `app.actor` and the `*_by` columns, so the audit log names the person. Demo role picker sessions use `demo|<role>`. Tests turn the picker on in `conftest.py` and mock Auth0 with a local signing key.
+
 ## Database access
 
 `recheck/db.py` holds one async pool, opened when the app starts. Every write uses `write_tx(pool, actor)`, which opens a transaction and sets `app.actor` for it; the schema rejects writes without it.
@@ -112,8 +121,12 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | Method and path | Who | Body → response |
 | --- | --- | --- |
 | `GET /api/health` | anyone | `Health` (503 when the database is down) |
-| `POST /api/staff/session` | demo role picker | `{role}` → signed HttpOnly `recheck_staff` cookie |
-| `GET` / `DELETE /api/staff/session` | staff | current role and site / sign out |
+| `GET /api/staff/sign-in-options` | anyone | `{auth0, demo}`: which sign-in buttons to show |
+| `GET /api/staff/login?return_to=/path` | browser navigation | 302 to Auth0 (code flow with PKCE); 503 if Auth0 isn't configured |
+| `GET /api/staff/callback` | Auth0 redirect | verifies the ID token and role, sets signed HttpOnly `recheck_staff` (12 h), 302 to `return_to`; on failure 302 to `/staff/sign-in?error=access_denied\|no_staff_role\|expired\|sign_in_failed` |
+| `GET /api/staff/logout` | browser navigation | clears the cookie and ends the Auth0 session, 302 to `/staff/sign-in` |
+| `POST /api/staff/session` | demo role picker | `{role}` → `recheck_staff` cookie; 403 unless `RECHECK_DEMO_STAFF` is on |
+| `GET` / `DELETE /api/staff/session` | staff | user ID, name, role and site / clear the cookie only |
 | `POST /api/visits` | triage or charge nurse | `VisitCreate` → `VisitEnrolled` (201; 200 on retry) |
 | `GET /api/visits/{id}/link` | triage or charge nurse | `VisitLink`; logs `visit.qr_shown` |
 | `POST /api/visits/{id}/sign-out` | triage or charge nurse | `StaffSignOut` → 204 |

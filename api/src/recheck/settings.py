@@ -5,6 +5,7 @@ root `.env` file, which is git-ignored and holds local credentials.
 """
 
 import os
+from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 
@@ -59,4 +60,40 @@ def site_id() -> str:
 
 def cookie_secure() -> bool:
     """Send cookies only over HTTPS. Off by default so local http:// works."""
-    return (_get("RECHECK_COOKIE_SECURE") or "false").lower() in ("1", "true", "yes")
+    return _flag("RECHECK_COOKIE_SECURE")
+
+
+def demo_staff_enabled() -> bool:
+    """Allow the demo role picker (`POST /api/staff/session`). Off by default: staff sign in with Auth0.
+
+    Turn it on for local work, tests, or as a fallback if Auth0 is unreachable on demo day.
+    """
+    return _flag("RECHECK_DEMO_STAFF")
+
+
+def _flag(name: str) -> bool:
+    return (_get(name) or "false").lower() in ("1", "true", "yes")
+
+
+@dataclass(frozen=True)
+class Auth0:
+    domain: str
+    client_id: str
+    client_secret: str
+    callback_url: str
+
+    @property
+    def issuer(self) -> str:
+        return f"https://{self.domain}/"
+
+
+def auth0() -> Auth0 | None:
+    """Auth0 application settings, or None when staff sign-in with Auth0 isn't configured."""
+    domain = _get("AUTH0_DOMAIN")
+    client_id = _get("AUTH0_CLIENT_ID")
+    client_secret = _get("AUTH0_CLIENT_SECRET")
+    if not (domain and client_id and client_secret):
+        return None
+    domain = domain.removeprefix("https://").rstrip("/")
+    callback = _get("AUTH0_CALLBACK_URL") or f"{public_url()}/api/staff/callback"
+    return Auth0(domain=domain, client_id=client_id, client_secret=client_secret, callback_url=callback)

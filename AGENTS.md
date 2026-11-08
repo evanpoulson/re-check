@@ -14,9 +14,22 @@ The prototype is a standalone companion to Connect Care and Epic Rover. Use synt
 | Database | PostgreSQL with [TimescaleDB from Tiger Data](https://www.tigerdata.com/timescaledb) |
 | Rules tests | pytest and Hypothesis |
 
-The repository currently has [Pydantic contracts](api/README.md), contract tests, and a [TimescaleDB schema](db/schema.sql) with [SQL checks](db/tests/schema_checks.sql). It also has the FHIR [question bank](question-bank/README.md) with its loader. FastAPI routes, generated client types, React screens, rules, scheduled jobs, and live delivery are implementation work. Staff authentication and the dashboard transport are open choices.
+The repository currently has [Pydantic contracts](api/README.md), contract tests, and a [TimescaleDB schema](db/schema.sql) with [SQL checks](db/tests/schema_checks.sql). It also has the FHIR [question bank](question-bank/README.md) with its loader. FastAPI routes, generated client types, React screens, rules, scheduled jobs, and live delivery are implementation work. Staff sign in with Auth0 (see [`auth0/README.md`](auth0/README.md)); the dashboard transport is an open choice.
 
 Use the contract for request and response shapes and keep database constraints aligned with it. Derive the acting identity and site permissions from the session, and authorize access to any referenced visit. Reports identify the reporter separately from the channel. Reuse the same client-generated submission UUID on retry, and set `app.actor` with transaction-local scope on writes as the `recheck_app` database role. Keep credentials and escalation decisions on the server.
+
+## Staff sign-in
+
+Staff sign in with Auth0: Google, Microsoft, or GitHub single sign-on for the team, and demo email-and-password accounts for judges. Each account has one fixed role. The API is the OAuth client and sets the signed `recheck_staff` cookie. Patients and companions never use Auth0; they sign in with the visit's QR token. The no-account demo role picker works only when `RECHECK_DEMO_STAFF=true`.
+
+**The front end still needs updating for this.** Until then, set `RECHECK_DEMO_STAFF=true` to keep the current role picker working.
+
+- Make `/api` same-origin with the web app. In development, add a Vite proxy from `/api` to FastAPI. The Auth0 callback and cookies depend on it.
+- On the sign-in page, call `GET /api/staff/sign-in-options`. Show a "Sign in" button that navigates (not fetch) to `/api/staff/login?return_to=<staff home>`. Show the role picker only when `demo` is true.
+- Show the `?error=` code from the callback (`access_denied`, `no_staff_role`, `expired`, `sign_in_failed`) as a plain message.
+- Read the signed-in user from `GET /api/staff/session`. It now returns `user_id`, `name`, `role` and `site_id`. Choose the staff home from `role`, not from the picker button.
+- Sign out by navigating to `/api/staff/logout`, which also ends the Auth0 session.
+- Update the MSW mocks for these routes.
 
 ## Demo scope
 
