@@ -247,7 +247,6 @@
   },
   "enrol": {
     "ctas": "CTAS level",
-    "ctas1": "CTAS 1 is never in the waiting room.",
     "complaint": "Presenting complaint",
     "cedis": "CEDIS code (optional, 3 digits)",
     "language": "Patient language",
@@ -258,7 +257,8 @@
     "errors": {
       "ctas": "Choose a CTAS level from 2 to 5.",
       "cedis": "A CEDIS code is exactly 3 digits.",
-      "pagerRequired": "Enter a pager number of 1 to 6 digits."
+      "pagerRequired": "Enter a pager number of 1 to 6 digits.",
+      "exclusionRequired": "Choose why the patient app is off."
     },
     "doneTitle": "Visit created",
     "pagerFallback": "Pager {{pager}} is bound to this visit; this QR is the phone fallback.",
@@ -266,8 +266,12 @@
     "another": "Enrol another patient",
     "cedisHelp": "Optional. Type a code or pick one from the list.",
     "groupLocked": "Set by the CEDIS code.",
-    "exclusion": "Patient app",
+    "complaintDetail": "Issue (optional)",
+    "complaintDetailHelp": "Briefly describe the presenting issue. Leave out names and health numbers.",
     "appOffered": "App is offered",
+    "exclusionDisclosure": "Who isn’t covered?",
+    "exclusionReason": "Reason the app is off",
+    "chooseExclusion": "Choose a reason",
     "notOffered": "Not offered: {{reason}}",
     "exclusionHelp": "No QR or prompts. The patient stays on this board and the staff reassessment timer keeps running.",
     "submitNoQr": "Create visit (no QR)",

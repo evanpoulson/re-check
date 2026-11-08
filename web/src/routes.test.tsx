@@ -136,8 +136,10 @@ describe('triage nurse: enrolment and QR', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Create visit and QR code' }))
     expect(await screen.findByText('Choose a CTAS level from 2 to 5.')).toBeInTheDocument()
+    expect(screen.queryByRole('radio', { name: '1' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: '3' }))
+    await user.type(screen.getByLabelText('Issue (optional)'), '  Ankle swelling  ')
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
 
     expect(await screen.findByRole('heading', { name: 'Visit created' })).toBeInTheDocument()
@@ -145,6 +147,7 @@ describe('triage nurse: enrolment and QR', () => {
     const links = screen.getAllByText(/\/v\//)
     expect(links).toHaveLength(1)
     expect(screen.getByText(/show it again from the visit/)).toBeInTheDocument()
+    expect((await visitWhere((r) => r.visit.complaint_detail === 'Ankle swelling')).complaint_group).toBe('general')
   })
 
   it('the visit shows who is signed in and can show the same QR again', async () => {
@@ -234,7 +237,9 @@ describe('triage nurse: enrolment and QR', () => {
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
     await user.type(await screen.findByLabelText(/CEDIS code/), '609')
-    expect(screen.getByLabelText('Patient app')).toHaveValue('child')
+    expect(screen.getByRole('switch', { name: 'App is offered' })).not.toBeChecked()
+    expect(screen.getByRole('switch', { name: 'App is offered' })).toBeDisabled()
+    expect(screen.getByLabelText('Reason the app is off')).toHaveValue('child')
     expect(screen.queryByRole('radio', { name: 'Pager' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: '4' }))
@@ -242,6 +247,21 @@ describe('triage nurse: enrolment and QR', () => {
     expect(await screen.findByText(/No QR issued: Child/)).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /QR code/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Print' })).not.toBeInTheDocument()
+  })
+
+  it('lists app exclusions and requires a reason when staff turn the app off', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/visits/new')
+    await user.click(await screen.findByText('Who isn’t covered?'))
+    expect(screen.getByText('Major trauma', { selector: 'li' })).toBeVisible()
+    await user.click(screen.getByRole('radio', { name: '4' }))
+    await user.click(screen.getByRole('switch', { name: 'App is offered' }))
+    await user.click(screen.getByRole('button', { name: 'Create visit (no QR)' }))
+    expect(screen.getByText('Choose why the patient app is off.')).toBeInTheDocument()
+    await user.selectOptions(screen.getByLabelText('Reason the app is off'), 'major_trauma')
+    await user.click(screen.getByRole('button', { name: 'Create visit (no QR)' }))
+    expect(await screen.findByText('No QR issued: Major trauma')).toBeInTheDocument()
   })
 })
 

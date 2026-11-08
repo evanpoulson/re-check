@@ -704,6 +704,7 @@ app_exclusion: (AppExclusion | null)
 cedis_code: (string | null)
 channel: (("phone" | "pager") | null)
 closed_at: (string | null)
+complaint_detail?: (string | null)
 complaint_group: ComplaintGroup
 /**
  * Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.
@@ -1043,7 +1044,7 @@ generated_at: string
 rows: BoardRow[]
 }
 /**
- * Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used.
+ * Triage nurse enrols a waiting patient (FR1).
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "VisitCreate".
@@ -1061,6 +1062,7 @@ cedis_code?: (string | null)
  * Required unless the app is not offered.
  */
 channel?: (("phone" | "pager") | null)
+complaint_detail?: (string | null)
 complaint_group: ComplaintGroup
 /**
  * Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.

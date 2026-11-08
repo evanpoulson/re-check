@@ -38,19 +38,20 @@ def staff_ref(actor: str | None, role: str | None) -> StaffRef | None:
 VISIT_COLUMNS = """
     v.id, v.site_id, v.ctas, v.complaint_group::text, v.cedis_code, v.language, v.app_exclusion::text,
     v.channel::text, v.pager_no, v.status::text, v.triaged_at, v.closed_at, v.next_prompt_due_at,
-    v.staff_reassess_due_at, v.last_staff_check_at, s.role::text, s.created_at
+    v.staff_reassess_due_at, v.last_staff_check_at, s.role::text, s.created_at, v.complaint_detail
 """
 VISIT_FROM = "visit v LEFT JOIN visit_session s ON s.visit_id = v.id AND s.revoked_at IS NULL"
 
 
 def visit_summary(row) -> VisitSummary:
     (vid, site, ctas, group, cedis, lang, exclusion, channel, pager, status, triaged, closed,
-     prompt_due, reassess_due, last_check, signed_role, signed_since) = row
+     prompt_due, reassess_due, last_check, signed_role, signed_since, complaint_detail) = row
     return VisitSummary(
         visit_id=vid, site_id=site, ctas=ctas, complaint_group=group, cedis_code=cedis, language=lang,
         app_exclusion=exclusion, channel=channel, pager_no=pager, status=status, triaged_at=triaged,
         closed_at=closed, next_prompt_due_at=prompt_due, staff_reassess_due_at=reassess_due,
         last_staff_check_at=last_check, signed_in_as=signed_role, signed_in_since=signed_since,
+        complaint_detail=complaint_detail,
     )
 
 

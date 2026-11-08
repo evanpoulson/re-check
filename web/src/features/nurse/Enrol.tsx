@@ -1,10 +1,10 @@
 import { useMutation } from '@tanstack/react-query'
-import { Printer, UserRoundCheck } from 'lucide-react'
+import { Check, Printer, UserRoundCheck } from 'lucide-react'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { enrolVisit } from '@/api/api'
 import { ApiError, newSubmissionId } from '@/api/client'
-import { cedisEntries, exclusionForCedis, lookupCedis } from '@/api/cedis'
+import { cedisEntries, lookupCedis } from '@/api/cedis'
 import type { AppExclusion, ComplaintGroup, Language, VisitEnrolled } from '@/api/types'
 import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,7 @@ const ERROR = 'mt-1.5 text-[0.9375rem] font-semibold text-level-red'
 export function Enrol() {
   const { t } = useTranslation()
   const [form, setForm] = useState<EnrolForm>(emptyEnrol)
+  const [offerApp, setOfferApp] = useState(true)
   const [errors, setErrors] = useState<EnrolErrors>({})
   const [serverError, setServerError] = useState<string | null>(null)
   const [done, setDone] = useState<{ visit: VisitEnrolled; pager: boolean } | null>(null)
@@ -33,8 +34,8 @@ export function Enrol() {
 
   const mutation = useMutation({
     mutationFn: enrolVisit,
-    onSuccess: (visit) => {
-      setDone({ visit, pager: form.channel === 'pager' && form.app_exclusion === null })
+    onSuccess: (visit, body) => {
+      setDone({ visit, pager: body.channel === 'pager' })
       submissionId.current = newSubmissionId()
     },
     onError: (err) => {
@@ -48,6 +49,8 @@ export function Enrol() {
   // A CEDIS code the backend's map knows picks the complaint group and may suggest an exclusion.
   const mapped = lookupCedis(form.cedis_code.trim())
   const groupLocked = !!mapped?.group
+  const offered = offerApp && !mapped?.exclusion
+  const exclusion = mapped?.exclusion ?? form.app_exclusion
 
   function changeCedis(value: string) {
     const code = value.trim()
@@ -56,14 +59,16 @@ export function Enrol() {
       ...f,
       cedis_code: value,
       complaint_group: entry?.group ?? f.complaint_group,
-      app_exclusion: entry?.exclusion ?? (exclusionForCedis(f.cedis_code.trim()) ? null : f.app_exclusion),
     }))
   }
 
   function submit(e: React.FormEvent) {
     e.preventDefault()
     setServerError(null)
-    const result = validateEnrol(form, submissionId.current)
+    const result = validateEnrol({ ...form, app_exclusion: offered ? null : exclusion }, submissionId.current)
+    if (!offered && !exclusion) {
+      return setErrors({ ...(result.ok ? {} : result.errors), app_exclusion: 'exclusionRequired' })
+    }
     if (!result.ok) return setErrors(result.errors)
     setErrors({})
     mutation.mutate(result.body)
@@ -108,6 +113,7 @@ export function Enrol() {
             onClick={() => {
               setDone(null)
               setForm(emptyEnrol)
+              setOfferApp(true)
             }}
           >
             {t('enrol.another')}
@@ -125,14 +131,13 @@ export function Enrol() {
           <fieldset>
             <legend className={LABEL}>{t('enrol.ctas')}</legend>
             <div className="flex gap-1 rounded-tap bg-canvas p-1">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={`${SEGMENT} ${n === 1 ? 'cursor-not-allowed text-muted line-through' : 'hover:not-has-checked:bg-surface'}`}>
-                  <input type="radio" name="ctas" value={n} disabled={n === 1} checked={form.ctas === n} onChange={() => set('ctas', n)} className="sr-only" />
+              {[2, 3, 4, 5].map((n) => (
+                <label key={n} className={`${SEGMENT} hover:not-has-checked:bg-surface`}>
+                  <input type="radio" name="ctas" value={n} checked={form.ctas === n} onChange={() => set('ctas', n)} className="sr-only" />
                   {n}
                 </label>
               ))}
             </div>
-            <p className="mt-1.5 text-sm text-muted">{t('enrol.ctas1')}</p>
             {errors.ctas && <p role="alert" className={ERROR}>{t('enrol.errors.ctas')}</p>}
           </fieldset>
 
@@ -170,15 +175,45 @@ export function Enrol() {
             {groupLocked && <p className="mt-1.5 text-sm text-muted">{t('enrol.groupLocked')}</p>}
           </div>
 
+          {form.complaint_group === 'general' && (
+            <div>
+              <label htmlFor="complaint-detail" className={LABEL}>{t('enrol.complaintDetail')}</label>
+              <input id="complaint-detail" className={FIELD} maxLength={200} value={form.complaint_detail}
+                onChange={(e) => set('complaint_detail', e.target.value)} aria-describedby="complaint-detail-help" />
+              <p id="complaint-detail-help" className="mt-1.5 text-sm text-muted">{t('enrol.complaintDetailHelp')}</p>
+            </div>
+          )}
+
           <div>
-            <label htmlFor="exclusion" className={LABEL}>{t('enrol.exclusion')}</label>
-            <select id="exclusion" className={FIELD} value={form.app_exclusion ?? ''} onChange={(e) => set('app_exclusion', (e.target.value || null) as AppExclusion | null)}>
-              <option value="">{t('enrol.appOffered')}</option>
-              {EXCLUSIONS.map((x) => (
-                <option key={x} value={x}>{t('enrol.notOffered', { reason: t(`exclusion.${x}`) })}</option>
-              ))}
-            </select>
-            {form.app_exclusion && <p className="mt-1.5 text-sm text-muted">{t('enrol.exclusionHelp')}</p>}
+            <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[0.9375rem] font-semibold has-[:disabled]:cursor-not-allowed">
+              <input type="checkbox" role="switch" checked={offered} disabled={!!mapped?.exclusion}
+                className="peer sr-only" onChange={(e) => setOfferApp(e.target.checked)} />
+              <span aria-hidden className="relative h-6 w-11 rounded-full bg-muted after:absolute after:start-1 after:top-1 after:size-4 after:rounded-full after:bg-white peer-checked:bg-brand-600 peer-checked:after:start-6 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-disabled:opacity-60" />
+              {t('enrol.appOffered')}
+            </label>
+            <details className="text-sm text-muted">
+              <summary className="flex min-h-8 w-fit cursor-pointer list-none items-center gap-2">
+                <Check aria-hidden className="size-4" />
+                {t('enrol.exclusionDisclosure')}
+              </summary>
+              <ul className="list-disc ps-6">
+                {EXCLUSIONS.map((reason) => <li key={reason}>{t(`exclusion.${reason}`)}</li>)}
+              </ul>
+            </details>
+            {!offered && (
+              <div className="mt-3">
+                <label htmlFor="exclusion" className={LABEL}>{t('enrol.exclusionReason')}</label>
+                <select id="exclusion" className={FIELD} value={exclusion ?? ''} disabled={!!mapped?.exclusion}
+                  aria-invalid={!!errors.app_exclusion && !exclusion}
+                  onChange={(e) => set('app_exclusion', (e.target.value || null) as AppExclusion | null)}>
+                  <option value="">{t('enrol.chooseExclusion')}</option>
+                  {EXCLUSIONS.map((reason) => <option key={reason} value={reason}>{t(`exclusion.${reason}`)}</option>)}
+                </select>
+                {errors.app_exclusion && !exclusion && <p role="alert" className={ERROR}>{t('enrol.errors.exclusionRequired')}</p>}
+                {mapped?.exclusion && <p className="mt-1.5 text-sm text-muted">{t('enrol.groupLocked')}</p>}
+                <p className="mt-1.5 text-sm text-muted">{t('enrol.exclusionHelp')}</p>
+              </div>
+            )}
           </div>
 
           <div>
@@ -190,7 +225,7 @@ export function Enrol() {
             </select>
           </div>
 
-          {form.app_exclusion === null && (
+          {offered && (
             <>
               <fieldset>
                 <legend className={LABEL}>{t('enrol.channel')}</legend>
@@ -217,7 +252,7 @@ export function Enrol() {
           {errors.conflict && <p role="alert" className={ERROR}>{errors.conflict}</p>}
           {serverError && <p role="alert" className={ERROR}>{serverError}</p>}
           <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? t('common.sending') : form.app_exclusion ? t('enrol.submitNoQr') : t('enrol.submit')}
+            {mutation.isPending ? t('common.sending') : offered ? t('enrol.submit') : t('enrol.submitNoQr')}
           </Button>
         </form>
       </Card>
