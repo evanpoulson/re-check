@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CircleAlert, CircleCheckBig, Clock, OctagonAlert } from 'lucide-react'
+import { ArrowRight, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
@@ -30,12 +30,7 @@ type View =
   | { name: 'confirmLeave' }
   | { name: 'followup'; keys: string[] }
   | { name: 'desk'; queued: boolean }
-  | { name: 'sent'; queued: boolean; message: PatientMessage }
-
-type UrgentNotice = {
-  status: 'sending' | 'sent' | 'queued' | 'failed'
-  followUps: string[]
-}
+  | { name: 'sent'; queued: boolean; message: PatientMessage; followUps?: string[] }
 
 const URGENT: PatientMessage[] = ['clinician_will_check', 'clinician_told']
 
@@ -54,26 +49,17 @@ export function CheckIn() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
-  const [urgent, setUrgent] = useState<UrgentNotice | null>(null)
-  const urgentBody = useRef<PatientReport | null>(null)
-  const urgentInFlight = useRef(false)
-  const urgentHeading = useRef<HTMLHeadingElement>(null)
-  const urgentVisible = urgent !== null
-  useEffect(() => {
-    if (!urgentVisible) return
-    urgentHeading.current?.focus()
-    document.title = `${t('urgent.title')} · Recheck`
-  }, [urgentVisible, t])
+  // The help buttons stay enabled while sending, so a second tap must not send twice.
+  const inFlight = useRef(false)
   const content = useRef<HTMLDivElement>(null)
   useEffect(() => {
-    if (urgentVisible) return
     const heading = content.current?.querySelector('h1')
     if (heading) {
       heading.tabIndex = -1
       heading.focus()
       document.title = `${heading.textContent} · Recheck`
     }
-  }, [view.name, urgentVisible])
+  }, [view.name])
 
   if (isPending)
     return (
@@ -81,7 +67,7 @@ export function CheckIn() {
         <p role="status">{t('common.loading')}</p>
       </PatientLayout>
     )
-  if (!home || (error instanceof ApiError && error.status === 401 && !urgentVisible)) {
+  if (!home || (error instanceof ApiError && error.status === 401)) {
     // Signed out by takeover, by staff, by the person, or because the visit closed.
     // A signed-out device can't send anything, so it says to tell staff.
     const signedOut = error instanceof ApiError && error.status === 401
@@ -106,6 +92,8 @@ export function CheckIn() {
 
   /** Send, then route to the screen the receipt calls for. Offline sends are saved, not lost. */
   async function deliver(body: PatientReport, after: (receipt: ReportReceipt | null) => View) {
+    if (inFlight.current) return
+    inFlight.current = true
     setSending(true)
     setFailed(false)
     try {
@@ -118,6 +106,7 @@ export function CheckIn() {
       if (e instanceof ApiError && (e.status === 409 || e.status === 401)) await qc.invalidateQueries({ queryKey: ['home'] })
       setFailed(true)
     } finally {
+      inFlight.current = false
       setSending(false)
     }
   }
@@ -125,30 +114,10 @@ export function CheckIn() {
   const afterReport = (receipt: ReportReceipt | null): View => {
     if (!receipt) return { name: 'sent', queued: true, message: 'none' }
     const followUps = receipt.follow_up_items ?? []
-    if (URGENT.includes(receipt.patient_message)) {
-      setUrgent((current) => current ?? { status: 'sent', followUps })
-      return { name: 'home' }
-    }
+    // An urgent report confirms first; its follow-ups stay optional.
+    if (URGENT.includes(receipt.patient_message)) return { name: 'sent', queued: false, message: receipt.patient_message, followUps }
     if (followUps.length > 0) return { name: 'followup', keys: followUps }
     return { name: 'sent', queued: false, message: receipt.patient_message }
-  }
-
-  async function deliverUrgent(body: PatientReport, finish?: () => void) {
-    if (urgentInFlight.current) return
-    urgentInFlight.current = true
-    urgentBody.current = body
-    setUrgent({ status: 'sending', followUps: [] })
-    try {
-      const result = await sendReport(body)
-      const followUps = result.queued ? [] : (result.receipt.follow_up_items ?? [])
-      setUrgent({ status: result.queued ? 'queued' : 'sent', followUps })
-      finish?.()
-      if (!result.queued) void qc.invalidateQueries({ queryKey: ['home'] })
-    } catch {
-      setUrgent({ status: 'failed', followUps: [] })
-    } finally {
-      urgentInFlight.current = false
-    }
   }
 
   const concern = (c: ConcernCode) => {
@@ -156,16 +125,10 @@ export function CheckIn() {
     if (c === 'desk_question') {
       return void deliver(body, (receipt) => ({ name: 'desk', queued: receipt === null }))
     }
-    void deliverUrgent(body)
+    void deliver(body, afterReport)
   }
 
-  const submitCheckin = (report: CheckinReport) => {
-    if (report.new_findings.kind === 'answered' && report.new_findings.value.length > 0) {
-      void deliverUrgent(report, () => setView({ name: 'home' }))
-    } else {
-      void deliver(report, afterReport)
-    }
-  }
+  const submitCheckin = (report: CheckinReport) => void deliver(report, afterReport)
   const endSession = async (submission_id: string) => {
     await signOut({ submission_id })
     await qc.invalidateQueries({ queryKey: ['home'] })
@@ -175,48 +138,9 @@ export function CheckIn() {
   return (
     <PatientLayout
       home={home}
-      dock={urgentVisible ? undefined : { onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
+      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
     >
-      {urgent && (
-        <section className="space-y-4 rounded-card bg-surface p-6 text-center shadow-card ring-2 ring-level-red" aria-labelledby="urgent-heading">
-          <span aria-hidden className="mx-auto flex size-16 items-center justify-center rounded-full bg-level-red-bg text-level-red">
-            <OctagonAlert className="size-8" />
-          </span>
-          <h1 ref={urgentHeading} tabIndex={-1} id="urgent-heading" className="text-level-red">
-            <span className="sr-only">{t('urgent.emergency')} </span>
-            {t('urgent.title')}
-          </h1>
-          <p className="text-xl">{t(home.role === 'companion' ? 'urgent.bodyCompanion' : 'urgent.body')}</p>
-          <p role="status" className="text-base text-muted">{t(`urgent.${urgent.status}`)}</p>
-          {urgent.status === 'failed' && (
-            <Button size="lg" variant="secondary" onClick={() => {
-              const body = urgentBody.current
-              if (body) void deliverUrgent(body, body.kind === 'concern' ? undefined : () => setView({ name: 'home' }))
-            }}>
-              {t('urgent.retry')}
-            </Button>
-          )}
-          {urgent.status !== 'sending' && (
-            <div className="grid gap-2">
-              {/* Closing is not an action on the emergency, so it is not red. */}
-              <Button size="lg" variant="secondary" className="w-full" onClick={() => setUrgent(null)}>
-                {t('urgent.telling')}
-              </Button>
-              {urgent.followUps.length > 0 && (
-                <div className="mt-2 border-t border-line pt-3">
-                  <Button size="lg" variant="ghost" className="w-full" onClick={() => {
-                    setView({ name: 'followup', keys: urgent.followUps })
-                    setUrgent(null)
-                  }}>
-                    {t('urgent.followupAfter', { count: urgent.followUps.length })}
-                  </Button>
-                </div>
-              )}
-            </div>
-          )}
-        </section>
-      )}
-      <div ref={content} className="space-y-5" hidden={urgentVisible}>
+      <div ref={content} className="space-y-5">
         {failed && (
           <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
             <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
@@ -256,10 +180,7 @@ export function CheckIn() {
             sending={sending}
             onCancel={() => setView({ name: 'home' })}
             onSend={(findings) =>
-              void deliverUrgent(
-                { kind: 'finding', findings: findings as [FindingCode, ...FindingCode[]], ...common() },
-                () => setView({ name: 'home' }),
-              )
+              void deliver({ kind: 'finding', findings: findings as [FindingCode, ...FindingCode[]], ...common() }, afterReport)
             }
           />
         )}
@@ -325,6 +246,11 @@ export function CheckIn() {
             <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
               {t('sent.back')}
             </Button>
+            {view.followUps && view.followUps.length > 0 && (
+              <Button size="lg" variant="ghost" className="w-full" onClick={() => setView({ name: 'followup', keys: view.followUps! })}>
+                {t('sent.followup', { count: view.followUps.length })}
+              </Button>
+            )}
           </Card>
         )}
       </div>

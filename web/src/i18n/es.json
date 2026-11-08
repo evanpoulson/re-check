@@ -46,13 +46,6 @@
     "confirm": "Sí, me voy",
     "cancel": "No, me quedo"
   },
-  "urgent": {
-    "title": "Avise ahora a un miembro del personal",
-    "body": "Acérquese al miembro del personal más cercano o pida ayuda en voz alta.",
-    "telling": "Voy a avisar al personal",
-    "sending": "Enviando su aviso…",
-    "retry": "Intentar enviar de nuevo"
-  },
   "sent": {
     "title": "Gracias, recibimos sus respuestas",
     "reported": "Informado",

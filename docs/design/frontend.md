@@ -139,7 +139,7 @@ Subscribe to `DashboardEvent` and refetch the affected view, since events are ch
 
 After scanning, the person picks **"I'm the patient"** or **"I'm with the patient"**. The `POST` token exchange (`TokenExchange` with `role`) returns `SessionInfo`, and an HttpOnly cookie holds the session. If another device is already signed in, the server answers 409 with `SignInConflict` (who is signed in and since when). Show **"This will sign out the other device"** and, only after the person confirms, resend with `takeover_session_id` from the 409. If someone else took over in the meantime, the server answers 409 again and the person is asked again. Sessions have no timer: they end on takeover, when the person taps **Sign out** (`SignOut`), when staff sign the device out (`StaffSignOut`), or when the visit closes. A signed-out device can't send anything, including reports it queued offline, so it shows "You've been signed out. If you need help now, tell a staff member." and a way to scan again. An unknown token, or one for a visit that has closed, shows "This code is no longer active. Please speak to the triage desk."
 
-Every screen shows "Your answers never change your place in line.", the department wait estimate ("The department's current estimate for new arrivals is about 4 h 47 min", or "Estimate unavailable") with "You've been waiting 2 h 10 min", a language switch, a "What we store" link to the `PrivacyPanel`, and the **four always-visible buttons** from the bank, docked at the bottom: "I need help now" full width, then "I'm worried I'm getting worse", "Question about my wait or care" and "I'm leaving". "Question about my wait or care" (`desk_question`) is non-clinical and goes to the triage nurse only, so it never shows the urgent screen. A companion sees the bank's companion wording.
+Every screen shows "Your answers never change your place in line.", the department wait estimate ("The department's current estimate for new arrivals is about 4 h 47 min", or "Estimate unavailable") with "You've been waiting 2 h 10 min", a language switch, a "What we store" link to the `PrivacyPanel`, and the **four always-visible buttons** from the bank, docked at the bottom: "I need help now" full width, then "I'm worried I'm getting worse", "Question about my wait or care" and "I'm leaving". "Question about my wait or care" (`desk_question`) is non-clinical and goes to the triage nurse only, never to the physician. A companion sees the bank's companion wording.
 
 1. **Home and waiting.** Next check-in countdown, "Start check-in", "Report a change", the latest `PatientMessage` and **Sign out of this phone** (asks first).
 2. **Check-in.** One question per screen, in the order of the bank's base section, with Back and "Finish later".
@@ -151,21 +151,21 @@ Every screen shows "Your answers never change your place in line.", the departme
    - Follow-ups from `PatientHome.items` by `input_type`, with "Not sure" only where `allow_unsure` is true.
    - Leaving mid-way submits a **partial** check-in. Unreached items become `not_reached`.
 3. **Circle check.** The server issues the sequence. Shapes appear one at a time (`show_ms`, then a `gap_ms` blank) at the positions given; the patient counts circles and ignores squares. Circles and squares differ by outline shape, not colour. It is shown once with no replay. The patient then enters a count from 0 to 20. "I'm not sure" and "I can't do this" are always available; both are sent as `missing` **with the `prompt_id`** (`unsure`, `unable_to_respond`), so staff can tell "shown but not answered" from "not shown". A companion, or a visit with no prompt, sends `missing: not_asked` with no prompt id. An expired prompt is replaced by a fresh one from the server. It is not a clinical test: the UI never shows a score or a verdict.
-4. **Urgent interstitial.** When a finding or concern returns `clinician_will_check` or `clinician_told`, show a full-screen "Tell a staff member now". It has already been sent. Follow-ups (`follow_up_items`) are optional and come after.
+4. **Urgent reports.** A finding or concern goes straight to the sent screen with its message (`clinician_will_check` or `clinician_told`). There is no separate "Tell a staff member now" screen. Follow-ups (`follow_up_items`) are optional and offered from the sent screen.
 5. **Sent and status.** A patient-safe timeline: Reported, Received. It says staff will still check on their own schedule, and never implies "all clear". Task level and reasons never reach the patient.
 6. **Leaving.** `LeavingReport` with `leaving_info` ("tell staff before you go").
 7. **Offline, saved and pending.** Answers queue locally and retry with the same `submission_id`. A clear "Saved, will send when connected" state looks different from "no problem".
 8. **Language.** For a language whose translation is still a draft, a plain notice says a medical translator has not checked it yet and to ask staff if anything is unclear.
 
 ```
- +----------------------------+     +----------------------------+
- | <  Check-in        2 / 5   |     |  Get help now              |
- | ======-----                |     |  Tell a staff member       |
- | Has the pain moved or      |     |  right away.               |
- | spread somewhere new?      |     |  We have already alerted   |
- | [ Yes ]   [ No ]           |     |  staff.                    |
- | [ Not sure ]               |     |  [ I'm telling staff ]     |
- | Your answers never change  |     +----------------------------+
+ +----------------------------+
+ | <  Check-in        2 / 5   |
+ | ======-----                |
+ | Has the pain moved or      |
+ | spread somewhere new?      |
+ | [ Yes ]   [ No ]           |
+ | [ Not sure ]               |
+ | Your answers never change  |
  | your place in line.        |
  | [ I'm worried ][ HELP NOW ]|   <- HelpBar pinned on every screen
  +----------------------------+

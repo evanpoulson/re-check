@@ -415,21 +415,6 @@
     "cancel": "No, I'm staying",
     "after": "If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
   },
-  "urgent": {
-    "title": "Tell a staff member now",
-    "body": "Go to the triage desk or the nearest staff member now. Call out if you can't walk.",
-    "sent": "Staff got your message. Still tell someone now.",
-    "queued": "Not sent yet. Staff do not know. Tell a staff member now.",
-    "telling": "Close",
-    "sending": "Sending your report…",
-    "failed": "Not sent. Staff do not know. Tell a staff member now.",
-    "retry": "Try sending again",
-    "bodyCompanion": "Get a staff member now, or call out. Stay with them if you can.",
-    "emergency": "Emergency:",
-    "followupAfter_one": "After you tell staff: answer 1 more question",
-    "followupAfter_other": "After you tell staff: answer {{count}} more questions",
-    "followup": "Answer a follow-up"
-  },
   "sent": {
     "title": "Thank you, we have your answers",
     "queuedTitle": "Not sent yet",
@@ -438,7 +423,9 @@
     "received": "Received by the care team",
     "waiting": "Waiting to send",
     "back": "Back",
-    "stillChecking": "Staff will keep checking on you. If you feel worse, press \"I need help now\" or go to the triage desk."
+    "stillChecking": "Staff will keep checking on you. If you feel worse, press \"I need help now\" or go to the triage desk.",
+    "followup_one": "Answer 1 more question",
+    "followup_other": "Answer {{count}} more questions"
   },
   "message": {
     "none": "Staff will see your answers.",

@@ -46,13 +46,6 @@
     "confirm": "Tak, wychodzę",
     "cancel": "Nie, zostaję"
   },
-  "urgent": {
-    "title": "Proszę natychmiast powiedzieć personelowi",
-    "body": "Proszę podejść do najbliższej osoby z personelu lub głośno zawołać o pomoc.",
-    "telling": "Mówię personelowi",
-    "sending": "Wysyłanie zgłoszenia…",
-    "retry": "Wyślij ponownie"
-  },
   "sent": {
     "title": "Dziękujemy, odpowiedzi zostały odebrane",
     "reported": "Zgłoszono",

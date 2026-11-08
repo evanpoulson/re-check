@@ -46,13 +46,6 @@
     "confirm": "Oui, je pars",
     "cancel": "Non, je reste"
   },
-  "urgent": {
-    "title": "Avertissez un membre du personnel maintenant",
-    "body": "Allez voir le membre du personnel le plus proche ou appelez à l'aide à voix haute.",
-    "telling": "Je préviens le personnel",
-    "sending": "Envoi de votre signalement…",
-    "retry": "Réessayer l'envoi"
-  },
   "sent": {
     "title": "Merci, nous avons reçu vos réponses",
     "reported": "Signalé",
