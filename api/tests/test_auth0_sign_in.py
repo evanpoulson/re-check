@@ -188,7 +188,8 @@ def test_demo_picker_is_off_by_default():
 
 
 def test_login_without_auth0_config_is_503(monkeypatch):
-    monkeypatch.delenv("AUTH0_CLIENT_SECRET")
+    # Empty, not deleted: settings reload the root .env, which only fills unset variables.
+    monkeypatch.setenv("AUTH0_CLIENT_SECRET", "")
     with client() as c:
         assert c.get("/api/staff/login").status_code == 503
         assert c.get("/api/staff/sign-in-options").json()["auth0"] is False
