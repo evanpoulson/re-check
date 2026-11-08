@@ -15,7 +15,6 @@
   "patient": {
     "language": "Sprache",
     "waitUnavailable": "Keine Schätzung verfügbar.",
-    "title": "Sie sind angemeldet",
     "titleCompanion": "Sie helfen bei der Anmeldung",
     "nextCheckin": "Nächste Abfrage",
     "startCheckin": "Abfrage starten",
@@ -51,7 +50,6 @@
     "reported": "Gemeldet",
     "received": "Vom Behandlungsteam erhalten",
     "waiting": "Wartet auf Versand",
-    "back": "Zurück",
     "stillChecking": "Das Personal sieht trotzdem nach eigenem Zeitplan nach Ihnen."
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "Ich bin Patient/in",
       "companion": "Ich begleite jemanden"
     },
-    "inactive": "Dieser Code ist nicht mehr aktiv. Bitte wenden Sie sich an den Triage-Schalter.",
     "failed": "Das hat nicht funktioniert. Bitte versuchen Sie es erneut oder wenden Sie sich an den Triage-Schalter.",
     "takeover": {
       "title": "Das andere Gerät wird abgemeldet",
@@ -84,8 +81,7 @@
       "companion": "Eine Begleitperson"
     },
     "signedOut": {
-      "title": "Sie wurden abgemeldet.",
-      "help": "Wenn Sie jetzt Hilfe brauchen, sagen Sie es dem Personal. Zum erneuten Anmelden scannen Sie den QR-Code für diesen Besuch."
+      "title": "Sie wurden abgemeldet."
     }
   },
   "privacy": {

@@ -131,13 +131,20 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 
   return (
     <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-5">
-      {index > 0 && !playing && (
-        <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
-          <ChevronLeft aria-hidden size={16} />
-          {t('flow.back')}
-        </button>
-      )}
-      <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} /></div>
+      {/* Back and the step count share one row. The row keeps its height on question 1
+          and while shapes play, so the question never jumps; the bar runs full width below. */}
+      <div className="question-progress">
+        <div className="question-progress-row">
+          {index > 0 && !playing ? (
+            <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
+              <ChevronLeft aria-hidden size={16} className="rtl:rotate-180" />
+              {t('flow.back')}
+            </button>
+          ) : <span />}
+          <span>{t('flow.progress', { n: index + 1, total: steps.length })}</span>
+        </div>
+        <progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} />
+      </div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
         <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} onPlayingChange={onCirclePlaying} />
@@ -177,18 +184,23 @@ function Question({ children }: { children: string }) {
   )
 }
 
+/**
+ * 0 to 10 in two rows: 0 to 5, then 6 to 10 centred under them, so every
+ * button keeps a usable width on a small phone. "Worst pain" sits under 10:
+ * the second row is inset by half a cell, so the label is too.
+ */
 function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined; onPick: (n: number) => void }) {
   const { t } = useTranslation()
   return (
     <div>
-      <div className="grid grid-cols-6 gap-2">
+      <div className="pain-scale">
         {Array.from({ length: 11 }, (_, n) => (
-          <AnswerButton key={n} kind="radio" selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
+          <AnswerButton key={n} kind="radio" indicator={false} selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
             {n}
           </AnswerButton>
         ))}
       </div>
-      <div className="mt-2 flex justify-between text-base text-muted">
+      <div className="pain-scale-labels">
         <span>{t('pain.low')}</span>
         <span>{t('pain.high')}</span>
       </div>
@@ -215,7 +227,7 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text(linkId, reporter)}</Question>
-        <div role="radiogroup" aria-labelledby="q" className="grid gap-3">
+        <div role="radiogroup" aria-labelledby="q" className="answer-list">
           {options(linkId).map((o) => (
             <AnswerButton key={o.code} kind="radio" selected={value === o.code} onClick={() => setDraft({ ...draft, [key]: o.code })}>
               {o.text}
@@ -231,7 +243,7 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text('pain', reporter)}</Question>
-        <div role="radiogroup" aria-labelledby="q" className="grid gap-3">
+        <div role="radiogroup" aria-labelledby="q" className="answer-list">
           <ScaleButtons value={draft.pain} onPick={(n) => setDraft({ ...draft, pain: n })} />
           {allowUnsure('pain') && <NotSure selected={draft.pain === 'unsure'} onClick={() => setDraft({ ...draft, pain: 'unsure' })} />}
         </div>
@@ -246,7 +258,7 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text('new_findings', reporter)}</Question>
-        <div role="group" aria-labelledby="q" className="grid gap-3">
+        <div role="group" aria-labelledby="q" className="answer-list">
           {options('new_findings').map((o) => (
             <AnswerButton key={o.code} kind="checkbox" selected={picked.includes(o.code as FindingCode)} onClick={() => toggle(o.code as FindingCode)}>
               {o.text}
@@ -275,7 +287,7 @@ function ItemStep({ item, reporter, draft, setDraft }: { item: QuestionItem; rep
   return (
     <>
       <Question>{words.text}</Question>
-      <div role={item.input_type === 'multi_choice' ? 'group' : 'radiogroup'} aria-labelledby="q" className="grid gap-3">
+      <div role={item.input_type === 'multi_choice' ? 'group' : 'radiogroup'} aria-labelledby="q" className="answer-list">
         {item.input_type === 'yes_no' && (
           <>
             <AnswerButton kind="radio" selected={current?.kind === 'yes_no' && current.value} onClick={() => set({ kind: 'yes_no', value: true })}>

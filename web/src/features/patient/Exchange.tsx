@@ -27,7 +27,7 @@ export function Exchange() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
   const [state, setState] = useState<State>({ name: 'choose' })
-  const titleKey = state.name === 'inactive' ? 'exchange.inactive' : state.name === 'conflict' ? 'exchange.takeover.title' : 'exchange.who'
+  const titleKey = state.name === 'inactive' ? 'exchange.expired.title' : state.name === 'conflict' ? 'exchange.takeover.title' : 'exchange.who'
   useEffect(() => { document.title = `${t(titleKey)} · Recheck` }, [titleKey, t])
 
   async function signIn(role: Role, takeover?: string) {
@@ -51,9 +51,12 @@ export function Exchange() {
   if (state.name === 'inactive') {
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-2 text-center">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.inactive')}</h1>
-          <p className="text-muted">{t('exchange.help')}</p>
+        {/* There is no way to check a code without signing in, so this shows after the role is picked.
+            A short heading, then the instruction in body text. */}
+        <Card role="alert" className="space-y-3">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.expired.title')}</h1>
+          <p>{t('exchange.expired.help')}</p>
+          <p className="font-semibold">{t('exchange.help')}</p>
         </Card>
       </PatientLayout>
     )
@@ -63,9 +66,9 @@ export function Exchange() {
     const { conflict, role } = state
     return (
       <PatientLayout>
-        <Card className="space-y-5 text-center">
+        <Card className="space-y-5">
           <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
-          <p className="text-muted">
+          <p>
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
               time: clock(conflict.signed_in_since),
@@ -86,7 +89,7 @@ export function Exchange() {
 
   const sending = state.name === 'sending'
   return (
-    <PatientLayout>
+    <PatientLayout about>
       <section aria-labelledby="who" className="space-y-6 pt-4">
         <div className="space-y-3 text-center">
           <h1 id="who" className="text-[2rem] font-semibold leading-tight tracking-tight">

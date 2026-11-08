@@ -15,7 +15,6 @@
   "patient": {
     "language": "Język",
     "waitUnavailable": "Brak szacowanego czasu.",
-    "title": "Rejestracja potwierdzona",
     "titleCompanion": "Tryb osoby towarzyszącej",
     "nextCheckin": "Następna ankieta",
     "startCheckin": "Rozpocznij ankietę",
@@ -51,7 +50,6 @@
     "reported": "Zgłoszono",
     "received": "Odebrane przez zespół medyczny",
     "waiting": "Czeka na wysłanie",
-    "back": "Wstecz",
     "stillChecking": "Personel i tak będzie sprawdzać stan pacjenta według własnego harmonogramu."
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "Jestem pacjentem / pacjentką",
       "companion": "Jestem osobą towarzyszącą"
     },
-    "inactive": "Ten kod jest już nieaktywny. Proszę zgłosić się do punktu triażu.",
     "failed": "Nie udało się. Proszę spróbować ponownie lub zgłosić się do punktu triażu.",
     "takeover": {
       "title": "Drugie urządzenie zostanie wylogowane",
@@ -84,8 +81,7 @@
       "companion": "Osoba towarzysząca"
     },
     "signedOut": {
-      "title": "Nastąpiło wylogowanie.",
-      "help": "W razie potrzeby pomocy proszę od razu powiedzieć personelowi. Aby zalogować się ponownie, proszę zeskanować kod QR tej wizyty."
+      "title": "Nastąpiło wylogowanie."
     }
   },
   "privacy": {
