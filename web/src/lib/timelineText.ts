@@ -1,33 +1,11 @@
 import type { TFunction } from 'i18next'
-import { useTranslation } from 'react-i18next'
 import { optionLabel } from '@/api/bank'
 import { entryKind, type TimelineEntry } from '@/api/types'
 import { attentionText, choiceText, concernText, findingsText, painText } from '@/lib/answers'
 import { clock } from '@/lib/time'
 
-function stamp(e: TimelineEntry): string {
-  if ('received_at' in e) return e.received_at
-  return 'started_at' in e ? e.started_at : e.at
-}
-
-/** Oldest first. Each entry shows what happened and when; corrections are new entries. */
-export function Timeline({ entries }: { entries: TimelineEntry[] }) {
-  const { t } = useTranslation()
-  if (entries.length === 0) return <p className="text-muted">{t('timeline.empty')}</p>
-  return (
-    <ol className="relative space-y-4 pl-6 before:absolute before:inset-y-1.5 before:left-[5px] before:w-px before:bg-line">
-      {entries.map((e, i) => (
-        <li key={i} className="relative">
-          <span aria-hidden className="absolute -left-6 top-1.5 size-[11px] rounded-full border-2 border-surface bg-brand-500 ring-1 ring-line" />
-          <div className="tabular text-xs font-medium text-muted">{clock(stamp(e))}</div>
-          <div className="text-[0.9375rem]">{describe(e, t)}</div>
-        </li>
-      ))}
-    </ol>
-  )
-}
-
-function describe(e: TimelineEntry, t: TFunction): string {
+/** One line describing a timeline entry. Corrections are new entries, so nothing is rewritten. */
+export function describeEntry(e: TimelineEntry, t: TFunction): string {
   switch (entryKind(e)) {
     case 'report': {
       const r = (e as Extract<TimelineEntry, { report_id: string }>).report

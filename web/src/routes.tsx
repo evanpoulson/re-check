@@ -4,7 +4,11 @@ import { Enrol } from '@/features/nurse/Enrol'
 import { SignIn } from '@/features/nurse/SignIn'
 import { RequireStaffRole, StaffLayout, StaffProvider } from '@/features/nurse/staff'
 import { Triage } from '@/features/nurse/Triage'
-import { VisitDetailPage } from '@/features/nurse/VisitDetailPage'
+import { AssessmentPage } from '@/features/nurse/visit/AssessmentPage'
+import { ManagementPage } from '@/features/nurse/visit/ManagementPage'
+import { OverviewPage } from '@/features/nurse/visit/OverviewPage'
+import { TimelinePage } from '@/features/nurse/visit/TimelinePage'
+import { VisitLayout } from '@/features/nurse/visit/VisitLayout'
 import { CheckIn } from '@/features/patient/CheckIn'
 import { Exchange } from '@/features/patient/Exchange'
 import { Placeholder } from '@/pages/Placeholder'
@@ -30,7 +34,16 @@ export const routes: RouteObject[] = [
             { path: '/staff/triage', element: <Triage /> },
             { path: '/staff/visits/new', element: <Enrol /> },
           ] },
-          { path: '/staff/visits/:id', element: <VisitDetailPage /> },
+          {
+            path: '/staff/visits/:id',
+            element: <VisitLayout />,
+            children: [
+              { index: true, element: <OverviewPage /> },
+              { path: 'assessment', element: <AssessmentPage /> },
+              { path: 'timeline', element: <TimelinePage /> },
+              { path: 'manage', element: <ManagementPage /> },
+            ],
+          },
         ],
       },
     ],
