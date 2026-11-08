@@ -87,23 +87,11 @@ export function Enrol() {
           </Card>
         ) : (
           <>
-<<<<<<< HEAD
-            <p role="alert" className="mx-auto max-w-xl rounded-card bg-level-amber-bg px-5 py-3 text-center font-semibold text-level-amber">
-              {t('enrol.shownOnce')}
-            </p>
-            <div className="grid gap-5 sm:grid-cols-2">
-              {visit.patient_link && <QrCard title={t('enrol.patientQr')} hint={t('enrol.patientHint')} link={visit.patient_link} />}
-              {visit.companion_link && <QrCard title={t('enrol.companionQr')} hint={t('enrol.companionHint')} link={visit.companion_link} />}
-            </div>
-            <p className="text-center text-muted">
-              {visit.links_expire_at ? t('enrol.expires', { time: clock(visit.links_expire_at) }) : ''}
-=======
-            <div className="max-w-sm">
+            <div className="mx-auto max-w-sm">
               {visit.link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={visit.link} />}
             </div>
-            <p className="text-muted">
+            <p className="text-center text-muted">
               {t('enrol.showAgain')}
->>>>>>> origin/main
               {pager ? ` ${t('enrol.pagerFallback', { pager: visit.pager_no ?? '' })}` : ''}
             </p>
           </>
