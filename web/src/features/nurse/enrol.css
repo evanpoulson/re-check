@@ -94,21 +94,12 @@
   min-height: 2.75rem;
   place-items: center;
   border: 1px solid transparent;
+  border-radius: var(--radius-tap);
   padding: .25rem;
   text-align: center;
   overflow-wrap: anywhere;
   cursor: pointer;
   transition: background-color 150ms, border-color 150ms;
-}
-
-.enrol-segment:first-child {
-  border-start-start-radius: var(--radius-tap);
-  border-end-start-radius: var(--radius-tap);
-}
-
-.enrol-segment:last-child {
-  border-start-end-radius: var(--radius-tap);
-  border-end-end-radius: var(--radius-tap);
 }
 
 .enrol-segment:hover { background: var(--color-surface); }
