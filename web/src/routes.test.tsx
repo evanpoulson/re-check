@@ -129,7 +129,7 @@ describe('staff sign-in', () => {
 })
 
 describe('triage nurse: enrolment and QR', () => {
-  it('validates, then shows one QR card that encodes the exact link, and Show QR brings it back', async () => {
+  it('focuses the validation summary and links back to the missing CTAS level', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
@@ -143,7 +143,15 @@ describe('triage nurse: enrolment and QR', () => {
 
     await user.click(screen.getByRole('radio', { name: '3' }))
     expect(error).not.toBeInTheDocument()
-    await user.type(screen.getByLabelText('Issue (optional)'), '  Ankle swelling  ')
+  })
+
+  it('confirms enrolment with the QR, saved visit link and reassessment time', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/visits/new')
+    await user.click(await screen.findByRole('radio', { name: '3' }))
+    await user.click(screen.getByLabelText('Issue (optional)'))
+    await user.paste('  Ankle swelling  ')
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
 
     expect(await screen.findByRole('heading', { name: 'Visit created' })).toHaveFocus()
