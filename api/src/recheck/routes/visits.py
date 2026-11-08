@@ -50,9 +50,9 @@ async def enrol_visit(body: VisitCreate, staff: DeskStaff, pool: Pool, response:
         token = new_token() if app else None
         cur = await conn.execute(
             """
-            INSERT INTO visit (site_id, ctas, complaint_group, cedis_code, language, app_exclusion,
+            INSERT INTO visit (site_id, ctas, complaint_group, cedis_code, complaint_detail, language, app_exclusion,
                                channel, pager_no, token_hash, token_ciphertext)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,
             [
@@ -60,6 +60,7 @@ async def enrol_visit(body: VisitCreate, staff: DeskStaff, pool: Pool, response:
                 body.ctas,
                 body.complaint_group,
                 body.cedis_code,
+                body.complaint_detail,
                 body.language,
                 body.app_exclusion,
                 body.channel,

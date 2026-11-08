@@ -5,6 +5,7 @@ export interface EnrolForm {
   ctas: number | null
   complaint_group: ComplaintGroup
   cedis_code: string
+  complaint_detail: string
   language: Language
   /** Set when the patient app is not offered. Then there is no channel, pager or QR. */
   app_exclusion: AppExclusion | null
@@ -12,7 +13,7 @@ export interface EnrolForm {
   pager_no: string
 }
 
-export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no', string>> & {
+export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no' | 'app_exclusion', string>> & {
   /** The backend's own message when the CEDIS map contradicts the nurse's choices. */
   conflict?: string
 }
@@ -21,6 +22,7 @@ export const emptyEnrol: EnrolForm = {
   ctas: null,
   complaint_group: 'general',
   cedis_code: '',
+  complaint_detail: '',
   language: 'en',
   app_exclusion: null,
   channel: 'phone',
@@ -60,6 +62,8 @@ export function validateEnrol(
     language: form.language,
   }
   if (cedis) body.cedis_code = cedis
+  const detail = form.complaint_detail.trim()
+  if (form.complaint_group === 'general' && detail) body.complaint_detail = detail
   if (form.app_exclusion) {
     body.app_exclusion = form.app_exclusion
   } else {

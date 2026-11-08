@@ -2268,7 +2268,7 @@
     },
     "VisitCreate": {
       "additionalProperties": false,
-      "description": "Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used.",
+      "description": "Triage nurse enrols a waiting patient (FR1).",
       "properties": {
         "app_exclusion": {
           "anyOf": [
@@ -2312,6 +2312,20 @@
           "default": null,
           "description": "Required unless the app is not offered.",
           "title": "Channel"
+        },
+        "complaint_detail": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Complaint Detail"
         },
         "complaint_group": {
           "$ref": "#/$defs/ComplaintGroup"
@@ -2592,6 +2606,20 @@
             }
           ],
           "title": "Closed At"
+        },
+        "complaint_detail": {
+          "anyOf": [
+            {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Complaint Detail"
         },
         "complaint_group": {
           "$ref": "#/$defs/ComplaintGroup"
