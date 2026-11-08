@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Response, status
 from ..auth import DeskStaff, Pool
 from ..contract.visits import StaffSignOut, VisitCreate, VisitEnrolled, VisitLink
 from ..db import write_tx
+from ..question_bank import EnrolmentConflict, check_enrolment, default_bank
 from ..security import decrypt_token, encrypt_token, new_token, token_hash
 from ..settings import public_url
 from .. import submissions
@@ -22,13 +23,20 @@ def qr_link(token: str) -> str:
     "",
     response_model=VisitEnrolled,
     status_code=status.HTTP_201_CREATED,
-    responses={409: {"description": "Pager already in use, or submission_id reused for a different request"}},
+    responses={
+        409: {"description": "Pager already in use, or submission_id reused for a different request"},
+        422: {"description": "Complaint group or exclusion contradicts the CEDIS map"},
+    },
 )
 async def enrol_visit(body: VisitCreate, staff: DeskStaff, pool: Pool, response: Response) -> VisitEnrolled:
     """Triage enrols a waiting patient and gets the visit's QR link (none when the app isn't offered).
 
     Retrying with the same `submission_id` returns the same visit and link.
     """
+    try:
+        check_enrolment(default_bank(), body)
+    except EnrolmentConflict as e:
+        raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, str(e)) from None
     endpoint = "visits.enrol"
     fp = submissions.fingerprint(body, site=staff.site_id)
     async with write_tx(pool, staff.actor) as conn:
