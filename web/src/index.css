@@ -127,13 +127,8 @@
     font-weight: 600;
   }
   .brand-mark {
-    display: grid;
-    place-items: center;
-    width: 32px;
+    width: auto;
     height: 32px;
-    background: var(--color-ink);
-    color: white;
-    border-radius: 9px;
     margin-right: 9px;
   }
   .brand-period {
