@@ -4,7 +4,7 @@ import pytest
 
 from recheck.question_bank import default_bank
 
-from test_reports_live import checkin, now, post, query, sid, sign_in
+from test_reports_live import checkin, make_due, now, post, query, sid, sign_in
 
 pytestmark = pytest.mark.live
 
@@ -29,6 +29,7 @@ def test_patient_home_shows_follow_ups_prompt_and_times(live_client):
     assert h["message"] == "none"
     assert h["waited_minutes"] >= 0
     assert h["next_checkin_due_at"] is not None
+    assert h["checkin_open"] is True
     # No fresh AHS estimate in the test database -> "Estimate unavailable", never a made-up number.
     assert h["wait_estimate"] is None or h["wait_estimate"]["source"] == "ahs_feed"
     prompt = h["attention_prompt"]
@@ -37,7 +38,7 @@ def test_patient_home_shows_follow_ups_prompt_and_times(live_client):
 
 
 def test_prompt_is_reused_until_answered_then_replaced(live_client):
-    sign_in(live_client)
+    visit = sign_in(live_client)
     first = home(live_client)["attention_prompt"]
     assert home(live_client)["attention_prompt"]["prompt_id"] == first["prompt_id"]
     # The expected count is server-side only.
@@ -45,7 +46,19 @@ def test_prompt_is_reused_until_answered_then_replaced(live_client):
     expected = query(live_client, "SELECT expected_count FROM attention_prompt WHERE id = %s", first["prompt_id"])[0]
     r = post(live_client, checkin(attention={"kind": "answered", "prompt_id": first["prompt_id"], "count": expected}))
     assert r.status_code == 200, r.text
+    assert home(live_client)["attention_prompt"] is None, "no circle check until the next check-in opens"
+    make_due(live_client, visit)
     assert home(live_client)["attention_prompt"]["prompt_id"] != first["prompt_id"]
+
+
+def test_check_in_closed_until_due(live_client):
+    visit = sign_in(live_client, due=False)
+    h = home(live_client)
+    assert h["checkin_open"] is False and h["attention_prompt"] is None
+    assert query(live_client, "SELECT count(*) FROM attention_prompt WHERE visit_id = %s", visit) == (0,)
+    make_due(live_client, visit)
+    h = home(live_client)
+    assert h["checkin_open"] is True and h["attention_prompt"] is not None
 
 
 def test_companion_gets_companion_wording_and_no_prompt(live_client):

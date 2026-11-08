@@ -290,7 +290,7 @@
     },
     "CheckinReport": {
       "additionalProperties": false,
-      "description": "A scheduled check-in (FR5, FR6). May be partial: unreached questions are `not_reached`.\n\nUrgent findings are routed as soon as this is received, even if partial.",
+      "description": "A scheduled check-in (FR5, FR6), or follow-up answers after an urgent report.\n\nA scheduled check-in may be partial: unreached questions are `not_reached`.\nUrgent findings are routed as soon as this is received, even if partial.",
       "properties": {
         "attention": {
           "description": "Circle-counting reliability check. Patient only; a companion sends it as missing.",
@@ -437,6 +437,16 @@
             }
           ],
           "title": "Pain"
+        },
+        "purpose": {
+          "default": "scheduled",
+          "description": "`scheduled` is accepted only once the patient prompt is due and restarts the prompt timer. `followup` answers only question bank items (every fixed question `not_asked`), is accepted at any time and never moves a timer.",
+          "enum": [
+            "scheduled",
+            "followup"
+          ],
+          "title": "Purpose",
+          "type": "string"
         },
         "questionnaire_version": {
           "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
@@ -1226,7 +1236,12 @@
             }
           ],
           "default": null,
-          "description": "Present for the patient role on a due check-in; never for a companion."
+          "description": "Present for the patient role while a check-in is open; never for a companion."
+        },
+        "checkin_open": {
+          "description": "True once the next check-in is due, by the server's clock. Until then the screen shows when it opens instead of a start button; the always-visible buttons and reporting a change stay available.",
+          "title": "Checkin Open",
+          "type": "boolean"
         },
         "items": {
           "items": {
@@ -1306,6 +1321,7 @@
         "wait_estimate",
         "waited_minutes",
         "next_checkin_due_at",
+        "checkin_open",
         "questionnaire_version",
         "items",
         "message"
