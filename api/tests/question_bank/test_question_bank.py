@@ -30,7 +30,7 @@ from recheck.question_bank import (
     raw_answers,
 )
 
-BASE_FIELDS = {"reporter", "feeling_now", "feeling_change", "pain", "new_findings", "attention"}
+BASE_FIELDS = {"feeling_now", "feeling_change", "pain", "new_findings", "attention"}
 
 
 @pytest.fixture(scope="module")
@@ -60,7 +60,8 @@ def test_option_codes_match_contract_code_lists(bank):
     assert option_codes(bank.items["feeling_change"]) == [c.value for c in FeelingChange]
     assert set(option_codes(bank.items["new_findings"])) == {c.value for c in FindingCode}
     assert set(option_codes(bank.items["complaint_group"])) == {c.value for c in ComplaintGroup}
-    assert set(option_codes(bank.items["answerer"])) == {Reporter.PATIENT.value, Reporter.COMPANION.value}
+    assert set(option_codes(bank.items["session_role"])) == {Reporter.PATIENT.value, Reporter.COMPANION.value}
+    assert "answerer" not in bank.items  # the role comes from sign-in
 
 
 def test_buttons_cover_every_concern(bank):
@@ -81,10 +82,8 @@ def test_follow_ups_go_in_items_under_their_own_key(bank):
 def test_patient_only_items(bank):
     for key in ("pain", "circle_count"):
         assert ext_values(bank.items[key], "reporter") == ["patient"]
-    assert bank.base_items(Reporter.PATIENT) == [
-        "answerer", "feeling_now", "feeling_change", "pain", "new_findings", "circle_count",
-    ]
-    assert bank.base_items(Reporter.COMPANION) == ["answerer", "feeling_now", "feeling_change", "new_findings"]
+    assert bank.base_items(Reporter.PATIENT) == ["feeling_now", "feeling_change", "pain", "new_findings", "circle_count"]
+    assert bank.base_items(Reporter.COMPANION) == ["feeling_now", "feeling_change", "new_findings"]
 
 
 def test_unknown_is_not_sure_everywhere(bank):
@@ -94,7 +93,7 @@ def test_unknown_is_not_sure_everywhere(bank):
 
 def test_every_question_and_button_has_companion_wording(bank):
     for key in bank.section("always_visible") + bank.section("base") + bank.section("follow_up"):
-        if ext_values(bank.items[key], "reporter") == ["patient"] or key == "answerer":
+        if ext_values(bank.items[key], "reporter") == ["patient"]:
             continue
         assert ext_value(bank.items[key], "companion-text"), key
 
@@ -102,8 +101,6 @@ def test_every_question_and_button_has_companion_wording(bank):
 def test_every_question_cites_evidence_listed_in_sources(bank):
     sources = (BANK_DIR / "SOURCES.md").read_text()
     for key in bank.section("base") + bank.section("follow_up"):
-        if key == "answerer":
-            continue
         evidence = ext_values(bank.items[key], "evidence")
         assert evidence, f"{key} has no evidence"
         for ref in evidence:

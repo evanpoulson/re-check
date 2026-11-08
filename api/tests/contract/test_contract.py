@@ -18,7 +18,15 @@ from recheck.contract.codes import Disposition, StaffRole, TaskLevel, TaskStatus
 from recheck.contract.reports import CheckinReport, ConcernReport
 from recheck.contract.staff import StaffRef
 from recheck.contract.tasks import EvidenceRef, Task, TaskReason
-from recheck.contract.visits import VisitEnrolled, VisitExclusionUpdate
+from recheck.contract.views import SessionRecord
+from recheck.contract.visits import (
+    SignInConflict,
+    SignOut,
+    StaffSignOut,
+    TokenExchange,
+    VisitEnrolled,
+    VisitExclusionUpdate,
+)
 
 NOW = "2026-11-07T20:15:00-07:00"
 
@@ -216,14 +224,56 @@ def test_app_exclusion_means_no_channel():
         VisitCreate.model_validate(visit(channel=None))
 
 
-def test_enrolled_links_match_the_offer():
+def test_enrolment_returns_one_link_for_an_app_visit():
     now = datetime(2026, 11, 7, 20, 15, tzinfo=timezone.utc)
-    VisitEnrolled(visit_id=uuid4(), patient_link="p", companion_link="c", links_expire_at=now)
-    VisitEnrolled(visit_id=uuid4(), app_exclusion="child", patient_link=None, companion_link=None, links_expire_at=None)
+    VisitEnrolled(visit_id=uuid4(), link="https://x/v/abc")
+    VisitEnrolled(visit_id=uuid4(), app_exclusion="child", link=None)
     with pytest.raises(ValidationError):
-        VisitEnrolled(visit_id=uuid4(), patient_link=None, companion_link="c", links_expire_at=now)
+        VisitEnrolled(visit_id=uuid4(), link=None)
     with pytest.raises(ValidationError):
-        VisitEnrolled(visit_id=uuid4(), app_exclusion="child", patient_link="p", companion_link="c", links_expire_at=now)
+        VisitEnrolled(visit_id=uuid4(), app_exclusion="child", link="https://x/v/abc")
+
+
+TOKEN = "A" * 32
+
+
+def test_sign_in_picks_a_role():
+    exchange = TokenExchange.model_validate({"token": TOKEN, "role": "companion"})
+    assert exchange.role == "companion" and exchange.takeover_session_id is None
+    TokenExchange.model_validate({"token": TOKEN, "role": "patient", "takeover_session_id": str(uuid4())})
+    for bad in (
+        {"token": TOKEN},
+        {"token": TOKEN, "role": "staff"},
+        {"token": TOKEN, "role": "patient", "takeover_session_id": "yes"},
+        {"token": TOKEN, "role": "patient", "confirm_takeover": True},
+    ):
+        with pytest.raises(ValidationError):
+            TokenExchange.model_validate(bad)
+
+
+def test_sign_in_conflict_names_the_session_to_take_over():
+    conflict = SignInConflict(session_id=uuid4(), signed_in_as="patient", signed_in_since=NOW)
+    assert TokenExchange.model_validate(
+        {"token": TOKEN, "role": "companion", "takeover_session_id": str(conflict.session_id)}
+    ).takeover_session_id == conflict.session_id
+
+
+def test_signed_in_fields_come_in_pairs():
+    start = datetime(2026, 11, 7, 20, 15, tzinfo=timezone.utc)
+    base = dict(session_id=uuid4(), visit_id=uuid4(), role="patient", started_at=start, replaces=None)
+    SessionRecord(**base, ended_at=None, end_reason=None)
+    SessionRecord(**base, ended_at=start, end_reason="staff_signed_out")
+    with pytest.raises(ValidationError):
+        SessionRecord(**base, ended_at=start, end_reason=None)
+    with pytest.raises(ValidationError):
+        SessionRecord(**base, ended_at=None, end_reason="takeover")
+
+
+def test_sign_out_bodies():
+    SignOut.model_validate({"submission_id": str(uuid4())})
+    StaffSignOut.model_validate({"submission_id": str(uuid4())})
+    with pytest.raises(ValidationError):
+        StaffSignOut.model_validate({"submission_id": str(uuid4()), "visit_id": str(uuid4())})
 
 
 def test_exclusion_update_needs_a_reason():
@@ -331,7 +381,7 @@ def test_task_levels_rank_in_physician_list_order():
 def test_json_schema_builds_for_typescript_generation():
     schema = contract_json_schema()
     defs = schema["$defs"]
-    assert {"VisitCreate", "CheckinReport", "Task", "Worklist"} <= set(defs)
+    assert {"VisitCreate", "CheckinReport", "Task", "Worklist", "SignInConflict", "VisitLink", "SessionRecord"} <= set(defs)
     # Discriminated unions come out as oneOf with a discriminator mapping.
     detail = json.dumps(defs["ReportRecord"])
     assert "discriminator" in detail
