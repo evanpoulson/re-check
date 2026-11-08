@@ -3,10 +3,22 @@
 Staff sign in with Auth0. Patients and companions do not: they use the visit's QR token.
 
 - **Team:** single sign-on with Google or GitHub. Only emails on the staff list can sign in. Microsoft isn't set up: it needs an Azure (Entra) directory to register the app.
-- **Judges:** demo email-and-password accounts, one for each role. Public sign-up is off. Put the emails and passwords in the Devpost notes.
+- **Judges:** demo email-and-password accounts, one for each role. Public sign-up is off. See [Judge logins](#judge-logins).
 - **Roles:** each account has one fixed role. The Action in `post-login-action.js` adds the role to the ID token. The API reads it and enforces it on every staff route.
 
 The API is the OAuth client (authorization code flow with PKCE). Auth0's tokens stay on the server. The browser gets only Recheck's signed HttpOnly `recheck_staff` cookie. See `api/src/recheck/oidc.py`.
+
+## Judge logins
+
+Open https://hackedthechangeyyc.health/staff/sign-in, choose **Sign in**, and enter one of these on the Auth0 page. Each account has one fixed role.
+
+| Role | Email | Password |
+| --- | --- | --- |
+| Triage nurse | `judge-triage@recheck.demo` | `RDDkJLaWa8LEsq03PaLSAKn-` |
+| Physician | `judge-physician@recheck.demo` | `nbGp1iHDz09swbzfprMnyWv5` |
+| Charge nurse | `judge-charge@recheck.demo` | `bODgsx38CoZglmILYtYxLxVP` |
+
+These are public demo accounts for the hackathon. All visits are synthetic. Change the passwords or delete the accounts after the event (Auth0 → User Management → Users).
 
 ## Set up the tenant
 
