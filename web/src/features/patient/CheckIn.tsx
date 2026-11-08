@@ -60,8 +60,10 @@ export function CheckIn() {
   const urgentHeading = useRef<HTMLHeadingElement>(null)
   const urgentVisible = urgent !== null
   useEffect(() => {
-    if (urgentVisible) urgentHeading.current?.focus()
-  }, [urgentVisible])
+    if (!urgentVisible) return
+    urgentHeading.current?.focus()
+    document.title = `${t('urgent.title')} · Recheck`
+  }, [urgentVisible, t])
   const content = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (urgentVisible) return
@@ -69,6 +71,7 @@ export function CheckIn() {
     if (heading) {
       heading.tabIndex = -1
       heading.focus()
+      document.title = `${heading.textContent} · Recheck`
     }
   }, [view.name, urgentVisible])
 
@@ -180,9 +183,10 @@ export function CheckIn() {
             <OctagonAlert className="size-8" />
           </span>
           <h1 ref={urgentHeading} tabIndex={-1} id="urgent-heading" className="text-level-red">
+            <span className="sr-only">{t('urgent.emergency')} </span>
             {t('urgent.title')}
           </h1>
-          <p className="text-xl">{t('urgent.body')}</p>
+          <p className="text-xl">{t(home.role === 'companion' ? 'urgent.bodyCompanion' : 'urgent.body')}</p>
           <p role="status" className="text-base text-muted">{t(`urgent.${urgent.status}`)}</p>
           {urgent.status === 'failed' && (
             <Button size="lg" variant="secondary" onClick={() => {
@@ -194,16 +198,19 @@ export function CheckIn() {
           )}
           {urgent.status !== 'sending' && (
             <div className="grid gap-2">
-              <Button size="lg" variant="danger" className="w-full" onClick={() => setUrgent(null)}>
+              {/* Closing is not an action on the emergency, so it is not red. */}
+              <Button size="lg" variant="secondary" className="w-full" onClick={() => setUrgent(null)}>
                 {t('urgent.telling')}
               </Button>
               {urgent.followUps.length > 0 && (
-                <Button size="lg" variant="ghost" className="w-full" onClick={() => {
-                  setView({ name: 'followup', keys: urgent.followUps })
-                  setUrgent(null)
-                }}>
-                  {t('urgent.followup')}
-                </Button>
+                <div className="mt-2 border-t border-line pt-3">
+                  <Button size="lg" variant="ghost" className="w-full" onClick={() => {
+                    setView({ name: 'followup', keys: urgent.followUps })
+                    setUrgent(null)
+                  }}>
+                    {t('urgent.followupAfter', { count: urgent.followUps.length })}
+                  </Button>
+                </div>
               )}
             </div>
           )}
@@ -263,7 +270,6 @@ export function CheckIn() {
             <p>{t('leaving.info')}</p>
             <Button
               size="lg"
-              variant="danger"
               className="w-full"
               disabled={sending}
               onClick={() =>
@@ -301,6 +307,8 @@ export function CheckIn() {
               {view.queued ? t('sent.queuedTitle') : t('sent.title')}
             </h1>
             <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+            {/* Leaving: after-leaving advice even when the report has not sent yet. */}
+            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after')}</p>}
             {/* Never "all clear": staff still check on their own schedule. */}
             <p className="text-base text-muted">{t('sent.stillChecking')}</p>
             {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
@@ -329,6 +337,7 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
   return (
     <div>
       <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
+      {home.role === 'companion' && <p className="mt-2 text-base text-muted">{t('patient.companionHint')}</p>}
       {home.message !== 'none' && <p className="mt-3 rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
       <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
         <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
@@ -337,7 +346,7 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
         </Button>
         <div className="patient-next">
           <span>{t('patient.nextCheckin')}</span>
-          <CountdownChip due={home.next_checkin_due_at} now={now} />
+          <CountdownChip due={home.next_checkin_due_at} now={now} patient />
         </div>
       </section>
       <Button size="lg" variant="ghost" className="mt-2 w-full" onClick={() => setView({ name: 'change' })}>
@@ -406,12 +415,13 @@ function ReportChange({
       <h1 id="change" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
         {text('new_findings', home.role)}
       </h1>
-      <div className="grid gap-3">
+      <div role="group" aria-labelledby="change" className="grid gap-3">
         {options('new_findings').map((o) => {
           const code = o.code as FindingCode
           return (
             <AnswerButton
               key={code}
+              kind="checkbox"
               selected={picked.includes(code)}
               onClick={() => setPicked(picked.includes(code) ? picked.filter((x) => x !== code) : [...picked, code])}
             >

@@ -1,4 +1,5 @@
 import { CircleAlert } from 'lucide-react'
+import { useLayoutEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { alwaysVisible, text } from '@/api/bank'
 import type { ConcernCode, Role } from '@/api/types'
@@ -18,8 +19,25 @@ interface Props {
 export function HelpBar({ role, onConcern, onLeaving, disabled }: Props) {
   const { t } = useTranslation()
   const buttons = alwaysVisible()
+  const dock = useRef<HTMLElement>(null)
+  // Publish the dock's real height so the page pads and scrolls focus clear of it,
+  // even at 200% text or with longer translated labels.
+  useLayoutEffect(() => {
+    const el = dock.current
+    if (!el) return
+    const root = document.documentElement
+    const update = () => root.style.setProperty('--dock-h', `${el.offsetHeight}px`)
+    update()
+    if (typeof ResizeObserver === 'undefined') return () => root.style.removeProperty('--dock-h')
+    const observer = new ResizeObserver(update)
+    observer.observe(el)
+    return () => {
+      observer.disconnect()
+      root.style.removeProperty('--dock-h')
+    }
+  }, [])
   return (
-    <section aria-label={t('patient.contactStaff')} className="patient-dock">
+    <section ref={dock} aria-label={t('patient.contactStaff')} className="patient-dock">
       <div className="patient-dock-inner">
         {buttons.map((button) => {
           const urgent = button.concern === 'help_now' || button.concern === 'worried'

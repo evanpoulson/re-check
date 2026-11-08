@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "语言",
-    "departmentWait": "急诊科目前估计，新到的病人大约需要等候{{estimate}}。",
     "waitUnavailable": "暂时无法估计等候时间。",
-    "waited": "您已等候{{waited}}。",
-    "placeInLine": "您的回答不会改变您的排队顺序。",
     "title": "您已完成登记",
     "titleCompanion": "您正在协助病人登记",
     "nextCheckin": "下次状况回报",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "请立即告诉工作人员",
     "body": "请走到最近的工作人员身边，或大声呼救。",
-    "sent": "您的报告已收到。",
-    "queued": "已保存在这部手机上，重新联网后会自动发送。",
     "telling": "我正在告诉工作人员",
     "sending": "正在发送您的报告…",
-    "failed": "您的报告没有发送成功。",
-    "retry": "重新发送",
-    "followup": "回答后续问题"
+    "retry": "重新发送"
   },
   "sent": {
     "title": "谢谢，我们已收到您的回答",
-    "queuedTitle": "已保存在这部手机上",
-    "queuedBody": "一联网就会发送。",
     "reported": "已报告",
     "received": "医护团队已收到",
     "waiting": "等待发送",
@@ -76,9 +67,7 @@
     "clinician_told": "已通知医护人员。",
     "leaving_info": "离开前请告诉工作人员。如果感觉更不舒服，请立即回到分诊台。"
   },
-  "outbox": {
-    "saved": "已保存，联网后发送（{{count}}条等待发送）。"
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "这个QR码无法使用"
@@ -126,9 +115,7 @@
     "confirm": "这是我数到的数目"
   },
   "desk": {
-    "title": "您的问题已转给分诊护士",
-    "body": "分诊护士会过来找您。您不需要再做什么。",
-    "notClinical": "如果您感觉更不舒服，或担心自己的健康，请改按“我现在需要帮助”。"
+    "title": "您的问题已转给分诊护士"
   },
   "flow": {
     "progress": "第{{n}}题，共{{total}}题",

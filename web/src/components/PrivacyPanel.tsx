@@ -1,7 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-/** "What we store". Keyboard accessible disclosure, no dialog trap. */
+/** "What we store". Keyboard accessible disclosure, no dialog trap. Short and layered. */
 export function PrivacyPanel() {
   const { t } = useTranslation()
   return (
@@ -11,10 +11,13 @@ export function PrivacyPanel() {
         {t('privacy.title')}
       </summary>
       <ul className="mt-3 list-disc space-y-1 pl-6 text-base text-muted">
+        <li>{t('privacy.seen')}</li>
         <li>{t('privacy.stored1')}</li>
         <li>{t('privacy.stored2')}</li>
         <li>{t('privacy.stored3')}</li>
         <li>{t('privacy.notStored')}</li>
+        <li>{t('privacy.shared')}</li>
+        <li>{t('privacy.code')}</li>
         <li>{t('privacy.synthetic')}</li>
       </ul>
     </details>

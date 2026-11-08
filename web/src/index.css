@@ -21,6 +21,8 @@
   --color-canvas: #f5f5f7;
   --color-surface: #ffffff;
   --color-line: #d2d2d7;
+  /* Edge of an unselected answer: 3.6:1 on white, above the 3:1 needed for controls. */
+  --color-answer: #86868b;
 
   /* Apple blue: actions, links, focus and the edge of a selected answer. */
   --color-brand-50: #e8f1fc;
@@ -478,14 +480,15 @@
   .patient-shell {
     min-height: 100dvh;
     padding-bottom: 40px;
-    font-size: 18px;
+    font-size: 1.125rem;
   }
+  /* --dock-h is the help dock's measured height, so nothing hides behind it at large text. */
   .patient-shell.has-dock {
-    padding-bottom: calc(142px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--dock-h, 142px) + 16px);
   }
   .patient-context {
     color: var(--color-muted);
-    font-size: 15px;
+    font-size: 1rem;
     line-height: 1.5;
     margin: 16px 0;
     padding-top: 12px;
@@ -527,7 +530,7 @@
     padding-top: 16px;
     margin-top: 16px;
     border-top: 1px solid var(--color-line);
-    font-size: 15px;
+    font-size: 1rem;
     color: var(--color-muted);
   }
   /* Compact version of the redesign's glass help bar. */
@@ -552,7 +555,7 @@
     min-height: 44px;
     padding: 5px 10px;
     border-radius: var(--radius-tap);
-    font-size: 14px;
+    font-size: 1rem;
     font-weight: 500;
     line-height: 1.2;
   }
@@ -585,7 +588,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    font-size: 14px;
+    font-size: 1rem;
     color: var(--color-muted);
   }
   .question-progress progress {
@@ -706,8 +709,12 @@
     width: 100%;
   }
 }
+/* Keep focused headings clear of the sticky top bar (WCAG 2.4.11). */
+html:has(.patient-shell) {
+  scroll-padding-top: 72px;
+}
 html:has(.patient-shell.has-dock) {
-  scroll-padding-bottom: calc(142px + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(var(--dock-h, 142px) + 16px);
 }
 .question-progress progress::-webkit-progress-bar {
   background: var(--color-line);

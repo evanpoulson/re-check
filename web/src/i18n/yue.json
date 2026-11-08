@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "語言",
-    "departmentWait": "急症室目前估計，新到達的病人約需輪候{{estimate}}。",
     "waitUnavailable": "暫時未能估計輪候時間。",
-    "waited": "你已輪候{{waited}}。",
-    "placeInLine": "你的回答不會改變你的輪候次序。",
     "title": "你已完成登記",
     "titleCompanion": "你正在協助病人登記",
     "nextCheckin": "下次情況回報",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "請立即告訴職員",
     "body": "請走到最近的職員身邊，或大聲呼救。",
-    "sent": "你的報告已收到。",
-    "queued": "已儲存在這部手機，重新連線後便會傳送。",
     "telling": "我正在告訴職員",
     "sending": "正在傳送你的報告…",
-    "failed": "你的報告未能傳送。",
-    "retry": "重新傳送",
-    "followup": "回答跟進問題"
+    "retry": "重新傳送"
   },
   "sent": {
     "title": "謝謝，我們已收到你的回答",
-    "queuedTitle": "已儲存在這部手機",
-    "queuedBody": "一連線便會傳送。",
     "reported": "已報告",
     "received": "醫護團隊已收到",
     "waiting": "等待傳送",
@@ -76,9 +67,7 @@
     "clinician_told": "已通知醫護人員。",
     "leaving_info": "離開前請告訴職員。如果感到更不適，請立即返回分流站。"
   },
-  "outbox": {
-    "saved": "已儲存，連線後便會傳送（{{count}}項等待傳送）。"
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "這個QR碼未能使用"
@@ -126,9 +115,7 @@
     "confirm": "這是我數到的數目"
   },
   "desk": {
-    "title": "你的問題已轉交分流護士",
-    "body": "分流護士會來找你。你不需要再做任何事。",
-    "notClinical": "如果你感到更不適，或擔心自己的健康，請改按「我現在需要幫助」。"
+    "title": "你的問題已轉交分流護士"
   },
   "flow": {
     "progress": "第{{n}}題，共{{total}}題",

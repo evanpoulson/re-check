@@ -37,12 +37,14 @@ describe('urgent patient reporting', () => {
 
     const user = await openCheckIn()
     await user.click(await screen.findByRole('button', { name: 'I need help now' }))
-    expect(screen.getByRole('heading', { name: 'Tell a staff member now' })).toHaveFocus()
-    expect(screen.queryByText('Your report was received.')).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Tell a staff member now/ })).toHaveFocus()
+    expect(screen.queryByText('Staff got your message. Still tell someone now.')).not.toBeInTheDocument()
 
     fail()
+    // A failed urgent send must never read as if staff already know.
+    expect(await screen.findByText('Not sent. Staff do not know. Tell a staff member now.')).toBeInTheDocument()
     await user.click(await screen.findByRole('button', { name: 'Try sending again' }))
-    expect(await screen.findByText('Your report was received.')).toBeInTheDocument()
+    expect(await screen.findByText('Staff got your message. Still tell someone now.')).toBeInTheDocument()
     expect(bodies).toHaveLength(2)
     expect(bodies[0]).toEqual(bodies[1])
   })
@@ -54,15 +56,15 @@ describe('urgent patient reporting', () => {
     }))
     const user = await openCheckIn('companion')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    await user.click(screen.getByRole('button', { name: /^OK$/ }))
+    await user.click(screen.getByRole('radio', { name: /^OK$/ }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveFocus()
-    await user.click(screen.getByRole('button', { name: 'About the same' }))
+    await user.click(screen.getByRole('radio', { name: 'About the same' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(screen.getByRole('button', { name: 'Speech is different or hard to understand' }))
-    await user.click(screen.getByRole('button', { name: 'Send warning signs now' }))
-    expect(screen.getByRole('heading', { name: 'Tell a staff member now' })).toBeInTheDocument()
-    await screen.findByText('Your report was received.')
+    await user.click(screen.getByRole('checkbox', { name: 'Speech is different or hard to understand' }))
+    await user.click(screen.getByRole('button', { name: 'Send to staff now' }))
+    expect(screen.getByRole('heading', { name: /Tell a staff member now/ })).toBeInTheDocument()
+    await screen.findByText('Staff got your message. Still tell someone now.')
     expect(body).toMatchObject({
       kind: 'checkin',
       reporter: 'companion',

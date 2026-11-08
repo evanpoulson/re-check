@@ -244,16 +244,16 @@ describe('triage board', () => {
 describe('patient and companion check-in', () => {
   it('opens from the QR link and shows the place-in-line promise, department estimate and time waited', async () => {
     await scanAs('chest', 'patient')
-    expect(await screen.findByRole('heading', { name: 'You are checked in' })).toBeInTheDocument()
-    expect(screen.getByText(/Your answers never change your place in line\./)).toBeInTheDocument()
-    expect(screen.getByText(/current estimate for new arrivals is about 4 h 47 min\./)).toBeInTheDocument()
-    expect(screen.getByText(/You've been waiting \d+ (min|h)/)).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: "You're signed in" })).toBeInTheDocument()
+    expect(screen.getByText(/The sickest people are seen first\./)).toBeInTheDocument()
+    expect(screen.getByText(/AHS estimate right now: about 4 to 5 hours from triage to seeing a doctor, for less urgent patients\. It is not your personal wait\./)).toBeInTheDocument()
+    expect(screen.getByText(/You have waited \d+ (minutes?|hours?)/)).toBeInTheDocument()
     expect(screen.getByText('What we store')).toBeInTheDocument()
   })
 
   it('shows all four always-visible buttons from the question bank', async () => {
     await scanAs('chest', 'patient')
-    await screen.findByRole('heading', { name: 'You are checked in' })
+    await screen.findByRole('heading', { name: "You're signed in" })
     for (const name of ['I need help now', "I'm worried I'm getting worse", 'Question about my wait or care', "I'm leaving"]) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
     }
@@ -261,7 +261,7 @@ describe('patient and companion check-in', () => {
 
   it('uses the bank\'s companion wording on the buttons for a companion', async () => {
     await scanAs('general', 'companion')
-    await screen.findByRole('heading', { name: 'You are helping with a check-in' })
+    await screen.findByRole('heading', { name: "You're answering for someone you're with" })
     expect(screen.getByRole('button', { name: 'They need help now' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'The patient is leaving' })).toBeInTheDocument()
   })
@@ -269,7 +269,7 @@ describe('patient and companion check-in', () => {
   it('a bad code says so and never shows a visit', async () => {
     renderApp('/v/not-a-real-code-at-all-1234')
     await userEvent.setup().click(await screen.findByRole('button', { name: "I'm the patient" }))
-    expect(await screen.findByText('This code is no longer active. Please speak to the triage desk.')).toBeInTheDocument()
+    expect(await screen.findByText('This code does not work anymore. Please ask a staff member for a new one.')).toBeInTheDocument()
   })
 
   it('a code for a closed visit is no longer active', async () => {
@@ -283,10 +283,10 @@ describe('patient and companion check-in', () => {
     const user = userEvent.setup()
     renderApp('/v/demo-confused-token')
     await user.click(await screen.findByRole('button', { name: "I'm the patient" }))
-    expect(await screen.findByRole('heading', { name: 'This will sign out the other device' })).toBeInTheDocument()
-    expect(screen.getByText(/Someone with the patient has been signed in on another phone/)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Sign out the other phone and continue' }))
-    expect(await screen.findByRole('heading', { name: 'You are checked in' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Another phone is already signed in' })).toBeInTheDocument()
+    expect(screen.getByText(/Someone with the patient signed in on another phone/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Use this phone instead' }))
+    expect(await screen.findByRole('heading', { name: "You're signed in" })).toBeInTheDocument()
 
     const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
     expect(visit.signed_in_as).toBe('patient')
@@ -335,14 +335,14 @@ describe('patient and companion check-in', () => {
     await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'Question about my wait or care' }))
     expect(await screen.findByRole('heading', { name: 'Your question went to the triage nurse' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { name: 'Tell a staff member now' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Tell a staff member now/ })).not.toBeInTheDocument()
   })
 
   it('"I need help now" shows the tell-a-staff-member screen and never any task level', async () => {
     const user = userEvent.setup()
     await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'I need help now' }))
-    expect(await screen.findByRole('heading', { name: 'Tell a staff member now' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Tell a staff member now/ })).toBeInTheDocument()
     expect(screen.queryByText(/^Red$/)).not.toBeInTheDocument()
   })
 
@@ -351,29 +351,29 @@ describe('patient and companion check-in', () => {
     await scanAs('general', 'companion')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
     expect(await screen.findByRole('heading', { name: 'How do they seem right now?' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Good' }))
+    await user.click(screen.getByRole('radio', { name: 'Good' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(await screen.findByRole('button', { name: 'About the same' }))
+    await user.click(await screen.findByRole('radio', { name: 'About the same' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     // The next question is the warning signs, not pain.
     expect(await screen.findByRole('heading', { name: /Since they arrived, have you noticed any of this/ })).toBeInTheDocument()
     expect(screen.queryByText(/How bad is your pain/)).not.toBeInTheDocument()
     // It is the last step for the general group, so there is no circle check either.
-    expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Send to staff' })).toBeInTheDocument()
   })
 
   it('a patient is asked for pain, then the circle check, and "I can\'t do this" still names the prompt', async () => {
     const user = userEvent.setup()
     await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    await user.click(await screen.findByRole('button', { name: 'Good' }))
+    await user.click(await screen.findByRole('radio', { name: 'Good' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(await screen.findByRole('button', { name: 'About the same' }))
+    await user.click(await screen.findByRole('radio', { name: 'About the same' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(await screen.findByText(/How bad is your pain right now/)).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: '3' }))
+    await user.click(screen.getByRole('radio', { name: '3' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(await screen.findByRole('button', { name: 'None of these' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'None of these' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
 
     expect(await screen.findByRole('heading', { name: /Count the circles/ })).toBeInTheDocument()
@@ -392,15 +392,15 @@ describe('patient and companion check-in', () => {
     const user = userEvent.setup()
     await scanAs('general', 'companion')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    await user.click(await screen.findByRole('button', { name: 'Good' }))
+    await user.click(await screen.findByRole('radio', { name: 'Good' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(await screen.findByRole('button', { name: 'About the same' }))
+    await user.click(await screen.findByRole('radio', { name: 'About the same' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
-    await user.click(await screen.findByRole('button', { name: 'Speech is different or hard to understand' }))
-    await user.click(screen.getByRole('button', { name: 'Send warning signs now' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'Speech is different or hard to understand' }))
+    await user.click(screen.getByRole('button', { name: 'Send to staff now' }))
 
-    expect(await screen.findByRole('heading', { name: 'Tell a staff member now' })).toBeInTheDocument()
-    await user.click(await screen.findByRole('button', { name: 'Answer a follow-up' }))
+    expect(await screen.findByRole('heading', { name: /Tell a staff member now/ })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: /answer 1 more question/ }))
     // The follow-up is asked only after the urgent screen, in the companion wording.
     expect(await screen.findByRole('heading', { name: 'When were they last speaking and moving as usual?' })).toBeInTheDocument()
   })
@@ -408,7 +408,7 @@ describe('patient and companion check-in', () => {
   it('shows an English-only notice for other languages until translations exist', async () => {
     const user = userEvent.setup()
     await scanAs('chest', 'patient')
-    await screen.findByRole('heading', { name: 'You are checked in' })
+    await screen.findByRole('heading', { name: "You're signed in" })
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
     await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'zh')
     expect(await screen.findByRole('note')).toHaveTextContent(zhUi.patient.languageNotice)
@@ -421,13 +421,13 @@ describe('patient and companion check-in', () => {
     expect(await screen.findByRole('heading', { name: 'How are you feeling right now?' })).toBeInTheDocument()
     await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'zh')
     expect(await screen.findByRole('heading', { name: translations.zh!.items.feeling_now!.text })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: translations.zh!.items.feeling_now!.options!.good })).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: translations.zh!.items.feeling_now!.options!.good })).toBeInTheDocument()
   })
 
   it('switches the page to right to left for Arabic and back for English', async () => {
     const user = userEvent.setup()
     await scanAs('chest', 'patient')
-    await screen.findByRole('heading', { name: 'You are checked in' })
+    await screen.findByRole('heading', { name: "You're signed in" })
     const picker = screen.getByRole('combobox', { name: 'Language' })
     await user.selectOptions(picker, 'ar')
     expect(document.documentElement).toHaveAttribute('dir', 'rtl')

@@ -8,9 +8,9 @@ import { HelpBar } from '@/components/HelpBar'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
 import { LANGUAGES } from '@/i18n'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
-import { formatMinutes } from '@/lib/time'
+import { clock, durationWords, waitWords } from '@/lib/time'
 
-/** "Saved, will send when connected". Retries on reconnect and on a timer. */
+/** Says plainly that saved reports have not reached staff yet. Retries on reconnect and on a timer. */
 function OutboxBanner() {
   const { t } = useTranslation()
   const [count, setCount] = useState(pendingCount)
@@ -45,10 +45,10 @@ interface Props {
 }
 
 /**
- * Every patient and companion screen: the language switch, the place-in-line
- * promise, the department wait estimate and time waited, "What we store", and the
- * docked always-visible buttons. The estimate is the department's figure for new
- * arrivals, never this patient's remaining wait, so it is worded that way.
+ * Every patient and companion screen: the language switch, who decides the order
+ * of care, the AHS wait estimate and time waited, "What we store", and the docked
+ * always-visible buttons. AHS defines its estimate as triage to first physician
+ * for less urgent patients, so it is worded that way and never as this person's wait.
  */
 export function PatientLayout({ home, dock, children }: Props) {
   const { t, i18n } = useTranslation()
@@ -90,12 +90,14 @@ export function PatientLayout({ home, dock, children }: Props) {
       <section aria-label={t('patient.waitContext')} className="patient-context">
         <p>{t('patient.placeInLine')}</p>
         {home && (
-          <p>
-            {estimate
-              ? t('patient.departmentWait', { estimate: formatMinutes(estimate.minutes * 60_000) })
-              : t('patient.waitUnavailable')}{' '}
-            {t('patient.waited', { waited: formatMinutes(home.waited_minutes * 60_000) })}
-          </p>
+          <>
+            <p>
+              {estimate
+                ? `${t('patient.departmentWait', { estimate: waitWords(estimate.minutes, t) })} ${t('patient.updated', { time: clock(estimate.as_of) })}`
+                : t('patient.waitUnavailable')}
+            </p>
+            <p>{t('patient.waited', { waited: durationWords(home.waited_minutes, t) })}</p>
+          </>
         )}
       </section>
       <PrivacyPanel />

@@ -80,7 +80,7 @@ describe('CircleCheck', () => {
     fireEvent.click(screen.getByRole('button', { name: 'One more' }))
     fireEvent.click(screen.getByRole('button', { name: 'One more' }))
     expect(screen.getByRole('status', { hidden: true }) ?? screen.getByText('2')).toBeTruthy()
-    click('That is my count')
+    click('Done')
     expect(onDone).toHaveBeenCalledWith({ shown: true, count: 2 })
   })
 

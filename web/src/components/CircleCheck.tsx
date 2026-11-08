@@ -61,6 +61,7 @@ export function CircleCheck({ prompt, role, onDone, onExpired }: Props) {
         <>
           <p className="text-lg">{t('circle.intro')}</p>
           <p className="text-base text-muted">{t('circle.once')}</p>
+          <p className="text-base text-muted">{t('circle.notTest')}</p>
           <Button size="lg" className="w-full" onClick={start}>
             {t('circle.start')}
           </Button>

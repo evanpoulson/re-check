@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { allowUnsure, itemWording, noneOption, options, text } from '@/api/bank'
 import { newSubmissionId } from '@/api/client'
@@ -34,6 +35,8 @@ interface Props {
 export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending }: Props) {
   const { t } = useTranslation()
   const [index, setIndex] = useState(0)
+  /** The step whose Next was pressed with no answer, so the hint never carries over. */
+  const [needAnswerFor, setNeedAnswerFor] = useState<string | null>(null)
   const section = useRef<HTMLElement>(null)
   // The signed-in role is the reporter for this device.
   const reporter: Role = home.role
@@ -65,7 +68,10 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
     const heading = section.current?.querySelector('h1')
     if (heading && !heading.closest('[hidden]')) {
       heading.tabIndex = -1
-      heading.focus()
+      // Show the whole step, Back link included, then move focus to the question.
+      heading.focus({ preventScroll: true })
+      section.current?.scrollIntoView?.({ block: 'start' })
+      document.title = `${heading.textContent} · Recheck`
     }
   }, [stepKey])
 
@@ -117,6 +123,12 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 
   return (
     <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-5">
+      {index > 0 && (
+        <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
+          <ChevronLeft aria-hidden size={16} />
+          {t('flow.back')}
+        </button>
+      )}
       <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} /></div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
@@ -125,18 +137,16 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
         <>
           <StepView step={step} reporter={reporter} draft={draft} setDraft={setDraft} />
           <div className="grid gap-3">
-            <Button size="lg" disabled={!answered(step, draft) || sending} onClick={() => next(draft)}>
+            {/* Stays enabled: a disabled button gives no reason, so say what is missing instead. */}
+            <Button size="lg" disabled={sending} onClick={() => (answered(step, draft) ? next(draft) : setNeedAnswerFor(stepKey ?? null))}>
               {hasNewFindings ? t('flow.sendNow') : last ? t('flow.send') : t('flow.next')}
             </Button>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              {index > 0 && <Button variant="ghost" disabled={sending} onClick={() => setIndex(index - 1)}>
-                {t('flow.back')}
-              </Button>}
-              <Button variant="ghost" className="ml-auto" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
-                {t('flow.finishLater')}
-              </Button>
-            </div>
-            {anyAnswered && <p className="text-sm text-muted">{t('flow.finishLaterHelp')}</p>}
+            {/* Below the button, so the button does not move under the help dock. */}
+            {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="font-semibold text-level-red">{t('flow.chooseAnswer')}</p>}
+            <Button variant="ghost" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
+              {anyAnswered ? t('flow.finishLater') : t('flow.stopEmpty')}
+            </Button>
+            {anyAnswered && <p className="text-base text-muted">{t('flow.finishLaterHelp')}</p>}
           </div>
         </>
       )}
@@ -165,7 +175,7 @@ function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined;
     <div>
       <div className="grid grid-cols-6 gap-2">
         {Array.from({ length: 11 }, (_, n) => (
-          <AnswerButton key={n} selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
+          <AnswerButton key={n} kind="radio" selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
             {n}
           </AnswerButton>
         ))}
@@ -178,10 +188,10 @@ function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined;
   )
 }
 
-function NotSure({ selected, onClick }: { selected: boolean; onClick: () => void }) {
+function NotSure({ selected, onClick, kind = 'radio' }: { selected: boolean; onClick: () => void; kind?: 'radio' | 'checkbox' }) {
   const { t } = useTranslation()
   return (
-    <AnswerButton selected={selected} onClick={onClick}>
+    <AnswerButton kind={kind} selected={selected} onClick={onClick}>
       {t('answer.unsure')}
     </AnswerButton>
   )
@@ -197,9 +207,9 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text(linkId, reporter)}</Question>
-        <div className="grid gap-3">
+        <div role="radiogroup" aria-labelledby="q" className="grid gap-3">
           {options(linkId).map((o) => (
-            <AnswerButton key={o.code} selected={value === o.code} onClick={() => setDraft({ ...draft, [key]: o.code })}>
+            <AnswerButton key={o.code} kind="radio" selected={value === o.code} onClick={() => setDraft({ ...draft, [key]: o.code })}>
               {o.text}
             </AnswerButton>
           ))}
@@ -213,8 +223,10 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text('pain', reporter)}</Question>
-        <ScaleButtons value={draft.pain} onPick={(n) => setDraft({ ...draft, pain: n })} />
-        {allowUnsure('pain') && <NotSure selected={draft.pain === 'unsure'} onClick={() => setDraft({ ...draft, pain: 'unsure' })} />}
+        <div role="radiogroup" aria-labelledby="q" className="grid gap-3">
+          <ScaleButtons value={draft.pain} onPick={(n) => setDraft({ ...draft, pain: n })} />
+          {allowUnsure('pain') && <NotSure selected={draft.pain === 'unsure'} onClick={() => setDraft({ ...draft, pain: 'unsure' })} />}
+        </div>
       </>
     )
   }
@@ -226,16 +238,16 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text('new_findings', reporter)}</Question>
-        <div className="grid gap-3">
+        <div role="group" aria-labelledby="q" className="grid gap-3">
           {options('new_findings').map((o) => (
-            <AnswerButton key={o.code} selected={picked.includes(o.code as FindingCode)} onClick={() => toggle(o.code as FindingCode)}>
+            <AnswerButton key={o.code} kind="checkbox" selected={picked.includes(o.code as FindingCode)} onClick={() => toggle(o.code as FindingCode)}>
               {o.text}
             </AnswerButton>
           ))}
-          <AnswerButton selected={Array.isArray(draft.findings) && picked.length === 0} onClick={() => setDraft({ ...draft, findings: [] })}>
+          <AnswerButton kind="checkbox" selected={Array.isArray(draft.findings) && picked.length === 0} onClick={() => setDraft({ ...draft, findings: [] })}>
             {noneOption('new_findings') ?? ''}
           </AnswerButton>
-          {allowUnsure('new_findings') && <NotSure selected={draft.findings === 'unsure'} onClick={() => setDraft({ ...draft, findings: 'unsure' })} />}
+          {allowUnsure('new_findings') && <NotSure kind="checkbox" selected={draft.findings === 'unsure'} onClick={() => setDraft({ ...draft, findings: 'unsure' })} />}
         </div>
       </>
     )
@@ -255,20 +267,20 @@ function ItemStep({ item, reporter, draft, setDraft }: { item: QuestionItem; rep
   return (
     <>
       <Question>{words.text}</Question>
-      <div className="grid gap-3">
+      <div role={item.input_type === 'multi_choice' ? 'group' : 'radiogroup'} aria-labelledby="q" className="grid gap-3">
         {item.input_type === 'yes_no' && (
           <>
-            <AnswerButton selected={current?.kind === 'yes_no' && current.value} onClick={() => set({ kind: 'yes_no', value: true })}>
+            <AnswerButton kind="radio" selected={current?.kind === 'yes_no' && current.value} onClick={() => set({ kind: 'yes_no', value: true })}>
               {t('common.yes')}
             </AnswerButton>
-            <AnswerButton selected={current?.kind === 'yes_no' && !current.value} onClick={() => set({ kind: 'yes_no', value: false })}>
+            <AnswerButton kind="radio" selected={current?.kind === 'yes_no' && !current.value} onClick={() => set({ kind: 'yes_no', value: false })}>
               {t('common.no')}
             </AnswerButton>
           </>
         )}
         {item.input_type === 'choice' &&
           words.options.map((o) => (
-            <AnswerButton key={o.code} selected={current?.kind === 'choice' && current.value === o.code} onClick={() => set({ kind: 'choice', value: o.code })}>
+            <AnswerButton key={o.code} kind="radio" selected={current?.kind === 'choice' && current.value === o.code} onClick={() => set({ kind: 'choice', value: o.code })}>
               {o.text}
             </AnswerButton>
           ))}
@@ -276,6 +288,7 @@ function ItemStep({ item, reporter, draft, setDraft }: { item: QuestionItem; rep
           words.options.map((o) => (
             <AnswerButton
               key={o.code}
+              kind="checkbox"
               selected={multi.includes(o.code)}
               onClick={() => set({ kind: 'multi_choice', value: multi.includes(o.code) ? multi.filter((x) => x !== o.code) : [...multi, o.code] })}
             >
@@ -285,7 +298,7 @@ function ItemStep({ item, reporter, draft, setDraft }: { item: QuestionItem; rep
         {item.input_type === 'scale' && (
           <ScaleButtons value={current?.kind === 'scale' ? current.value : undefined} onPick={(n) => set({ kind: 'scale', value: n })} />
         )}
-        {item.allow_unsure !== false && <NotSure selected={current?.kind === 'missing'} onClick={() => set(unsure)} />}
+        {item.allow_unsure !== false && <NotSure kind={item.input_type === 'multi_choice' ? 'checkbox' : 'radio'} selected={current?.kind === 'missing'} onClick={() => set(unsure)} />}
       </div>
     </>
   )

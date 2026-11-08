@@ -14,10 +14,7 @@
   },
   "patient": {
     "language": "Wika",
-    "departmentWait": "Ang kasalukuyang tantiya ng departamento para sa mga bagong dating ay mga {{estimate}}.",
     "waitUnavailable": "Walang tantiya sa ngayon.",
-    "waited": "Naghihintay na po kayo nang {{waited}}.",
-    "placeInLine": "Hindi kailanman mababago ng inyong mga sagot ang inyong puwesto sa pila.",
     "title": "Naka-check in na po kayo",
     "titleCompanion": "Tumutulong po kayo sa isang check-in",
     "nextCheckin": "Susunod na check-in",
@@ -52,18 +49,12 @@
   "urgent": {
     "title": "Sabihan agad ang isang staff",
     "body": "Pumunta sa pinakamalapit na staff o tumawag nang malakas para humingi ng tulong.",
-    "sent": "Natanggap ang inyong ulat.",
-    "queued": "Naka-save sa teleponong ito. Ipapadala ito kapag naka-connect na kayo ulit.",
     "telling": "Sinasabihan ko na ang staff",
     "sending": "Ipinapadala ang inyong ulat…",
-    "failed": "Hindi naipadala ang inyong ulat.",
-    "retry": "Subukang ipadala muli",
-    "followup": "Sagutin ang karagdagang tanong"
+    "retry": "Subukang ipadala muli"
   },
   "sent": {
     "title": "Salamat po, natanggap namin ang inyong mga sagot",
-    "queuedTitle": "Naka-save sa teleponong ito",
-    "queuedBody": "Ipapadala ito agad kapag naka-connect na kayo.",
     "reported": "Iniulat",
     "received": "Natanggap ng care team",
     "waiting": "Naghihintay maipadala",
@@ -76,9 +67,7 @@
     "clinician_told": "Nasabihan na ang isang doktor o nurse.",
     "leaving_info": "Pakisabihan po ang staff bago kayo umalis. Bumalik agad sa triage kung lumala ang pakiramdam ninyo."
   },
-  "outbox": {
-    "saved": "Naka-save, ipapadala kapag naka-connect ({{count}} naghihintay)."
-  },
+  "outbox": {},
   "exchange": {
     "invalid": {
       "title": "Hindi gumana ang code na ito"
@@ -126,9 +115,7 @@
     "confirm": "Iyan ang bilang ko"
   },
   "desk": {
-    "title": "Naipadala ang inyong tanong sa triage nurse",
-    "body": "Pupuntahan kayo ng triage nurse. Wala na kayong kailangang gawin.",
-    "notClinical": "Kung lumala ang pakiramdam ninyo o nag-aalala kayo sa inyong kalusugan, pindutin na lang ang \"Kailangan ko ng tulong ngayon\"."
+    "title": "Naipadala ang inyong tanong sa triage nurse"
   },
   "flow": {
     "progress": "Tanong {{n}} sa {{total}}",
