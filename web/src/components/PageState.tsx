@@ -1,4 +1,5 @@
 import { CircleAlert, Inbox, LoaderCircle } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { Button } from './ui/button'
 
 export function PageState({
@@ -12,6 +13,7 @@ export function PageState({
   loading?: boolean
   retry?: () => void
 }) {
+  const { t } = useTranslation()
   const Icon = loading ? LoaderCircle : retry ? CircleAlert : Inbox
   return (
     <div className="page-state" role={retry ? 'alert' : 'status'}>
@@ -20,7 +22,7 @@ export function PageState({
       {body && <p>{body}</p>}
       {retry && (
         <Button variant="secondary" onClick={retry}>
-          Try again
+          {t('common.retry')}
         </Button>
       )}
     </div>
