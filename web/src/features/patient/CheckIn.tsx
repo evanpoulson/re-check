@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
+import { ArrowRight, ChevronLeft, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
@@ -367,9 +367,15 @@ function ReportChange({
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
     <section aria-labelledby="change" className="space-y-6">
-      <h1 id="change">
-        {text('new_findings', home.role)}
-      </h1>
+      <div>
+        <button type="button" className="back-link mb-0!" disabled={sending} onClick={onCancel}>
+          <ChevronLeft aria-hidden size={18} className="rtl:rotate-180" />
+          {t('flow.back')}
+        </button>
+        <h1 id="change">
+          {text('new_findings', home.role)}
+        </h1>
+      </div>
       <div role="group" aria-labelledby="change" className="grid gap-3">
         {options('new_findings').map((o) => {
           const code = o.code as FindingCode
@@ -388,9 +394,6 @@ function ReportChange({
       <div className="grid gap-3">
         <Button size="lg" className="w-full" disabled={picked.length === 0 || sending} onClick={() => onSend(picked)}>
           {t('change.send')}
-        </Button>
-        <Button size="lg" variant="ghost" className="w-full" onClick={onCancel}>
-          {t('flow.back')}
         </Button>
       </div>
     </section>

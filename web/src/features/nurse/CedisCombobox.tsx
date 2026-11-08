@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 /**
  * CEDIS code picker: an editable combobox with a list popup (WAI-ARIA APG
  * pattern). Type a code or part of a complaint name; Down and Up move through
- * the list, Enter picks, Escape closes (and a second Escape clears). The field
+ * the list, Enter picks, and Escape closes the list. The field
  * still accepts any typed code, so codes outside the map work as before.
  */
 export function CedisCombobox({
@@ -41,6 +41,7 @@ export function CedisCombobox({
   }
 
   function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+    if (e.nativeEvent.isComposing) return
     switch (e.key) {
       case 'ArrowDown':
         e.preventDefault()
@@ -68,9 +69,6 @@ export function CedisCombobox({
           e.preventDefault()
           setOpen(false)
           setActive(-1)
-        } else if (value) {
-          e.preventDefault()
-          onChange('')
         }
         break
       case 'Tab':
@@ -87,6 +85,7 @@ export function CedisCombobox({
         role="combobox"
         autoComplete="off"
         spellCheck={false}
+        placeholder={t('enrol.cedisPlaceholder')}
         className="field"
         value={value}
         aria-expanded={open}
@@ -100,7 +99,8 @@ export function CedisCombobox({
           setOpen(true)
           setActive(-1)
         }}
-        onClick={() => setOpen((o) => !o)}
+        onFocus={() => setOpen(true)}
+        onClick={() => setOpen(true)}
         onKeyDown={onKeyDown}
         onBlur={() => {
           setOpen(false)
@@ -115,11 +115,9 @@ export function CedisCombobox({
               id={`${listId}-${i}`}
               role="option"
               aria-selected={i === active}
-              // Mouse down, not click: picking must happen before the input's blur closes the list.
-              onMouseDown={(e) => {
-                e.preventDefault()
-                choose(entry)
-              }}
+              // Keep focus on the input until the click selects. Touch scrolling can cancel the click.
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => choose(entry)}
               onMouseMove={() => setActive(i)}
               className={cn('flex min-h-11 cursor-pointer items-center gap-3 px-3.5 py-2 text-small', i === active && 'bg-brand-50')}
             >
@@ -128,7 +126,7 @@ export function CedisCombobox({
             </li>
           ))}
         </ul>
-        {options.length === 0 && <p className="px-3.5 py-3 text-small text-muted">{t('enrol.cedisNoMatch')}</p>}
+        {options.length === 0 && <p role="status" className="px-3.5 py-3 text-small text-muted">{t('enrol.cedisNoMatch')}</p>}
       </div>
     </div>
   )

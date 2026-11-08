@@ -33,7 +33,7 @@ export function VisitLayout() {
   const isDesk = role === 'triage_nurse' || role === 'charge_nurse'
   const canFlag = role === 'triage_nurse'
   const task = data?.open_task ?? null
-  const { pathname } = useLocation()
+  const { pathname, state } = useLocation()
   const completedTitle = useRef<HTMLHeadingElement>(null)
   const focusCompletion = useRef(false)
   // The task this page just assessed, so the result can name its outcome.
@@ -53,9 +53,20 @@ export function VisitLayout() {
   const tabName = t(page === 'assessment' || page === 'timeline' || page === 'manage' ? `visitTabs.${page}` : 'visitTabs.overview')
   usePageTitle(visitName ? `${visitName} · ${tabName}` : t('pages.visit'))
 
-  const [backTo, backLabel] = role === 'physician'
-    ? ['/staff/physician', t('visit.backToReview')]
-    : role === 'charge_nurse' ? ['/staff/escalations', t('visit.backToEscalations')] : ['/staff/triage', t('visit.back')]
+  // A visit can be opened from several lists by a charge nurse. Direct links keep the role's default.
+  const from = role === 'charge_nurse' ? state?.from : undefined
+  let backTo = '/staff/triage'
+  let backLabel = t('visit.back')
+  if (role === 'physician' || from === '/staff/physician') {
+    backTo = '/staff/physician'
+    backLabel = t('visit.backToReview')
+  } else if (from === '/staff/escalations/handover') {
+    backTo = '/staff/escalations/handover'
+    backLabel = t('visit.backToHandover')
+  } else if (role === 'charge_nurse' && from !== '/staff/triage') {
+    backTo = '/staff/escalations'
+    backLabel = t('visit.backToEscalations')
+  }
   const back = (
     <Link to={backTo} className="back-link mb-0!">
       <ArrowLeft aria-hidden className="size-[1.2em] rtl:-scale-x-100" />
@@ -173,7 +184,7 @@ export function VisitLayout() {
           <ul className="flex gap-2">
             {tabs.map((tab) => (
               <li key={tab.to} className="shrink-0">
-                <NavLink to={tab.to} end={tab.end} className={({ isActive }) => cn('visit-tab', isActive && 'is-active')}>
+                <NavLink to={tab.to} state={state} end={tab.end} className={({ isActive }) => cn('visit-tab', isActive && 'is-active')}>
                   {tab.label}
                 </NavLink>
               </li>

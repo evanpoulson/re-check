@@ -110,14 +110,28 @@ describe('staff sign-in', () => {
     expect(await getStaffSession()).toMatchObject({ user_id: 'demo|physician', role: 'physician' })
   })
 
-  it('a charge nurse can open both the triage board and the worklist', async () => {
+  it('keeps all three charge nurse destinations available on the triage board', async () => {
     sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
-    renderApp('/staff/physician')
-    const nav = await screen.findByRole('navigation', { name: 'Staff' })
-    expect(within(nav).getByRole('link', { name: /Triage board/ })).toBeInTheDocument()
-    // New visit is a sheet opened from the board, not a page of its own.
-    expect(within(nav).queryByRole('link', { name: /New visit/ })).not.toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /Physician worklist/ })).toBeInTheDocument()
+    const user = userEvent.setup()
+    renderApp('/staff/escalations')
+    const nav = within(await screen.findByRole('navigation', { name: 'Staff' }))
+    await user.click(nav.getByRole('link', { name: 'Triage board' }))
+    await screen.findByRole('heading', { name: 'Triage board' })
+    expect(nav.getByRole('link', { name: 'Triage board' })).toHaveAttribute('aria-current', 'page')
+    expect(nav.getByRole('link', { name: 'Escalations' })).toBeVisible()
+    expect(nav.getByRole('link', { name: 'Physician worklist' })).toBeVisible()
+    expect(nav.queryByRole('link', { name: 'New visit' })).not.toBeInTheDocument()
+  })
+
+  it('returns a charge nurse to the triage board after opening a visit and changing tabs', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = within(await screen.findByRole('table'))
+    await user.click(table.getAllByRole('link', { name: /^P-/ })[0]!)
+    await user.click(await screen.findByRole('link', { name: 'Timeline' }))
+    await user.click(screen.getByRole('link', { name: 'Back to triage board' }))
+    expect(await screen.findByRole('heading', { name: 'Triage board' })).toBeVisible()
   })
 
   it('signing out clears the server session', async () => {
@@ -235,6 +249,34 @@ describe('triage nurse: enrolment and QR', () => {
     const links = screen.getAllByText(/\/v\//)
     expect(links).toHaveLength(1)
     expect(screen.getByText(/show it again from the visit/)).toBeInTheDocument()
+    await user.click(within(sheet).getByRole('button', { name: 'Back to triage board' }))
+    expect(sheet).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New visit' })).toHaveFocus()
+  })
+
+  it('keeps CEDIS suggestions open while editing and allows keyboard and pointer selection', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/visits/new')
+    const sheet = within(await screen.findByRole('dialog', { name: 'New visit' }))
+    const search = sheet.getByRole('combobox', { name: 'CEDIS code' })
+    await user.click(search)
+    await user.click(search)
+    expect(sheet.getByRole('listbox', { name: 'CEDIS suggestions' })).toBeVisible()
+    await user.type(search, 'chest')
+    const match = sheet.getAllByRole('option', { name: /chest/i })[0]!
+    expect(match).toBeVisible()
+    await user.keyboard('{ArrowDown}{Enter}')
+    expect(search).toHaveValue('003')
+    expect(sheet.getByRole('combobox', { name: 'Presenting complaint' })).toBeDisabled()
+
+    await user.clear(search)
+    await user.type(search, '407')
+    await user.click(sheet.getByRole('option', { name: /407/ }))
+    expect(search).toHaveValue('407')
+    expect(search).toHaveAttribute('aria-expanded', 'false')
+    expect(sheet.getByRole('combobox', { name: 'Presenting complaint' })).toHaveValue('head_injury')
+    expect(sheet.getByRole('button', { name: 'Create visit and QR code' })).toBeVisible()
   })
 
   it('the visit shows who is signed in and can show the same QR again', async () => {
@@ -630,6 +672,16 @@ describe('patient and companion check-in', () => {
     expect(screen.queryByText(/AHS estimate right now/)).not.toBeInTheDocument()
     expect(screen.queryByText('How triage works')).not.toBeInTheDocument()
     expect(screen.queryByText('What we store')).not.toBeInTheDocument()
+  })
+
+  it('lets the patient go back from an unanswered first question and restart the check-in', async () => {
+    const user = await scanAs('chest', 'patient')
+    await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
+    await screen.findByRole('heading', { name: 'How are you feeling right now?' })
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: "You're signed in" })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'Start check-in' }))
+    expect(await screen.findByRole('heading', { name: 'How are you feeling right now?' })).toBeVisible()
   })
 
   it('shows all four always-visible buttons from the question bank', async () => {

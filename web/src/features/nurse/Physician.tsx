@@ -105,7 +105,7 @@ export function Physician() {
               const staffDelta = row.visit.staff_reassess_due_at ? Date.parse(row.visit.staff_reassess_due_at) - now : null
               return (
                 <li key={id}>
-                  <Link className="review-row" to={`/staff/visits/${id}`} aria-labelledby={`reason-${id} ref-${id}`}>
+                  <Link className="review-row" to={`/staff/visits/${id}`} state={{ from: '/staff/physician' }} aria-labelledby={`reason-${id} ref-${id}`}>
                     <div className="concern-cell">
                       <TaskLevelLabel level={task.level} />
                       <h2 id={`reason-${id}`}>{label}</h2>

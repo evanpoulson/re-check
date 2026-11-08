@@ -132,6 +132,7 @@ function EscalationList({ tasks, tlpOnDuty, visits, now }: {
 /** One row per task: level, reason, visit, routing, and where acknowledgement stands. */
 function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<string, WorklistRow>; now: number; label: string }) {
   const { t } = useTranslation()
+  const { pathname } = useLocation()
   return (
     <ul className="review-list" aria-label={label}>
       {tasks.map((task) => {
@@ -141,7 +142,7 @@ function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<st
         const id = task.task_id
         return (
           <li key={id}>
-            <Link className="review-row" to={`/staff/visits/${task.visit_id}`} aria-labelledby={`esc-reason-${id} esc-ref-${id}`}>
+            <Link className="review-row" to={`/staff/visits/${task.visit_id}`} state={{ from: pathname }} aria-labelledby={`esc-reason-${id} esc-ref-${id}`}>
               <div className="concern-cell">
                 <TaskLevelLabel level={task.level} />
                 <h2 id={`esc-reason-${id}`}>
@@ -209,7 +210,7 @@ function HandoverView({ data, now }: { data: Handover; now: number }) {
               const due = row.visit.staff_reassess_due_at
               return (
                 <li key={id}>
-                  <Link className="review-row" to={`/staff/visits/${id}`}>
+                  <Link className="review-row" to={`/staff/visits/${id}`} state={{ from: '/staff/escalations/handover' }}>
                     <div className="concern-cell">
                       <h2>{visitRef(row.visit, id)}</h2>
                       <p>{t(`complaint.${row.visit.complaint_group}`)} · CTAS {row.visit.ctas}</p>
@@ -266,7 +267,7 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
   const urgent = ackOverdue || row.reassess_overdue
   return (
     <li>
-      <Link className="review-row" to={`/staff/visits/${id}`} aria-labelledby={`hp-ref-${id}`}>
+      <Link className="review-row" to={`/staff/visits/${id}`} state={{ from: '/staff/escalations/handover' }} aria-labelledby={`hp-ref-${id}`}>
         <div className="concern-cell">
           <div className="flex flex-wrap items-center gap-2">
             <span className="tabular-nums text-small font-semibold text-muted">#{row.rank}</span>
