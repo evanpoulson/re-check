@@ -39,7 +39,7 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 4. **Two clocks, separate steps.** The patient prompt timer (`next_prompt_due_at`) and the staff reassessment timer (`staff_reassess_due_at`) are shown separately. Created, delivered, acknowledged and assessed are separate task steps.
 5. **Quiet by default.** Neutral UI. Colour marks state and is always paired with an icon and text.
 6. **Accessible and private.** Touch targets of 48px or more, plain language, screen-reader labels, no name or health number anywhere, and a visible "What we store" panel.
-7. **Label demo data.** A persistent "Synthetic data, demo thresholds" badge in the nurse chrome.
+7. **Label demo data.** The staff sign-in says all visits are synthetic. The staff header carries no demo badge.
 
 ## Design system
 

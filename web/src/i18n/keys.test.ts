@@ -42,6 +42,7 @@ describe('translations', () => {
       'signedIn.short': ['patient', 'companion', 'none'],
       'exchange.role': ['patient', 'companion'],
       'exchange.signedInAs': ['patient', 'companion'],
+      'triage.levelHelp': ['red', 'amber', 'silent', 'leave_risk', 'overdue'].flatMap((l) => [`${l}.title`, `${l}.what`, `${l}.then`]),
       'triageInfo.level': ['2', '3', '4', '5'].flatMap((n) => [`${n}.name`, `${n}.body`]),
     }
     const missing = Object.entries(groups).flatMap(([g, codes]) =>

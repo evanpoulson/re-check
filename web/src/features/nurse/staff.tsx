@@ -7,7 +7,6 @@ import { ApiError } from '@/api/client'
 import { endpoints } from '@/api/endpoints'
 import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
-import { DemoBadge } from '@/components/DemoBadge'
 import { PageState } from '@/components/PageState'
 import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -127,7 +126,6 @@ export function StaffLayout() {
           )}
         </nav>
         <div className="staff-identity">
-          <DemoBadge />
           <span className="hidden sm:inline">
             {staff.name ? t('signIn.signedInAs', { name: staff.name, role: t(`role.${role}`) }) : t(`role.${role}`)}
           </span>

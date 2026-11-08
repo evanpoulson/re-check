@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "Dữ liệu mô phỏng, ngưỡng dùng để minh họa"
-  },
   "common": {
     "loading": "Đang tải…",
     "none": "Không có",

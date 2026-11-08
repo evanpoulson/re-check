@@ -351,6 +351,36 @@ describe('triage board', () => {
     expect(child).not.toHaveTextContent('No response')
   })
 
+  it('shows when the rows were last updated, and keeps them with "Reconnecting" when a refresh fails', async () => {
+    signInAsNurse()
+    renderApp('/staff/triage')
+    const status = await screen.findByText(/^Live · Updated /)
+    const time = status.textContent!.replace('Live · Updated ', '')
+
+    // The next refresh fails: the rows stay, and the time is still the last good one.
+    server.use(http.get(endpoints.triageBoard(), () => HttpResponse.json({ detail: 'down' }, { status: 503 })))
+    const events = new BroadcastChannel('recheck-events')
+    events.postMessage('changed')
+    expect(await screen.findByText(`Reconnecting · Last updated ${time}`)).toBeInTheDocument()
+    events.close()
+    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(6)
+    expect(screen.queryByText('The board could not be loaded.')).not.toBeInTheDocument()
+  })
+
+  it('explains each count in a tooltip that opens on focus and closes on Escape', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const info = await screen.findByRole('button', { name: 'About Red' })
+    expect(info).toHaveAccessibleDescription(/Urgent review.*A new warning sign/)
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    info.focus()
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Acknowledge within 2 minutes, or it also goes to the charge nurse.')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
+    expect(screen.getAllByRole('button', { name: /^About / })).toHaveLength(5)
+  })
+
   it('a new flag shows a badge but never moves a row or its numeral', async () => {
     signInAsNurse()
     const before = await queue()

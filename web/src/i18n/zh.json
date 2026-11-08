@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "模拟数据，演示用阈值"
-  },
   "common": {
     "loading": "加载中…",
     "none": "无",
