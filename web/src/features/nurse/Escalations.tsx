@@ -5,14 +5,13 @@ import { Link, NavLink, useLocation } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getEscalations, getHandover } from '@/api/api'
 import type { Handover, Task, VisitSummary, WorklistRow } from '@/api/types'
-import { LevelChip } from '@/components/LevelChip'
 import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
 import { clock, formatMinutes, isDueNow, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
-import { TaskStatus } from './TaskStatus'
+import { TaskLevelLabel, TaskStatus } from './TaskStatus'
 import { useDashboardEvents } from './useDashboardEvents'
 
 const visitRef = (visit: Pick<VisitSummary, 'visit_id' | 'pager_no'> | undefined, visitId: string) =>
@@ -144,7 +143,7 @@ function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<st
           <li key={id}>
             <Link className="review-row" to={`/staff/visits/${task.visit_id}`} aria-labelledby={`esc-reason-${id} esc-ref-${id}`}>
               <div className="concern-cell">
-                <LevelChip level={task.level} />
+                <TaskLevelLabel level={task.level} />
                 <h2 id={`esc-reason-${id}`}>
                   {reason ? t(`reason.${reason.reason_code}`, { defaultValue: reason.reason_code.replaceAll('_', ' ') }) : t(`taskLevel.${task.level}`)}
                 </h2>
@@ -156,8 +155,7 @@ function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<st
                 </p>
               </div>
               <div className="review-status">
-                <TaskStatus task={task} now={now} />
-                {task.status === 'open' && <p>{t('escalations.raised', { time: clock(task.created_at) })}</p>}
+                <TaskStatus task={task} now={now} notes={[task.status === 'open' && t('escalations.raised', { time: clock(task.created_at) })]} />
               </div>
               <ArrowRight aria-hidden className="row-arrow size-[1.125rem] rtl:-scale-x-100" />
             </Link>
@@ -272,7 +270,7 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
         <div className="concern-cell">
           <div className="flex flex-wrap items-center gap-2">
             <span className="tabular-nums text-small font-semibold text-muted">#{row.rank}</span>
-            {row.open_task ? <LevelChip level={row.open_task.level} /> : <span className="text-small text-muted">{t('handover.noTask')}</span>}
+            {row.open_task ? <TaskLevelLabel level={row.open_task.level} /> : <span className="text-small text-muted">{t('handover.noTask')}</span>}
           </div>
           <h2 id={`hp-ref-${id}`}>{visitRef(visit, id)}</h2>
           <p>{t(`complaint.${visit.complaint_group}`)} · CTAS {visit.ctas} · {t('handover.waited', { time: formatMinutes(now - Date.parse(visit.triaged_at)) })}</p>

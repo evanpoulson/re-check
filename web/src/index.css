@@ -351,38 +351,65 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
     font-weight: 600;
   }
-  /* A search box that looks like a field: 3:1 border, the magnifier inside, a round focus ring. */
+  /*
+    The redesign's search: a magnifier and text sitting in the toolbar, no box. A hairline
+    (3.6:1) shows under it on hover, and focus draws the usual ring round the whole field.
+  */
   .search-field {
-    position: relative;
     display: flex;
     align-items: center;
+    gap: 8px;
     min-width: 0;
+    padding-inline: 10px;
+    border-bottom: 1px solid transparent;
     color: var(--color-muted);
+    transition: border-color 150ms;
   }
-  .search-field > svg {
-    position: absolute;
-    inset-inline-start: 0.875rem;
-    pointer-events: none;
+  @media (hover: hover) {
+    .search-field:hover {
+      border-bottom-color: var(--color-answer);
+    }
+  }
+  .search-field:focus-within {
+    border-bottom-color: var(--color-answer);
+    border-radius: var(--radius-data) var(--radius-data) 0 0;
+    outline: 3px solid rgb(0 113 227 / 0.6);
+    outline-offset: 2px;
   }
   .search-field input {
     min-height: 44px;
-    width: 16rem;
+    width: 12rem;
     min-width: 0;
-    padding-inline: 2.5rem 0.875rem;
-    border: 1px solid var(--color-answer);
-    border-radius: var(--radius-tap);
-    background: var(--color-surface);
+    background: transparent;
     color: var(--color-ink);
     font-size: var(--text-small);
+  }
+  .search-field input:focus-visible {
+    outline: none;
   }
   .search-field input::placeholder {
     color: var(--color-muted);
   }
-  .search-field input:focus-visible {
-    outline: none;
-    border-color: var(--color-brand-500);
-    box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
+  /* A task level on the worklist and escalations: a dot and the level's name, both in its colour. */
+  .task-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-note);
+    font-weight: 600;
   }
+  .task-label::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .task-red { color: var(--color-level-red); }
+  .task-amber { color: var(--color-level-amber); }
+  .task-silent { color: var(--color-level-silent); }
+  .task-leave_risk { color: var(--color-level-leave); }
+  .task-overdue { color: var(--color-level-overdue); }
   .review-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 17rem) 1.125rem;
@@ -422,9 +449,6 @@
   /* Status in sentence-case bold, then its timing and notes below in grey. */
   .review-status {
     font-size: var(--text-small);
-  }
-  .review-status > :first-child {
-    font-weight: 600;
   }
   .review-status p {
     color: var(--color-muted);
