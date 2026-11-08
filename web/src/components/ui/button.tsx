@@ -2,15 +2,16 @@ import { cva, type VariantProps } from 'class-variance-authority'
 import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
+// Buttons are the things you tap, so they carry the large radius.
 const button = cva(
-  'inline-flex items-center justify-center gap-2 rounded-lg font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
+  'inline-flex items-center justify-center gap-2 rounded-tap font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-50',
   {
     variants: {
       variant: {
-        primary: 'bg-brand-600 text-white hover:bg-brand-700',
-        secondary: 'border border-line bg-surface text-ink hover:bg-slate-50',
-        danger: 'bg-level-red text-white hover:bg-red-900',
-        ghost: 'text-brand-700 hover:bg-brand-50',
+        primary: 'bg-ink text-white hover:bg-[#0a1827]',
+        secondary: 'border-2 border-ink bg-surface text-ink hover:bg-brand-50',
+        danger: 'bg-level-red text-white hover:bg-[#85140f]',
+        ghost: 'text-brand-700 underline-offset-4 hover:bg-brand-50 hover:underline',
       },
       size: {
         md: 'min-h-11 px-4 text-base',

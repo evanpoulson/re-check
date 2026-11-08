@@ -4,6 +4,7 @@
 export const endpoints = {
   enrolVisit: () => '/api/visits',
   visitStatus: (visitId: string) => `/api/visits/${visitId}/status`,
+  visitExclusion: (visitId: string) => `/api/visits/${visitId}/exclusion`,
   visitDetail: (visitId: string) => `/api/visits/${visitId}`,
   vitals: (visitId: string) => `/api/visits/${visitId}/vitals`,
   flagHigher: (visitId: string) => `/api/visits/${visitId}/flag`,

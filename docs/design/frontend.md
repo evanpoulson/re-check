@@ -15,7 +15,9 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 - The frontend is built to the **backend contract as it stands** (`api/src/recheck/contract/`). It adds no fields and assumes no contract changes.
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
-- Calm clinical light theme, desktop-first staff UI, shadcn/ui with Radix, languages `en`, `pa`, `tl`.
+- A distinct but calm identity that reads as hospital wayfinding signage: one legibility-first family (Atkinson Hyperlegible Next, self-hosted), a cool sky canvas, signage navy for text and actions, and no green for "fine". Radius encodes meaning: small on data, large only on things you tap.
+- Desktop-first staff UI, languages `en`, `pa`, `tl`. Question wording is English only until the bank's translations exist.
+- **The question bank is the source of every wording.** `question-bank/` is copied into `web/src/api/bank/` by `npm run gen:contract` and read by `bank.ts`, `cedis.ts` and `enableWhen.ts`. Nothing the bank owns is retyped in the UI.
 
 ## Routes
 
@@ -31,7 +33,7 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 
 ## Design principles
 
-1. **Urgent is never blocked.** "I need help now" and "I'm worried" are on every patient screen. A finding routes as soon as it is submitted, even from a partial check-in. Follow-ups come after (`ReportReceipt.follow_up_items`).
+1. **Urgent is never blocked.** The four always-visible buttons (help now, worried, question about my wait or care, leaving) are on every patient screen. A finding routes as soon as it is submitted, even from a partial check-in. Follow-ups come after (`ReportReceipt.follow_up_items`).
 2. **Honest answers.** Every answer is a value or a missing reason (`unsure`, `unable_to_respond`, `not_asked`, `not_reached`). These look different and are never shown as "no" or "all clear". A reassuring answer never hides an open concern.
 3. **Queue position is the nurse's.** Every patient screen says "Your answers never change your place in line." The dashboard never reorders rows on its own.
 4. **Two clocks, separate steps.** The patient prompt timer (`next_prompt_due_at`) and the staff reassessment timer (`staff_reassess_due_at`) are shown separately. Created, delivered, acknowledged and assessed are separate task steps.
@@ -55,12 +57,16 @@ Fields exactly as the contract and schema:
 - `ctas` 2 to 5 as a segmented control. CTAS 1 is disabled with "never in the waiting room".
 - `complaint_group`: `chest_back_pain`, `neuro_change`, `head_injury`, `confused_drowsy` or `general`. With a CEDIS code, the server rejects a group the [CEDIS map](../../question-bank/cedis-groups.json) contradicts.
 - `app_exclusion` (optional): child, pregnancy over 20 weeks, self-harm or violence, or major trauma. An excluded visit gets no channel and no QR, and stays on the staff list.
-- Optional 3-digit `cedis_code`.
+- Optional 3-digit `cedis_code`, picked from the backend's CEDIS map. A mapped code locks the group and suggests an exclusion; the form mirrors `check_enrolment()` and shows the backend's message for a contradiction.
 - `language`: `en`, `pa` or `tl`.
 - `channel`: phone or pager. `pager_no` (1 to 6 digits) appears only for pager. A pager already bound to a waiting patient is rejected by the schema, so show the server error inline.
 - A client `submission_id` is generated once and reused on retry.
 
-After submit (`VisitEnrolled`), show two QR cards, **Patient** and **Companion** (`patient_link`, `companion_link`), with Print and Save, the expiry from `links_expire_at`, and a clear warning: **"Shown once. Print or hand over now."** Also show when the first prompt and the staff reassessment are due (CTAS demo defaults of 15, 30, 60 and 120 minutes). Pager patients also get a phone fallback QR.
+The CEDIS field is a searchable list of the codes in the backend's map. Picking a mapped code locks the complaint group and pre-selects a suggested exclusion; the form mirrors the backend's `check_enrolment()` and shows the same message before the request.
+
+For an **excluded** visit (`app_exclusion` set) there is no channel, pager or QR, and no QR cards appear. The result says "No QR issued", that staff watch this patient directly, and that the staff reassessment timer is running.
+
+After submit (`VisitEnrolled`) for an app visit, show two QR cards, **Patient** and **Companion** (`patient_link`, `companion_link`), with Print and Save, the expiry from `links_expire_at`, and a clear warning: **"Shown once. Print or hand over now."** Also show when the first prompt and the staff reassessment are due (CTAS demo defaults of 15, 30, 60 and 120 minutes). Pager patients also get a phone fallback QR.
 
 ```
 +--------------------------------------------------------------+
@@ -84,10 +90,11 @@ Rows keep **queue order (CTAS, then `triaged_at`)** and are never re-sorted auto
 
 Columns:
 
+- **Place in line**: a large numeral rail down the left giving each patient's position in queue order. It is a true sequence and never changes when a flag arrives, which makes "flags do not move the row" visible. Filtering does not renumber it.
 - Visit ref (pager number or short ref), CTAS, complaint group, language and channel.
 - **Waiting time** since `triaged_at`.
-- **Condition** (`StateChip`): the last check-in `feeling_change` (much better to much worse, or unknown) plus the latest findings.
-- **Flags:** `LevelChip` for the open task level, `MissedChip` ("No response" from `silent` or `prompt_overdue`), `leave_risk`, prompt overdue and reassessment overdue.
+- **Condition** (`StateChip`): the last check-in `feeling_change` (much worse, worse, same, better, much better or unknown). Worse states are warm and better states are plain grey; reassurance is never a colour. Labels come from the bank. `feeling_now` is shown in the visit detail.
+- **Flags:** `LevelChip` for the open task level, "No response" (from `silent` or `prompt_overdue`), `leave_risk` and reassessment overdue. An excluded visit shows an **"App not offered: <reason>"** chip instead: its patient-prompt countdown reads "Not applicable" and it is never "No response", because there are no prompts to miss.
 - **Time since last check-in**, with who answered (patient or companion) and the channel.
 - **Next check-in due** and **staff reassessment due** as two separate countdowns.
 - **Symptoms:** the latest pain and reported findings, plus a `Sparkline` of the trend. An unanswered point is a gap, never a zero.
@@ -118,6 +125,7 @@ Columns:
   - Record vitals (`VitalsCreate`): sbp and dbp together, hr, rr, spo2, temp_c, `measured_at`, and an optional `supersedes` to correct an earlier entry.
   - **Flag higher** with an optional note of up to 280 characters.
   - Update visit status: roomed, left or discharged.
+  - **Stop offering the app** (`VisitExclusionUpdate`): choose a reason and confirm. It is irreversible, signs out the patient's and companion's devices and stops prompts; the staff timer keeps running. Hidden once set.
 
 ### Missed check-ins
 
@@ -131,20 +139,23 @@ Subscribe to `DashboardEvent` and refetch the affected view, since events are ch
 
 `POST` token exchange returns `SessionInfo` and an HttpOnly cookie holds the session. **Which QR was scanned decides patient or companion**, so there is no role picker. An invalid, expired or used token shows "Ask the triage desk for a new code".
 
-Every screen shows the wait range when present, "Your answers never change your place in line.", a language switch, a "What we store" link to the `PrivacyPanel`, and the persistent `HelpBar` (I'm worried, I need help now).
+Every screen shows the wait range when present, "Your answers never change your place in line.", a language switch, a "What we store" link to the `PrivacyPanel`, and the **four always-visible buttons** from the bank, docked at the bottom: "I need help now" full width, then "I'm worried I'm getting worse", "Question about my wait or care" and "I'm leaving". "Question about my wait or care" (`desk_question`) is non-clinical and goes to the triage nurse only, so it never shows the urgent screen. A companion sees the bank's companion wording.
 
-1. **Home and waiting.** Next check-in countdown, "Report a change", "I'm leaving" and the latest `PatientMessage`.
-2. **Check-in.** One question per screen, with a progress bar and Back.
-   - Wellness: `feeling_now` (very good to very poor) and `feeling_change` (much better to much worse), each with "Not sure" (`missing: unsure`). See the [question bank](../../question-bank/README.md).
-   - Pain from 0 to 10 on a slider with word labels, plus "Not sure". **Hidden for a companion** and sent as missing, because the schema forbids companion pain.
-   - New warning signs: multi-select over the 13 `FindingCode`s with an explicit "None of these". Companion wording becomes "Are they...".
-   - Complaint items from `PatientHome.items` by `input_type` (`yes_no`, `choice`, `multi_choice`, `scale`), each with "Not sure" or "Can't tell".
+1. **Home and waiting.** Next check-in countdown, "Start check-in", "Report a change" and the latest `PatientMessage`.
+2. **Check-in.** One question per screen, in the order of the bank's base section, with Back and "Finish later".
+   - **Who is answering?** Required, no "Not sure". Preselected from the QR; the answer becomes the report's `reporter`, and choosing companion removes pain and the circle check.
+   - Wellness: `feeling_now` (very good to very poor) and `feeling_change` (much better to much worse), each with "Not sure" (`missing: unsure`) where the bank allows it.
+   - Pain from 0 to 10, patient only. A companion sends it as missing.
+   - New warning signs in the bank's order, with "None of these". Companion wording from the bank.
+   - **Circle check** (patient only, when `PatientHome.attention_prompt` is present): see below.
+   - Follow-ups from `PatientHome.items` by `input_type`, with "Not sure" only where `allow_unsure` is true.
    - Leaving mid-way submits a **partial** check-in. Unreached items become `not_reached`.
-3. **Urgent interstitial.** When a finding or concern returns `clinician_will_check` or `clinician_told`, show a full-screen "Tell a staff member now". It has already been sent. Follow-ups (`follow_up_items`) are optional and come after.
-4. **Sent and status.** A patient-safe timeline: Reported, Received, Staff notified. Task level and reasons never reach the patient.
-5. **Leaving.** `LeavingReport` with `leaving_info` ("tell staff before you go").
-6. **Offline, saved and pending.** Answers queue locally and retry with the same `submission_id`. A clear "Saved, will send when connected" state looks different from "no problem".
-7. **Unable to respond.** A "Someone else is answering" or "I can't answer right now" path records `unable_to_respond`.
+3. **Circle check.** The server issues the sequence. Shapes appear one at a time (`show_ms`, then a `gap_ms` blank) at the positions given; the patient counts circles and ignores squares. Circles and squares differ by outline shape, not colour. It is shown once with no replay. The patient then enters a count from 0 to 20. "I'm not sure" and "I can't do this" are always available; both are sent as `missing` **with the `prompt_id`** (`unsure`, `unable_to_respond`), so staff can tell "shown but not answered" from "not shown". A companion, or a visit with no prompt, sends `missing: not_asked` with no prompt id. An expired prompt is replaced by a fresh one from the server. It is not a clinical test: the UI never shows a score or a verdict.
+4. **Urgent interstitial.** When a finding or concern returns `clinician_will_check` or `clinician_told`, show a full-screen "Tell a staff member now". It has already been sent. Follow-ups (`follow_up_items`) are optional and come after.
+5. **Sent and status.** A patient-safe timeline: Reported, Received. It says staff will still check on their own schedule, and never implies "all clear". Task level and reasons never reach the patient.
+6. **Leaving.** `LeavingReport` with `leaving_info` ("tell staff before you go").
+7. **Offline, saved and pending.** Answers queue locally and retry with the same `submission_id`. A clear "Saved, will send when connected" state looks different from "no problem".
+8. **Language.** For `pa` and `tl` a plain notice says questions are shown in English for now.
 
 ```
  +----------------------------+     +----------------------------+
@@ -162,16 +173,20 @@ Every screen shows the wait range when present, "Your answers never change your 
 
 ## Built to the contract as it is
 
-The frontend uses the contract exactly. Types are generated from `contract_json_schema()` in `api/src/recheck/contract/__init__.py`, so a contract change breaks the type check instead of drifting silently.
+The frontend uses the contract exactly. Types are generated from `contract_json_schema()` in `api/src/recheck/contract/__init__.py`, and the question bank and CEDIS map are copied from `question-bank/`. `npm run gen:contract` regenerates them and `npm run check:contract` fails if the copies are out of date, so a backend change breaks the type check instead of drifting silently.
 
+- **Wording and branching come from the bank.** `bank.ts` gives question text, companion text, options, "Not sure" rules and the circle-check settings. `enableWhen.ts` mirrors the backend's branching for the mock server and tests only; screens render what `PatientHome.items` and `follow_up_items` say.
+- **CEDIS comes from the map.** `cedis.ts` lists the codes, suggests groups and exclusions, and mirrors `check_enrolment()`.
 - **Board data.** The board joins `TriageBoard.rows` (`BoardRow`) with `Worklist.rows` (`WorklistRow`) on `visit_id`. Together they carry the last report, trend, `silent`, `leave_risk`, prompt and reassessment due and overdue, and the open task.
 - **Queue order.** The board sorts on the client by `visit.ctas`, then `visit.triaged_at`, and ignores the severity `rank`. Flags never reorder rows.
 - **Condition.** Derived from the latest `trend` point's `feeling_change` and the open task level. No new field.
 - **Missed check-ins.** Shown as "No response" from `silent` and `prompt_overdue`. The contract has no missed count.
 - **Connection state.** Not shown. `VisitSummary` does not expose whether a QR was scanned.
 - **Staff identity.** The contract defines only `StaffRef`, so the demo role picker is local-only until a staff session exists.
-- **Routes and transport.** The contract defines no HTTP paths and no realtime transport. Paths live in one file, `web/src/api/endpoints.ts`, and the frontend runs against typed MSW mocks until the FastAPI routes exist.
-- **Translations.** Question text for `pa` and `tl` comes from the question bank.
+- **Routes and transport.** The contract defines no HTTP paths and no realtime transport. Paths live in one file, `web/src/api/endpoints.ts`, and the frontend runs against typed MSW mocks until the FastAPI routes exist. The mocks run on the real bank.
+- **Not in the contract, so assumed in the mocks only:** how a desk question reaches the nurse (the mock opens a triage-nurse-only task at level `overdue`), and the task level for a wrong or missing circle count (the mock uses `overdue`, "non-urgent in-person check").
+- **Reporter and session.** The frontend sends the answered "Who is answering?" as `reporter`. Whether the server accepts a reporter that differs from the QR's role is not stated.
+- **Translations.** Question text for `pa` and `tl` comes from the question bank when it exists.
 
 Possible later contract improvements, only if the backend chooses to add them: a missed-check count, patient and companion linked flags, and a richer `BoardRow`.
 

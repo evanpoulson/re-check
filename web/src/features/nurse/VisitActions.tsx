@@ -1,9 +1,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { acknowledgeTask, assessTask, postFlagHigher, postVitals, updateVisitStatus } from '@/api/api'
+import { acknowledgeTask, assessTask, postFlagHigher, postVitals, updateVisitExclusion, updateVisitStatus } from '@/api/api'
 import { ApiError, newSubmissionId } from '@/api/client'
-import type { Disposition, VisitDetail, VitalsRecord } from '@/api/types'
+import type { AppExclusion, Disposition, VisitDetail, VitalsRecord } from '@/api/types'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { emptyVitals, validateVitals, type VitalsError, type VitalsForm } from '@/lib/vitals'
@@ -17,7 +17,8 @@ const DISPOSITIONS: Disposition[] = [
   'left_before_assessment',
   'not_located',
 ]
-const FIELD = 'min-h-11 w-full rounded-lg border border-line bg-surface px-3 text-base'
+const EXCLUSIONS: AppExclusion[] = ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma']
+const FIELD = 'min-h-11 w-full rounded-data border border-ink bg-surface px-3 text-base'
 
 /** Runs one staff action with a submission id created up front and reused on retry. */
 function useAction<A>(visitId: string, fn: (args: A, submissionId: string) => Promise<unknown>) {
@@ -52,6 +53,11 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
   )
   const status = useAction(visit.visit_id, (s: 'roomed' | 'left' | 'discharged', submission_id) =>
     updateVisitStatus(visit.visit_id, { submission_id, status: s }),
+  )
+  const [exclusion, setExclusion] = useState<AppExclusion>('child')
+  const [confirmExclusion, setConfirmExclusion] = useState(false)
+  const exclude = useAction(visit.visit_id, (reason: AppExclusion, submission_id) =>
+    updateVisitExclusion(visit.visit_id, { submission_id, app_exclusion: reason }),
   )
   const vitalsAction = useAction(visit.visit_id, (body: Parameters<typeof postVitals>[0]) => postVitals(body))
   const vitalsId = useRef(newSubmissionId())
@@ -146,6 +152,27 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
         </Button>
         {flag.error && <p role="alert" className="font-semibold text-level-red">{flag.error}</p>}
       </Card>
+
+      {!visit.app_exclusion && (
+        <Card className="space-y-3">
+          <h3 className="font-semibold">{t('actions.stopApp')}</h3>
+          <p className="text-sm text-muted">{t('actions.stopAppHelp')}</p>
+          <label htmlFor="exclusion-reason" className="block text-sm font-semibold">{t('actions.stopAppReason')}</label>
+          <select id="exclusion-reason" className={FIELD} value={exclusion} onChange={(e) => setExclusion(e.target.value as AppExclusion)}>
+            {EXCLUSIONS.map((x) => (
+              <option key={x} value={x}>{t(`exclusion.${x}`)}</option>
+            ))}
+          </select>
+          <label className="flex min-h-11 items-start gap-2 text-sm">
+            <input type="checkbox" className="mt-1 size-4" checked={confirmExclusion} onChange={(e) => setConfirmExclusion(e.target.checked)} />
+            {t('actions.stopAppConfirm')}
+          </label>
+          <Button variant="danger" disabled={!confirmExclusion || exclude.pending} onClick={() => exclude.run(exclusion)}>
+            {t('actions.stopAppButton')}
+          </Button>
+          {exclude.error && <p role="alert" className="font-semibold text-level-red">{exclude.error}</p>}
+        </Card>
+      )}
 
       <Card className="space-y-3">
         <h3 className="font-semibold">{t('actions.visitStatus')}</h3>

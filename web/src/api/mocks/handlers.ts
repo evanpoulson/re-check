@@ -7,6 +7,7 @@ import type {
   PatientReport,
   TokenExchange,
   VisitCreate,
+  VisitExclusionUpdate,
   VisitStatusUpdate,
   VitalsCreate,
 } from '../types'
@@ -45,6 +46,10 @@ export const handlers = [
   http.post(withParam(endpoints.visitStatus), async ({ request, params }) => {
     const body = (await request.json()) as VisitStatusUpdate
     return reply(() => store.setVisitStatus(String(params.id), body.status))
+  }),
+  http.post(withParam(endpoints.visitExclusion), async ({ request, params }) => {
+    const body = (await request.json()) as VisitExclusionUpdate
+    return reply(() => store.setExclusion(String(params.id), body.app_exclusion))
   }),
   http.post(withParam(endpoints.acknowledgeTask), async ({ request, params }) => {
     ;(await request.json()) as AcknowledgeTask

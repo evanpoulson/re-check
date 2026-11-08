@@ -1,6 +1,8 @@
 import type { TFunction } from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { optionLabel } from '@/api/bank'
 import { entryKind, type TimelineEntry } from '@/api/types'
+import { attentionText, choiceText, concernText, findingsText, painText } from '@/lib/answers'
 import { clock } from '@/lib/time'
 
 function stamp(e: TimelineEntry): string {
@@ -12,10 +14,10 @@ export function Timeline({ entries }: { entries: TimelineEntry[] }) {
   const { t } = useTranslation()
   if (entries.length === 0) return <p className="text-muted">{t('timeline.empty')}</p>
   return (
-    <ol className="space-y-3 border-l-2 border-line pl-4">
+    <ol className="space-y-3 border-l-4 border-ink pl-4">
       {entries.map((e, i) => (
         <li key={i} className="relative">
-          <span aria-hidden className="absolute -left-[1.4rem] top-1.5 size-2.5 rounded-full bg-brand-600" />
+          <span aria-hidden className="absolute -left-[1.55rem] top-1.5 size-3 bg-ink" />
           <div className="tabular text-sm text-muted">{clock(stamp(e))}</div>
           <div>{describe(e, t)}</div>
         </li>
@@ -30,18 +32,17 @@ function describe(e: TimelineEntry, t: TFunction): string {
       const r = (e as Extract<TimelineEntry, { report_id: string }>).report
       const who = t(`reporter.${r.reporter}`)
       if (r.kind === 'checkin') {
-        const overall = r.overall.kind === 'answered' ? t(`overall.${r.overall.value}`) : t(`missing.${r.overall.reason}`)
-        const pain = r.pain.kind === 'answered' ? String(r.pain.value) : t(`missing.${r.pain.reason}`)
-        const found =
-          r.new_findings.kind === 'answered'
-            ? r.new_findings.value.length
-              ? r.new_findings.value.map((f) => t(`finding.${f}`)).join(', ')
-              : t('timeline.noFindings')
-            : t(`missing.${r.new_findings.reason}`)
-        return t('timeline.checkin', { who, overall, pain, found })
+        return t('timeline.checkin', {
+          who,
+          change: choiceText(r.feeling_change, 'feeling_change', t),
+          now: choiceText(r.feeling_now, 'feeling_now', t),
+          pain: painText(r.pain, t),
+          found: findingsText(r.new_findings, t),
+          attention: attentionText(r.attention, t),
+        })
       }
-      if (r.kind === 'concern') return t('timeline.concern', { who, concern: t(`concern.${r.concern}`) })
-      if (r.kind === 'finding') return t('timeline.finding', { who, findings: r.findings.map((f) => t(`finding.${f}`)).join(', ') })
+      if (r.kind === 'concern') return t('timeline.concern', { who, concern: concernText(r.concern) })
+      if (r.kind === 'finding') return t('timeline.finding', { who, findings: r.findings.map((f) => optionLabel('new_findings', f)).join(', ') })
       return t('timeline.leaving', { who })
     }
     case 'vitals': {

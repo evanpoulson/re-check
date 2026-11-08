@@ -3,11 +3,12 @@ import { ArrowLeft, Check, Circle } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getVisitDetail } from '@/api/api'
-import type { CheckinReport, ItemAnswer, Task, VisitDetail } from '@/api/types'
+import type { CheckinReport, Task, VisitDetail } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
 import { LevelChip } from '@/components/LevelChip'
 import { Timeline } from '@/components/Timeline'
 import { Card } from '@/components/ui/card'
+import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
 import { clock, useNow } from '@/lib/time'
 import { useDashboardEvents } from './useDashboardEvents'
 import { VisitActions } from './VisitActions'
@@ -33,7 +34,7 @@ export function VisitDetailPage() {
 
         <Card className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-2xl font-bold">
+            <h1 className="text-3xl font-extrabold tracking-tight">
               {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : t('visit.title', { ref: visit.visit_id.slice(0, 4) })}
             </h1>
             {task && <LevelChip level={task.level} />}
@@ -43,19 +44,20 @@ export function VisitDetailPage() {
             <Field label={t('visit.complaint')} value={t(`complaint.${visit.complaint_group}`)} />
             <Field label={t('visit.cedis')} value={visit.cedis_code ?? t('common.none')} />
             <Field label={t('visit.language')} value={t(`language.${visit.language}`)} />
-            <Field label={t('visit.channel')} value={t(`channel.${visit.channel}`)} />
+            <Field label={t('visit.channel')} value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')} />
+            <Field label={t('visit.app')} value={visit.app_exclusion ? t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) }) : t('enrol.appOffered')} />
             <Field label={t('visit.status')} value={t(`visitStatus.${visit.status}`)} />
             <Field label={t('visit.triaged')} value={clock(visit.triaged_at)} />
           </dl>
         </Card>
 
         <Card className="space-y-2">
-          <h2 className="text-xl font-bold">{t('visit.timers')}</h2>
+          <h2 className="text-xl font-extrabold">{t('visit.timers')}</h2>
           <p className="text-sm text-muted">{t('visit.timersHelp')}</p>
           <dl className="grid gap-2 sm:grid-cols-3">
             <div>
               <dt className="text-sm font-semibold text-muted">{t('visit.nextPrompt')}</dt>
-              <dd><CountdownChip due={visit.next_prompt_due_at} now={now} /></dd>
+              <dd>{visit.app_exclusion ? t('time.notApplicable') : <CountdownChip due={visit.next_prompt_due_at} now={now} />}</dd>
             </div>
             <div>
               <dt className="text-sm font-semibold text-muted">{t('visit.nextReassess')}</dt>
@@ -75,7 +77,7 @@ export function VisitDetailPage() {
         <LatestAnswers detail={data} />
 
         <Card className="space-y-3">
-          <h2 className="text-xl font-bold">{t('visit.timeline')}</h2>
+          <h2 className="text-xl font-extrabold">{t('visit.timeline')}</h2>
           <Timeline entries={data.timeline} />
         </Card>
       </div>
@@ -107,10 +109,10 @@ function TaskCard({ task }: { task: Task }) {
   ]
   return (
     <Card className="space-y-4">
-      <h2 className="text-xl font-bold">{t('visit.whyFlagged')}</h2>
+      <h2 className="text-xl font-extrabold">{t('visit.whyFlagged')}</h2>
       <ul className="space-y-2">
         {task.reasons.map((r, i) => (
-          <li key={i} className="rounded-lg bg-slate-50 p-3">
+          <li key={i} className="rounded-data bg-canvas p-3">
             <div className="flex items-center gap-2">
               <LevelChip level={r.level} />
               <span className="font-semibold">{t(`reason.${r.reason_code}`, { defaultValue: r.reason_code })}</span>
@@ -140,19 +142,6 @@ function TaskCard({ task }: { task: Task }) {
 
 const humanKey = (k: string) => k.replace(/_/g, ' ')
 
-function answerText(a: ItemAnswer, t: (k: string) => string): string {
-  switch (a.kind) {
-    case 'missing':
-      return t(`missing.${a.reason}`)
-    case 'yes_no':
-      return a.value ? t('common.yes') : t('common.no')
-    case 'multi_choice':
-      return a.value.join(', ') || t('timeline.noFindings')
-    default:
-      return String(a.value)
-  }
-}
-
 /** The latest check-in, with every missing reason kept distinct from "no". */
 function LatestAnswers({ detail }: { detail: VisitDetail }) {
   const { t } = useTranslation()
@@ -162,24 +151,18 @@ function LatestAnswers({ detail }: { detail: VisitDetail }) {
   if (!last) return null
   const c = last.report as CheckinReport
   const rows: [string, string][] = [
-    [t('answers.overall'), c.overall.kind === 'answered' ? t(`overall.${c.overall.value}`) : t(`missing.${c.overall.reason}`)],
-    [t('answers.pain'), c.pain.kind === 'answered' ? String(c.pain.value) : t(`missing.${c.pain.reason}`)],
-    [
-      t('answers.findings'),
-      c.new_findings.kind === 'answered'
-        ? c.new_findings.value.length
-          ? c.new_findings.value.map((f) => t(`finding.${f}`)).join(', ')
-          : t('timeline.noFindings')
-        : t(`missing.${c.new_findings.reason}`),
-    ],
-    ...Object.entries(c.items ?? {}).map(([k, a]): [string, string] => [humanKey(k), answerText(a, t)]),
+    [t('answers.feelingChange'), choiceText(c.feeling_change, 'feeling_change', t)],
+    [t('answers.feelingNow'), choiceText(c.feeling_now, 'feeling_now', t)],
+    [t('answers.pain'), painText(c.pain, t)],
+    [t('answers.findings'), findingsText(c.new_findings, t)],
+    [t('answers.attention'), attentionText(c.attention, t)],
+    ...Object.entries(c.items ?? {}).map(([k, a]): [string, string] => [humanKey(k), itemAnswerText(a, t)]),
   ]
   return (
     <Card className="space-y-2">
-      <h2 className="text-xl font-bold">{t('visit.latestAnswers')}</h2>
-      <p className="text-sm text-muted">
-        {t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}
-      </p>
+      <h2 className="text-xl font-extrabold">{t('visit.latestAnswers')}</h2>
+      <p className="text-sm text-muted">{t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}</p>
+      {c.reporter === 'companion' && <p className="text-sm font-semibold">{t('answers.companionOnly')}</p>}
       <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
         {rows.map(([k, v]) => (
           <div key={k}>

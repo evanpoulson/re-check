@@ -29,14 +29,10 @@ describe('translations', () => {
       level: ['red', 'amber', 'silent', 'leave_risk', 'overdue'],
       missing: ['unsure', 'unable_to_respond', 'not_asked', 'not_reached'],
       disposition: ['assessed_stable', 'tests_ordered', 're_triaged', 'roomed', 'treated_and_released', 'left_before_assessment', 'not_located'],
-      finding: [
-        'chest_pain', 'trouble_breathing', 'new_confusion', 'fainting', 'new_weakness_numbness', 'heavy_bleeding',
-        'vomiting', 'worst_headache', 'speech_change', 'facial_droop', 'drowsiness', 'vision_change', 'balance_change',
-      ],
       taskEvent: ['created', 'reason_added', 'level_raised', 'escalated', 'delivered', 'acknowledged', 'assessed'],
       message: ['none', 'clinician_will_check', 'clinician_told', 'leaving_info'],
-      complaint: ['chest_back_pain', 'neuro_change', 'head_injury', 'general'],
-      concern: ['worried', 'help_now'],
+      complaint: ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general'],
+      exclusion: ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma'],
       reporter: ['patient', 'companion', 'staff'],
       role: ['triage_nurse', 'physician', 'charge_nurse', 'quality'],
     }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardRow, TriageBoard, Worklist, WorklistRow } from '@/api/types'
-import { applyFilters, conditionOf, countByLevel, joinBoard, needsReview, sortQueue } from './board'
+import { appNotOffered, applyFilters, conditionOf, countByLevel, feelingNowOf, joinBoard, needsReview, sortQueue } from './board'
 
 const iso = (min: number) => new Date(Date.UTC(2026, 10, 7, 18, 0) - min * 60_000).toISOString()
 
@@ -23,6 +23,7 @@ function row(id: string, ctas: number, triagedMinAgo: number, level: BoardRow['l
       complaint_group: 'general',
       cedis_code: null,
       language: 'en',
+      app_exclusion: null,
       channel: 'phone',
       pager_no: null,
       status: 'waiting',
@@ -81,10 +82,24 @@ describe('board', () => {
   })
 
   it('derives condition from the latest check-in; an unanswered latest is unknown, not same', () => {
-    const worse = { at: iso(5), pain: 3, overall: 'worse' as const }
+    const worse = { at: iso(5), pain: 3, feeling_now: 'poor' as const, feeling_change: 'worse' as const }
     expect(conditionOf(row('a', 2, 1, null, { trend: [worse] }).work)).toBe('worse')
-    expect(conditionOf(row('a', 2, 1, null, { trend: [worse, { at: iso(1), pain: null, overall: null }] }).work)).toBe('unknown')
+    expect(conditionOf(row('a', 2, 1, null, { trend: [worse, { at: iso(1), pain: null, feeling_now: null, feeling_change: null }] }).work)).toBe('unknown')
     expect(conditionOf(row('a', 2, 1).work)).toBe('unknown')
+    expect(feelingNowOf(row('a', 2, 1, null, { trend: [worse] }).work)).toBe('poor')
+    expect(feelingNowOf(row('a', 2, 1).work)).toBeNull()
+  })
+
+  it.each(['much_worse', 'worse', 'same', 'better', 'much_better'] as const)('condition can be %s', (change) => {
+    const point = { at: iso(1), pain: null, feeling_now: null, feeling_change: change }
+    expect(conditionOf(row('a', 2, 1, null, { trend: [point] }).work)).toBe(change)
+  })
+
+  it('knows when the app is not offered', () => {
+    expect(appNotOffered(row('a', 3, 1).work)).toBe(false)
+    const excluded = row('a', 3, 1)
+    excluded.work.visit.app_exclusion = 'child'
+    expect(appNotOffered(excluded.work)).toBe(true)
   })
 
   it('counts by level and filters', () => {
