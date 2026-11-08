@@ -9,6 +9,8 @@ import type {
   PatientReport,
   ReportReceipt,
   SessionInfo,
+  SignOut,
+  StaffSignOut,
   Task,
   TokenExchange,
   TriageBoard,
@@ -16,6 +18,7 @@ import type {
   VisitDetail,
   VisitEnrolled,
   VisitExclusionUpdate,
+  VisitLink,
   VisitStatusUpdate,
   VitalsCreate,
   VitalsRecord,
@@ -37,8 +40,12 @@ export const updateVisitStatus = (visitId: string, body: VisitStatusUpdate) =>
 
 export const updateVisitExclusion = (visitId: string, body: VisitExclusionUpdate) =>
   request<undefined>('POST', endpoints.visitExclusion(visitId), body)
+export const getVisitLink = (visitId: string) => request<VisitLink>('GET', endpoints.visitLink(visitId))
+export const staffSignOut = (visitId: string, body: StaffSignOut) =>
+  request<undefined>('POST', endpoints.staffSignOut(visitId), body)
 
 // Patient and companion
 export const exchangeToken = (body: TokenExchange) => request<SessionInfo>('POST', endpoints.exchangeToken(), body)
 export const getPatientHome = () => request<PatientHome>('GET', endpoints.patientHome())
 export const postReport = (body: PatientReport) => request<ReportReceipt>('POST', endpoints.postReport(), body)
+export const signOut = (body: SignOut) => request<undefined>('POST', endpoints.signOut(), body)

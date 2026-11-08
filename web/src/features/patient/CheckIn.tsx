@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { getPatientHome } from '@/api/api'
+import { getPatientHome, signOut } from '@/api/api'
 import { options, text } from '@/api/bank'
 import { ApiError, newSubmissionId } from '@/api/client'
 import type { CheckinReport, ConcernCode, FindingCode, PatientHome, PatientMessage, PatientReport, ReportReceipt } from '@/api/types'
@@ -38,12 +38,14 @@ export function CheckIn() {
 
   if (isPending) return <PatientLayout><p role="status">{t('common.loading')}</p></PatientLayout>
   if (error || !home) {
-    const noSession = error instanceof ApiError && error.status === 401
+    // Signed out by takeover, by staff, by the person, or because the visit closed.
+    // A signed-out device can't send anything, so it says to tell staff.
+    const signedOut = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
         <Card role="alert" className="space-y-2">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{t(noSession ? 'exchange.noSession.title' : 'exchange.invalid.title')}</h1>
-          <p>{t('exchange.askDesk')}</p>
+          <h1 className="text-[1.75rem] font-extrabold leading-tight">{t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}</h1>
+          <p>{t(signedOut ? 'exchange.signedOut.help' : 'exchange.askDesk')}</p>
         </Card>
       </PatientLayout>
     )
@@ -66,7 +68,8 @@ export function CheckIn() {
       setView(after(result.queued ? null : result.receipt))
     } catch (e) {
       // A prompt the server no longer accepts (expired or already used): get a fresh one.
-      if (e instanceof ApiError && e.status === 409) await qc.invalidateQueries({ queryKey: ['home'] })
+      // Signed out (401): refetching shows the signed-out screen.
+      if (e instanceof ApiError && (e.status === 409 || e.status === 401)) await qc.invalidateQueries({ queryKey: ['home'] })
       setFailed(true)
     } finally {
       setSending(false)
@@ -103,7 +106,17 @@ export function CheckIn() {
         </p>
       )}
 
-      {view.name === 'home' && <Home home={home} now={now} setView={setView} />}
+      {view.name === 'home' && (
+        <Home
+          home={home}
+          now={now}
+          setView={setView}
+          onSignOut={async () => {
+            await signOut({ submission_id: newSubmissionId() }).catch(() => undefined)
+            await qc.invalidateQueries({ queryKey: ['home'] })
+          }}
+        />
+      )}
 
       {view.name === 'checkin' && (
         <CheckinFlow
@@ -208,7 +221,7 @@ export function CheckIn() {
   )
 }
 
-function Home({ home, now, setView }: { home: PatientHome; now: number; setView: (v: View) => void }) {
+function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: number; setView: (v: View) => void; onSignOut: () => Promise<void> }) {
   const { t } = useTranslation()
   return (
     <div className="space-y-5">
@@ -228,7 +241,32 @@ function Home({ home, now, setView }: { home: PatientHome; now: number; setView:
           {t('patient.reportChange')}
         </Button>
       </div>
+      <SignOutButton onSignOut={onSignOut} />
     </div>
+  )
+}
+
+/** Signing out asks first: after it, this device can't send anything until someone scans again. */
+function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
+  const { t } = useTranslation()
+  const [confirm, setConfirm] = useState(false)
+  if (!confirm) {
+    return (
+      <Button variant="secondary" onClick={() => setConfirm(true)}>
+        {t('patient.signOut')}
+      </Button>
+    )
+  }
+  return (
+    <Card className="space-y-3">
+      <p>{t('patient.signOutHelp')}</p>
+      <div className="grid grid-cols-2 gap-3">
+        <Button onClick={() => void onSignOut()}>{t('patient.signOutConfirm')}</Button>
+        <Button variant="secondary" onClick={() => setConfirm(false)}>
+          {t('exchange.takeover.cancel')}
+        </Button>
+      </div>
+    </Card>
   )
 }
 

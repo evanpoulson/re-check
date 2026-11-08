@@ -2,12 +2,12 @@
   "resourceType": "Questionnaire",
   "id": "recheck-waiting-room-checkin",
   "url": "urn:recheck:questionnaire:waiting-room-checkin",
-  "version": "2026-11-07.1",
+  "version": "2026-11-08.1",
   "name": "RecheckWaitingRoomCheckin",
   "title": "Recheck waiting-room check-in",
   "status": "draft",
   "experimental": true,
-  "date": "2026-11-07",
+  "date": "2026-11-08",
   "publisher": "Recheck prototype",
   "description": "Demo content for synthetic visits only. Not clinically approved. Wording, groups and options need review by the site's clinical team before any real use. Base questions follow the Martha's Rule patient wellness question; follow-ups depend on the visit's complaint group. See question-bank/SOURCES.md.",
   "language": "en",
@@ -90,6 +90,38 @@
                 "system": "urn:recheck:codes:complaint-group",
                 "code": "general",
                 "display": "General"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "session_role",
+          "text": "Who signed in: the patient or a companion",
+          "type": "choice",
+          "readOnly": true,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "session.role"
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:reporter",
+                "code": "patient",
+                "display": "Patient"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:reporter",
+                "code": "companion",
+                "display": "Companion"
               }
             }
           ]
@@ -202,46 +234,6 @@
       "text": "Check-in",
       "type": "group",
       "item": [
-        {
-          "linkId": "answerer",
-          "text": "Who is answering?",
-          "type": "choice",
-          "extension": [
-            {
-              "url": "urn:recheck:fhir:reporter",
-              "valueCode": "patient"
-            },
-            {
-              "url": "urn:recheck:fhir:reporter",
-              "valueCode": "companion"
-            },
-            {
-              "url": "urn:recheck:fhir:contract-field",
-              "valueString": "reporter"
-            },
-            {
-              "url": "urn:recheck:fhir:allow-unsure",
-              "valueBoolean": false
-            }
-          ],
-          "answerOption": [
-            {
-              "valueCoding": {
-                "system": "urn:recheck:codes:reporter",
-                "code": "patient",
-                "display": "Me, the patient"
-              }
-            },
-            {
-              "valueCoding": {
-                "system": "urn:recheck:codes:reporter",
-                "code": "companion",
-                "display": "Someone with the patient"
-              }
-            }
-          ],
-          "required": true
-        },
         {
           "linkId": "feeling_now",
           "text": "How are you feeling right now?",
@@ -418,7 +410,7 @@
           ],
           "enableWhen": [
             {
-              "question": "answerer",
+              "question": "session_role",
               "operator": "=",
               "answerCoding": {
                 "system": "urn:recheck:codes:reporter",
@@ -636,7 +628,7 @@
           ],
           "enableWhen": [
             {
-              "question": "answerer",
+              "question": "session_role",
               "operator": "=",
               "answerCoding": {
                 "system": "urn:recheck:codes:reporter",

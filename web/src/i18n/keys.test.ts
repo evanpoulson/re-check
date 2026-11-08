@@ -35,6 +35,10 @@ describe('translations', () => {
       exclusion: ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma'],
       reporter: ['patient', 'companion', 'staff'],
       role: ['triage_nurse', 'physician', 'charge_nurse', 'quality'],
+      sessionEnd: ['takeover', 'signed_out', 'staff_signed_out', 'visit_closed', 'app_excluded'],
+      'signedIn.short': ['patient', 'companion', 'none'],
+      'exchange.role': ['patient', 'companion'],
+      'exchange.signedInAs': ['patient', 'companion'],
     }
     const missing = Object.entries(groups).flatMap(([g, codes]) =>
       codes.filter((c) => !has(`${g}.${c}`)).map((c) => `${g}.${c}`),

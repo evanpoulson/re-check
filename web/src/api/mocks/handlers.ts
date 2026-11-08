@@ -7,6 +7,8 @@ import type {
   PatientReport,
   TokenExchange,
   VisitCreate,
+  StaffSignOut,
+  SignOut,
   VisitExclusionUpdate,
   VisitStatusUpdate,
   VitalsCreate,
@@ -19,7 +21,7 @@ function reply<T>(fn: () => T, status = 200) {
     const out = fn()
     return out === undefined ? new HttpResponse(null, { status: 204 }) : HttpResponse.json(out as never, { status })
   } catch (e) {
-    if (e instanceof store.MockError) return HttpResponse.json({ detail: e.message }, { status: e.status })
+    if (e instanceof store.MockError) return HttpResponse.json((e.body ?? { detail: e.message }) as never, { status: e.status })
     throw e
   }
 }
@@ -61,7 +63,16 @@ export const handlers = [
   }),
   http.post(endpoints.exchangeToken(), async ({ request }) => {
     const body = (await request.json()) as TokenExchange
-    return reply(() => store.exchange(body.token))
+    return reply(() => store.exchange(body))
+  }),
+  http.post(endpoints.signOut(), async ({ request }) => {
+    ;(await request.json()) as SignOut
+    return reply(() => store.signOut())
+  }),
+  http.get(withParam(endpoints.visitLink), ({ params }) => reply(() => store.visitLink(String(params.id)))),
+  http.post(withParam(endpoints.staffSignOut), async ({ request, params }) => {
+    ;(await request.json()) as StaffSignOut
+    return reply(() => store.staffSignOut(String(params.id)))
   }),
   http.get(endpoints.patientHome(), () => reply(() => store.patientHome())),
   http.post(endpoints.postReport(), async ({ request }) => {

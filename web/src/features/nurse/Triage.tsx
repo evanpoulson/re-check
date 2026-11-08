@@ -144,6 +144,9 @@ function Row({ item, place, now }: { item: BoardItem; place: number; now: number
         <Link to={`/staff/visits/${board.visit_id}`} className="text-brand-700 underline">
           {shortRef(work)}
         </Link>
+        {!excluded && (
+          <div className="text-sm font-normal text-muted">{t(`signedIn.short.${work.visit.signed_in_as ?? 'none'}`)}</div>
+        )}
       </td>
       <td className="tabular px-3 py-3">{board.ctas}</td>
       <td className="px-3 py-3">{t(`complaint.${board.complaint_group}`)}</td>
