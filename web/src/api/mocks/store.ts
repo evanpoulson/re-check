@@ -12,11 +12,13 @@ import type {
   AttentionPrompt,
   AttentionStep,
   BoardRow,
+  ChargeNurseView,
   Disposition,
   FeelingChange,
   FeelingNow,
   FindingCode,
   FlagRecord,
+  Handover,
   ItemAnswer,
   PatientHome,
   PatientReport,
@@ -428,10 +430,21 @@ function raise(
   return r.task
 }
 
-/** Server-side timers: a prompt overdue by 5 minutes opens a "silent" task. Excluded visits have no prompts. */
+/**
+ * Server-side timers (api/src/recheck/scheduler.py): a prompt overdue by 5 minutes
+ * opens a "silent" task, and a red task still unacknowledged at its deadline is
+ * escalated and routed to the charge nurse as backup. Excluded visits have no prompts.
+ */
 function tick(s: State, now: number) {
   let changed = false
   for (const r of s.visits) {
+    const t = r.task
+    if (r.visit.status === 'waiting' && t && t.level === 'red' && t.status === 'open' && !t.escalated && t.ack_due_at && Date.parse(t.ack_due_at) <= now) {
+      // The backup role is added in staff_role enum order, as the scheduler's ORDER BY does.
+      r.task = { ...t, escalated: true, routed_to: STAFF_ROLES.filter((x) => x === 'charge_nurse' || t.routed_to.includes(x)) }
+      r.events.push({ type: 'task_event', task_id: t.task_id, event: 'escalated', at: t.ack_due_at, level: t.level, by: null })
+      changed = true
+    }
     if (r.visit.status !== 'waiting' || r.visit.app_exclusion || !r.visit.next_prompt_due_at) continue
     if (now - Date.parse(r.visit.next_prompt_due_at) >= 5 * MIN && !r.task) {
       const last = r.reports[r.reports.length - 1]
@@ -590,6 +603,63 @@ export function worklist(): Worklist {
   return { generated_at: iso(now), rows }
 }
 
+/** Highest level first, then oldest (views.by_urgency). */
+const byUrgency = (tasks: Task[]) =>
+  [...tasks].sort((a, b) => LEVELS.indexOf(b.level) - LEVELS.indexOf(a.level) || Date.parse(a.created_at) - Date.parse(b.created_at))
+
+/** The signed-in demo role, as the API's require_staff would see it. */
+function requireRole(...roles: StaffRef['role'][]) {
+  const { role } = staffSession()
+  if (!roles.includes(role)) throw new MockError(403, `${role} can't do this`)
+}
+
+/**
+ * Charge nurse view (views.for_charge_nurse): escalated tasks, anything routed to
+ * the charge nurse, and triage nurse flags. The mock has no TLP hours, so the
+ * physician is always on duty.
+ */
+export function escalations(): ChargeNurseView {
+  requireRole('charge_nurse')
+  const s = load()
+  const now = Date.now()
+  tick(s, now)
+  const tasks = s.visits.flatMap((r) => (r.visit.status === 'waiting' && r.task ? [r.task] : []))
+  const mine = tasks.filter((t) => t.escalated || t.routed_to.includes('charge_nurse') || t.reasons.some((x) => x.reason_code === 'staff_flag'))
+  return { generated_at: iso(now), tlp_on_duty: true, tasks: byUrgency(mine) }
+}
+
+/** Shift changes for handover (settings.shift_changes demo default: 07:00 and 19:00 local). */
+const SHIFT_CHANGES = [7, 19]
+
+function currentShift(now: number): [string, string] {
+  const changes = [-1, 0, 1].flatMap((offset) =>
+    SHIFT_CHANGES.map((hour) => {
+      const d = new Date(now)
+      d.setDate(d.getDate() + offset)
+      d.setHours(hour, 0, 0, 0)
+      return d.getTime()
+    }),
+  ).sort((a, b) => a - b)
+  const start = Math.max(...changes.filter((c) => c <= now))
+  const end = Math.min(...changes.filter((c) => c > now))
+  return [iso(start), iso(end)]
+}
+
+/** Shift handover from a fixed template (FR19): patients as ranked on the worklist, open tasks, overdue reassessments. */
+export function handover(): Handover {
+  requireRole('triage_nurse', 'physician', 'charge_nurse')
+  const { generated_at, rows } = worklist()
+  const [shift_start, shift_end] = currentShift(Date.parse(generated_at))
+  return {
+    generated_at,
+    shift_start,
+    shift_end,
+    patients: rows,
+    open_tasks: byUrgency(rows.flatMap((r) => (r.open_task ? [r.open_task] : []))),
+    reassess_overdue: rows.filter((r) => r.reassess_overdue).map((r) => r.visit.visit_id),
+  }
+}
+
 export function siteSettings(): SiteSettings {
   return load().settings ?? { show_triage_level: false, updated_at: null }
 }
@@ -638,7 +708,7 @@ export function recordVitals(body: VitalsCreate): VitalsRecord {
     visit_id: body.visit_id,
     measured_at: body.measured_at,
     received_at: iso(Date.now()),
-    entered_by: NURSE,
+    entered_by: demoStaff(),
     sbp: body.sbp ?? null,
     dbp: body.dbp ?? null,
     hr: body.hr ?? null,
