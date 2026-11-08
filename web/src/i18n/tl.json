@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "Synthetic na data, pang-demo na threshold"
-  },
   "common": {
     "loading": "Naglo-load…",
     "none": "Wala",

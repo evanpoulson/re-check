@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "Synthetische Daten, Demo-Schwellenwerte"
-  },
   "common": {
     "loading": "Wird geladen…",
     "none": "Keine",

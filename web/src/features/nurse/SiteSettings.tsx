@@ -37,8 +37,9 @@ export function SiteSettingsCard() {
         {t('siteSettings.showLevel')}
         {save.isPending && <span className="text-muted">{t('siteSettings.saving')}</span>}
       </label>
-      <p id={helpId} className="text-sm text-muted">{t('siteSettings.showLevelHelp')}</p>
-      {save.isError && <p role="alert" className="text-sm font-semibold text-level-red">{t('siteSettings.failed')}</p>}
+      {/* Indented to start under the label, not the switch. */}
+      <p id={helpId} className="pl-8 text-sm text-muted">{t('siteSettings.showLevelHelp')}</p>
+      {save.isError && <p role="alert" className="pl-8 text-sm font-semibold text-level-red">{t('siteSettings.failed')}</p>}
     </Card>
   )
 }

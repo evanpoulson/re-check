@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "模擬數據，示範用閾值"
-  },
   "common": {
     "loading": "載入中…",
     "none": "沒有",

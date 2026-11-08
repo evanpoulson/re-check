@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "Datos ficticios, umbrales de demostración"
-  },
   "common": {
     "loading": "Cargando…",
     "none": "Ninguno",

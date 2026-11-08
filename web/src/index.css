@@ -99,6 +99,144 @@
     border-color: var(--color-brand-500);
     box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
   }
+  .field:disabled {
+    background-color: var(--color-canvas);
+    color: var(--color-muted);
+    cursor: not-allowed;
+  }
+  /*
+    Dropdowns: our own grey chevron instead of the browser's, so they look the same on
+    every OS, with room on the right so long options never run under it. `.field` is the
+    form dropdown; `.select-pill` is the compact pill used in filter bars.
+  */
+  select.field,
+  .select-pill {
+    appearance: none;
+    cursor: pointer;
+    padding-right: 2.5rem;
+    text-overflow: ellipsis;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.875rem center;
+    background-size: 1rem;
+  }
+  select.field:hover:not(:disabled),
+  .select-pill:hover:not(:disabled) {
+    border-color: var(--color-muted);
+  }
+  /*
+    A wide table that scrolls sideways. Where the browser supports scroll-driven
+    animation, the edge with more content fades out (right at the start, left at the
+    end, both in between), so a cut-off column reads as "more this way" instead of
+    clipped text. A table that fits has no fade.
+  */
+  .table-scroll {
+    overflow-x: auto;
+    border-radius: inherit;
+  }
+  @supports (animation-timeline: scroll()) {
+    .table-scroll {
+      mask-image: linear-gradient(
+        to right,
+        transparent,
+        #000 var(--fade-start),
+        #000 calc(100% - var(--fade-end)),
+        transparent
+      );
+      animation: table-scroll-fade linear both;
+      animation-timeline: scroll(self inline);
+    }
+  }
+  /* A locked dropdown can't open, so it loses the chevron. */
+  select.field:disabled {
+    background-image: none;
+    opacity: 1;
+  }
+  /*
+    The pill fits the chosen option on one line, so a long choice never wraps or loses
+    its chevron. The minimum width keeps short choices ("All", "3") the same size, so
+    picking one doesn't nudge the filters after it.
+  */
+  .select-pill {
+    min-height: 2.75rem;
+    min-width: 4.5rem;
+    white-space: nowrap;
+    border-radius: var(--radius-tap);
+    border: 1px solid var(--color-line);
+    background-color: var(--color-surface);
+    padding-left: 1rem;
+    font-size: 0.9375rem;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .select-pill:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
+  }
+  /*
+    Where the browser allows it (Chrome and Edge 135+), the open list is ours too: a white
+    card with hairline rows, a blue hover and a check on the chosen option. Elsewhere the
+    browser draws its own list under the same pill.
+  */
+  @supports (appearance: base-select) {
+    .select-pill,
+    .select-pill::picker(select) {
+      appearance: base-select;
+    }
+    .select-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding-right: 0.875rem;
+      background-image: none;
+    }
+    .select-pill::picker-icon {
+      content: '';
+      width: 1rem;
+      height: 1rem;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
+        center / 1rem no-repeat;
+      transition: rotate 150ms;
+    }
+    .select-pill:open::picker-icon {
+      rotate: 180deg;
+    }
+    .select-pill::picker(select) {
+      margin-block: 6px;
+      min-width: anchor-size(width);
+      padding: 6px;
+      border: 1px solid var(--color-line);
+      border-radius: 14px;
+      background: var(--color-surface);
+      box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+    }
+    .select-pill option {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      min-height: 2.75rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-data);
+      font-size: 0.9375rem;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .select-pill option:hover,
+    .select-pill option:focus-visible {
+      outline: none;
+      background: var(--color-brand-50);
+    }
+    .select-pill option:checked {
+      font-weight: 600;
+    }
+    /* The chosen option is marked by weight and a check, not colour alone. */
+    .select-pill option::checkmark {
+      order: 1;
+      margin-inline-start: auto;
+      color: var(--color-brand-500);
+      font-weight: 700;
+    }
+  }
   /* "Lead phrase. Grey continuation." headings. */
   .headline-split > em {
     font-style: normal;
@@ -759,4 +897,31 @@ html:has(.patient-shell.has-dock) {
   .page-heading { margin-bottom: 12px; }
   .filter-group { flex-wrap: wrap; }
   .filter-group button { white-space: normal; }
+}
+
+/* The edge fade on a sideways-scrolling table (see .table-scroll). */
+@property --fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@property --fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes table-scroll-fade {
+  0% {
+    --fade-start: 0px;
+    --fade-end: 56px;
+  }
+  8%,
+  92% {
+    --fade-start: 56px;
+    --fade-end: 56px;
+  }
+  100% {
+    --fade-start: 56px;
+    --fade-end: 0px;
+  }
 }

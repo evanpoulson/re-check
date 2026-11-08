@@ -7,7 +7,6 @@ import { getSignInOptions } from '@/api/api'
 import { endpoints } from '@/api/endpoints'
 import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
-import { DemoBadge } from '@/components/DemoBadge'
 import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { staffHome, useStaff } from './staff'
@@ -44,7 +43,6 @@ export function SignIn() {
         <Brand />
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.signIn')}</h1>
         <p className="max-w-md text-lg text-muted">{t(auth0 ? 'signIn.explain' : 'signIn.explainDemo')}</p>
-        <DemoBadge />
       </div>
 
       {(error || demoError) && (

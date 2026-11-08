@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "Synthetic data, demo thresholds"
-  },
   "common": {
     "loading": "Loading…",
     "none": "None",
@@ -218,8 +215,8 @@
     "signedOut": "Signed out at {{time}}: {{reason}}"
   },
   "triage": {
-    "live": "Live, refreshes every 5 seconds",
-    "reconnecting": "Offline, will reconnect",
+    "live": "Live · Updated {{time}}",
+    "reconnecting": "Reconnecting · Last updated {{time}}",
     "counts": "Flags by level",
     "needsReview": "Needs review",
     "ctas": "CTAS",
@@ -243,7 +240,36 @@
       "pain": "Pain trend",
       "place": "Place in line"
     },
-    "noApp": "No app"
+    "noApp": "No app",
+    "levelInfo": "About {{level}}",
+    "levelCount": "Patients with an open task at this level.",
+    "levelHelp": {
+      "red": {
+        "title": "Urgent review",
+        "what": "A new warning sign, “I need help now”, or feeling much worse.",
+        "then": "Acknowledge within 2 minutes, or it also goes to the charge nurse."
+      },
+      "amber": {
+        "title": "Review needed",
+        "what": "Feeling worse, “I’m worried”, or flagged by staff.",
+        "then": "Acknowledge within 10 minutes."
+      },
+      "silent": {
+        "title": "Missed check-in",
+        "what": "No answer to a check-in for 5 minutes.",
+        "then": "Acknowledge within 10 minutes."
+      },
+      "leave_risk": {
+        "title": "May leave",
+        "what": "The patient or a companion said they’re leaving.",
+        "then": "Acknowledge within 10 minutes."
+      },
+      "overdue": {
+        "title": "Non-urgent check",
+        "what": "A question for the desk, or a circle check missed or wrong.",
+        "then": "Acknowledge within 10 minutes."
+      }
+    }
   },
   "enrol": {
     "ctas": "CTAS level",

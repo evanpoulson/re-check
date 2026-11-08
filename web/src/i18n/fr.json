@@ -2,9 +2,6 @@
   "app": {
     "name": "Recheck"
   },
-  "demo": {
-    "badge": "Données fictives, seuils de démonstration"
-  },
   "common": {
     "loading": "Chargement…",
     "none": "Aucun",
