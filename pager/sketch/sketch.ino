@@ -7,7 +7,7 @@
 //
 //   Python -> MCU   show(text)        Lines split by '\n'. The first line is an inverted header bar;
 //                                     a later line starting with '>' is drawn highlighted (the cursor).
-//   Python -> MCU   leds(red, green)  red: 0 off, 1 on, 2 blink (with buzzer chirps); green: 0 off, 1 on
+//   Python -> MCU   leds(red, green)  red: 0 off, 1 on, 2 blink; green: 0 off, 1 on. The buzzer follows red.
 //   Python -> MCU   ack(n)            Green double flash: "staff received it"
 //   Python -> MCU   play(spec)        The circle check: "lead,show,gap;C,x,y;S,x,y;..." (ms, then each
 //                                     shape's centre in pixels: C circle, S square). A blank screen for
@@ -15,9 +15,9 @@
 //                                     The MCU keeps the time, so a busy Linux side can't stretch a shape.
 //                                     The screen stays blank at the end; the next show() replaces it,
 //                                     and a show() during the shapes stops them.
-//   MCU -> Python   button(code)      1 = LEFT (up / previous / back), 2 = CONFIRM, 3 = RIGHT (down / next)
+//   MCU -> Python   button(code)      1 = LEFT, 2 = CONFIRM, 3 = RIGHT, 4 = all three (reset)
 //
-// Every press flips the green LED for 120 ms, straight from the MCU, so the patient
+// Each individual button event flips the green LED for 120 ms on the MCU, so the patient
 // sees the press was felt even while the Linux side is busy sending.
 //
 // Wiring (3.3 V logic, no soldering):
@@ -27,7 +27,7 @@
 //   RIGHT    D4 -> button leg; diagonally opposite leg -> GND rail   (internal pull-ups, no resistors)
 //   Red LED  D5 -> 220-330 ohm -> LED long leg; short leg -> GND rail
 //   Green    D6 -> 220-330 ohm -> LED long leg; short leg -> GND rail
-//   Buzzer (optional 3.3 V active buzzer) D9 -> + ; - -> GND rail
+//   Buzzer D9 -> + ; - -> GND rail. A 2 kHz tone whenever red is on (passive or active buzzer).
 
 #include <Arduino_RouterBridge.h>
 #include <Wire.h>
@@ -40,11 +40,13 @@ const int PIN_RIGHT = 4;
 const int PIN_RED = 5;
 const int PIN_GREEN = 6;
 const int PIN_BUZZ = 9;
+const unsigned int BUZZ_HZ = 2000;  // a clear beep for a passive buzzer
+bool buzzing = false;
 
 const unsigned long DEBOUNCE_MS = 30;
+const unsigned long CHORD_WINDOW_MS = 150;
 const unsigned long PRESS_FLASH_MS = 120;
 const unsigned long BLINK_MS = 400;
-const unsigned long CHIRP_FOR_MS = 3000;
 const unsigned long ACK_MS = 800;
 
 Adafruit_SSD1306 oled(128, 64, &Wire1, -1);
@@ -65,7 +67,6 @@ unsigned long playStart = 0, playLead = 0, playShow = 0, playGap = 0;
 int playDrawn = -2;  // the frame on screen: -1 blank, n shape n, -2 nothing drawn yet
 
 int redMode = 0;
-unsigned long redModeSince = 0;
 int greenMode = 0;
 unsigned long pressFlashUntil = 0;
 unsigned long ackStart = 0;
@@ -84,6 +85,11 @@ Button buttons[] = {
   {PIN_CONFIRM, 2, true, true, 0},
   {PIN_RIGHT, 3, true, true, 0},
 };
+const uint8_t ALL_BUTTONS = 0b111;
+const int RESET_CODE = 4;
+uint8_t pendingButtons = 0;
+unsigned long firstPressAt = 0;
+bool resetHeld = false;
 
 uint8_t findOled() {
   const uint8_t addrs[] = {0x3D, 0x3C};
@@ -194,10 +200,7 @@ void updatePlay() {
 }
 
 void leds(int red, int green) {
-  if (red != redMode) {
-    redMode = red;
-    redModeSince = millis();
-  }
+  redMode = red;
   greenMode = green;
 }
 
@@ -207,19 +210,46 @@ void ack(int n) {
   ackStart = millis();
 }
 
-void pollButton(Button &b) {
+bool pollButton(Button &b, unsigned long now) {
   bool r = digitalRead(b.pin);
-  unsigned long now = millis();
   if (r != b.lastRead) {
     b.lastRead = r;
     b.changedAt = now;
   }
   if (now - b.changedAt >= DEBOUNCE_MS && r != b.stable) {
     b.stable = r;
-    if (!r) {  // pressed
-      pressFlashUntil = now + PRESS_FLASH_MS;
-      Bridge.notify("button", b.code);
+    return !r;  // newly pressed
+  }
+  return false;
+}
+
+void pollButtons() {
+  unsigned long now = millis();
+  uint8_t held = 0;
+  for (Button &b : buttons) {
+    uint8_t bit = 1 << (b.code - 1);
+    if (pollButton(b, now) && !resetHeld) {
+      if (!pendingButtons) firstPressAt = now;
+      pendingButtons |= bit;
     }
+    if (!b.stable) held |= bit;
+  }
+  if (resetHeld) {
+    if (!held) resetHeld = false;
+    return;
+  }
+  if (held == ALL_BUTTONS && pendingButtons == ALL_BUTTONS) {
+    pendingButtons = 0;
+    resetHeld = true;
+    Bridge.notify("button", RESET_CODE);
+    return;
+  }
+  if (pendingButtons && (!held || now - firstPressAt >= CHORD_WINDOW_MS)) {
+    pressFlashUntil = now + PRESS_FLASH_MS;
+    for (const Button &b : buttons) {
+      if (pendingButtons & (1 << (b.code - 1))) Bridge.notify("button", b.code);
+    }
+    pendingButtons = 0;
   }
 }
 
@@ -227,13 +257,15 @@ void updateLeds() {
   unsigned long now = millis();
 
   bool red = redMode == 1;
-  bool buzz = false;
-  if (redMode == 2) {
-    red = ((now / BLINK_MS) % 2) == 0;
-    buzz = red && (now - redModeSince < CHIRP_FOR_MS);
-  }
+  if (redMode == 2) red = ((now / BLINK_MS) % 2) == 0;
   digitalWrite(PIN_RED, red ? HIGH : LOW);
-  digitalWrite(PIN_BUZZ, buzz ? HIGH : LOW);
+  // The buzzer sounds whenever the red light is on. tone() drives a passive buzzer, which only
+  // clicks on a plain HIGH, and still works on an active one. Only start or stop it on a change.
+  if (red != buzzing) {
+    buzzing = red;
+    if (red) tone(PIN_BUZZ, BUZZ_HZ);
+    else noTone(PIN_BUZZ);
+  }
 
   bool green = greenMode == 1;
   if (acking) {
@@ -269,7 +301,7 @@ void setup() {
 }
 
 void loop() {
-  for (Button &b : buttons) pollButton(b);
+  pollButtons();
   updateLeds();
   updatePlay();
 }

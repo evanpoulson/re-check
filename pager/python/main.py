@@ -6,6 +6,7 @@ answers and report body are in checkin.py, next to this file. The MCU sketch
 buttons and drives the LEDs.
 
 Buttons: LEFT (D2) = up / previous / back, CONFIRM (D3) = choose, RIGHT (D4) = down / next.
+Press all three together after the visit closes to reset the pager for reuse.
 
 Lights:
   green flicker on every press   the pager felt the press (done on the MCU)
@@ -47,6 +48,7 @@ OFFLINE_AFTER_FAILURES = 3
 RESULT_SECONDS = 8
 SEND_TRIES = 3
 PLAY_SLACK_MS = 300  # Bridge delay before the MCU starts the shapes
+RESET = 4
 
 CONFIG_PATH = os.path.join(HERE, "pager_config.json")
 
@@ -170,6 +172,11 @@ class PagerUI:
         self.failures = 0
         self.offset = 0.0               # server time minus local time, seconds
         self.next_poll = 0.0
+        self.dismissed_call = False
+        self.reset_available = False
+        self.clear_patient()
+
+    def clear_patient(self) -> None:
         self.view = "pages"             # pages | flow | report | symptoms | confirm | result
         self.page = "status"            # checkin | status | report
         self.cursor = 0
@@ -185,6 +192,23 @@ class PagerUI:
         self.result_until = 0.0
         self._was_open = False
 
+    def reset(self) -> bool:
+        if not self.reset_available:
+            return False
+        # A new patient may have been assigned since the last scheduled poll.
+        self.poll()
+        self.next_poll = self.clock() + POLL_SECONDS
+        if self.failures or not self.reset_available:
+            return False
+        self.clear_patient()
+        self.dismissed_call = self.state.get("state") == "called"
+        self.reset_available = False
+        self.state = None
+        self.next_poll = 0.0
+        self.io.leds(0, 0)
+        self.io.redraw()
+        return True
+
     # -- server state -------------------------------------------------------
     def poll(self) -> None:
         try:
@@ -197,7 +221,21 @@ class PagerUI:
         server = parse_time(st.get("server_time"))
         if server is not None:
             self.offset = server.timestamp() - self.clock()
-        is_open = st.get("state") == "waiting" and bool(st.get("checkin_open"))
+        state = st.get("state")
+        previous = (self.state or {}).get("state")
+        if state != "waiting":
+            self.clear_patient()
+        if state != "called":
+            self.dismissed_call = False
+        if state == "waiting":
+            self.reset_available = False
+        elif state == "called":
+            self.reset_available = not self.dismissed_call
+        elif state == "unassigned" and previous == "waiting":
+            # The API also uses unassigned for an idle pager. Only an observed
+            # transition from a waiting visit makes this eligible for reset.
+            self.reset_available = True
+        is_open = state == "waiting" and bool(st.get("checkin_open"))
         if is_open and not self._was_open and self.view == "pages":
             self.page = "checkin"       # a new check-in: jump to it
         self._was_open = is_open
@@ -215,6 +253,9 @@ class PagerUI:
 
     # -- buttons ------------------------------------------------------------
     def handle(self, button: int) -> None:
+        if button == RESET:
+            self.reset()
+            return
         if self.view == "result":
             self.end_result()
             return
@@ -343,6 +384,8 @@ class PagerUI:
         expires = parse_time((prompt or {}).get("expires_at"))
         if prompt and expires and expires.timestamp() <= self.server_now():
             self.poll()
+            if self.flow is None:
+                return
             fresh = (self.state or {}).get("attention_prompt")
             if fresh and fresh.get("prompt_id") != prompt.get("prompt_id"):
                 flow.prompt = prompt = fresh
@@ -415,16 +458,15 @@ class PagerUI:
             return (header, "", "No connection.", "", "Please tell the", "triage desk."), 1, 0
         if st is None:
             return (header, "", "Connecting..."), 0, 0
-        if st.get("state") == "called":
-            self.to_pages()
+        if st.get("state") == "called" and not self.dismissed_call:
             return (header, "", "PLEASE GO TO THE", "TRIAGE DESK NOW", "", "Staff are ready", "for you."), 2, 1
+        if st.get("state") != "waiting":
+            return (header, "", "Not in use.", "", "Staff give this", "pager out at triage."), 0, 1
         if self.view == "result":
             if self.clock() < self.result_until:
                 return (self.result_lines[0], "", *self.result_lines[1:]), 0 if self.result_ok else 1, 1
             self.end_result()
-        if st.get("state") != "waiting":
-            self.to_pages()
-            return (header, "", "Not in use.", "", "Staff give this", "pager out at triage."), 0, 1
+            return self.screen()
         if self.view == "flow":
             return self.flow.lines(), 0, 1
         if self.view == "confirm":
@@ -470,6 +512,15 @@ class PagerUI:
         self.io.leds(red, green)
 
     def tick(self, events: "queue.Queue[int]") -> None:
+        try:
+            button = events.get(timeout=0.05)
+        except queue.Empty:
+            button = None
+        if button == RESET:
+            if self.reset():
+                self.render()
+                return
+            button = None
         if self.view == "flow" and self.flow and self.flow.playing:
             if self.clock() >= self.play_until:
                 self.flow.played()
@@ -477,10 +528,8 @@ class PagerUI:
         elif self.clock() >= self.next_poll:   # never poll mid-shapes: a slow call would stretch them
             self.poll()
             self.next_poll = self.clock() + POLL_SECONDS
-        try:
-            self.handle(events.get(timeout=0.05))
-        except queue.Empty:
-            pass
+        if button is not None:
+            self.handle(button)
         self.render()
 
 
@@ -583,7 +632,7 @@ def run_console() -> None:
     cfg = load_config()
     events: "queue.Queue[int]" = queue.Queue()
     ui = PagerUI(make_api(cfg), ConsoleIo(), cfg["pager_no"])
-    keys = {"a": LEFT, "s": CONFIRM, "d": RIGHT}
+    keys = {"a": LEFT, "s": CONFIRM, "d": RIGHT, "r": RESET}
 
     def read_keys() -> None:
         for line in sys.stdin:
@@ -591,7 +640,7 @@ def run_console() -> None:
                 if ch in keys:
                     events.put(keys[ch])
 
-    print("Pager simulator: a = LEFT, s = CONFIRM, d = RIGHT (then Enter). Ctrl+C to quit.")
+    print("Pager simulator: a = LEFT, s = CONFIRM, d = RIGHT, r = RESET (then Enter). Ctrl+C to quit.")
     threading.Thread(target=read_keys, daemon=True).start()
     while True:
         ui.tick(events)

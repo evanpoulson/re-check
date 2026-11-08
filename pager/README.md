@@ -34,8 +34,8 @@ separate change. Until then the pager isn't connected: it runs against its stub 
 | Green flicker on each press | The pager felt the press |
 | Green double flash | Staff received the report |
 | Green steady | Connected |
-| Red blinking | You're needed: a check-in is due, or you've been called to the desk |
-| Red steady | No connection, or a report wasn't sent: tell the desk |
+| Red blinking, with beeps | You're needed: a check-in is due, or you've been called to the desk |
+| Red steady, with a steady tone | No connection, or a report wasn't sent: tell the desk |
 
 ## Screens
 
@@ -142,7 +142,12 @@ MVP limits:
 | LEFT / CONFIRM / RIGHT buttons | D2 / D3 / D4 to one leg; the diagonally opposite leg to the GND rail |
 | Red LED | D5 to 220-330 ohm resistor to LED long leg; short leg to GND rail |
 | Green LED | D6 to 220-330 ohm resistor to LED long leg; short leg to GND rail |
-| Buzzer (optional, 3.3 V active) | D9 to +; - to GND rail |
+| Buzzer (passive or active) | D9 to +; - to GND rail. A 2 kHz tone whenever the red light is on. |
+
+After a visit ends and the pager is handed back, press all three buttons together. The pager clears
+its local screen and dismisses the current call, then checks for an assignment. It ignores the
+gesture during an active visit or when it is already idle. Enrol the next patient with the same pager
+number.
 | GND rail | A GND pin on the power header |
 
 The buttons use internal pull-ups. Nothing connects to 3.3 V or 5 V.
