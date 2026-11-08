@@ -1,0 +1,8 @@
+# HTTPS in front of nginx on the EC2 box (compose profile "https").
+# SITE_ADDRESS is a hostname such as 34-210-1-2.sslip.io; Caddy gets and renews its certificate.
+# HTTPS is required: browsers only expose crypto.randomUUID() on secure origins,
+# and the session cookies are Secure in production.
+{$SITE_ADDRESS} {
+	encode zstd gzip
+	reverse_proxy web:80
+}

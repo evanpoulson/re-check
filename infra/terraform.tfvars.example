@@ -1,0 +1,6 @@
+# Copy to terraform.tfvars (git-ignored) and fill in.
+ssh_public_key = "ssh-ed25519 AAAA... recheck-deploy"
+
+# Optional overrides:
+# region        = "us-west-2"
+# instance_type = "t3.small"
