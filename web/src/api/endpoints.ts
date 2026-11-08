@@ -15,6 +15,11 @@ export const endpoints = {
   worklist: () => '/api/worklist',
   acknowledgeTask: (taskId: string) => `/api/tasks/${taskId}/acknowledge`,
   assessTask: (taskId: string) => `/api/tasks/${taskId}/assess`,
+  staffSession: () => '/api/staff/session',
+  staffSignInOptions: () => '/api/staff/sign-in-options',
+  // Page navigations, not fetch calls: they redirect through Auth0.
+  staffLogin: (returnTo: string) => `/api/staff/login?return_to=${encodeURIComponent(returnTo)}`,
+  staffLogout: () => '/api/staff/logout',
   exchangeToken: () => '/api/session',
   signOut: () => '/api/session/sign-out',
   patientHome: () => '/api/patient/home',

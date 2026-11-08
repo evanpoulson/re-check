@@ -10,6 +10,7 @@ import type {
   StaffSignOut,
   SignOut,
   SiteSettingsUpdate,
+  StaffRole,
   VisitExclusionUpdate,
   VisitStatusUpdate,
   VitalsCreate,
@@ -31,6 +32,13 @@ function reply<T>(fn: () => T, status = 200) {
 const withParam = (build: (p: string) => string) => build(':id')
 
 export const handlers = [
+  http.get(endpoints.staffSignInOptions(), () => reply(() => store.signInOptions())),
+  http.get(endpoints.staffSession(), () => reply(() => store.staffSession())),
+  http.post(endpoints.staffSession(), async ({ request }) => {
+    const body = (await request.json()) as { role: StaffRole }
+    return reply(() => store.demoStaffSignIn(body.role))
+  }),
+  http.delete(endpoints.staffSession(), () => reply(() => store.clearStaffSession())),
   http.post(endpoints.enrolVisit(), async ({ request }) => {
     const body = (await request.json()) as VisitCreate
     return reply(() => store.enrol(body), 201)

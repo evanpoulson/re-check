@@ -1,35 +1,97 @@
-import { ArrowRight } from 'lucide-react'
-import { useNavigate } from 'react-router'
+import { useQuery } from '@tanstack/react-query'
+import { ArrowRight, CircleAlert, LogIn } from 'lucide-react'
+import { useState } from 'react'
+import { Navigate, useSearchParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { getSignInOptions } from '@/api/api'
+import { endpoints } from '@/api/endpoints'
+import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
 import { DemoBadge } from '@/components/DemoBadge'
+import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { staffHome, useStaff } from './staff'
 
-const roles = ['triage_nurse', 'physician'] as const
+const DEMO_ROLES = ['triage_nurse', 'physician', 'charge_nurse'] as const satisfies readonly StaffRole[]
+// The codes the API's Auth0 callback sends back as ?error=.
+const ERRORS = ['access_denied', 'no_staff_role', 'expired', 'sign_in_failed'] as const
+
+function errorKey(code: string | null): string | null {
+  if (!code) return null
+  return `signIn.error.${(ERRORS as readonly string[]).includes(code) ? code : 'sign_in_failed'}`
+}
 
 export function SignIn() {
   const { t } = useTranslation()
-  const { signIn } = useStaff()
-  const navigate = useNavigate()
+  const { staff, role, loading, signInDemo, signOut } = useStaff()
+  const [params] = useSearchParams()
+  const [demoError, setDemoError] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const options = useQuery({ queryKey: ['sign-in-options'], queryFn: getSignInOptions, retry: false, staleTime: Infinity })
+
+  if (loading) return <main className="mx-auto max-w-md px-4 py-16"><PageState loading title={t('common.loading')} /></main>
+
+  const home = role ? staffHome(role) : null
+  if (staff && home) return <Navigate to={home} replace />
+
+  const error = errorKey(params.get('error'))
+  const auth0 = options.data?.auth0 ?? false
+  const demo = options.data?.demo ?? false
+
   return (
-    <main className="mx-auto max-w-md px-4 py-16 sm:py-24">
+    <main id="main-content" className="mx-auto max-w-md px-4 py-16 sm:py-24">
       <div className="mb-10 flex flex-col items-center gap-4 text-center">
         <Brand />
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.signIn')}</h1>
-        <p className="max-w-md text-lg text-muted">{t('signIn.explain')}</p>
+        <p className="max-w-md text-lg text-muted">{t(auth0 ? 'signIn.explain' : 'signIn.explainDemo')}</p>
         <DemoBadge />
       </div>
-      <div className="grid gap-3">
-        {roles.map((role) => (
-          <Button key={role} variant="secondary" size="lg" className="justify-between" onClick={() => {
-            signIn(role)
-            navigate(staffHome(role))
-          }}>
-            {t(`signIn.open.${role}`)} <ArrowRight size={18} aria-hidden />
-          </Button>
-        ))}
-      </div>
+
+      {(error || demoError) && (
+        <p role="alert" className="mb-6 flex items-start gap-2 rounded-xl border border-level-red bg-surface p-4 text-level-red">
+          <CircleAlert aria-hidden size={20} className="mt-0.5 shrink-0" />
+          {t(demoError ? 'signIn.error.demo' : error!)}
+        </p>
+      )}
+
+      {staff && !home ? (
+        <div className="grid gap-3 text-center">
+          <p>{t('signIn.noPages', { role: t(`role.${staff.role}`) })}</p>
+          <Button variant="secondary" size="lg" onClick={() => void signOut()}>{t('nav.signOut')}</Button>
+        </div>
+      ) : options.isPending ? (
+        <PageState loading title={t('common.loading')} />
+      ) : options.isError ? (
+        <PageState title={t('signIn.optionsFailed')} retry={() => void options.refetch()} />
+      ) : (
+        <div className="grid gap-8">
+          {auth0 && (
+            <div className="grid gap-2">
+              <Button size="lg" className="justify-between" onClick={() => window.location.assign(endpoints.staffLogin('/staff/sign-in'))}>
+                {t('signIn.auth0')} <LogIn size={18} aria-hidden />
+              </Button>
+              <p className="text-center text-sm text-muted">{t('signIn.auth0Hint')}</p>
+            </div>
+          )}
+          {demo && (
+            <section aria-labelledby="demo-roles" className="grid gap-3">
+              {auth0 && <h2 id="demo-roles" className="text-center text-base font-semibold text-muted">{t('signIn.demoHeading')}</h2>}
+              {!auth0 && <h2 id="demo-roles" className="sr-only">{t('signIn.demoHeading')}</h2>}
+              {DEMO_ROLES.map((r) => (
+                <Button key={r} variant="secondary" size="lg" className="justify-between" disabled={busy} onClick={() => {
+                  setBusy(true)
+                  setDemoError(false)
+                  // On success the session changes and this page redirects to the role's home.
+                  signInDemo(r).catch(() => setDemoError(true)).finally(() => setBusy(false))
+                }}>
+                  {t(`signIn.open.${r}`)} <ArrowRight size={18} aria-hidden />
+                </Button>
+              ))}
+            </section>
+          )}
+          {!auth0 && !demo && <PageState title={t('signIn.unavailable')} />}
+        </div>
+      )}
     </main>
   )
 }

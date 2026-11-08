@@ -16,7 +16,8 @@ from ..settings import shift_changes, site_timezone, tlp_hours
 router = APIRouter(prefix="/api", tags=["staff screens"])
 
 CLINICAL = (StaffRole.TRIAGE_NURSE, StaffRole.PHYSICIAN, StaffRole.CHARGE_NURSE)
-WorklistStaff = Annotated[Staff, Depends(require_staff(StaffRole.PHYSICIAN, StaffRole.CHARGE_NURSE))]
+# The triage board page joins the worklist rows (trend, condition) onto the board.
+WorklistStaff = Annotated[Staff, Depends(require_staff(*CLINICAL))]
 BoardStaff = Annotated[Staff, Depends(require_staff(StaffRole.TRIAGE_NURSE, StaffRole.CHARGE_NURSE))]
 ClinicalStaff = Annotated[Staff, Depends(require_staff(*CLINICAL))]
 ChargeNurse = Annotated[Staff, Depends(require_staff(StaffRole.CHARGE_NURSE))]

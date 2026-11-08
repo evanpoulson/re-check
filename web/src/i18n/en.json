@@ -13,7 +13,7 @@
     "sending": "Sending…"
   },
   "pages": {
-    "signIn": "Choose a demo role",
+    "signIn": "Staff sign-in",
     "enrol": "New visit",
     "triage": "Triage board",
     "visit": "Visit",
@@ -28,16 +28,31 @@
     "signOut": "Sign out",
     "skip": "Skip to content",
     "home": "Recheck staff home",
-    "synthetic": "Synthetic data",
-    "changeRole": "Change role"
+    "synthetic": "Synthetic data"
   },
   "signIn": {
-    "explain": "Choose a staff view. All visits are synthetic.",
+    "explain": "Sign in with your staff account. All visits are synthetic.",
+    "explainDemo": "Choose a staff view. All visits are synthetic.",
     "continue": "Continue",
     "notInBuild": "Not part of this build",
+    "auth0": "Sign in",
+    "auth0Hint": "Use Google or a Recheck demo account.",
+    "demoHeading": "Or open a demo role without an account",
     "open": {
       "triage_nurse": "Open triage board",
-      "physician": "Open physician worklist"
+      "physician": "Open physician worklist",
+      "charge_nurse": "Open as charge nurse"
+    },
+    "signedInAs": "{{name}} · {{role}}",
+    "noPages": "Recheck has no pages for the {{role}} role yet.",
+    "optionsFailed": "Couldn't reach Recheck",
+    "unavailable": "Staff sign-in isn't available",
+    "error": {
+      "access_denied": "This account isn't on the Recheck staff list. Use a listed account or a demo account.",
+      "no_staff_role": "This account has no Recheck staff role. Ask the charge nurse to add one.",
+      "expired": "Sign-in took too long. Try again.",
+      "sign_in_failed": "Sign-in didn't work. Try again.",
+      "demo": "Couldn't open the demo role. Try again."
     }
   },
   "role": {
