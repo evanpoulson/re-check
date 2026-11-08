@@ -15,6 +15,8 @@ export function useDashboardEvents(): { live: boolean } {
       void qc.invalidateQueries({ queryKey: ['board'] })
       void qc.invalidateQueries({ queryKey: ['worklist'] })
       void qc.invalidateQueries({ queryKey: ['visit'] })
+      void qc.invalidateQueries({ queryKey: ['escalations'] })
+      void qc.invalidateQueries({ queryKey: ['handover'] })
     }
     const id = setInterval(refetch, 5000)
     const channel = typeof BroadcastChannel === 'undefined' ? null : new BroadcastChannel('recheck-events')

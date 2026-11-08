@@ -2,6 +2,7 @@ import { createBrowserRouter, createMemoryRouter, Navigate, Outlet, type RouteOb
 import { AppFrame } from '@/components/AppFrame'
 import { Physician } from '@/features/nurse/Physician'
 import { Enrol } from '@/features/nurse/Enrol'
+import { Escalations } from '@/features/nurse/Escalations'
 import { SignIn } from '@/features/nurse/SignIn'
 import { RequireStaffRole, StaffLayout, StaffProvider } from '@/features/nurse/staff'
 import { Triage } from '@/features/nurse/Triage'
@@ -28,6 +29,10 @@ const pages: RouteObject[] = [
       {
         element: <StaffLayout />,
         children: [
+          { element: <RequireStaffRole roles={['charge_nurse']} />, children: [
+            { path: '/staff/escalations', element: <Escalations /> },
+            { path: '/staff/escalations/handover', element: <Escalations /> },
+          ] },
           { element: <RequireStaffRole roles={['physician', 'charge_nurse']} />, children: [
             { path: '/staff/physician', element: <Physician /> },
           ] },

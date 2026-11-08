@@ -144,6 +144,57 @@ describe('staff sign-in', () => {
   })
 })
 
+describe('charge nurse', () => {
+  const signInAsCharge = () => sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+
+  it('starts on escalations, where the unacknowledged urgent task has reached the backup', async () => {
+    signInAsCharge()
+    renderApp('/staff/sign-in')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Escalations' })).toBeInTheDocument()
+    const nav = await screen.findByRole('navigation', { name: 'Staff' })
+    expect(within(nav).getAllByRole('link')[0]).toHaveTextContent('Escalations')
+    const list = await screen.findByRole('list', { name: 'Escalated and routed tasks' })
+    const row = within(list).getByRole('link', { name: /New chest pain reported/ })
+    expect(row).toHaveTextContent('Routed to backup')
+    expect(row).toHaveTextContent('Physician, Charge nurse')
+    expect(document.title).toBe('Escalations – Recheck')
+  })
+
+  it('shows the handover: shift, ranked patients, open tasks and overdue reassessments', async () => {
+    signInAsCharge()
+    const user = userEvent.setup()
+    renderApp('/staff/escalations')
+    await user.click(await screen.findByRole('link', { name: 'Handover' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Handover' })).toBeInTheDocument()
+    expect(screen.getByText(/^Shift /)).toBeInTheDocument()
+    const patients = screen.getByRole('list', { name: 'Waiting patients' })
+    expect(within(patients).getAllByRole('link')[0]).toHaveTextContent('#1')
+    expect(screen.getByRole('list', { name: 'Open tasks' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Overdue staff reassessments/ })).toBeInTheDocument()
+  })
+
+  it('may acknowledge, record vitals and manage the visit, but not flag higher (the API is triage nurse only)', async () => {
+    signInAsCharge()
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}/assessment`)
+    expect(await screen.findByRole('link', { name: 'Back to escalations' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Visit management' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Flag higher/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Acknowledge' }))
+    await waitFor(async () =>
+      expect((await getVisitDetail(visit.visit_id)).open_task).toMatchObject({ status: 'acknowledged', acknowledged_by: { role: 'charge_nurse' } }),
+    )
+  })
+
+  it('other roles have no escalations page', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    renderApp('/staff/escalations')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Physician worklist' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Escalations/ })).not.toBeInTheDocument()
+  })
+})
+
 describe('triage nurse: enrolment and QR', () => {
   it('validates, then shows one QR card that encodes the exact link, and Show QR brings it back', async () => {
     signInAsNurse()
