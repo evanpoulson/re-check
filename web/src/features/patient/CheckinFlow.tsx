@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { allowUnsure, itemWording, noneOption, options, text } from '@/api/bank'
@@ -23,6 +23,8 @@ interface Props {
   /** The circle prompt expired; fetch a fresh one. */
   onPromptExpired: () => void
   sending?: boolean
+  /** True while the circle check's shapes play: the page shows only "I need help now". */
+  onPlayingChange?: (playing: boolean) => void
 }
 
 /**
@@ -32,8 +34,14 @@ interface Props {
  * the sign-in, so it is never asked. Leaving early sends what was answered as a
  * partial check-in.
  */
-export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending }: Props) {
+export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending, onPlayingChange }: Props) {
   const { t } = useTranslation()
+  // Nothing else to tap while shapes play, except the dock's "I need help now".
+  const [playing, setPlaying] = useState(false)
+  const onCirclePlaying = useCallback((on: boolean) => {
+    setPlaying(on)
+    onPlayingChange?.(on)
+  }, [onPlayingChange])
   const [index, setIndex] = useState(0)
   /** The step whose Next was pressed with no answer, so the hint never carries over. */
   const [needAnswerFor, setNeedAnswerFor] = useState<string | null>(null)
@@ -123,7 +131,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 
   return (
     <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-5">
-      {index > 0 && (
+      {index > 0 && !playing && (
         <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
           <ChevronLeft aria-hidden size={16} />
           {t('flow.back')}
@@ -132,7 +140,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
       <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} /></div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
-        <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
+        <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} onPlayingChange={onCirclePlaying} />
       ) : (
         <>
           <StepView step={step} reporter={reporter} draft={draft} setDraft={setDraft} />
