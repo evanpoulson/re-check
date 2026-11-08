@@ -105,7 +105,7 @@ export function VisitLayout() {
         <div className="staff-container pt-3 pb-5">
           {back}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-            <h1 id="visit-title" className="text-heading font-semibold">
+            <h1 id="visit-title" className="text-heading font-semibold tracking-[-0.026em] sm:text-page">
               {visitName}
             </h1>
             <span className="rounded-data bg-canvas px-2.5 py-1 font-semibold">
@@ -201,15 +201,16 @@ function ConcernBanner({ task }: { task: Task }) {
   const { t } = useTranslation()
   const reason = getPrimaryTaskReason(task)
   return (
-    <section aria-labelledby="active-concern" className={cn('min-w-0 space-y-1 rounded-data border border-line border-l-4 bg-surface p-3 sm:p-4', LEVEL_STYLE[task.level].edge)}>
+    // Tinted in the level's colour, as on the redesign; the chip sits on white so it still reads as a chip.
+    <section aria-labelledby="active-concern" className={cn('min-w-0 space-y-1 rounded-data border border-l-4 p-3 sm:p-4', LEVEL_STYLE[task.level].tone)}>
       <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small font-semibold">
-        <LevelChip level={task.level} />
+        <LevelChip level={task.level} className="bg-surface" />
         {t('visitPage.unresolvedShort')}
       </p>
       <h2 id="active-concern" className="text-title font-semibold">
         {reason ? reasonText(reason.reason_code, t) : t('actions.task')}
       </h2>
-      <p className="text-note text-muted sm:text-small">
+      <p className="text-note text-ink/80 sm:text-small">
           {task.status === 'open' ? t('visitPage.ackPending') : t('visitPage.ackDone', { time: clock(task.acknowledged_at ?? task.created_at) })}
           {' · '}
           {t('visitPage.assessPending')}
