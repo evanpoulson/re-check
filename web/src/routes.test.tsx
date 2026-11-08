@@ -190,11 +190,12 @@ describe('triage board', () => {
 })
 
 describe('patient and companion check-in', () => {
-  it('opens from the QR link and shows the place-in-line promise and wait range', async () => {
+  it('opens from the QR link and shows the place-in-line promise, department estimate and time waited', async () => {
     await scanAs('chest', 'patient')
     expect(await screen.findByRole('heading', { name: 'You are checked in' })).toBeInTheDocument()
     expect(screen.getByText(/Your answers never change your place in line\./)).toBeInTheDocument()
-    expect(screen.getByText(/Estimated wait: 30 to 90 minutes/)).toBeInTheDocument()
+    expect(screen.getByText(/current estimate for new arrivals is about 4 h 47 min\./)).toBeInTheDocument()
+    expect(screen.getByText(/You've been waiting \d+ (min|h)/)).toBeInTheDocument()
     expect(screen.getByText('What we store')).toBeInTheDocument()
   })
 

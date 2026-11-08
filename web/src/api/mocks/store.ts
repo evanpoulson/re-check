@@ -763,7 +763,8 @@ export function patientHome(): PatientHome {
   const home: PatientHome = {
     role,
     language: r.visit.language,
-    wait_range: { low_minutes: 30, high_minutes: 90, source: 'site_estimate', as_of: iso(now_) },
+    wait_estimate: { minutes: 287, source: 'ahs_feed', as_of: iso(now_ - 2 * 60_000) },
+    waited_minutes: Math.max(0, Math.floor((now_ - Date.parse(r.visit.triaged_at)) / 60_000)),
     next_checkin_due_at: r.visit.next_prompt_due_at,
     questionnaire_version: bankVersion,
     items: keys.map((k) => questionItem(k, role)),

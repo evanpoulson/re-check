@@ -31,7 +31,13 @@ export function CheckIn() {
   const { t } = useTranslation()
   const qc = useQueryClient()
   const now = useNow()
-  const { data: home, isPending, error } = useQuery({ queryKey: ['home'], queryFn: getPatientHome, retry: false })
+  const { data: home, isPending, error } = useQuery({
+    queryKey: ['home'],
+    queryFn: getPatientHome,
+    retry: false,
+    // The poller stores a new department estimate every 5 minutes.
+    refetchInterval: 60_000,
+  })
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)

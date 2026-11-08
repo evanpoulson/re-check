@@ -58,6 +58,24 @@ uv run python -m recheck.synthetic.load --tokens-out ../.seed-tokens.json   # lo
 - **Sources.** `calibration.py` lists every number with its source. Values marked "demo assumption" are for the site to replace. This is not a validated risk model.
 - **Tests.** `tests/synthetic` checks schema-level invariants across many seeds. Set `RECHECK_TEST_DATABASE_URL` to a scratch database to also run the load test.
 
+## Department wait estimates
+
+`src/recheck/wait_times/` polls the AHS estimated emergency wait times feed every five minutes. The feed is the same undocumented JSON the public AHS wait-times page loads. The poller stores one `wait_snapshot` row for each site in `wait_site`.
+
+```sh
+uv run python -m recheck.wait_times.poller --once   # one round
+uv run python -m recheck.wait_times.poller          # every 5 minutes; run as its own process
+```
+
+- **What the number is.** AHS publishes one figure for each facility: the estimated time from triage to seeing a physician, for a mid-acuity patient arriving now. It is not any patient's remaining wait. The patient screen says "The department's current estimate for new arrivals is about 4 h 47 min. You've been waiting 2 h 10 min." Every CTAS level sees it.
+- **Contract.** `PatientHome.wait_estimate` is a `WaitEstimate` (`minutes`, `source`, `as_of`) or null, and `waited_minutes` is computed by the server. `as_of` is Recheck's fetch time, because the feed carries no timestamp. The patient screen refetches `PatientHome` every minute.
+- **When it's shown.** `estimate.current_estimate()` shows the last `ok` value until it is 15 minutes old. If AHS itself marks the site unavailable, the screen shows "Estimate unavailable" at once. If only Recheck's fetch failed, the last value stays up until it goes stale.
+- **Every attempt is stored.** Each snapshot is `ok` (with minutes), `unavailable` (AHS marked it, the text was unreadable, or the site was missing) or `fetch_failed`, so gaps in the trend are explained. Snapshots are append-only and aren't audited, because they are already a log. Changes to `wait_site` are audited.
+- **Database role.** The poller connects with `RECHECK_POLLER_DATABASE_URL` as `recheck_poller`, which can read `wait_site` and insert snapshots, nothing else. `db/schema.sql` creates the role without a password; give it one by hand with `ALTER ROLE recheck_poller WITH LOGIN PASSWORD '...'`. `recheck_app` can only read both tables.
+- **Site map.** `db/seed/wait_sites.sql` maps `foothills-demo` to Foothills Medical Centre. Run it as an admin. A facility with separate departments, such as South Health Campus, also needs `ahs_department` set to the feed's `SplitFacility` label.
+- **Terms.** The AHS site allows personal, non-commercial use only. Polling it is for the demo; a pilot needs written permission from AHS.
+- **Tests.** `tests/wait_times` uses a synthetic copy of the feed's shape. Set `RECHECK_TEST_DATABASE_URL` to also run the poll-and-read test.
+
 ## Develop
 
 ```sh

@@ -223,7 +223,7 @@ VisitStatusUpdate?: VisitStatusUpdate
 VisitSummary?: VisitSummary
 VitalsCreate?: VitalsCreate
 VitalsRecord?: VitalsRecord
-WaitRange?: WaitRange
+WaitEstimate?: WaitEstimate
 WaitSource?: WaitSource
 Worklist?: Worklist
 WorklistRow?: WorklistRow
@@ -753,7 +753,7 @@ reporter: ("patient" | "companion")
 submission_id: string
 }
 /**
- * Every screen shows the wait range and "Your answers never change your place in line." (FR8).
+ * Every screen shows the wait estimate, the time waited and "Your answers never change your place in line." (FR8).
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "PatientHome".
@@ -769,7 +769,14 @@ message: PatientMessage
 next_checkin_due_at: (string | null)
 questionnaire_version: string
 role: ("patient" | "companion")
-wait_range: (WaitRange | null)
+/**
+ * Null when no fresh estimate exists; the screen shows "Estimate unavailable".
+ */
+wait_estimate: (WaitEstimate | null)
+/**
+ * Whole minutes since triage, computed by the server on each fetch.
+ */
+waited_minutes: number
 }
 /**
  * One fixed question from the question bank, in the session's language.
@@ -796,13 +803,20 @@ code: string
 text: string
 }
 /**
+ * The department's current wait estimate for new arrivals, as the source publishes it.
+ * 
+ * For AHS this is one facility-wide figure: triage to first physician for a
+ * mid-acuity patient arriving now. It is not this patient's remaining wait.
+ * 
  * This interface was referenced by `Contract`'s JSON-Schema
- * via the `definition` "WaitRange".
+ * via the `definition` "WaitEstimate".
  */
-export interface WaitRange {
+export interface WaitEstimate {
+/**
+ * When Recheck fetched the value. The AHS feed carries no timestamp.
+ */
 as_of: string
-high_minutes: number
-low_minutes: number
+minutes: number
 source: WaitSource
 }
 /**
