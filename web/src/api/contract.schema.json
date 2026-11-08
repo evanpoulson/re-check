@@ -17,6 +17,17 @@
       "title": "AcknowledgeTask",
       "type": "object"
     },
+    "AppExclusion": {
+      "description": "Why the patient app was not offered. Staff watch these patients directly.",
+      "enum": [
+        "child",
+        "pregnancy_over_20_weeks",
+        "self_harm_or_violence",
+        "major_trauma"
+      ],
+      "title": "AppExclusion",
+      "type": "string"
+    },
     "AssessTask": {
       "additionalProperties": false,
       "description": "Record the in-person outcome and complete the task (FR16).",
@@ -36,6 +47,145 @@
         "disposition"
       ],
       "title": "AssessTask",
+      "type": "object"
+    },
+    "AttentionAnswered": {
+      "additionalProperties": false,
+      "description": "The patient's count for a circle-counting prompt. The server scores it against what it issued.",
+      "properties": {
+        "count": {
+          "maximum": 20,
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "prompt_id": {
+          "description": "The attention prompt the server issued for this check-in.",
+          "format": "uuid",
+          "title": "Prompt Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "prompt_id",
+        "count"
+      ],
+      "title": "AttentionAnswered",
+      "type": "object"
+    },
+    "AttentionMissing": {
+      "additionalProperties": false,
+      "description": "No count. Carries the prompt ID when one was shown, so staff can tell \"shown but not answered\"\nfrom \"never shown\" (a companion check-in, for example).",
+      "properties": {
+        "kind": {
+          "const": "missing",
+          "title": "Kind",
+          "type": "string"
+        },
+        "prompt_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Id"
+        },
+        "reason": {
+          "$ref": "#/$defs/MissingReason"
+        }
+      },
+      "required": [
+        "kind",
+        "reason"
+      ],
+      "title": "AttentionMissing",
+      "type": "object"
+    },
+    "AttentionPrompt": {
+      "description": "Circle-counting reliability check, generated and stored by the server for one check-in.\n\nThe patient counts the circles and ignores the squares. Shapes are distinguished\nby outline, not colour alone. Not a clinical test: a wrong or missing count only\nasks staff to check the patient in person.",
+      "properties": {
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "gap_ms": {
+          "description": "Blank time between shapes.",
+          "minimum": 0,
+          "title": "Gap Ms",
+          "type": "integer"
+        },
+        "prompt_id": {
+          "format": "uuid",
+          "title": "Prompt Id",
+          "type": "string"
+        },
+        "show_ms": {
+          "description": "How long each shape stays on screen.",
+          "minimum": 200,
+          "title": "Show Ms",
+          "type": "integer"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/AttentionStep"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt_id",
+        "steps",
+        "show_ms",
+        "gap_ms",
+        "expires_at"
+      ],
+      "title": "AttentionPrompt",
+      "type": "object"
+    },
+    "AttentionStep": {
+      "description": "One shape shown during the circle-counting check. Positions are fractions of the play area.",
+      "properties": {
+        "shape": {
+          "enum": [
+            "circle",
+            "square"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "shape",
+        "x",
+        "y"
+      ],
+      "title": "AttentionStep",
       "type": "object"
     },
     "BoardRow": {
@@ -142,6 +292,25 @@
       "additionalProperties": false,
       "description": "A scheduled check-in (FR5, FR6). May be partial: unreached questions are `not_reached`.\n\nUrgent findings are routed as soon as this is received, even if partial.",
       "properties": {
+        "attention": {
+          "description": "Circle-counting reliability check. Patient only; a companion sends it as missing.",
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/AttentionAnswered",
+              "missing": "#/$defs/AttentionMissing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/AttentionAnswered"
+            },
+            {
+              "$ref": "#/$defs/AttentionMissing"
+            }
+          ],
+          "title": "Attention"
+        },
         "captured_at": {
           "description": "When the person answered on the device. The server records its own received time.",
           "format": "date-time",
@@ -155,6 +324,42 @@
           ],
           "title": "Channel",
           "type": "string"
+        },
+        "feeling_change": {
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/FeelingChangeAnswered",
+              "missing": "#/$defs/Missing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/FeelingChangeAnswered"
+            },
+            {
+              "$ref": "#/$defs/Missing"
+            }
+          ],
+          "title": "Feeling Change"
+        },
+        "feeling_now": {
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/FeelingNowAnswered",
+              "missing": "#/$defs/Missing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/FeelingNowAnswered"
+            },
+            {
+              "$ref": "#/$defs/Missing"
+            }
+          ],
+          "title": "Feeling Now"
         },
         "items": {
           "description": "Complaint-specific answers keyed by question bank item key.",
@@ -215,24 +420,6 @@
           ],
           "title": "New Findings"
         },
-        "overall": {
-          "discriminator": {
-            "mapping": {
-              "answered": "#/$defs/OverallAnswered",
-              "missing": "#/$defs/Missing"
-            },
-            "propertyName": "kind"
-          },
-          "oneOf": [
-            {
-              "$ref": "#/$defs/OverallAnswered"
-            },
-            {
-              "$ref": "#/$defs/Missing"
-            }
-          ],
-          "title": "Overall"
-        },
         "pain": {
           "discriminator": {
             "mapping": {
@@ -278,9 +465,11 @@
         "captured_at",
         "kind",
         "questionnaire_version",
-        "overall",
+        "feeling_now",
+        "feeling_change",
         "pain",
-        "new_findings"
+        "new_findings",
+        "attention"
       ],
       "title": "CheckinReport",
       "type": "object"
@@ -307,27 +496,30 @@
       "type": "object"
     },
     "ComplaintGroup": {
-      "description": "Pathway selected from the triage complaint (research brief, section 2).",
+      "description": "Pathway selected from the triage CEDIS complaint (question-bank/cedis-groups.json).",
       "enum": [
         "chest_back_pain",
         "neuro_change",
         "head_injury",
+        "confused_drowsy",
         "general"
       ],
       "title": "ComplaintGroup",
       "type": "string"
     },
     "ConcernCode": {
+      "description": "Always-visible buttons. `desk_question` is non-clinical and goes to the triage nurse only.",
       "enum": [
         "worried",
-        "help_now"
+        "help_now",
+        "desk_question"
       ],
       "title": "ConcernCode",
       "type": "string"
     },
     "ConcernReport": {
       "additionalProperties": false,
-      "description": "\"I'm worried\" or \"I need help now\", available at any time.",
+      "description": "\"I'm worried\", \"I need help now\" or \"Question about my wait or care\", available at any time.",
       "properties": {
         "captured_at": {
           "description": "When the person answered on the device. The server records its own received time.",
@@ -488,6 +680,68 @@
         "id"
       ],
       "title": "EvidenceRef",
+      "type": "object"
+    },
+    "FeelingChange": {
+      "description": "Wellness question 2: compared with when staff last checked. \"Not sure\" is a missing reason.",
+      "enum": [
+        "much_better",
+        "better",
+        "same",
+        "worse",
+        "much_worse"
+      ],
+      "title": "FeelingChange",
+      "type": "string"
+    },
+    "FeelingChangeAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FeelingChange"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FeelingChangeAnswered",
+      "type": "object"
+    },
+    "FeelingNow": {
+      "description": "Wellness question 1, adapted from the Patient Wellness Questionnaire (Martha's Rule).\n\n\"Not sure\" is a missing reason.",
+      "enum": [
+        "very_good",
+        "good",
+        "ok",
+        "poor",
+        "very_poor"
+      ],
+      "title": "FeelingNow",
+      "type": "string"
+    },
+    "FeelingNowAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FeelingNow"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FeelingNowAnswered",
       "type": "object"
     },
     "FindingCode": {
@@ -919,35 +1173,6 @@
       "title": "MultiChoiceAnswered",
       "type": "object"
     },
-    "Overall": {
-      "description": "Better, same or worse than at triage. \"Not sure\" is a missing reason.",
-      "enum": [
-        "better",
-        "same",
-        "worse"
-      ],
-      "title": "Overall",
-      "type": "string"
-    },
-    "OverallAnswered": {
-      "additionalProperties": false,
-      "properties": {
-        "kind": {
-          "const": "answered",
-          "title": "Kind",
-          "type": "string"
-        },
-        "value": {
-          "$ref": "#/$defs/Overall"
-        }
-      },
-      "required": [
-        "kind",
-        "value"
-      ],
-      "title": "OverallAnswered",
-      "type": "object"
-    },
     "PainAnswered": {
       "additionalProperties": false,
       "properties": {
@@ -974,6 +1199,18 @@
     "PatientHome": {
       "description": "Every screen shows the wait range and \"Your answers never change your place in line.\" (FR8).",
       "properties": {
+        "attention_prompt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttentionPrompt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Present for the patient role on a due check-in; never for a companion."
+        },
         "items": {
           "items": {
             "$ref": "#/$defs/QuestionItem"
@@ -1143,6 +1380,12 @@
     "QuestionItem": {
       "description": "One fixed question from the question bank, in the session's language.",
       "properties": {
+        "allow_unsure": {
+          "default": true,
+          "description": "Show a \"Not sure\" button, sent as missing: unsure.",
+          "title": "Allow Unsure",
+          "type": "boolean"
+        },
         "input_type": {
           "$ref": "#/$defs/ItemInputType"
         },
@@ -1694,10 +1937,20 @@
           "title": "At",
           "type": "string"
         },
-        "overall": {
+        "feeling_change": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Overall"
+              "$ref": "#/$defs/FeelingChange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "feeling_now": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FeelingNow"
             },
             {
               "type": "null"
@@ -1719,7 +1972,8 @@
       "required": [
         "at",
         "pain",
-        "overall"
+        "feeling_now",
+        "feeling_change"
       ],
       "title": "TrendPoint",
       "type": "object"
@@ -1750,6 +2004,18 @@
       "additionalProperties": false,
       "description": "Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used.",
       "properties": {
+        "app_exclusion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppExclusion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set when the patient app is not offered. The visit still appears on the staff list and the staff reassessment timer still runs, but no QR is issued and no prompts are sent."
+        },
         "cedis_code": {
           "anyOf": [
             {
@@ -1765,12 +2031,21 @@
           "title": "Cedis Code"
         },
         "channel": {
-          "enum": [
-            "phone",
-            "pager"
+          "anyOf": [
+            {
+              "enum": [
+                "phone",
+                "pager"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ],
-          "title": "Channel",
-          "type": "string"
+          "default": null,
+          "description": "Required unless the app is not offered.",
+          "title": "Channel"
         },
         "complaint_group": {
           "$ref": "#/$defs/ComplaintGroup"
@@ -1809,8 +2084,7 @@
         "submission_id",
         "ctas",
         "complaint_group",
-        "language",
-        "channel"
+        "language"
       ],
       "title": "VisitCreate",
       "type": "object"
@@ -1870,17 +2144,42 @@
       "type": "object"
     },
     "VisitEnrolled": {
-      "description": "Returned once at enrolment. The links carry the raw tokens and are never shown again.",
+      "description": "Returned once at enrolment. The links carry the raw tokens and are never shown again.\n\nWhen the app is not offered, there are no links.",
       "properties": {
+        "app_exclusion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppExclusion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "companion_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "URL for the companion QR card (FR11). Single-use.",
-          "title": "Companion Link",
-          "type": "string"
+          "title": "Companion Link"
         },
         "links_expire_at": {
-          "format": "date-time",
-          "title": "Links Expire At",
-          "type": "string"
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Links Expire At"
         },
         "pager_no": {
           "anyOf": [
@@ -1896,9 +2195,16 @@
           "title": "Pager No"
         },
         "patient_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "description": "URL for the patient QR card. Single-use, binds the first device.",
-          "title": "Patient Link",
-          "type": "string"
+          "title": "Patient Link"
         },
         "visit_id": {
           "format": "uuid",
@@ -1913,6 +2219,27 @@
         "links_expire_at"
       ],
       "title": "VisitEnrolled",
+      "type": "object"
+    },
+    "VisitExclusionUpdate": {
+      "additionalProperties": false,
+      "description": "Staff stop offering the app after enrolment.\n\nThe server revokes the visit's sessions and stops patient prompts. The staff\ntimer keeps running. An exclusion can't be removed once set.",
+      "properties": {
+        "app_exclusion": {
+          "$ref": "#/$defs/AppExclusion"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "app_exclusion"
+      ],
+      "title": "VisitExclusionUpdate",
       "type": "object"
     },
     "VisitStatus": {
@@ -1953,6 +2280,16 @@
     },
     "VisitSummary": {
       "properties": {
+        "app_exclusion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppExclusion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "cedis_code": {
           "anyOf": [
             {
@@ -1966,12 +2303,19 @@
           "title": "Cedis Code"
         },
         "channel": {
-          "enum": [
-            "phone",
-            "pager"
+          "anyOf": [
+            {
+              "enum": [
+                "phone",
+                "pager"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
           ],
-          "title": "Channel",
-          "type": "string"
+          "title": "Channel"
         },
         "closed_at": {
           "anyOf": [
@@ -2074,6 +2418,7 @@
         "complaint_group",
         "cedis_code",
         "language",
+        "app_exclusion",
         "channel",
         "pager_no",
         "status",
@@ -2496,8 +2841,23 @@
     "AcknowledgeTask": {
       "$ref": "#/$defs/AcknowledgeTask"
     },
+    "AppExclusion": {
+      "$ref": "#/$defs/AppExclusion"
+    },
     "AssessTask": {
       "$ref": "#/$defs/AssessTask"
+    },
+    "AttentionAnswered": {
+      "$ref": "#/$defs/AttentionAnswered"
+    },
+    "AttentionMissing": {
+      "$ref": "#/$defs/AttentionMissing"
+    },
+    "AttentionPrompt": {
+      "$ref": "#/$defs/AttentionPrompt"
+    },
+    "AttentionStep": {
+      "$ref": "#/$defs/AttentionStep"
     },
     "BoardRow": {
       "$ref": "#/$defs/BoardRow"
@@ -2537,6 +2897,18 @@
     },
     "EvidenceRef": {
       "$ref": "#/$defs/EvidenceRef"
+    },
+    "FeelingChange": {
+      "$ref": "#/$defs/FeelingChange"
+    },
+    "FeelingChangeAnswered": {
+      "$ref": "#/$defs/FeelingChangeAnswered"
+    },
+    "FeelingNow": {
+      "$ref": "#/$defs/FeelingNow"
+    },
+    "FeelingNowAnswered": {
+      "$ref": "#/$defs/FeelingNowAnswered"
     },
     "FindingCode": {
       "$ref": "#/$defs/FindingCode"
@@ -2579,12 +2951,6 @@
     },
     "MultiChoiceAnswered": {
       "$ref": "#/$defs/MultiChoiceAnswered"
-    },
-    "Overall": {
-      "$ref": "#/$defs/Overall"
-    },
-    "OverallAnswered": {
-      "$ref": "#/$defs/OverallAnswered"
     },
     "PainAnswered": {
       "$ref": "#/$defs/PainAnswered"
@@ -2666,6 +3032,9 @@
     },
     "VisitEnrolled": {
       "$ref": "#/$defs/VisitEnrolled"
+    },
+    "VisitExclusionUpdate": {
+      "$ref": "#/$defs/VisitExclusionUpdate"
     },
     "VisitStatus": {
       "$ref": "#/$defs/VisitStatus"

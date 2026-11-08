@@ -1,0 +1,351 @@
+{
+  "resourceType": "ConceptMap",
+  "id": "recheck-cedis-to-group",
+  "url": "urn:recheck:conceptmap:cedis-to-group",
+  "version": "2026-11-07.1",
+  "name": "RecheckCedisToGroup",
+  "title": "CEDIS presenting complaint to Recheck complaint group and app exclusion",
+  "status": "draft",
+  "experimental": true,
+  "date": "2026-11-07",
+  "publisher": "Recheck prototype",
+  "description": "Demo mapping. CEDIS codes and names from the CEDIS Presenting Complaint List v1.1 (Grafstein et al., CJEM 2008). Confirm against the site's current CEDIS version before use. Group 1 picks the follow-up questions; any code not listed maps to 'general'. Group 2 lists complaints where the patient app is not offered; the triage nurse can also set an exclusion directly, for example by age.",
+  "group": [
+    {
+      "source": "urn:recheck:codesystem:cedis-v1.1",
+      "target": "urn:recheck:codes:complaint-group",
+      "element": [
+        {
+          "code": "003",
+          "display": "Chest pain (cardiac features)",
+          "target": [
+            {
+              "code": "chest_back_pain",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "004",
+          "display": "Chest pain (noncardiac features)",
+          "target": [
+            {
+              "code": "chest_back_pain",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "102",
+          "display": "Facial trauma",
+          "target": [
+            {
+              "code": "head_injury",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "105",
+          "display": "Neck trauma",
+          "target": [
+            {
+              "code": "head_injury",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "301",
+          "display": "Flank pain",
+          "target": [
+            {
+              "code": "chest_back_pain",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "401",
+          "display": "Altered level of consciousness",
+          "target": [
+            {
+              "code": "confused_drowsy",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "402",
+          "display": "Confusion",
+          "target": [
+            {
+              "code": "confused_drowsy",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "403",
+          "display": "Vertigo",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "404",
+          "display": "Headache",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "405",
+          "display": "Seizure",
+          "target": [
+            {
+              "code": "confused_drowsy",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "406",
+          "display": "Gait disturbance/ataxia",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "407",
+          "display": "Head injury",
+          "target": [
+            {
+              "code": "head_injury",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "409",
+          "display": "Extremity weakness/symptoms of CVA",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "410",
+          "display": "Sensory loss/paresthesias",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "504",
+          "display": "Visual disturbance",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "508",
+          "display": "Diplopia",
+          "target": [
+            {
+              "code": "neuro_change",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "551",
+          "display": "Back pain",
+          "target": [
+            {
+              "code": "chest_back_pain",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "751",
+          "display": "Substance misuse/intoxication",
+          "target": [
+            {
+              "code": "confused_drowsy",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "854",
+          "display": "Hypoglycemia",
+          "target": [
+            {
+              "code": "confused_drowsy",
+              "equivalence": "wider"
+            }
+          ]
+        }
+      ],
+      "unmapped": {
+        "mode": "fixed",
+        "code": "general"
+      }
+    },
+    {
+      "source": "urn:recheck:codesystem:cedis-v1.1",
+      "target": "urn:recheck:codes:app-exclusion",
+      "element": [
+        {
+          "code": "351",
+          "display": "Depression/suicidal/deliberate self harm",
+          "target": [
+            {
+              "code": "self_harm_or_violence",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "355",
+          "display": "Violent/homicidal behaviour",
+          "target": [
+            {
+              "code": "self_harm_or_violence",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "458",
+          "display": "Pregnancy issues > 20 wk",
+          "target": [
+            {
+              "code": "pregnancy_over_20_weeks",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "601",
+          "display": "Feeding difficulties in newborn",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "602",
+          "display": "Neonatal jaundice",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "603",
+          "display": "Inconsolable crying in infants",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "605",
+          "display": "Paediatric gait disorder/painful walk",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "606",
+          "display": "Apneic spells in infants",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "607",
+          "display": "Paediatric disruptive behaviour",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "609",
+          "display": "Floppy child",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "611",
+          "display": "Congenital problem in children",
+          "target": [
+            {
+              "code": "child",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "801",
+          "display": "Major trauma - penetrating",
+          "target": [
+            {
+              "code": "major_trauma",
+              "equivalence": "wider"
+            }
+          ]
+        },
+        {
+          "code": "802",
+          "display": "Major trauma - blunt",
+          "target": [
+            {
+              "code": "major_trauma",
+              "equivalence": "wider"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

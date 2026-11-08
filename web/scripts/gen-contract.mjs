@@ -1,8 +1,10 @@
-// Generates web/src/api/contract.schema.json and contract.d.ts from the
-// backend's Pydantic contract. Run with `npm run gen:contract`. Commit both
-// outputs; re-running must not change them.
+// Generates, from the backend:
+//   src/api/contract.schema.json and contract.d.ts  (the Pydantic contract)
+//   src/api/bank/questionnaire.json and cedis-groups.json  (copies of question-bank/)
+// Run `npm run gen:contract`. Commit the outputs; re-running must not change
+// them. `npm run check:contract` fails if the committed files are out of date.
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { compile } from 'json-schema-to-typescript'
@@ -10,6 +12,8 @@ import { compile } from 'json-schema-to-typescript'
 const here = dirname(fileURLToPath(import.meta.url))
 const web = resolve(here, '..')
 const out = resolve(web, 'src/api')
+const bank = resolve(web, '../question-bank')
+const check = process.argv.includes('--check')
 
 const json = execFileSync(
   'uv',
@@ -48,7 +52,27 @@ const ts = await compile(schema, 'Contract', {
   style: { singleQuote: true, semi: false },
 })
 
-mkdirSync(out, { recursive: true })
-writeFileSync(resolve(out, 'contract.schema.json'), json.replace(/\r\n/g, '\n'))
-writeFileSync(resolve(out, 'contract.d.ts'), ts.replace(/\r\n/g, '\n'))
-console.log('wrote src/api/contract.schema.json and contract.d.ts')
+const CR = String.fromCharCode(13)
+const lf = (text) => text.split(CR).join('')
+const outputs = {
+  [resolve(out, 'contract.schema.json')]: lf(json),
+  [resolve(out, 'contract.d.ts')]: lf(ts),
+  [resolve(out, 'bank/questionnaire.json')]: lf(readFileSync(resolve(bank, 'questionnaire.json'), 'utf8')),
+  [resolve(out, 'bank/cedis-groups.json')]: lf(readFileSync(resolve(bank, 'cedis-groups.json'), 'utf8')),
+}
+
+if (check) {
+  const stale = Object.entries(outputs).filter(
+    ([file, content]) => !existsSync(file) || lf(readFileSync(file, 'utf8')) !== content,
+  )
+  if (stale.length > 0) {
+    console.error('Out of date with the backend. Run `npm run gen:contract` and commit:')
+    for (const [file] of stale) console.error('  ' + file.replace(web, 'web'))
+    process.exit(1)
+  }
+  console.log('Contract and question bank copies are up to date.')
+} else {
+  mkdirSync(resolve(out, 'bank'), { recursive: true })
+  for (const [file, content] of Object.entries(outputs)) writeFileSync(file, content)
+  console.log('wrote src/api/contract.*, src/api/bank/*.json')
+}
