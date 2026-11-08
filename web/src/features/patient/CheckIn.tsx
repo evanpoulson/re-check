@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
+import { ArrowRight, CircleAlert, CircleCheckBig, Clock, CloudOff } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
@@ -49,6 +49,8 @@ export function CheckIn() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
+  // While the circle check plays, the dock shows only "I need help now".
+  const [circlePlaying, setCirclePlaying] = useState(false)
   // The help buttons stay enabled while sending, so a second tap must not send twice.
   const inFlight = useRef(false)
   const content = useRef<HTMLDivElement>(null)
@@ -56,7 +58,10 @@ export function CheckIn() {
     const heading = content.current?.querySelector('h1')
     if (heading) {
       heading.tabIndex = -1
-      heading.focus()
+      // Each new screen starts at the top, wherever the last one was scrolled,
+      // so a confirmation is never half under the sticky header.
+      document.documentElement.scrollTop = 0
+      heading.focus({ preventScroll: true })
       document.title = `${heading.textContent} · Recheck`
     }
     // isPending: also on first load, once the page has its heading.
@@ -139,7 +144,7 @@ export function CheckIn() {
   return (
     <PatientLayout
       home={home}
-      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
+      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending, helpOnly: circlePlaying }}
     >
       <div ref={content} className="space-y-5">
         {failed && (
@@ -159,6 +164,7 @@ export function CheckIn() {
             onSubmit={submitCheckin}
             onCancel={() => setView({ name: 'home' })}
             onPromptExpired={refreshPrompt}
+            onPlayingChange={setCirclePlaying}
           />
         )}
 
@@ -228,7 +234,21 @@ export function CheckIn() {
             <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
               {view.queued ? t('sent.queuedTitle') : t('sent.title')}
             </h1>
-            <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+            {/* The status is the point of this screen: bold, with an icon, not muted. */}
+            <p
+              className={
+                view.queued
+                  ? 'flex items-start gap-3 rounded-card bg-level-amber-bg px-5 py-3 font-semibold text-level-amber'
+                  : 'flex items-start gap-3 rounded-card bg-brand-50 px-5 py-3 font-semibold'
+              }
+            >
+              {view.queued ? (
+                <CloudOff aria-hidden className="mt-0.5 size-6 shrink-0" />
+              ) : (
+                <CircleCheckBig aria-hidden className="mt-0.5 size-6 shrink-0 text-brand-600" />
+              )}
+              {view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}
+            </p>
             {/* Leaving: after-leaving advice even when the report has not sent yet. */}
             {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after')}</p>}
             {/* Never "all clear": staff still check on their own schedule. */}

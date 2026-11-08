@@ -397,6 +397,7 @@
     "signOutFailed": "This phone could not sign out. Try again.",
     "waitContext": "Waiting-room information",
     "contactStaff": "Contact staff",
+    "moreOptions": "More options",
     "updated": "Updated {{time}}.",
     "companionHint": "Tell us what you see or hear. Only they can tell us how they feel inside."
   },
@@ -491,6 +492,8 @@
     "notShown": "Not shown"
   },
   "circle": {
+    "title": "Count the circles",
+    "chooseCount": "Tap \u2212 or + to choose a number.",
     "intro": "You will see shapes appear one at a time. Count the circles. Ignore the squares.",
     "once": "You only see them once. If you cannot do this, tap \"I can't do this\" and staff will check on you.",
     "start": "Start",

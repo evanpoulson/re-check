@@ -41,7 +41,7 @@ function OutboxBanner() {
 interface Props {
   home?: PatientHome
   /** Present on screens that show the four always-visible buttons. */
-  dock?: { onConcern: (c: ConcernCode) => void; onLeaving: () => void; disabled?: boolean }
+  dock?: { onConcern: (c: ConcernCode) => void; onLeaving: () => void; disabled?: boolean; helpOnly?: boolean }
   children: ReactNode
 }
 
