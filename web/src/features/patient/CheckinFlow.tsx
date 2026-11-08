@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { allowUnsure, itemWording, noneOption, options, text } from '@/api/bank'
@@ -8,7 +8,6 @@ import type { CheckinReport, FindingCode, ItemAnswer, PatientHome, QuestionItem,
 import { AnswerButton } from '@/components/AnswerButton'
 import { CircleCheck } from '@/components/CircleCheck'
 import { Button } from '@/components/ui/button'
-import { isUrgentFinding } from '@/lib/findings'
 import { buildCheckinReport, type AttentionDraft, type CheckinDraft } from '@/lib/checkin'
 
 type Step = { kind: 'base'; linkId: string } | { kind: 'item'; item: QuestionItem }
@@ -24,6 +23,8 @@ interface Props {
   /** The circle prompt expired; fetch a fresh one. */
   onPromptExpired: () => void
   sending?: boolean
+  /** True while the circle check's shapes play: the page shows only "I need help now". */
+  onPlayingChange?: (playing: boolean) => void
 }
 
 /**
@@ -33,8 +34,14 @@ interface Props {
  * the sign-in, so it is never asked. Leaving early sends what was answered as a
  * partial check-in.
  */
-export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending }: Props) {
+export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending, onPlayingChange }: Props) {
   const { t } = useTranslation()
+  // Nothing else to tap while shapes play, except the dock's "I need help now".
+  const [playing, setPlaying] = useState(false)
+  const onCirclePlaying = useCallback((on: boolean) => {
+    setPlaying(on)
+    onPlayingChange?.(on)
+  }, [onPlayingChange])
   const [index, setIndex] = useState(0)
   /** The step whose Next was pressed with no answer, so the hint never carries over. */
   const [needAnswerFor, setNeedAnswerFor] = useState<string | null>(null)
@@ -62,9 +69,8 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
   const step = steps[Math.min(index, steps.length - 1)]
   const stepKey = step?.kind === 'base' ? step.linkId : step?.item.key
   const last = index >= steps.length - 1
-  // Only a sign that is urgent on its own sends straight away; the rest finish the check-in.
   const hasNewFindings = step?.kind === 'base' && step.linkId === 'new_findings' &&
-    Array.isArray(draft.findings) && draft.findings.some(isUrgentFinding)
+    Array.isArray(draft.findings) && draft.findings.length > 0
 
   useEffect(() => {
     const heading = section.current?.querySelector('h1')
@@ -124,34 +130,44 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
   )
 
   return (
-    <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-6">
-      <div className="flow-head">
-        {index > 0 ? (
-          <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
-            <ChevronLeft aria-hidden size={18} />
-            {t('flow.back')}
-          </button>
-        ) : <span />}
-        <span className="count">{t('flow.progress', { n: index + 1, total: steps.length })}</span>
+    <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-5">
+      {/* Back and the step count share one row. The row keeps its height on question 1
+          and while shapes play, so the question never jumps; the bar runs full width below. */}
+      <div className="question-progress">
+        <div className="question-progress-row">
+          {index > 0 && !playing ? (
+            <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
+              <ChevronLeft aria-hidden className="size-4 rtl:rotate-180" />
+              {t('flow.back')}
+            </button>
+          ) : <span />}
+          <span>{t('flow.progress', { n: index + 1, total: steps.length })}</span>
+        </div>
         <progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} />
       </div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
-        <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
+        <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} onPlayingChange={onCirclePlaying} />
       ) : (
         <>
           <StepView step={step} reporter={reporter} draft={draft} setDraft={setDraft} />
-          <div className="grid gap-3">
-            {/* Stays enabled: a disabled button gives no reason, so say what is missing instead. */}
-            <Button size="lg" disabled={sending} onClick={() => (answered(step, draft) ? next(draft) : setNeedAnswerFor(stepKey ?? null))}>
+          {/*
+            Stays enabled: a disabled button gives no reason, so say what is missing instead.
+            Sticks just above the help dock, so Next is on screen even when the answers run
+            past a short phone's screen. A sibling of the question, so it can stick over it.
+          */}
+          <div className="flow-next">
+            <Button size="lg" className="w-full" disabled={sending} onClick={() => (answered(step, draft) ? next(draft) : setNeedAnswerFor(stepKey ?? null))}>
               {hasNewFindings ? t('flow.sendNow') : last ? t('flow.send') : t('flow.next')}
             </Button>
+          </div>
+          <div className="grid gap-3">
             {/* Below the button, so the button does not move under the help dock. */}
-            {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="text-base font-medium text-level-red">{t('flow.chooseAnswer')}</p>}
+            {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="font-semibold text-level-red">{t('flow.chooseAnswer')}</p>}
             <Button variant="ghost" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
               {anyAnswered ? t('flow.finishLater') : t('flow.stopEmpty')}
             </Button>
-            {anyAnswered && <p className="text-center text-base text-muted">{t('flow.finishLaterHelp')}</p>}
+            {anyAnswered && <p className="text-base text-muted">{t('flow.finishLaterHelp')}</p>}
           </div>
         </>
       )}
@@ -168,25 +184,29 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 tabIndex={-1} id="q">
+    <h1 tabIndex={-1} id="q" className="text-heading font-semibold leading-tight tracking-tight">
       {children}
     </h1>
   )
 }
 
-/** 0 to 10 as one segmented row. Each number is a radio in the parent radiogroup. */
+/**
+ * 0 to 10 in two rows: 0 to 5, then 6 to 10 centred under them, so every
+ * button keeps a usable width on a small phone. "Worst pain" sits under 10:
+ * the second row is inset by half a cell, so the label is too.
+ */
 function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined; onPick: (n: number) => void }) {
   const { t } = useTranslation()
   return (
     <div>
-      <div className="scale">
+      <div className="pain-scale">
         {Array.from({ length: 11 }, (_, n) => (
-          <button key={n} type="button" role="radio" aria-checked={value === n} onClick={() => onPick(n)}>
+          <AnswerButton key={n} kind="radio" indicator={false} selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
             {n}
-          </button>
+          </AnswerButton>
         ))}
       </div>
-      <div aria-hidden className="scale-ends">
+      <div className="pain-scale-labels">
         <span>{t('pain.low')}</span>
         <span>{t('pain.high')}</span>
       </div>
@@ -213,7 +233,7 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text(linkId, reporter)}</Question>
-        <div role="radiogroup" aria-labelledby="q" className="grid gap-3">
+        <div role="radiogroup" aria-labelledby="q" className="answer-list">
           {options(linkId).map((o) => (
             <AnswerButton key={o.code} kind="radio" selected={value === o.code} onClick={() => setDraft({ ...draft, [key]: o.code })}>
               {o.text}
@@ -229,7 +249,7 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text('pain', reporter)}</Question>
-        <div role="radiogroup" aria-labelledby="q" className="grid gap-3">
+        <div role="radiogroup" aria-labelledby="q" className="answer-list">
           <ScaleButtons value={draft.pain} onPick={(n) => setDraft({ ...draft, pain: n })} />
           {allowUnsure('pain') && <NotSure selected={draft.pain === 'unsure'} onClick={() => setDraft({ ...draft, pain: 'unsure' })} />}
         </div>
@@ -244,7 +264,7 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
     return (
       <>
         <Question>{text('new_findings', reporter)}</Question>
-        <div role="group" aria-labelledby="q" className="grid gap-3">
+        <div role="group" aria-labelledby="q" className="answer-list">
           {options('new_findings').map((o) => (
             <AnswerButton key={o.code} kind="checkbox" selected={picked.includes(o.code as FindingCode)} onClick={() => toggle(o.code as FindingCode)}>
               {o.text}
@@ -273,7 +293,7 @@ function ItemStep({ item, reporter, draft, setDraft }: { item: QuestionItem; rep
   return (
     <>
       <Question>{words.text}</Question>
-      <div role={item.input_type === 'multi_choice' ? 'group' : 'radiogroup'} aria-labelledby="q" className="grid gap-3">
+      <div role={item.input_type === 'multi_choice' ? 'group' : 'radiogroup'} aria-labelledby="q" className="answer-list">
         {item.input_type === 'yes_no' && (
           <>
             <AnswerButton kind="radio" selected={current?.kind === 'yes_no' && current.value} onClick={() => set({ kind: 'yes_no', value: true })}>

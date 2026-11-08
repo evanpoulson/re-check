@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
+import { ArrowRight, ChevronLeft, CircleAlert, CircleCheckBig, Clock, CloudOff, QrCode } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
@@ -28,6 +28,7 @@ type View =
   | { name: 'checkin' }
   | { name: 'change' }
   | { name: 'confirmLeave' }
+  | { name: 'confirmDesk' }
   | { name: 'followup'; keys: string[] }
   | { name: 'desk'; queued: boolean }
   | { name: 'sent'; queued: boolean; message: PatientMessage; followUps?: string[] }
@@ -49,6 +50,8 @@ export function CheckIn() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
+  // While the circle check plays, the dock shows only "I need help now".
+  const [circlePlaying, setCirclePlaying] = useState(false)
   // The help buttons stay enabled while sending, so a second tap must not send twice.
   const inFlight = useRef(false)
   const content = useRef<HTMLDivElement>(null)
@@ -56,10 +59,14 @@ export function CheckIn() {
     const heading = content.current?.querySelector('h1')
     if (heading) {
       heading.tabIndex = -1
-      heading.focus()
+      // Each new screen starts at the top, wherever the last one was scrolled,
+      // so a confirmation is never half under the sticky header.
+      document.documentElement.scrollTop = 0
+      heading.focus({ preventScroll: true })
       document.title = `${heading.textContent} · Recheck`
     }
-  }, [view.name])
+    // isPending: also on first load, once the page has its heading.
+  }, [view.name, isPending])
 
   if (isPending)
     return (
@@ -73,16 +80,25 @@ export function CheckIn() {
     const signedOut = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-3 p-5">
-          <h1>
+        <Card role="alert" className="space-y-3">
+          <h1 className="text-heading font-semibold leading-tight tracking-tight">
             {t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}
           </h1>
-          <p className="text-muted">{t(signedOut ? 'exchange.signedOut.help' : 'exchange.askDesk')}</p>
+          <p>{t(signedOut ? 'exchange.signedOut.helpNow' : 'exchange.askDesk')}</p>
+          {/* There is no scanner in the page: the way back in is the phone's camera on the visit's QR. */}
+          {signedOut && (
+            <p className="flex items-start gap-3 rounded-card bg-canvas px-5 py-3 font-semibold">
+              <QrCode aria-hidden className="mt-0.5 size-6 shrink-0" />
+              {t('exchange.signedOut.scanAgain')}
+            </p>
+          )}
         </Card>
       </PatientLayout>
     )
   }
 
+  // Companion wording ("Is the patient leaving?") falls back to the patient's where there is none.
+  const companion = home.role === 'companion' ? 'companion' : undefined
   const common = (reporter = home.role) => ({
     submission_id: newSubmissionId(),
     reporter,
@@ -121,12 +137,12 @@ export function CheckIn() {
   }
 
   const concern = (c: ConcernCode) => {
-    const body = { kind: 'concern', concern: c, ...common() } as const
-    if (c === 'desk_question') {
-      return void deliver(body, (receipt) => ({ name: 'desk', queued: receipt === null }))
-    }
-    void deliver(body, afterReport)
+    // A question is not urgent, and a stray tap would make a nurse task, so it asks first.
+    if (c === 'desk_question') return setView({ name: 'confirmDesk' })
+    void deliver({ kind: 'concern', concern: c, ...common() }, afterReport)
   }
+  const sendDeskQuestion = () =>
+    void deliver({ kind: 'concern', concern: 'desk_question', ...common() }, (receipt) => ({ name: 'desk', queued: receipt === null }))
 
   const submitCheckin = (report: CheckinReport) => void deliver(report, afterReport)
   const endSession = async (submission_id: string) => {
@@ -138,12 +154,12 @@ export function CheckIn() {
   return (
     <PatientLayout
       home={home}
-      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
-      context={view.name === 'home'}
+      about={view.name === 'home'}
+      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending, helpOnly: circlePlaying }}
     >
-      <div ref={content} className="space-y-6">
+      <div ref={content} className="space-y-5">
         {failed && (
-          <p role="alert" className="flex items-start gap-3 rounded-card bg-level-red-bg px-5 py-4 text-base font-medium text-level-red">
+          <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
             <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
             {t('patient.sendFailed')}
           </p>
@@ -159,6 +175,7 @@ export function CheckIn() {
             onSubmit={submitCheckin}
             onCancel={() => setView({ name: 'home' })}
             onPromptExpired={refreshPrompt}
+            onPlayingChange={setCirclePlaying}
           />
         )}
 
@@ -187,78 +204,99 @@ export function CheckIn() {
         )}
 
         {view.name === 'confirmLeave' && (
-          <section className="space-y-6">
-            <div className="space-y-2">
-              <h1>{t('leaving.title')}</h1>
-              <p>{t('leaving.info')}</p>
-            </div>
-            <div className="grid gap-3">
-              <Button
-                size="lg"
-                className="w-full"
-                disabled={sending}
-                onClick={() =>
-                  void deliver({ kind: 'leaving', ...common() }, (r) =>
-                    r
-                      ? { name: 'sent', queued: false, message: r.patient_message }
-                      : { name: 'sent', queued: true, message: 'leaving_info' },
-                  )
-                }
-              >
-                {t('leaving.confirm')}
-              </Button>
-              <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
-                {t('leaving.cancel')}
-              </Button>
-            </div>
-          </section>
+          <Card className="space-y-3">
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('leaving.title', { context: companion })}</h1>
+            <p>{t('leaving.info', { context: companion })}</p>
+            <Button
+              size="lg"
+              className="w-full"
+              disabled={sending}
+              onClick={() =>
+                void deliver({ kind: 'leaving', ...common() }, (r) =>
+                  r
+                    ? { name: 'sent', queued: false, message: r.patient_message }
+                    : { name: 'sent', queued: true, message: 'leaving_info' },
+                )
+              }
+            >
+              {t('leaving.confirm', { context: companion })}
+            </Button>
+            <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('leaving.cancel', { context: companion })}
+            </Button>
+          </Card>
+        )}
+
+        {view.name === 'confirmDesk' && (
+          <Card className="space-y-3">
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('desk.confirmTitle')}</h1>
+            <p>{t('desk.confirmBody', { context: companion })}</p>
+            <Button size="lg" className="w-full" disabled={sending} onClick={sendDeskQuestion}>
+              {t('desk.confirm')}
+            </Button>
+            <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('desk.cancel')}
+            </Button>
+          </Card>
         )}
 
         {view.name === 'desk' && (
-          <section className="space-y-6">
-            <div className="space-y-2">
-              <h1>{view.queued ? t('sent.queuedTitle') : t('desk.title')}</h1>
-              <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
-              <p className="text-base text-muted">{t('desk.notClinical')}</p>
-            </div>
+          <Card className="space-y-3">
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">
+              {view.queued ? t('sent.queuedTitle') : t('desk.title')}
+            </h1>
+            <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
+            <p className="text-base text-muted">{t('desk.notClinical')}</p>
             <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-              {t('sent.back')}
+              {t('sent.backHome')}
             </Button>
-          </section>
+          </Card>
         )}
 
         {view.name === 'sent' && (
-          <section className="space-y-6">
-            <div className="space-y-2">
-              <h1>{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
-              <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+          <Card className="space-y-3">
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">
+              {view.queued ? t('sent.queuedTitle') : t('sent.title')}
+            </h1>
+            {/* The status is the point of this screen: bold, with an icon, not muted. */}
+            <p
+              className={
+                view.queued
+                  ? 'flex items-start gap-3 rounded-card bg-level-amber-bg px-5 py-3 font-semibold text-level-amber'
+                  : 'flex items-start gap-3 rounded-card bg-canvas px-5 py-3 font-semibold'
+              }
+            >
+              {view.queued ? (
+                <CloudOff aria-hidden className="mt-0.5 size-6 shrink-0" />
+              ) : (
+                <CircleCheckBig aria-hidden className="mt-0.5 size-6 shrink-0" />
+              )}
+              {view.queued ? t('sent.queuedBody') : t(`message.${view.message}`, { context: companion })}
+            </p>
             {/* Leaving: after-leaving advice even when the report has not sent yet. */}
-            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after')}</p>}
+            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after', { context: companion })}</p>}
             {/* Never "all clear": staff still check on their own schedule. */}
-              <p className="text-base text-muted">{t('sent.stillChecking')}</p>
-            </div>
+            <p className="text-base text-muted">{t('sent.stillChecking')}</p>
             {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
-            <ol className="p-card space-y-3 text-base">
+            <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
               <li className="flex items-center gap-2">
-                <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
+                <CircleCheckBig aria-hidden className="size-5 shrink-0" />
                 {t('sent.reported')}
               </li>
               <li className={view.queued ? 'flex items-center gap-2 text-muted' : 'flex items-center gap-2'}>
-                {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />}
+                {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0" />}
                 {view.queued ? t('sent.waiting') : t('sent.received')}
               </li>
             </ol>
-            <div className="grid gap-3">
-              <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-                {t('sent.back')}
+            <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('sent.backHome')}
+            </Button>
+            {view.followUps && view.followUps.length > 0 && (
+              <Button size="lg" variant="ghost" className="w-full" onClick={() => setView({ name: 'followup', keys: view.followUps! })}>
+                {t('sent.followup', { count: view.followUps.length })}
               </Button>
-              {view.followUps && view.followUps.length > 0 && (
-                <Button size="lg" variant="ghost" className="w-full" onClick={() => setView({ name: 'followup', keys: view.followUps! })}>
-                  {t('sent.followup', { count: view.followUps.length })}
-                </Button>
-              )}
-            </div>
-          </section>
+            )}
+          </Card>
         )}
       </div>
     </PatientLayout>
@@ -268,28 +306,25 @@ export function CheckIn() {
 function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: number; setView: (v: View) => void; onSignOut: (submissionId: string) => Promise<void> }) {
   const { t } = useTranslation()
   return (
-    <div className="space-y-6">
-      <div>
-        <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
-        {home.role === 'companion' && <p className="p-lede">{t('patient.companionHint')}</p>}
-      </div>
-      {home.message !== 'none' && <p className="rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
-      <section className="p-card" aria-label={t('patient.nextCheckin')}>
+    <div>
+      <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.homeTitle')}</h1>
+      {home.role === 'companion' && <p className="mt-2 text-base text-muted">{t('patient.companionHint')}</p>}
+      {home.message !== 'none' && <p className="mt-3 rounded-card border border-line bg-surface px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
+      <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
         <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
           {t('patient.startCheckin')}
-          <ArrowRight size={20} aria-hidden />
+          <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
         </Button>
         <div className="patient-next">
           <span>{t('patient.nextCheckin')}</span>
           <CountdownChip due={home.next_checkin_due_at} now={now} patient />
         </div>
       </section>
-      <div className="grid gap-2">
-        <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'change' })}>
-          {t('patient.reportChange')}
-        </Button>
-        <SignOutButton onSignOut={onSignOut} />
-      </div>
+      {/* The two actions below the check-in line up: both full width and centred. */}
+      <Button size="lg" variant="secondary" className="mt-4 w-full" onClick={() => setView({ name: 'change' })}>
+        {t('patient.reportChange', { context: home.role === 'companion' ? 'companion' : undefined })}
+      </Button>
+      <SignOutButton onSignOut={onSignOut} />
     </div>
   )
 }
@@ -314,13 +349,13 @@ function SignOutButton({ onSignOut }: { onSignOut: (submissionId: string) => Pro
   }
   if (!confirm) {
     return (
-      <Button variant="ghost" className="w-full text-base text-muted" onClick={() => setConfirm(true)}>
+      <Button variant="ghost" className="mt-1 w-full text-muted" onClick={() => setConfirm(true)}>
         {t('patient.signOut')}
       </Button>
     )
   }
   return (
-    <Card className="space-y-4 p-5">
+    <Card className="mt-2 space-y-3">
       <p>{t('patient.signOutHelp')}</p>
       {failed && <p role="alert">{t('patient.signOutFailed')}</p>}
       <div className="grid grid-cols-2 gap-3">
@@ -347,12 +382,17 @@ function ReportChange({
 }) {
   const { t } = useTranslation()
   const [picked, setPicked] = useState<FindingCode[]>([])
+  const [needOne, setNeedOne] = useState(false)
   return (
-    <section aria-labelledby="change" className="space-y-6">
-      <h1 id="change">
+    <section aria-labelledby="change" className="space-y-4">
+      <button type="button" className="back-link mb-0!" onClick={onCancel}>
+        <ChevronLeft aria-hidden className="size-4 rtl:rotate-180" />
+        {t('flow.back')}
+      </button>
+      <h1 id="change" className="text-heading font-semibold leading-tight tracking-tight">
         {text('new_findings', home.role)}
       </h1>
-      <div role="group" aria-labelledby="change" className="grid gap-3">
+      <div role="group" aria-labelledby="change" className="answer-list">
         {options('new_findings').map((o) => {
           const code = o.code as FindingCode
           return (
@@ -367,14 +407,15 @@ function ReportChange({
           )
         })}
       </div>
-      <div className="grid gap-3">
-        <Button size="lg" className="w-full" disabled={picked.length === 0 || sending} onClick={() => onSend(picked)}>
-          {t('change.send')}
-        </Button>
-        <Button size="lg" variant="ghost" className="w-full" onClick={onCancel}>
-          {t('flow.back')}
-        </Button>
-      </div>
+      {/* Stays enabled, as in the check-in: a disabled button gives no reason, so say what is missing. */}
+      <Button size="lg" className="w-full" disabled={sending} onClick={() => (picked.length > 0 ? onSend(picked) : setNeedOne(true))}>
+        {t('change.send')}
+      </Button>
+      {needOne && picked.length === 0 && (
+        <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="font-semibold text-level-red">
+          {t('change.chooseOne')}
+        </p>
+      )}
     </section>
   )
 }

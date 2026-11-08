@@ -1,6 +1,8 @@
 import { createBrowserRouter, createMemoryRouter, Navigate, Outlet, type RouteObject } from 'react-router'
+import { AppFrame } from '@/components/AppFrame'
 import { Physician } from '@/features/nurse/Physician'
 import { Enrol } from '@/features/nurse/Enrol'
+import { Escalations } from '@/features/nurse/Escalations'
 import { SignIn } from '@/features/nurse/SignIn'
 import { RequireStaffRole, StaffLayout, StaffProvider } from '@/features/nurse/staff'
 import { Triage } from '@/features/nurse/Triage'
@@ -14,7 +16,7 @@ import { Exchange } from '@/features/patient/Exchange'
 import { Placeholder } from '@/pages/Placeholder'
 
 // Routes match docs/recheck-project-plan.md.
-export const routes: RouteObject[] = [
+const pages: RouteObject[] = [
   {
     element: (
       <StaffProvider>
@@ -27,6 +29,10 @@ export const routes: RouteObject[] = [
       {
         element: <StaffLayout />,
         children: [
+          { element: <RequireStaffRole roles={['charge_nurse']} />, children: [
+            { path: '/staff/escalations', element: <Escalations /> },
+            { path: '/staff/escalations/handover', element: <Escalations /> },
+          ] },
           { element: <RequireStaffRole roles={['physician', 'charge_nurse']} />, children: [
             { path: '/staff/physician', element: <Physician /> },
           ] },
@@ -52,6 +58,9 @@ export const routes: RouteObject[] = [
   { path: '/check-in', element: <CheckIn /> },
   { path: '*', element: <Placeholder titleKey="pages.notFound" /> },
 ]
+
+// AppFrame wraps every page: scroll restoration and focus on page change.
+export const routes: RouteObject[] = [{ element: <AppFrame />, children: pages }]
 
 export const createRouter = () => createBrowserRouter(routes)
 export const createTestRouter = (initialEntries: string[]) => createMemoryRouter(routes, { initialEntries })

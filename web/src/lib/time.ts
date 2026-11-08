@@ -20,6 +20,12 @@ export function formatMinutes(ms: number): string {
   return `${h} h ${m} min`
 }
 
+/** Within a minute either side of the deadline, staff screens say "Due now" instead of "0 min". */
+export const isDueNow = (ms: number) => Math.abs(ms) < 60_000
+
+/** Past the deadline by more than the "Due now" minute. */
+export const isOverdue = (ms: number | null) => ms !== null && ms <= -60_000
+
 /** Patient wording: "1 hour 10 minutes", "45 minutes". Units are spelled out. */
 export function durationWords(minutes: number, t: TFunction): string {
   const total = Math.max(0, Math.round(Math.abs(minutes)))
@@ -45,5 +51,15 @@ export function waitWords(minutes: number, t: TFunction): string {
 export const sinceMs = (iso: string | null, now: number) => (iso ? now - Date.parse(iso) : null)
 export const untilMs = (iso: string | null, now: number) => (iso ? Date.parse(iso) - now : null)
 
-export const clock = (iso: string) =>
-  new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+/**
+ * "14:05" or "2:05 PM". Staff screens use the browser locale. Patient screens pass
+ * the page language so the time reads like the sentence around it.
+ */
+export const clock = (iso: string, locale?: string) =>
+  new Date(iso).toLocaleTimeString(locale ? [locale] : [], { hour: '2-digit', minute: '2-digit' })
+
+/**
+ * Wraps a value in Unicode first-strong isolates, the plain-text form of `<bdi>`, so a
+ * time such as "2:05 PM" keeps its order inside an Arabic or Urdu sentence.
+ */
+export const isolate = (value: string) => `\u2068${value}\u2069`

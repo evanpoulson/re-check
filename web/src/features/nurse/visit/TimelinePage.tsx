@@ -2,13 +2,15 @@ import { ClipboardList, Flag, HeartPulse, Monitor, Smartphone, TriangleAlert } f
 import { useTranslation } from 'react-i18next'
 import { bankItems, text } from '@/api/bank'
 import type { Task, TimelineEntry } from '@/api/types'
+import { LevelChip } from '@/components/LevelChip'
+import { LEVEL_STYLE } from '@/components/levelStyle'
 import { describeEntry } from '@/lib/timelineText'
 import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
 import { clock } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { AcknowledgeAction } from '../VisitActions'
-import { Divider, Fact, Facts, PageHeading, SectionCard } from './parts'
-import { LEVEL_TONE, entryTime, isCheckin, isReport, reasonText, reportSummary, type CheckinEntry, useVisit } from './model'
+import { Divider, Fact, Facts, PageHeading, Safeguard, SectionCard } from './parts'
+import { entryTime, isCheckin, isReport, reasonText, reportSummary, type CheckinEntry, useVisit } from './model'
 
 export function TimelinePage() {
   const { t } = useTranslation()
@@ -16,6 +18,7 @@ export function TimelinePage() {
   const task = detail.open_task
   const entries = detail.timeline
   const latestCheckin = entries.filter(isCheckin).at(-1)
+  const excluded = !!detail.visit.app_exclusion
 
   return (
     <>
@@ -27,7 +30,7 @@ export function TimelinePage() {
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_27rem]">
         <section aria-label={t('visitTabs.timeline')} className="min-w-0 rounded-card bg-surface p-4 shadow-card sm:p-6">
           {entries.length === 0 ? (
-            <p className="text-muted">{t('timeline.empty')}</p>
+            <p className="text-muted">{t(excluded ? 'visitPage.timeline.emptyExcluded' : 'timeline.empty')}</p>
           ) : (
             <ol className="space-y-5">
               {entries.map((entry, i) => (
@@ -45,8 +48,13 @@ export function TimelinePage() {
               <WhyFlagged task={task} entries={entries} />
               <SectionCard title={t('visitPage.timeline.taskStatus')}>
                 <TaskSteps task={task} />
-                <Divider />
-                <AcknowledgeAction task={task} canAct={canAcknowledge} stale={stale} />
+                {/* Once acknowledged, the steps above already say when and by whom. */}
+                {task.status === 'open' && (
+                  <>
+                    <Divider />
+                    <AcknowledgeAction task={task} canAct={canAcknowledge} stale={stale} />
+                  </>
+                )}
               </SectionCard>
             </>
           ) : (
@@ -54,25 +62,25 @@ export function TimelinePage() {
               <p className="text-muted">{t('visit.noTask')}</p>
             </SectionCard>
           )}
-          <p className="text-[0.9375rem] text-muted">{t('visitPage.timeline.safeguard')}</p>
+          {!excluded && <Safeguard />}
         </div>
       </div>
     </>
   )
 }
 
-/** Who an entry came from, shown under its time. */
-function source(entry: TimelineEntry, t: ReturnType<typeof useTranslation>['t']): string | null {
+/** Who an entry came from, shown under its time. Task events without a person are "System". */
+function source(entry: TimelineEntry, t: ReturnType<typeof useTranslation>['t']): string {
   if (isReport(entry)) return t(`reporter.${entry.report.reporter}`)
   if ('vitals_id' in entry) return t(`role.${entry.entered_by.role}`)
   if ('flag_id' in entry) return t('reporter.staff')
   if ('session_id' in entry) return t(`reporter.${entry.role}`)
-  return null
+  return entry.by ? t(`role.${entry.by.role}`) : t('reporter.system')
 }
 
 /** A small icon for the kind of entry. Reports get their own card instead. */
 function EntryIcon({ entry }: { entry: TimelineEntry }) {
-  const props = { 'aria-hidden': true, size: 20, className: 'shrink-0 text-brand-600' } as const
+  const props = { 'aria-hidden': true, className: 'size-5 shrink-0 text-muted' } as const
   if (isReport(entry)) return <TriangleAlert {...props} />
   if ('vitals_id' in entry) return <HeartPulse {...props} />
   if ('flag_id' in entry) return <Flag {...props} />
@@ -84,17 +92,24 @@ function AuditEvent({ entry, latest }: { entry: TimelineEntry; latest: boolean }
   const { t } = useTranslation()
   const who = source(entry, t)
   return (
-    <div className={cn('flex flex-col gap-2 sm:flex-row sm:gap-4', isCheckin(entry) ? 'sm:items-start' : 'sm:items-center')}>
-      <div className="flex shrink-0 items-baseline gap-2 sm:block sm:w-24">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:gap-4">
+      <div className="flex shrink-0 items-baseline gap-2 sm:block sm:w-28">
         <p className="tabular font-bold whitespace-nowrap">{clock(entryTime(entry))}</p>
-        {who && <p className="text-[0.8125rem] text-muted uppercase sm:mt-1">{who}</p>}
+        <p className="text-note text-muted sm:mt-1">{who}</p>
       </div>
       {isCheckin(entry) ? (
         <ReportCard entry={entry} latest={latest} />
       ) : (
-        <div className="flex min-w-0 flex-1 items-center gap-3 rounded-data bg-canvas p-4">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1 rounded-data bg-canvas p-4">
           <EntryIcon entry={entry} />
-          <p className="min-w-0 font-semibold">{describeEntry(entry, t)}</p>
+          {'event' in entry ? (
+            <>
+              <p className="min-w-0 font-semibold">{t(`taskEvent.${entry.event}`)}</p>
+              <LevelChip level={entry.level} />
+            </>
+          ) : (
+            <p className="min-w-0 flex-1 font-semibold">{describeEntry(entry, t)}</p>
+          )}
         </div>
       )}
     </div>
@@ -106,10 +121,19 @@ function ReportCard({ entry, latest }: { entry: CheckinEntry; latest: boolean })
   const { t } = useTranslation()
   const c = entry.report
   return (
-    <article className={cn('min-w-0 flex-1 space-y-4 rounded-data border border-line p-5', latest ? 'bg-canvas' : 'bg-surface')}>
-      <header className="flex flex-wrap items-center justify-between gap-x-4">
+    <article
+      className={cn(
+        'min-w-0 flex-1 space-y-4 rounded-data border p-5',
+        latest ? 'border-ink/30 bg-surface' : 'border-line bg-canvas text-ink/85',
+      )}
+    >
+      <header className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
         <h3 className="font-bold">{t('visitPage.timeline.report', { who: t(`reporter.${c.reporter}`) })}</h3>
-        <p className="text-sm text-muted">{latest ? t('visitPage.timeline.latest') : t('visitPage.timeline.previous')}</p>
+        {latest ? (
+          <span className="rounded-data bg-ink px-2 py-0.5 text-note font-semibold text-surface">{t('visitPage.timeline.latest')}</span>
+        ) : (
+          <p className="text-small text-muted">{t('visitPage.timeline.previous')}</p>
+        )}
       </header>
       <Facts>
         <Fact label={t('answers.feelingChange')} value={choiceText(c.feeling_change, 'feeling_change', t)} />
@@ -117,7 +141,7 @@ function ReportCard({ entry, latest }: { entry: CheckinEntry; latest: boolean })
         <Fact label={t('answers.pain')} value={painText(c.pain, t)} />
       </Facts>
       <Divider />
-      <Facts>
+      <Facts rows>
         <Fact label={t('answers.findings')} value={findingsText(c.new_findings, t)} />
         {Object.entries(c.items ?? {}).map(([key, value]) => (
           <Fact
@@ -147,8 +171,9 @@ function WhyFlagged({ task, entries }: { task: Task; entries: TimelineEntry[] })
           <div key={i} className="space-y-3">
             {i > 0 && <Divider />}
             {reports.map((r) => (
-              <div key={r.report_id} className={cn('space-y-1 rounded-data p-3.5', LEVEL_TONE[reason.level])}>
-                <p className="text-sm font-bold uppercase">
+              <div key={r.report_id} className={cn('space-y-1.5 rounded-data border-l-4 bg-canvas p-3.5', LEVEL_STYLE[reason.level].edge)}>
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small font-semibold">
+                  <LevelChip level={reason.level} />
                   {t(`reporter.${r.report.reporter}`)} · {clock(r.received_at)}
                 </p>
                 <p className="font-semibold">{reportSummary(r.report, t)}</p>

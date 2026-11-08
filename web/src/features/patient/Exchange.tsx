@@ -1,5 +1,4 @@
-import { CircleAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { exchangeToken } from '@/api/api'
@@ -8,7 +7,8 @@ import type { Role, SignInConflict } from '@/api/types'
 import { AnswerButton } from '@/components/AnswerButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { clock } from '@/lib/time'
+import { chosenLanguage } from '@/i18n'
+import { clock, isolate } from '@/lib/time'
 import { PatientLayout } from './PatientLayout'
 
 type State =
@@ -28,12 +28,15 @@ export function Exchange() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
   const [state, setState] = useState<State>({ name: 'choose' })
+  const titleKey = state.name === 'inactive' ? 'exchange.expired.title' : state.name === 'conflict' ? 'exchange.takeover.title' : 'exchange.who'
+  useEffect(() => { document.title = `${t(titleKey)} · Recheck` }, [titleKey, t])
 
   async function signIn(role: Role, takeover?: string) {
     setState({ name: 'sending', role })
     try {
       const session = await exchangeToken({ token, role, ...(takeover ? { takeover_session_id: takeover } : {}) })
-      void i18n.changeLanguage(session.language)
+      // Keep a language the person picked on this phone; otherwise use the visit's.
+      void i18n.changeLanguage(chosenLanguage() ?? session.language)
       navigate('/check-in', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -50,9 +53,12 @@ export function Exchange() {
   if (state.name === 'inactive') {
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-3 p-5">
-          <h1>{t('exchange.inactive')}</h1>
-          <p className="text-base text-muted">{t('exchange.help')}</p>
+        {/* There is no way to check a code without signing in, so this shows after the role is picked.
+            A short heading, then the instruction in body text. */}
+        <Card role="alert" className="space-y-3">
+          <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('exchange.expired.title')}</h1>
+          <p>{t('exchange.expired.help')}</p>
+          <p className="font-semibold">{t('exchange.help')}</p>
         </Card>
       </PatientLayout>
     )
@@ -62,12 +68,12 @@ export function Exchange() {
     const { conflict, role } = state
     return (
       <PatientLayout>
-        <Card className="space-y-4 p-5">
-          <h1>{t('exchange.takeover.title')}</h1>
-          <p className="text-base text-muted">
+        <Card className="space-y-5">
+          <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
+          <p>
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
-              time: clock(conflict.signed_in_since),
+              time: isolate(clock(conflict.signed_in_since, i18n.language)),
             })}
           </p>
           <div className="grid gap-3">
@@ -85,35 +91,38 @@ export function Exchange() {
 
   const sending = state.name === 'sending'
   return (
-    <PatientLayout>
-      <section aria-labelledby="who" className="space-y-6">
-        <div>
-          <h1 id="who">{t('exchange.who')}</h1>
-          <p className="p-lede">{t('exchange.intro')}</p>
+    <PatientLayout about>
+      <section aria-labelledby="who" className="space-y-6 pt-4">
+        <div className="space-y-3 text-center">
+          <h1 id="who" className="text-heading font-semibold leading-tight tracking-tight">
+            {t('exchange.who')}
+          </h1>
+          <p className="text-base text-muted">{t('exchange.intro')}</p>
         </div>
         <div className="grid gap-3">
           {(['patient', 'companion'] as const).map((role) => (
-            <AnswerButton
-              key={role}
-              selected={sending && state.role === role}
-              disabled={sending}
-              hint={role === 'companion' ? t('exchange.companionHint') : undefined}
-              onClick={() => void signIn(role)}
-            >
-              {t(`exchange.role.${role}`)}
-            </AnswerButton>
+            <div key={role} className="space-y-1">
+              <AnswerButton
+                selected={sending && state.role === role}
+                disabled={sending}
+                aria-describedby={role === 'companion' ? 'companion-hint' : undefined}
+                onClick={() => void signIn(role)}
+              >
+                {t(`exchange.role.${role}`)}
+              </AnswerButton>
+              {role === 'companion' && (
+                <p id="companion-hint" className="px-5 text-base text-muted">{t('exchange.companionHint')}</p>
+              )}
+            </div>
           ))}
         </div>
-        {sending && <p role="status" className="text-base text-muted">{t('pages.patientEntry')}</p>}
+        <p className="text-center text-base font-semibold">{t('exchange.help')}</p>
+        {sending && <p role="status" className="text-center text-muted">{t('pages.patientEntry')}</p>}
         {state.name === 'failed' && (
-          <p role="alert" className="rounded-card bg-level-red-bg px-5 py-4 text-base font-medium text-level-red">
+          <p role="alert" className="rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
             {t('exchange.failed')}
           </p>
         )}
-        <p className="flex items-start gap-3 rounded-card bg-surface px-5 py-4 text-base font-medium shadow-card">
-          <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-level-red" />
-          {t('exchange.help')}
-        </p>
       </section>
     </PatientLayout>
   )

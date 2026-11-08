@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardRow, TriageBoard, Worklist, WorklistRow } from '@/api/types'
-import { appNotOffered, applyFilters, conditionOf, countByLevel, feelingNowOf, joinBoard, needsReview, sortQueue } from './board'
+import { appNotOffered, applyFilters, conditionOf, countByLevel, feelingNowOf, joinBoard, needsReview, sortQueue, sortRows } from './board'
 
 const iso = (min: number) => new Date(Date.UTC(2026, 10, 7, 18, 0) - min * 60_000).toISOString()
 
@@ -110,6 +110,15 @@ describe('board', () => {
     expect(countByLevel(items)).toMatchObject({ red: 1, amber: 1, silent: 0 })
     expect(applyFilters(items, { needsReview: true, ctas: null, complaint: null }).map((i) => i.board.visit_id)).toContain('a')
     expect(applyFilters(items, { needsReview: false, ctas: 3, complaint: null })).toHaveLength(2)
+    expect(applyFilters(items, { needsReview: false, ctas: null, complaint: null, level: 'amber' }).map((i) => i.board.visit_id)).toEqual(['b'])
+  })
+
+  it('sorts manually without changing queue order', () => {
+    const [b, w] = toApi([row('a', 2, 10), row('b', 3, 50), row('c', 3, 20)])
+    const queue = sortQueue(joinBoard(b, w))
+    expect(sortRows(queue, 'place')).toBe(queue)
+    expect(sortRows(queue, 'waiting').map((i) => i.board.visit_id)).toEqual(['b', 'c', 'a'])
+    expect(queue.map((i) => i.board.visit_id)).toEqual(['a', 'b', 'c'])
   })
 
   it('needs review for an overdue prompt or reassessment even without a task', () => {

@@ -2,12 +2,16 @@
   "app": {
     "name": "Recheck"
   },
+  "demo": {
+    "badge": "Synthetic data, demo thresholds"
+  },
   "common": {
     "loading": "Loading…",
     "none": "None",
     "yes": "Yes",
     "no": "No",
-    "sending": "Sending…"
+    "sending": "Sending…",
+    "retry": "Try again"
   },
   "pages": {
     "signIn": "Staff sign-in",
@@ -16,7 +20,8 @@
     "visit": "Visit",
     "patientEntry": "Opening your check-in",
     "checkIn": "Check-in",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "escalations": "Escalations"
   },
   "nav": {
     "label": "Staff",
@@ -25,7 +30,8 @@
     "signOut": "Sign out",
     "skip": "Skip to content",
     "home": "Recheck staff home",
-    "synthetic": "Synthetic data"
+    "synthetic": "Synthetic data",
+    "escalations": "Escalations"
   },
   "signIn": {
     "explain": "Sign in with your staff account. All visits are synthetic.",
@@ -35,10 +41,11 @@
     "auth0": "Sign in",
     "auth0Hint": "Use Google, GitHub or a Recheck demo account.",
     "demoHeading": "Or open a demo role without an account",
+    "demoRoles": "Demo roles",
     "open": {
-      "triage_nurse": "Open triage board",
-      "physician": "Open physician worklist",
-      "charge_nurse": "Open as charge nurse"
+      "triage_nurse": "Triage nurse",
+      "physician": "Physician",
+      "charge_nurse": "Charge nurse"
     },
     "signedInAs": "{{name}} · {{role}}",
     "noPages": "Recheck has no pages for the {{role}} role yet.",
@@ -117,7 +124,8 @@
   "reporter": {
     "patient": "Patient",
     "companion": "Companion",
-    "staff": "Staff"
+    "staff": "Staff",
+    "system": "System"
   },
   "missing": {
     "unsure": "Not sure",
@@ -185,19 +193,24 @@
     "overdue": "{{value}} overdue",
     "ago": "{{value}} ago",
     "notApplicable": "Not applicable",
-    "readyNow": "Ready now"
+    "readyNow": "Ready now",
+    "dueNow": "Due now"
   },
   "flags": {
     "noResponse": "No response",
     "reassessOverdue": "Reassessment overdue",
-    "appNotOffered": "App not offered: {{reason}}"
+    "appNotOffered": "App not offered: {{reason}}",
+    "appNotOfferedShort": "App not offered",
+    "reassessOverdueShort": "Reassess overdue"
   },
   "sparkline": {
     "label": "Pain over time: {{values}}",
     "none": "No pain answers yet"
   },
   "qr": {
-    "label": "QR code for {{title}}"
+    "label": "QR code for {{title}}",
+    "copy": "Copy link",
+    "copied": "Copied"
   },
   "timeline": {
     "empty": "Nothing recorded yet.",
@@ -215,9 +228,16 @@
     "signedOut": "Signed out at {{time}}: {{reason}}"
   },
   "triage": {
-    "live": "Live · Updated {{time}}",
-    "reconnecting": "Reconnecting · Last updated {{time}}",
-    "counts": "Flags by level",
+    "live": "Live, refreshes every 5 seconds",
+    "reconnecting": "Offline, will reconnect",
+    "counts": "Filter by flag level",
+    "filters": "Filters",
+    "tableHeading": "Waiting patients",
+    "showing": "Showing {{shown}} of {{total}} patients",
+    "total_one": "{{count}} patient",
+    "total_other": "{{count}} patients",
+    "sortedBy": "Sorted by {{column}}. Place still shows queue order.",
+    "sortReset": "Back to queue order",
     "needsReview": "Needs review",
     "ctas": "CTAS",
     "complaint": "Complaint",
@@ -236,49 +256,19 @@
       "flags": "Flags",
       "lastCheckin": "Last check-in",
       "nextCheckin": "Next check-in",
-      "reassess": "Staff reassessment",
-      "pain": "Pain trend",
-      "place": "Place in line"
+      "reassess": "Reassess",
+      "pain": "Pain",
+      "place": "Place"
     },
-    "noApp": "No app",
-    "levelInfo": "About {{level}}",
-    "levelCount": "Patients with an open task at this level.",
-    "levelHelp": {
-      "red": {
-        "title": "Urgent review",
-        "what": "A new warning sign, “I need help now”, or feeling much worse.",
-        "then": "Acknowledge within 2 minutes, or it also goes to the charge nurse."
-      },
-      "amber": {
-        "title": "Review needed",
-        "what": "Feeling worse, “I’m worried”, or flagged by staff.",
-        "then": "Acknowledge within 10 minutes."
-      },
-      "silent": {
-        "title": "Missed check-in",
-        "what": "No answer to a check-in for 5 minutes.",
-        "then": "Acknowledge within 10 minutes."
-      },
-      "leave_risk": {
-        "title": "May leave",
-        "what": "The patient or a companion said they’re leaving.",
-        "then": "Acknowledge within 10 minutes."
-      },
-      "overdue": {
-        "title": "Non-urgent check",
-        "what": "A question for the desk, or a circle check missed or wrong.",
-        "then": "Acknowledge within 10 minutes."
-      }
-    }
+    "noApp": "No app"
   },
   "enrol": {
-    "detailsTitle": "Visit details",
-    "eligibilityTitle": "App eligibility",
-    "deliveryTitle": "Language and delivery",
-    "errorTitle": "Check the visit details",
     "ctas": "CTAS level",
+    "ctas1": "CTAS 1 is never in the waiting room.",
     "complaint": "Presenting complaint",
     "cedis": "CEDIS code (optional)",
+    "cedisList": "CEDIS suggestions",
+    "cedisNoMatch": "No CEDIS code matches. Type a 3-digit code or try another word.",
     "language": "Patient language",
     "channel": "How will they check in?",
     "pagerNo": "Pager number",
@@ -287,23 +277,25 @@
     "errors": {
       "ctas": "Choose a CTAS level from 2 to 5.",
       "cedis": "A CEDIS code is exactly 3 digits.",
-      "pagerRequired": "Enter a pager number of 1 to 6 digits.",
-      "exclusionRequired": "Choose why the patient app is off."
+      "pagerRequired": "Enter a pager number of 1 to 6 digits."
     },
     "doneTitle": "Visit created",
+    "doneRef": "Patient {{ref}}",
+    "dueAt": "{{time}} ({{rel}})",
+    "firstPrompt": "First check-in prompt",
+    "staffReassess": "Staff reassessment due",
+    "openVisit": "Open visit",
+    "save": "Save QR",
+    "errorSummary": "There is a problem",
+    "errorTitle": "Error: {{title}}",
+    "errorPrefix": "Error:",
     "pagerFallback": "Pager {{pager}} is bound to this visit; this QR is the phone fallback.",
     "print": "Print",
     "another": "Enrol another patient",
-    "cedisHelp": "Enter a three-digit code or search by complaint name.",
-    "cedisSuggestions": "Matching CEDIS codes",
+    "cedisHelp": "Type a 3-digit code or part of the complaint name, then choose from the list.",
     "groupLocked": "Set by the CEDIS code.",
-    "exclusionLocked": "This CEDIS code excludes the patient from the app.",
-    "openVisit": "Open visit",
-    "showLink": "Show check-in link",
+    "exclusion": "Patient app",
     "appOffered": "App is offered",
-    "exclusionDisclosure": "Who isn’t covered?",
-    "exclusionReason": "Reason the app is off",
-    "chooseExclusion": "Choose a reason",
     "notOffered": "Not offered: {{reason}}",
     "exclusionHelp": "No QR or prompts. The patient stays on this board and the staff reassessment timer keeps running.",
     "submitNoQr": "Create visit (no QR)",
@@ -339,7 +331,8 @@
     "failed": "This visit could not be loaded.",
     "app": "Patient app",
     "device": "Signed in",
-    "backToReview": "Back to review worklist",
+    "backToReview": "Back to physician worklist",
+    "backToEscalations": "Back to escalations",
     "assessmentRecorded": "Assessment recorded",
     "details": "Visit details",
     "routedTo": "Routed to {{roles}}",
@@ -391,36 +384,52 @@
     "staffTools": "Visit tools",
     "saved": "Changes saved.",
     "vitalsSaved": "Vitals saved",
-    "flagSaved": "Flag recorded"
+    "flagSaved": "Flag recorded",
+    "vitalsSavedAt": "Vitals saved · measured {{time}}"
   },
   "vitals": {
-    "sbp": "Systolic BP",
-    "dbp": "Diastolic BP",
-    "hr": "HR · beats/min",
-    "rr": "RR · breaths/min",
-    "spo2": "SpO2 · %",
-    "temp_c": "Temp · °C",
+    "sbp": "Systolic (mmHg)",
+    "dbp": "Diastolic (mmHg)",
+    "hr": "Heart rate (beats/min)",
+    "rr": "Respiratory rate (breaths/min)",
+    "spo2": "Oxygen saturation, SpO₂ (%)",
+    "temp_c": "Temperature (°C)",
     "supersedes": "This corrects an earlier entry",
     "newEntry": "New entry",
     "errors": {
       "none": "Enter at least one measurement.",
-      "bpPair": "Enter systolic and diastolic together.",
-      "bpOrder": "Diastolic must be lower than systolic.",
-      "range": "A value is outside the allowed range. Check for a typo.",
-      "future": "The measurement time cannot be in the future."
+      "bpPair": "Enter {{field}} as well. Systolic and diastolic go together.",
+      "bpOrder": "{{field}} must be lower than systolic.",
+      "range": "{{field}} must be a whole number from {{lo}} to {{hi}}.",
+      "future": "The measurement time cannot be in the future.",
+      "rangeDecimal": "{{field}} must be from {{lo}} to {{hi}}."
+    },
+    "names": {
+      "sbp": "Systolic blood pressure",
+      "dbp": "Diastolic blood pressure",
+      "hr": "Heart rate",
+      "rr": "Respiratory rate",
+      "spo2": "SpO₂",
+      "temp_c": "Temperature"
+    },
+    "short": {
+      "bp": "BP {{sbp}}/{{dbp}} mmHg",
+      "hr": "HR {{value}} beats/min",
+      "rr": "RR {{value}} breaths/min",
+      "spo2": "SpO₂ {{value}}%",
+      "temp_c": "Temp {{value}} °C"
     }
   },
   "patient": {
     "language": "Language",
-    "departmentWait": "AHS estimate right now: {{estimate}} from triage to seeing a doctor, for less urgent patients. It is not your personal wait.",
-    "waitUnavailable": "AHS wait estimate not available right now.",
-    "waited": "You have waited {{waited}} since triage.",
+    "waitUnavailable": "Not available right now.",
     "placeInLine": "The sickest people are seen first. Staff decide the order of care, not this app.",
-    "title": "You're signed in",
+    "homeTitle": "Waiting room check-ins",
     "titleCompanion": "You're answering for someone you're with",
     "nextCheckin": "Next check-in",
     "startCheckin": "Start check-in",
     "reportChange": "Tell us about a new symptom",
+    "reportChange_companion": "Tell us about something new you notice",
     "leaving": "I'm leaving",
     "sendFailed": "That did not send. Please try again, or tell a staff member.",
     "languageNotice": "This translation is a draft. A medical translator has not checked it yet. If anything is unclear, ask a staff member.",
@@ -431,8 +440,12 @@
     "signOutFailed": "This phone could not sign out. Try again.",
     "waitContext": "Waiting-room information",
     "contactStaff": "Contact staff",
-    "updated": "Updated {{time}}.",
-    "companionHint": "Tell us what you see or hear. Only they can tell us how they feel inside."
+    "moreOptions": "More options",
+    "companionHint": "Tell us what you see or hear. Only they can tell us how they feel inside.",
+    "waitedLabel": "You've waited since triage",
+    "estimateLabel": "AHS estimate",
+    "estimateValue": "{{estimate}} from triage to seeing a doctor, for less urgent patients",
+    "estimateNote": "Not your personal wait. Updated {{time}}."
   },
   "pain": {
     "low": "No pain",
@@ -442,14 +455,20 @@
     "unsure": "I'm not sure"
   },
   "change": {
-    "send": "Send to staff"
+    "send": "Send to staff",
+    "chooseOne": "Choose at least one change, or go back."
   },
   "leaving": {
     "title": "Are you leaving?",
     "info": "Please tell a staff member before you go. If you feel worse, return to triage right away.",
     "confirm": "Yes, I'm leaving",
     "cancel": "No, I'm staying",
-    "after": "If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
+    "after": "If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811.",
+    "title_companion": "Is the patient leaving?",
+    "info_companion": "Please tell a staff member before they go. If they seem worse, bring them back to triage right away.",
+    "confirm_companion": "Yes, they're leaving",
+    "cancel_companion": "No, they're staying",
+    "after_companion": "If they get worse after leaving, call 911 or take them to the nearest emergency department. For health advice any time, call 811."
   },
   "sent": {
     "title": "Thank you, we have your answers",
@@ -458,16 +477,17 @@
     "reported": "Reported",
     "received": "Received by the care team",
     "waiting": "Waiting to send",
-    "back": "Back",
     "stillChecking": "Staff will keep checking on you. If you feel worse, press \"I need help now\" or go to the triage desk.",
     "followup_one": "Answer 1 more question",
-    "followup_other": "Answer {{count}} more questions"
+    "followup_other": "Answer {{count}} more questions",
+    "backHome": "Back to home"
   },
   "message": {
     "none": "Staff will see your answers.",
     "clinician_will_check": "A doctor or nurse will check on you.",
     "clinician_told": "We told a doctor or nurse.",
-    "leaving_info": "Please tell staff before you leave. If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
+    "leaving_info": "Please tell staff before you leave. If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811.",
+    "leaving_info_companion": "Please tell staff before the patient leaves. If they get worse after leaving, call 911 or take them to the nearest emergency department. For health advice any time, call 811."
   },
   "outbox": {
     "saved": "Not sent yet. We will keep trying. If you feel worse, tell a staff member now."
@@ -482,7 +502,6 @@
       "patient": "I'm the patient",
       "companion": "I'm with the patient"
     },
-    "inactive": "This code does not work anymore. Please ask a staff member for a new one.",
     "failed": "That did not work. Try again, or ask a staff member.",
     "takeover": {
       "title": "Another phone is already signed in",
@@ -495,12 +514,17 @@
       "companion": "Someone with the patient"
     },
     "signedOut": {
-      "title": "You've been signed out.",
-      "help": "If you need help now, tell a staff member. To sign in again, scan the visit's QR code."
+      "title": "You've been signed out",
+      "helpNow": "If you need help now, tell a staff member.",
+      "scanAgain": "To sign in again, scan the visit's QR code with this phone's camera."
     },
     "intro": "Use this page to tell ER staff if things change while you wait. It does not replace talking to staff.",
     "help": "Feeling much worse? Tell a staff member now.",
-    "companionHint": "Family member or friend answering for them"
+    "companionHint": "Family member or friend answering for them",
+    "expired": {
+      "title": "This code no longer works",
+      "help": "Please ask a staff member for a new code."
+    }
   },
   "privacy": {
     "title": "What we store",
@@ -525,7 +549,10 @@
     "notShown": "Not shown"
   },
   "circle": {
-    "intro": "Shapes will appear one at a time. You see each one only once.",
+    "title": "Count the circles",
+    "chooseCount": "Tap − or + to choose a number.",
+    "intro": "You will see shapes appear one at a time. Count the circles. Ignore the squares.",
+    "once": "You only see them once. If you cannot do this, tap \"I can't do this\" and staff will check on you.",
     "start": "Start",
     "watch": "Watch the screen and count the circles.",
     "cantDo": "I can't do this",
@@ -533,12 +560,17 @@
     "fewer": "One fewer",
     "more": "One more",
     "confirm": "Done",
-    "notTest": "This is not a medical test. If it is hard, tap \"I can't do this\" and staff will check on you."
+    "notTest": "This is not a medical test. If it's hard, staff will simply come and check on you."
   },
   "desk": {
     "title": "Your question went to the triage nurse",
-    "body": "The triage nurse will get your question and come when they can. If you feel worse, go to the triage desk.",
-    "notClinical": "If you feel worse, press \"I'm worried I'm getting worse\". If you need help right away, press \"I need help now\" or go to the triage desk."
+    "body": "The triage nurse will get your question and come when they can.",
+    "notClinical": "If you feel worse, press \"I'm worried I'm getting worse\". If you need help right away, press \"I need help now\" or go to the triage desk.",
+    "confirmTitle": "Send a question to the triage nurse?",
+    "confirmBody": "This is for questions about your wait or care. The triage nurse will come when they can. If you feel worse, press \"I'm worried I'm getting worse\" instead.",
+    "confirmBody_companion": "This is for questions about their wait or care. The triage nurse will come when they can. If they seem worse, press \"I'm worried they're getting worse\" instead.",
+    "confirm": "Yes, send my question",
+    "cancel": "Cancel"
   },
   "flow": {
     "progress": "Question {{n}} of {{total}}",
@@ -570,7 +602,7 @@
     "app_excluded": "the app is no longer offered"
   },
   "review": {
-    "title": "Review worklist",
+    "title": "Physician worklist",
     "refresh": "Refresh",
     "updated": "Updated {{time}}",
     "stale": "Update failed. Showing the list from {{time}}.",
@@ -581,21 +613,24 @@
     "failed": "Worklist unavailable",
     "noMatch": "No matching visits",
     "tasks": "Review tasks",
-    "urgent": "Urgent review",
     "backup": "Routed to backup",
     "dueIn": "due in {{time}}",
     "overdueBy": "{{time}} overdue",
     "staffDue": "Staff reassessment {{timing}}",
     "filters": {
-      "all": "All tasks",
-      "open": "Needs acknowledgement",
-      "acknowledged": "Needs assessment"
+      "all": "All",
+      "open": "To acknowledge",
+      "acknowledged": "To assess"
     },
     "empty": {
       "all": "No active review tasks",
       "open": "No tasks need acknowledgement",
       "acknowledged": "No acknowledged tasks"
-    }
+    },
+    "dueNow": "due now",
+    "ackDueIn": "Due in {{time}}",
+    "ackOverdue": "{{time}} overdue",
+    "clearSearch": "Clear search"
   },
   "taskLevel": {
     "red": "Urgent review",
@@ -644,25 +679,37 @@
       "latestAnswers": "Latest check-in answers",
       "answersFrom": "{{who}} · {{time}}",
       "compare": "Compare reports in Timeline",
-      "clockSafeguard": "Patient answers do not reset the staff clock or clear this concern.",
       "review": "Review this concern",
-      "nextStep": "Next: record vitals and deliberately select an assessment disposition.",
-      "goAssessment": "Go to Assessment"
+      "goAssessment": "Go to Assessment",
+      "leadNoTask": "No open concern. Patient reports and the two clocks are below.",
+      "leadExcluded": "The app is not offered, so there are no patient reports. Staff check this patient in person.",
+      "lastKnown": "Last known report",
+      "silentSince": "No check-in since {{time}}",
+      "silentOverdue": "({{value}} overdue)",
+      "painRose": "Pain went up",
+      "nextAssess": "Next: choose an outcome and record the assessment.",
+      "nextVitalsAssess": "Next: record vitals if you measured them, then choose an outcome and record the assessment.",
+      "nextVitals": "Next: record vitals if you measured them. The assessment is recorded by the {{roles}}.",
+      "nextNone": "The assessment is recorded by the {{roles}}."
     },
     "assessment": {
-      "lead": "Record the staff check. Acknowledgement and assessment are separate steps.",
-      "vitalsLead": "Enter measured values; no values are prefilled.",
-      "bp": "Blood pressure · mmHg",
+      "lead": "Acknowledge, then record the outcome. Vitals are optional supporting input.",
+      "vitalsLead": "Enter the values you measured. Nothing is filled in for you.",
+      "bp": "Blood pressure (mmHg)",
       "measuredAt": "Measured at",
       "measuredAtHelp": "Leave empty to use the time you save.",
       "vitalsNotAssessment": "Saving vitals does not record the assessment.",
       "recordReminder": "Document clinical care in Connect Care.",
       "recordReminderLead": "Recheck supports waiting-room review, not the clinical record.",
       "disposition": "Assessment disposition",
-      "statusPending": "Assessment pending · No disposition selected",
-      "statusSelected": "Assessment pending · {{disposition}} selected",
-      "assessHelp": "Disabled until acknowledged and a disposition is deliberately selected.",
-      "firstAck": "First, acknowledge"
+      "statusPending": "No outcome chosen yet",
+      "statusSelected": "{{disposition}} chosen",
+      "assessHelp": "Acknowledge first, then choose an outcome and record it.",
+      "firstAck": "1. Acknowledge",
+      "chooseOutcome": "Choose an outcome of the assessment.",
+      "notYours": "Assessment pending. It is recorded by the {{roles}}.",
+      "lastAssessed": "No open review task. Last assessment: {{outcome}} at {{time}}.",
+      "recentVitals": "Recent vitals"
     },
     "timeline": {
       "lead": "Patient reports and task audit, with the evidence behind this concern.",
@@ -675,26 +722,41 @@
       "rule": "Rule",
       "version": "Version",
       "taskStatus": "Review task status",
-      "safeguard": "Patient responses never reset staff reassessment or clear an unresolved concern."
+      "emptyExcluded": "Nothing recorded yet. The app is not offered, so there are no patient reports; staff entries appear here."
     },
     "manage": {
-      "lead": "Visit details, app access and status. For clinical review or Flag higher, use Assessment.",
       "qr": "Visit QR",
       "qrAvailable": "Available while waiting",
       "qrHelp": "One reusable visit QR. After scanning, choose patient or companion; only one device can be signed in.",
       "qrReused": "The same QR is reused for this visit.",
-      "showQr": "Show visit QR",
+      "showQr": "Show QR",
       "qrUnavailable": "The visit QR is only available while the patient is waiting and the app is offered.",
       "currentStatus": "Current status: {{status}}",
       "statusHelp": "Updating visit status is separate from completing the review task. Record an assessment in Assessment.",
       "stopLead": "Irreversible app exclusion",
       "stopImpact": "Stops patient prompts and signs out the active device.",
       "stopContinues": "Staff reassessment continues.",
-      "stopCannotUndo": "This cannot be undone. The app is currently offered.",
+      "stopCannotUndo": "This cannot be undone.",
       "stepReason": "1. Select an exclusion reason",
       "stepConfirm": "2. Confirm the irreversible change",
-      "stopHelp": "Disabled until a reason is selected and the irreversible change is confirmed."
-    }
+      "stopHelp": "Choose a reason and confirm, then stop the app.",
+      "leadTriage": "Visit details, app access and status. To acknowledge, record vitals or flag higher, use the Assessment tab.",
+      "leadCharge": "Visit details, app access and status. To acknowledge or record vitals, use the Assessment tab.",
+      "chooseReason": "Choose a reason for stopping the app.",
+      "tickConfirm": "Confirm that you understand this cannot be undone.",
+      "dangerZone": "Danger zone",
+      "confirmTitle": "Mark this visit as {{status}}?",
+      "confirmEnds": "This ends the visit and signs out the patient's phone. The visit QR stops working.",
+      "confirmEndsNoPhone": "This ends the visit.",
+      "confirmChange": "The visit has already ended. This changes its recorded status.",
+      "confirmButton": "Yes, mark as {{status}}",
+      "cancel": "Cancel",
+      "statusDone": "Visit marked {{status}} at {{time}}. The patient's phone is signed out.",
+      "statusDoneNoPhone": "Visit marked {{status}} at {{time}}."
+    },
+    "appNotOffered": "App not offered: {{reason}}",
+    "safeguard": "Patient answers never reset the staff clock or clear an open concern.",
+    "unresolvedShort": "Unresolved"
   },
   "waitWords": {
     "short": "under 15 minutes",
@@ -739,10 +801,50 @@
     }
   },
   "siteSettings": {
+    "disclosure": "Site settings",
     "title": "Patient screens",
     "showLevel": "Show patients their triage level",
     "showLevelHelp": "Applies to every patient at this site. When off, patients see only How triage works. Target times are never shown.",
     "saving": "Saving…",
     "failed": "That setting did not save. Try again."
+  },
+  "escalations": {
+    "tabsLabel": "Charge nurse views",
+    "tabs": {
+      "escalations": "Escalations",
+      "handover": "Handover"
+    },
+    "lead": "Urgent tasks not acknowledged in time, tasks routed to the charge nurse, and triage nurse flags. Highest level first.",
+    "leadNoTlp": "No triage liaison physician is on duty, so every open task is shown here. Highest level first.",
+    "loading": "Loading escalations",
+    "failed": "Escalations unavailable",
+    "empty": "No escalations",
+    "emptyBody": "Nothing has been escalated or routed to the charge nurse.",
+    "listLabel": "Escalated and routed tasks",
+    "backup": "Routed to backup",
+    "raised": "Raised {{time}}"
+  },
+  "handover": {
+    "loading": "Loading handover",
+    "failed": "Handover unavailable",
+    "shift": "Shift {{start}} – {{end}}",
+    "template": "Fixed template. Named handover of tasks is not recorded here.",
+    "patients": "Waiting patients",
+    "openTasks": "Open tasks",
+    "reassessOverdue": "Overdue staff reassessments",
+    "noPatients": "No patients waiting",
+    "noTasks": "No open tasks",
+    "noReassess": "No staff reassessments overdue",
+    "noTask": "No open task",
+    "waited": "waiting {{time}}",
+    "flags": {
+      "ack": "Acknowledgement {{time}} overdue",
+      "reassess": "Reassessment overdue",
+      "silent": "Check-in missed",
+      "prompt": "Check-in late",
+      "leave": "May leave",
+      "none": "Nothing overdue",
+      "ackDueNow": "Acknowledgement due now"
+    }
   }
 }

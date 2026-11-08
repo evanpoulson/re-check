@@ -1,5 +1,8 @@
-import { checkEnrolment } from '@/api/cedis'
+import { cedisEntries, checkEnrolment, type CedisEntry } from '@/api/cedis'
 import type { AppExclusion, ComplaintGroup, Language, VisitCreate } from '@/api/types'
+
+/** Every complaint group, in the order the enrol form and the board filter list them. */
+export const COMPLAINT_GROUPS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general']
 
 export interface EnrolForm {
   ctas: number | null
@@ -15,6 +18,8 @@ export interface EnrolForm {
 export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no' | 'app_exclusion', string>> & {
   /** The backend's own message when the CEDIS map contradicts the nurse's choices. */
   conflict?: string
+  /** The field the conflict points at, for the error summary link. */
+  conflictField?: 'complaint' | 'exclusion'
 }
 
 export const emptyEnrol: EnrolForm = {
@@ -49,7 +54,10 @@ export function validateEnrol(
 
   if (!errors.cedis_code) {
     const conflict = checkEnrolment({ cedis_code: cedis || null, complaint_group: form.complaint_group, app_exclusion: form.app_exclusion })
-    if (conflict) errors.conflict = conflict.message
+    if (conflict) {
+      errors.conflict = conflict.message
+      errors.conflictField = conflict.kind === 'exclusion' ? 'exclusion' : 'complaint'
+    }
   }
   if (Object.keys(errors).length > 0) return { ok: false, errors }
 
@@ -67,4 +75,13 @@ export function validateEnrol(
     if (form.channel === 'pager') body.pager_no = pager
   }
   return { ok: true, body }
+}
+
+/** Codes that start with the query, then names that contain it. */
+export function matchCedis(query: string): CedisEntry[] {
+  const q = query.trim().toLowerCase()
+  if (!q) return cedisEntries
+  const byCode = cedisEntries.filter((e) => e.code.startsWith(q))
+  const byName = cedisEntries.filter((e) => !e.code.startsWith(q) && e.name.toLowerCase().includes(q))
+  return [...byCode, ...byName]
 }

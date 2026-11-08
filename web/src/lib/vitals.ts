@@ -1,4 +1,5 @@
-import type { VitalsCreate } from '@/api/types'
+import type { TFunction } from 'i18next'
+import type { VitalsCreate, VitalsRecord } from '@/api/types'
 
 export interface VitalsForm {
   sbp: string
@@ -11,11 +12,24 @@ export interface VitalsForm {
   supersedes: string
 }
 
+export type VitalsField = keyof Omit<VitalsForm, 'supersedes'>
+
 export const emptyVitals: VitalsForm = { sbp: '', dbp: '', hr: '', rr: '', spo2: '', temp_c: '', supersedes: '' }
 
-export type VitalsError = 'none' | 'bpPair' | 'bpOrder' | 'range'
+/** `none` is about the whole form; the rest belong to one field. */
+export type VitalsFieldError = 'bpPair' | 'bpOrder' | 'range'
+export type VitalsErrors = { none?: true } & Partial<Record<VitalsField, VitalsFieldError>>
 
-const RANGES = { sbp: [40, 300], dbp: [20, 200], hr: [20, 250], rr: [4, 60], spo2: [50, 100] } as const
+/** The contract's typo-catching ranges. Temperature allows decimals; the rest are whole numbers. */
+export const VITALS_RANGES: Record<VitalsField, readonly [number, number]> = {
+  sbp: [40, 300],
+  dbp: [20, 200],
+  hr: [20, 250],
+  rr: [4, 60],
+  spo2: [50, 100],
+  temp_c: [30, 44],
+}
+const FIELDS = Object.keys(VITALS_RANGES) as VitalsField[]
 
 const num = (s: string): number | null | 'bad' => {
   const v = s.trim()
@@ -27,42 +41,46 @@ const num = (s: string): number | null | 'bad' => {
 /**
  * Mirrors VitalsCreate: at least one value, sbp and dbp together with dbp below
  * sbp, and the contract's typo-catching ranges (these reject typos, not
- * abnormal values).
+ * abnormal values). Every field with a problem gets its own error.
  */
 export function validateVitals(
   form: VitalsForm,
   visitId: string,
   submissionId: string,
   measuredAt: string,
-): { ok: true; body: VitalsCreate } | { ok: false; error: VitalsError } {
-  const v = {
-    sbp: num(form.sbp),
-    dbp: num(form.dbp),
-    hr: num(form.hr),
-    rr: num(form.rr),
-    spo2: num(form.spo2),
-    temp_c: num(form.temp_c),
-  }
-  const values = Object.values(v)
-  if (values.every((x) => x === null)) return { ok: false, error: 'none' }
-  if (values.includes('bad')) return { ok: false, error: 'range' }
+): { ok: true; body: VitalsCreate } | { ok: false; errors: VitalsErrors } {
+  const v = Object.fromEntries(FIELDS.map((f) => [f, num(form[f])])) as Record<VitalsField, number | null | 'bad'>
+  if (FIELDS.every((f) => v[f] === null)) return { ok: false, errors: { none: true } }
 
-  for (const key of Object.keys(RANGES) as (keyof typeof RANGES)[]) {
-    const x = v[key]
-    const [lo, hi] = RANGES[key]
-    if (typeof x === 'number' && (!Number.isInteger(x) || x < lo || x > hi)) return { ok: false, error: 'range' }
+  const errors: VitalsErrors = {}
+  for (const f of FIELDS) {
+    const x = v[f]
+    const [lo, hi] = VITALS_RANGES[f]
+    if (x === 'bad' || (typeof x === 'number' && ((f !== 'temp_c' && !Number.isInteger(x)) || x < lo || x > hi))) errors[f] = 'range'
   }
-  if (typeof v.temp_c === 'number' && (v.temp_c < 30 || v.temp_c > 44)) return { ok: false, error: 'range' }
-  if ((v.sbp === null) !== (v.dbp === null)) return { ok: false, error: 'bpPair' }
-  if (typeof v.sbp === 'number' && typeof v.dbp === 'number' && v.dbp >= v.sbp) return { ok: false, error: 'bpOrder' }
+  if (!errors.sbp && !errors.dbp) {
+    if (v.sbp === null && v.dbp !== null) errors.sbp = 'bpPair'
+    else if (v.dbp === null && v.sbp !== null) errors.dbp = 'bpPair'
+    else if (typeof v.sbp === 'number' && typeof v.dbp === 'number' && v.dbp >= v.sbp) errors.dbp = 'bpOrder'
+  }
+  if (Object.keys(errors).length) return { ok: false, errors }
 
   const body: VitalsCreate = { submission_id: submissionId, visit_id: visitId, measured_at: measuredAt }
-  if (typeof v.sbp === 'number') body.sbp = v.sbp
-  if (typeof v.dbp === 'number') body.dbp = v.dbp
-  if (typeof v.hr === 'number') body.hr = v.hr
-  if (typeof v.rr === 'number') body.rr = v.rr
-  if (typeof v.spo2 === 'number') body.spo2 = v.spo2
-  if (typeof v.temp_c === 'number') body.temp_c = v.temp_c
+  for (const f of FIELDS) {
+    const x = v[f]
+    if (typeof x === 'number') body[f] = x
+  }
   if (form.supersedes) body.supersedes = form.supersedes
   return { ok: true, body }
+}
+
+/** "BP 150/90 mmHg, HR 110 beats/min, …", with units, for the timeline and saved-vitals lists. */
+export function vitalsText(v: Pick<VitalsRecord, VitalsField>, t: TFunction): string {
+  return [
+    v.sbp !== null && v.dbp !== null ? t('vitals.short.bp', { sbp: v.sbp, dbp: v.dbp }) : null,
+    v.hr !== null ? t('vitals.short.hr', { value: v.hr }) : null,
+    v.rr !== null ? t('vitals.short.rr', { value: v.rr }) : null,
+    v.spo2 !== null ? t('vitals.short.spo2', { value: v.spo2 }) : null,
+    v.temp_c !== null ? t('vitals.short.temp_c', { value: v.temp_c }) : null,
+  ].filter(Boolean).join(', ')
 }

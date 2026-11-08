@@ -2,30 +2,52 @@
   "app": {
     "name": "Recheck"
   },
+  "demo": {
+    "badge": "Synthetic na data, pang-demo na threshold"
+  },
   "common": {
     "loading": "Naglo-load…",
     "none": "Wala",
     "yes": "Oo",
     "no": "Hindi",
-    "sending": "Ipinapadala…"
+    "sending": "Ipinapadala…",
+    "retry": "Subukang muli"
+  },
+  "pages": {
+    "patientEntry": "Binubuksan ang inyong check-in"
+  },
+  "time": {
+    "in": "sa loob ng {{value}}",
+    "overdue": "lampas nang {{value}}",
+    "readyNow": "Puwede na ngayon",
+    "dueNow": "Ngayon na"
   },
   "patient": {
     "language": "Wika",
-    "waitUnavailable": "Walang tantiya sa ngayon.",
-    "title": "Naka-check in na po kayo",
-    "titleCompanion": "Tumutulong po kayo sa isang check-in",
+    "waitUnavailable": "Wala pa sa ngayon.",
+    "placeInLine": "Inuuna ang may pinakamalubhang kalagayan. Ang staff ang nagpapasya ng pagkakasunod-sunod ng pag-aalaga, hindi ang app na ito.",
+    "homeTitle": "Mga check-in sa waiting room",
+    "titleCompanion": "Sumasagot kayo para sa kasama ninyo",
     "nextCheckin": "Susunod na check-in",
     "startCheckin": "Simulan ang check-in",
-    "reportChange": "Mag-ulat ng pagbabago",
+    "reportChange": "Sabihin sa amin ang bagong sintomas",
+    "reportChange_companion": "Sabihin sa amin ang bagong napapansin ninyo",
     "leaving": "Aalis na ako",
     "sendFailed": "Hindi ito naipadala. Pakisubukang muli, o sabihan ang isang staff.",
     "languageNotice": "Draft pa lamang ang pagsasaling ito. Hindi pa ito nasusuri ng isang medical translator. Kung may hindi malinaw, magtanong po sa isang staff.",
+    "languageMissing": "Nasa Ingles muna ang mga tanong. Humingi ng interpreter sa kahit sinong staff.",
     "signOut": "Mag-sign out sa teleponong ito",
-    "signOutHelp": "Hindi na magpapadala ng check-in ang teleponong ito. Mananatili ang puwesto ng pasyente sa pila, at kahit sino ay maaaring mag-sign in muli sa pag-scan ng QR code.",
+    "signOutHelp": "Hindi na magpapadala ng check-in ang teleponong ito. Mananatili ang puwesto ninyo sa pila. Para mag-sign in muli, i-scan ang code.",
     "signOutConfirm": "Mag-sign out",
     "signOutFailed": "Hindi makapag-sign out ang teleponong ito. Subukang muli.",
     "waitContext": "Impormasyon tungkol sa waiting room",
-    "contactStaff": "Kausapin ang staff"
+    "contactStaff": "Kausapin ang staff",
+    "moreOptions": "Iba pang pagpipilian",
+    "companionHint": "Sabihin sa amin ang nakikita o naririnig ninyo. Siya lang ang makapagsasabi kung ano ang nararamdaman niya sa loob.",
+    "waitedLabel": "Tagal ng paghihintay mula sa triage",
+    "estimateLabel": "Tantiya ng AHS",
+    "estimateValue": "{{estimate}} mula triage hanggang makita ng doktor, para sa mga hindi gaanong urgent",
+    "estimateNote": "Hindi ito ang sarili ninyong paghihintay. Na-update nang {{time}}."
   },
   "pain": {
     "low": "Walang sakit",
@@ -35,45 +57,58 @@
     "unsure": "Hindi ako sigurado"
   },
   "change": {
-    "send": "Ipadala sa staff"
+    "send": "Ipadala sa staff",
+    "chooseOne": "Pumili ng kahit isang pagbabago, o bumalik."
   },
   "leaving": {
     "title": "Aalis na po ba kayo?",
     "info": "Pakisabihan po ang isang staff bago kayo umalis. Kung lumala ang pakiramdam ninyo, bumalik agad sa triage.",
     "confirm": "Oo, aalis na ako",
-    "cancel": "Hindi, dito lang ako"
+    "cancel": "Hindi, dito lang ako",
+    "after": "Kung lumala ang lagay ninyo pagkaalis, tumawag sa 911 o pumunta sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811.",
+    "title_companion": "Aalis na po ba ang pasyente?",
+    "info_companion": "Pakisabihan po ang isang staff bago siya umalis. Kung mukhang lumalala ang lagay niya, ibalik siya agad sa triage.",
+    "confirm_companion": "Oo, aalis na siya",
+    "cancel_companion": "Hindi, dito lang siya",
+    "after_companion": "Kung lumala ang lagay niya pagkaalis, tumawag sa 911 o dalhin siya sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811."
   },
   "sent": {
     "title": "Salamat po, natanggap namin ang inyong mga sagot",
+    "queuedTitle": "Hindi pa naipapadala",
+    "queuedBody": "Hindi pa naipapadala. Patuloy naming susubukan. Kung lumala ang pakiramdam ninyo, sabihan ang isang staff.",
     "reported": "Iniulat",
     "received": "Natanggap ng care team",
     "waiting": "Naghihintay maipadala",
-    "back": "Bumalik",
-    "stillChecking": "Titingnan pa rin kayo ng staff ayon sa sarili nilang iskedyul."
+    "stillChecking": "Patuloy kayong titingnan ng staff. Kung lumala ang pakiramdam ninyo, pindutin ang \"Kailangan ko ng tulong ngayon\" o pumunta sa triage desk.",
+    "followup_one": "Sagutin ang {{count}} pang tanong",
+    "followup_other": "Sagutin ang {{count}} pang tanong",
+    "backHome": "Bumalik sa home"
   },
   "message": {
     "none": "Makikita ng staff ang inyong mga sagot.",
     "clinician_will_check": "Titingnan kayo ng isang doktor o nurse.",
-    "clinician_told": "Nasabihan na ang isang doktor o nurse.",
-    "leaving_info": "Pakisabihan po ang staff bago kayo umalis. Bumalik agad sa triage kung lumala ang pakiramdam ninyo."
+    "clinician_told": "Sinabihan namin ang isang doktor o nurse.",
+    "leaving_info": "Pakisabihan po ang staff bago kayo umalis. Kung lumala ang lagay ninyo pagkaalis, tumawag sa 911 o pumunta sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811.",
+    "leaving_info_companion": "Pakisabihan po ang staff bago umalis ang pasyente. Kung lumala ang lagay niya pagkaalis, tumawag sa 911 o dalhin siya sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811."
   },
-  "outbox": {},
+  "outbox": {
+    "saved": "Hindi pa naipapadala. Patuloy naming susubukan. Kung lumala ang pakiramdam ninyo, sabihan ang isang staff ngayon."
+  },
   "exchange": {
     "invalid": {
       "title": "Hindi gumana ang code na ito"
     },
-    "askDesk": "Humingi po ng bagong code sa triage desk.",
+    "askDesk": "Humingi po ng bagong code sa isang staff.",
     "who": "Sino ang gumagamit ng teleponong ito?",
     "role": {
       "patient": "Ako ang pasyente",
       "companion": "Kasama ako ng pasyente"
     },
-    "inactive": "Hindi na aktibo ang code na ito. Pakikausap po ang triage desk.",
-    "failed": "Hindi iyon gumana. Pakisubukang muli, o kausapin ang triage desk.",
+    "failed": "Hindi ito gumana. Subukang muli, o magtanong sa isang staff.",
     "takeover": {
-      "title": "Masa-sign out nito ang isa pang device",
-      "who": "{{who}} ay naka-sign in sa ibang telepono mula pa noong {{time}}. Isang telepono lang ang maaaring naka-sign in.",
-      "confirm": "I-sign out ang isa pang telepono at magpatuloy",
+      "title": "May ibang teleponong naka-sign in na",
+      "who": "{{who}}: nag-sign in sa ibang telepono nang {{time}}. Isang telepono lang ang puwedeng gamitin. Kung magpapatuloy kayo, masa-sign out ang teleponong iyon.",
+      "confirm": "Gamitin na lang ang teleponong ito",
       "cancel": "Kanselahin"
     },
     "signedInAs": {
@@ -81,43 +116,76 @@
       "companion": "Isang kasama ng pasyente"
     },
     "signedOut": {
-      "title": "Na-sign out na po kayo.",
-      "help": "Kung kailangan ninyo ng tulong ngayon, sabihan ang isang staff. Para mag-sign in muli, i-scan ang QR code ng pagbisitang ito."
+      "title": "Na-sign out na po kayo",
+      "helpNow": "Kung kailangan ninyo ng tulong ngayon, sabihan ang isang staff.",
+      "scanAgain": "Para mag-sign in muli, i-scan ang QR code ng pagbisita gamit ang camera ng teleponong ito."
+    },
+    "intro": "Gamitin ang page na ito para sabihan ang staff ng ER kung may magbago habang naghihintay kayo. Hindi nito pinapalitan ang pakikipag-usap sa staff.",
+    "help": "Mas malala na ba ang pakiramdam ninyo? Sabihan ang isang staff ngayon.",
+    "companionHint": "Kapamilya o kaibigan na sumasagot para sa pasyente",
+    "expired": {
+      "title": "Hindi na gumagana ang code na ito",
+      "help": "Humingi po ng bagong code sa isang staff."
     }
   },
   "privacy": {
     "title": "Ang aming iniimbak",
     "stored1": "Ang inyong mga sagot at kung kailan ninyo ibinigay ang mga ito.",
-    "stored2": "Ang inyong triage level at ang uri ng inyong pangunahing idinaraing.",
+    "stored2": "Kung gaano ka-urgent ang pagbisita ninyo ayon sa nurse, at ang pangunahing dahilan ng inyong pagpunta.",
     "stored3": "Ang ginawa ng staff bilang tugon.",
     "notStored": "Hindi namin kailanman iniimbak ang inyong pangalan o health number.",
-    "synthetic": "Synthetic na data lamang ang gamit ng demo na ito."
+    "synthetic": "Synthetic na data lamang ang gamit ng demo na ito.",
+    "seen": "Nakikita ng staff ng ER ang inyong mga sagot. Hindi ito ang inyong medical chart.",
+    "shared": "Makikita ng sinumang may hawak ng teleponong ito ang page na ito. Mag-sign out bago ninyo ito ipahiram.",
+    "code": "Huwag ipakita sa iba ang inyong code."
   },
   "circle": {
+    "title": "Bilangin ang mga bilog",
+    "chooseCount": "Pindutin ang − o + para pumili ng numero.",
     "intro": "Lilitaw ang mga hugis nang isa-isa. Bilangin ang mga bilog. Huwag pansinin ang mga parisukat.",
+    "once": "Isang beses lang ninyo ito makikita. Kung hindi ninyo ito kaya, pindutin ang \"Hindi ko ito kaya\" at titingnan kayo ng staff.",
     "start": "Simulan",
     "watch": "Tingnan ang screen at bilangin ang mga bilog.",
     "cantDo": "Hindi ko ito kaya",
     "countLabel": "Bilang ng mga bilog",
     "fewer": "Bawasan ng isa",
     "more": "Dagdagan ng isa",
-    "confirm": "Iyan ang bilang ko"
+    "confirm": "Tapos na",
+    "notTest": "Hindi ito medikal na pagsusuri. Kung mahirap, pupuntahan lang po kayo ng staff para tingnan."
   },
   "desk": {
-    "title": "Naipadala ang inyong tanong sa triage nurse"
+    "title": "Naipadala ang inyong tanong sa triage nurse",
+    "body": "Matatanggap ng triage nurse ang inyong tanong at pupunta siya kapag kaya na niya.",
+    "notClinical": "Kung lumala ang pakiramdam ninyo, pindutin ang \"Nag-aalala ako na lumalala ang lagay ko\". Kung kailangan ninyo agad ng tulong, pindutin ang \"Kailangan ko ng tulong ngayon\" o pumunta sa triage desk.",
+    "confirmTitle": "Magpadala ng tanong sa triage nurse?",
+    "confirmBody": "Para ito sa mga tanong tungkol sa inyong paghihintay o pag-aalaga. Pupunta ang triage nurse kapag kaya na niya. Kung lumala ang pakiramdam ninyo, pindutin na lang ang \"Nag-aalala ako na lumalala ang lagay ko\".",
+    "confirmBody_companion": "Para ito sa mga tanong tungkol sa paghihintay o pag-aalaga sa pasyente. Pupunta ang triage nurse kapag kaya na niya. Kung mukhang lumalala ang lagay niya, pindutin na lang ang \"Nag-aalala ako na lumalala ang lagay niya\".",
+    "confirm": "Oo, ipadala ang tanong ko",
+    "cancel": "Kanselahin"
   },
   "flow": {
     "progress": "Tanong {{n}} sa {{total}}",
     "next": "Susunod",
-    "send": "Ipadala",
+    "send": "Ipadala sa staff",
     "back": "Bumalik",
-    "finishLater": "Tapusin mamaya",
+    "finishLater": "Huminto at ipadala ang mga nasagot ko",
     "finishLaterHelp": "Kung titigil kayo, ipapadala namin ang mga sagot na naibigay na ninyo.",
-    "sendNow": "Ipadala na ang mga babalang sintomas",
-    "progressLabel": "Progreso ng check-in"
+    "sendNow": "Ipadala sa staff ngayon",
+    "progressLabel": "Progreso ng check-in",
+    "stopEmpty": "Huminto muna",
+    "chooseAnswer": "Pumili ng sagot, o piliin ang \"Hindi ako sigurado\"."
   },
-  "pages": {
-    "patientEntry": "Binubuksan ang inyong check-in"
+  "waitWords": {
+    "short": "wala pang 15 minuto",
+    "minutes": "mga {{n}} minuto",
+    "hours": "mga {{lo}} hanggang {{hi}} oras"
+  },
+  "duration": {
+    "hours_one": "{{count}} oras",
+    "hours_other": "{{count}} oras",
+    "minutes_one": "{{count}} minuto",
+    "minutes_other": "{{count}} minuto",
+    "inTime": "sa loob ng {{value}}"
   },
   "triageInfo": {
     "title": "Paano gumagana ang triage",
@@ -127,10 +195,6 @@
     "worse": "Kung lumala ang pakiramdam ninyo, sabihan agad ang staff.",
     "leaving": "Pakisabihan po ang staff bago kayo umalis.",
     "level": {
-      "heading": "Ang inyong triage level",
-      "heading_companion": "Ang triage level ng pasyente",
-      "label": "Level {{level}}: {{name}}",
-      "setAtTriage": "Ito ang level na itinakda ng triage nurse sa pagdating.",
       "2": {
         "name": "Napakaapurahan",
         "body": "May nakitang palatandaan ang nurse na kailangang matingnan sa lalong madaling panahon. Madalas na titingin ang staff."
@@ -146,7 +210,11 @@
       "5": {
         "name": "Hindi apurahan",
         "body": "Maaari itong maghintay nang ligtas. Maaaring matagal ang paghihintay. Nasa tamang lugar kayo."
-      }
+      },
+      "heading": "Ang inyong triage level",
+      "heading_companion": "Ang triage level ng pasyente",
+      "label": "Level {{level}}: {{name}}",
+      "setAtTriage": "Ito ang level na itinakda ng triage nurse sa pagdating."
     }
   }
 }

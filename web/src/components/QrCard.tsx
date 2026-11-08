@@ -1,30 +1,58 @@
+import { Check, Copy } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
 
-/** A QR card for the visit's link. The QR encodes the exact link the API returned. */
-export function QrCard({ title, hint, link, enrolment = false }: {
+/**
+ * A QR card for the visit's link. The QR encodes the exact link the API returned,
+ * with a 4-module quiet zone so it scans when printed or saved. `svgId` lets the
+ * page save the same image.
+ */
+export function QrCard({
+  title,
+  hint,
+  link,
+  heading: Heading = 'h3',
+  svgId,
+}: {
   title: string
   hint: string
   link: string
-  enrolment?: boolean
+  heading?: 'h2' | 'h3'
+  svgId?: string
 }) {
   const { t } = useTranslation()
-  const Heading = enrolment ? 'h2' : 'h3'
+  const [copied, setCopied] = useState(false)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(link)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setCopied(false)
+    }
+  }
+
   return (
-    <Card className="flex flex-col items-center gap-4 p-4 text-center sm:p-8 print:break-inside-avoid">
-      <Heading className="text-2xl font-semibold tracking-tight">{title}</Heading>
-      <div className="max-w-full rounded-card bg-surface p-3 ring-1 ring-line">
-        <QRCodeSVG value={link} size={192} level="M" fgColor="#1d1d1f" role="img"
-          className="h-auto max-w-full" aria-label={t('qr.label', { title })} />
+    <Card className="flex flex-col items-center gap-4 p-8 text-center print:break-inside-avoid">
+      <Heading className="text-title font-semibold tracking-tight">{title}</Heading>
+      <div className="overflow-hidden rounded-card ring-1 ring-line">
+        <QRCodeSVG id={svgId} value={link} size={216} marginSize={4} level="M" fgColor="#1d1d1f" role="img" aria-label={t('qr.label', { title })} />
       </div>
-      <p className="max-w-xs text-[0.9375rem] text-muted">{hint}</p>
-      {enrolment ? (
-        <details className="no-print max-w-full text-sm text-muted">
-          <summary className="min-h-11 cursor-pointer py-3 text-brand-700 underline">{t('enrol.showLink')}</summary>
-          <p className="wrap-anywhere" dir="ltr">{link}</p>
-        </details>
-      ) : <p className="max-w-full break-all text-xs text-muted no-print">{link}</p>}
+      <p className="max-w-xs text-small text-muted">{hint}</p>
+      <div className="flex w-full min-w-0 items-center gap-2 rounded-xl bg-canvas py-1 pr-1 pl-3 no-print">
+        <span className="min-w-0 flex-1 truncate text-start text-note text-muted" title={link}>{link}</span>
+        <button
+          type="button"
+          onClick={() => void copy()}
+          className="inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-tap px-3 text-small font-medium text-brand-600 hover:bg-brand-50"
+        >
+          {copied ? <Check aria-hidden className="size-4" /> : <Copy aria-hidden className="size-4" />}
+          <span aria-live="polite">{copied ? t('qr.copied') : t('qr.copy')}</span>
+        </button>
+      </div>
     </Card>
   )
 }

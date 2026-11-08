@@ -7,8 +7,9 @@ import { ApiError } from '@/api/client'
 import { endpoints } from '@/api/endpoints'
 import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
+import { DemoBadge } from '@/components/DemoBadge'
 import { PageState } from '@/components/PageState'
-import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
+import { BellRing, ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -74,10 +75,11 @@ export function useStaff(): StaffContext {
 
 const link = ({ isActive }: { isActive: boolean }) => cn('staff-nav-link', isActive && 'is-active')
 
-/** Where each role starts. The charge nurse starts on the triage board and can also open the worklist. */
+/** Where each role starts. The charge nurse starts on escalations and can also open the triage board and worklist. */
 export function staffHome(role: StaffRole): string | null {
   if (role === 'physician') return '/staff/physician'
-  if (role === 'triage_nurse' || role === 'charge_nurse') return '/staff/triage'
+  if (role === 'triage_nurse') return '/staff/triage'
+  if (role === 'charge_nurse') return '/staff/escalations'
   return null
 }
 
@@ -115,23 +117,28 @@ export function StaffLayout() {
       <header className="staff-header no-print">
         <NavLink to={home} aria-label={t('nav.home')}><Brand /></NavLink>
         <nav aria-label={t('nav.label')}>
-          {SEES_WORKLIST.includes(role) && (
-            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
+          {/* Same order for every role, so each role's home comes first. */}
+          {role === 'charge_nurse' && (
+            <NavLink to="/staff/escalations" className={link}><BellRing aria-hidden className="size-[1.125rem]" />{t('nav.escalations')}</NavLink>
           )}
           {SEES_TRIAGE.includes(role) && (
             <>
-              <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>
-              <NavLink to="/staff/visits/new" className={link}><Plus size={18} aria-hidden />{t('nav.enrol')}</NavLink>
+              <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
+              <NavLink to="/staff/visits/new" className={link}><Plus aria-hidden className="size-[1.125rem]" />{t('nav.enrol')}</NavLink>
             </>
+          )}
+          {SEES_WORKLIST.includes(role) && (
+            <NavLink to="/staff/physician" className={link}><ClipboardList aria-hidden className="size-[1.125rem]" />{t('review.title')}</NavLink>
           )}
         </nav>
         <div className="staff-identity">
-          <span className="hidden sm:inline">
+          <DemoBadge compact />
+          <span className="staff-who">
             {staff.name ? t('signIn.signedInAs', { name: staff.name, role: t(`role.${role}`) }) : t(`role.${role}`)}
           </span>
-          <Button variant="ghost" aria-label={t('nav.signOut')} onClick={() => {
+          <Button variant="ghost" title={t('nav.signOut')} className="staff-sign-out" onClick={() => {
             void signOut().then(() => navigate('/staff/sign-in'))
-          }}><LogOut size={18} aria-hidden /></Button>
+          }}><LogOut aria-hidden className="size-[1.125rem]" /><span className="staff-sign-out-label">{t('nav.signOut')}</span></Button>
         </div>
       </header>
       <Outlet />

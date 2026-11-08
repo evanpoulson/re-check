@@ -2,30 +2,52 @@
   "app": {
     "name": "Recheck"
   },
+  "demo": {
+    "badge": "Datos ficticios, umbrales de demostración"
+  },
   "common": {
     "loading": "Cargando…",
     "none": "Ninguno",
     "yes": "Sí",
     "no": "No",
-    "sending": "Enviando…"
+    "sending": "Enviando…",
+    "retry": "Intentar de nuevo"
+  },
+  "pages": {
+    "patientEntry": "Abriendo su cuestionario"
+  },
+  "time": {
+    "in": "en {{value}}",
+    "overdue": "{{value}} de retraso",
+    "readyNow": "Ya es hora",
+    "dueNow": "Toca ahora"
   },
   "patient": {
     "language": "Idioma",
-    "waitUnavailable": "Estimación no disponible.",
-    "title": "Su llegada está registrada",
-    "titleCompanion": "Usted está ayudando a una persona a responder el cuestionario",
+    "waitUnavailable": "No disponible por ahora.",
+    "placeInLine": "Se atiende primero a las personas más graves. El personal decide el orden de atención, no esta aplicación.",
+    "homeTitle": "Cuestionarios en la sala de espera",
+    "titleCompanion": "Está respondiendo por una persona a la que acompaña",
     "nextCheckin": "Próximo cuestionario",
     "startCheckin": "Comenzar el cuestionario",
-    "reportChange": "Informar un cambio",
+    "reportChange": "Informar un síntoma nuevo",
+    "reportChange_companion": "Cuéntenos algo nuevo que note",
     "leaving": "Me voy",
     "sendFailed": "No se pudo enviar. Por favor, intente de nuevo o avise a un miembro del personal.",
     "languageNotice": "Esta traducción es un borrador. Un traductor médico todavía no la ha revisado. Si algo no está claro, pregunte a un miembro del personal.",
+    "languageMissing": "Por ahora las preguntas están en inglés. Pida un intérprete a cualquier miembro del personal.",
     "signOut": "Cerrar sesión en este teléfono",
-    "signOutHelp": "Este teléfono dejará de enviar cuestionarios. Se conserva el lugar en la fila, y cualquier persona puede volver a iniciar sesión escaneando el código QR.",
+    "signOutHelp": "Este teléfono dejará de enviar cuestionarios. Usted conserva su lugar en la fila. Para volver a iniciar sesión, escanee el código.",
     "signOutConfirm": "Cerrar sesión",
     "signOutFailed": "No se pudo cerrar la sesión en este teléfono. Intente de nuevo.",
     "waitContext": "Información de la sala de espera",
-    "contactStaff": "Contactar al personal"
+    "contactStaff": "Contactar al personal",
+    "moreOptions": "Más opciones",
+    "companionHint": "Cuéntenos lo que ve u oye. Solo la persona puede decirnos cómo se siente por dentro.",
+    "waitedLabel": "Tiempo de espera desde el triaje",
+    "estimateLabel": "Estimación de AHS",
+    "estimateValue": "{{estimate}} desde el triaje hasta ver a un médico, para los casos menos urgentes",
+    "estimateNote": "No es su espera personal. Actualizado a las {{time}}."
   },
   "pain": {
     "low": "Sin dolor",
@@ -35,45 +57,59 @@
     "unsure": "No lo sé"
   },
   "change": {
-    "send": "Enviar al personal"
+    "send": "Enviar al personal",
+    "chooseOne": "Elija al menos un cambio, o vuelva atrás."
   },
   "leaving": {
     "title": "¿Se va?",
     "info": "Por favor, avise a un miembro del personal antes de irse. Si se siente peor, regrese a triaje de inmediato.",
     "confirm": "Sí, me voy",
-    "cancel": "No, me quedo"
+    "cancel": "No, me quedo",
+    "after": "Si empeora después de irse, llame al 911 o vaya a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811.",
+    "title_companion": "¿La persona se va?",
+    "info_companion": "Por favor, avise a un miembro del personal antes de que se vaya. Si la persona parece estar peor, tráigala a triaje de inmediato.",
+    "confirm_companion": "Sí, la persona se va",
+    "cancel_companion": "No, la persona se queda",
+    "after_companion": "Si la persona empeora después de irse, llame al 911 o llévela a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811."
   },
   "sent": {
     "title": "Gracias, recibimos sus respuestas",
+    "queuedTitle": "Todavía no se envió",
+    "queuedBody": "Todavía no se envió. Seguiremos intentándolo. Si se siente peor, avise a un miembro del personal.",
     "reported": "Informado",
     "received": "Recibido por el equipo de atención",
     "waiting": "Pendiente de envío",
-    "back": "Volver",
-    "stillChecking": "El personal igual hará sus revisiones según su propio horario."
+    "stillChecking": "El personal seguirá revisando cómo está. Si se siente peor, toque “Necesito ayuda ahora” o vaya al mostrador de triaje.",
+    "followup_one": "Responder {{count}} pregunta más",
+    "followup_many": "Responder {{count}} preguntas más",
+    "followup_other": "Responder {{count}} preguntas más",
+    "backHome": "Volver al inicio"
   },
   "message": {
     "none": "El personal verá sus respuestas.",
-    "clinician_will_check": "Un profesional de la salud vendrá a hacerle una revisión.",
-    "clinician_told": "Ya se avisó a un profesional de la salud.",
-    "leaving_info": "Por favor, avise al personal antes de irse. Regrese a triaje de inmediato si se siente peor."
+    "clinician_will_check": "Un médico o el personal de enfermería vendrá a verle.",
+    "clinician_told": "Avisamos a un médico o al personal de enfermería.",
+    "leaving_info": "Por favor, avise al personal antes de irse. Si empeora después de irse, llame al 911 o vaya a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811.",
+    "leaving_info_companion": "Por favor, avise al personal antes de que la persona se vaya. Si empeora después de irse, llame al 911 o llévela a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811."
   },
-  "outbox": {},
+  "outbox": {
+    "saved": "Todavía no se envió. Seguiremos intentándolo. Si se siente peor, avise a un miembro del personal ahora."
+  },
   "exchange": {
     "invalid": {
       "title": "Este código no funcionó"
     },
-    "askDesk": "Pida un código nuevo en el mostrador de triaje.",
+    "askDesk": "Pida un código nuevo a un miembro del personal.",
     "who": "¿Quién está usando este teléfono?",
     "role": {
       "patient": "Soy la persona que vino a atenderse",
       "companion": "Acompaño a la persona que vino a atenderse"
     },
-    "inactive": "Este código ya no está activo. Por favor, hable con el mostrador de triaje.",
-    "failed": "No funcionó. Por favor, intente de nuevo o hable con el mostrador de triaje.",
+    "failed": "No funcionó. Intente de nuevo o pregunte a un miembro del personal.",
     "takeover": {
-      "title": "Esto cerrará la sesión en el otro dispositivo",
-      "who": "{{who}} tiene la sesión abierta en otro teléfono desde {{time}}. Solo un teléfono puede tener la sesión abierta.",
-      "confirm": "Cerrar la sesión en el otro teléfono y continuar",
+      "title": "Ya hay otro teléfono con la sesión iniciada",
+      "who": "{{who}}: sesión iniciada en otro teléfono a las {{time}}. Solo se puede usar un teléfono. Si continúa, se cerrará la sesión en ese teléfono.",
+      "confirm": "Usar este teléfono",
       "cancel": "Cancelar"
     },
     "signedInAs": {
@@ -81,43 +117,78 @@
       "companion": "Alguien que acompaña a la persona"
     },
     "signedOut": {
-      "title": "Se cerró su sesión.",
-      "help": "Si necesita ayuda ahora, avise a un miembro del personal. Para volver a iniciar sesión, escanee el código QR de la visita."
+      "title": "Se cerró su sesión",
+      "helpNow": "Si necesita ayuda ahora, avise a un miembro del personal.",
+      "scanAgain": "Para volver a iniciar sesión, escanee el código QR de la visita con la cámara de este teléfono."
+    },
+    "intro": "Use esta página para avisar al personal de urgencias si algo cambia mientras espera. No reemplaza hablar con el personal.",
+    "help": "¿Se siente mucho peor? Avise a un miembro del personal ahora.",
+    "companionHint": "Familiar o amistad que responde por la persona",
+    "expired": {
+      "title": "Este código ya no funciona",
+      "help": "Pida un código nuevo a un miembro del personal."
     }
   },
   "privacy": {
     "title": "Qué información guardamos",
     "stored1": "Sus respuestas y cuándo las dio.",
-    "stored2": "Su nivel de triaje y el grupo de su motivo de consulta.",
+    "stored2": "Qué tan urgente consideró su visita el personal de enfermería, y el motivo principal de su visita.",
     "stored3": "Lo que hizo el personal en respuesta.",
     "notStored": "Nunca guardamos su nombre ni su número de tarjeta de salud.",
-    "synthetic": "Esta demostración usa solo datos ficticios."
+    "synthetic": "Esta demostración usa solo datos ficticios.",
+    "seen": "El personal de urgencias ve sus respuestas. Esto no es su historia clínica.",
+    "shared": "Cualquier persona que tenga este teléfono puede ver esta página. Cierre la sesión antes de prestarlo.",
+    "code": "No comparta su código."
   },
   "circle": {
+    "title": "Cuente los círculos",
+    "chooseCount": "Toque − o + para elegir un número.",
     "intro": "Verá aparecer figuras una por una. Cuente los círculos. No tome en cuenta los cuadrados.",
+    "once": "Solo las verá una vez. Si no puede hacerlo, toque \"No puedo hacerlo\" y el personal irá a ver cómo está.",
     "start": "Comenzar",
     "watch": "Mire la pantalla y cuente los círculos.",
     "cantDo": "No puedo hacerlo",
     "countLabel": "Número de círculos",
     "fewer": "Uno menos",
     "more": "Uno más",
-    "confirm": "Ese es mi total"
+    "confirm": "Listo",
+    "notTest": "Esto no es una prueba médica. Si le resulta difícil, el personal simplemente vendrá a verle."
   },
   "desk": {
-    "title": "Su pregunta se envió al personal de enfermería de triaje"
+    "title": "Su pregunta se envió al personal de enfermería de triaje",
+    "body": "El personal de enfermería de triaje recibirá su pregunta y vendrá cuando pueda.",
+    "notClinical": "Si se siente peor, toque “Me preocupa estar empeorando”. Si necesita ayuda de inmediato, toque “Necesito ayuda ahora” o vaya al mostrador de triaje.",
+    "confirmTitle": "¿Enviar una pregunta al personal de enfermería de triaje?",
+    "confirmBody": "Esto es para preguntas sobre su espera o su atención. El personal de enfermería de triaje vendrá cuando pueda. Si se siente peor, mejor toque “Me preocupa estar empeorando”.",
+    "confirmBody_companion": "Esto es para preguntas sobre la espera o la atención de la persona. El personal de enfermería de triaje vendrá cuando pueda. Si la persona parece estar peor, mejor toque “Me preocupa que la persona esté empeorando”.",
+    "confirm": "Sí, enviar mi pregunta",
+    "cancel": "Cancelar"
   },
   "flow": {
     "progress": "Pregunta {{n}} de {{total}}",
     "next": "Siguiente",
-    "send": "Enviar",
+    "send": "Enviar al personal",
     "back": "Atrás",
-    "finishLater": "Terminar más tarde",
+    "finishLater": "Parar y enviar lo que respondí",
     "finishLaterHelp": "Si se detiene, enviaremos las respuestas que ya dio.",
-    "sendNow": "Enviar ahora las señales de alarma",
-    "progressLabel": "Avance del cuestionario"
+    "sendNow": "Enviar al personal ahora",
+    "progressLabel": "Avance del cuestionario",
+    "stopEmpty": "Parar por ahora",
+    "chooseAnswer": "Elija una respuesta, o elija “No lo sé”."
   },
-  "pages": {
-    "patientEntry": "Abriendo su cuestionario"
+  "waitWords": {
+    "short": "menos de 15 minutos",
+    "minutes": "unos {{n}} minutos",
+    "hours": "unas {{lo}} a {{hi}} horas"
+  },
+  "duration": {
+    "hours_one": "{{count}} hora",
+    "hours_many": "{{count}} horas",
+    "hours_other": "{{count}} horas",
+    "minutes_one": "{{count}} minuto",
+    "minutes_many": "{{count}} minutos",
+    "minutes_other": "{{count}} minutos",
+    "inTime": "en {{value}}"
   },
   "triageInfo": {
     "title": "Cómo funciona el triaje",
@@ -127,10 +198,6 @@
     "worse": "Si se siente peor, avise al personal de inmediato.",
     "leaving": "Por favor, avise al personal antes de irse.",
     "level": {
-      "heading": "Su nivel de triaje",
-      "heading_companion": "Nivel de triaje de la persona atendida",
-      "label": "Nivel {{level}}: {{name}}",
-      "setAtTriage": "Este es el nivel que asignó el personal de enfermería de triaje a la llegada.",
       "2": {
         "name": "Muy urgente",
         "body": "El personal de enfermería encontró señales que requieren atención muy pronto. El personal revisará con frecuencia."
@@ -146,7 +213,11 @@
       "5": {
         "name": "No urgente",
         "body": "Esto puede esperar sin riesgo. La espera puede ser larga. Está en el lugar correcto."
-      }
+      },
+      "heading": "Su nivel de triaje",
+      "heading_companion": "Nivel de triaje de la persona atendida",
+      "label": "Nivel {{level}}: {{name}}",
+      "setAtTriage": "Este es el nivel que asignó el personal de enfermería de triaje a la llegada."
     }
   }
 }
