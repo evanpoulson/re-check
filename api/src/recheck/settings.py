@@ -146,6 +146,17 @@ def demo_checkins_enabled() -> bool:
     return _flag("RECHECK_DEMO_CHECKINS")
 
 
+def demo_pace() -> float:
+    """Demo setting, 1 by default: multiplies how long staff have to acknowledge a task and how long a check-in can
+    be overdue before the visit goes silent, so a live demo isn't all alarms. Never below 1: it can only give more
+    time. The CTAS check-in and reassessment intervals don't change.
+    """
+    value = float(_get("RECHECK_DEMO_PACE") or "1")
+    if value < 1:
+        raise ValueError("RECHECK_DEMO_PACE must be 1 or more")
+    return value
+
+
 def _flag(name: str) -> bool:
     return (_get(name) or "false").lower() in ("1", "true", "yes")
 

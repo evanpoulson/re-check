@@ -15,6 +15,7 @@ from uuid import UUID
 
 from psycopg import AsyncConnection
 
+from . import settings
 from .rules import ACK_DUE, RULESET_VERSION, Fire, highest
 
 
@@ -24,7 +25,7 @@ async def raise_task(conn: AsyncConnection, visit_id: UUID, fires: list[Fire], e
         return None
     level = highest(f.level for f in fires)
     routed = sorted({r.value for f in fires for r in f.routed_to})
-    due_after = min(ACK_DUE[f.level] for f in fires)
+    due_after = min(ACK_DUE[f.level] for f in fires) * settings.demo_pace()
 
     cur = await conn.execute(
         "SELECT id FROM task WHERE visit_id = %s AND status <> 'completed' FOR UPDATE", [visit_id]

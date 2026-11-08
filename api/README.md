@@ -56,6 +56,7 @@ uv run python -m recheck.synthetic.load --tokens-out ../.seed-tokens.json   # lo
   - three visits where the app isn't offered
 - **Generated visits.** The other 29 are generated. About 7% leave without being seen. That target comes from Alberta's 4.1–4.8% and Ottawa's 9.1%. Relative effects of triage level, age, arrival hour and ambulance come from NHAMCS 2019–2022, and the crowding effect from Ottawa.
 - **Sources.** `calibration.py` lists every number with its source. Values marked "demo assumption" are for the site to replace. This is not a validated risk model.
+- **Between demos.** `uv run python -m recheck.synthetic.reseed` discharges every waiting visit and loads a fresh nine-visit board under a new batch name: the scripted demo cases, one visit without the app and two quiet generated visits. Check-ins and staff reassessments are staggered one to three hours out, so only `head_injury_unanswered` and `pager_silent` start silent, and open tasks get at least 15 minutes to acknowledge. QR tokens are encrypted with `RECHECK_SECRET_KEY`, so the desk can re-show them if the key matches the API's. `--dry-run` shows the board without loading it.
 - **Tests.** `tests/synthetic` checks schema-level invariants across many seeds. Set `RECHECK_TEST_DATABASE_URL` to a scratch database to also run the load test.
 
 ## Department wait estimates
@@ -93,6 +94,7 @@ AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
 AUTH0_CALLBACK_URL=...                     # optional: defaults to {RECHECK_PUBLIC_URL}/api/staff/callback
 RECHECK_DEMO_STAFF=false                   # optional: true turns on the no-account demo role picker
+RECHECK_DEMO_PACE=1                        # optional: 4 gives staff 4x longer to acknowledge and check-ins 4x longer before silent
 RECHECK_DEMO_CHECKINS=false                # optional: true opens a new visit's first check-in at enrolment and allows open-checkin
 RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when unset)
 RECHECK_VAPID_PRIVATE_KEY=...              # optional: turns on check-in reminders by Web Push (`uv run python -m recheck.push keygen`)

@@ -51,6 +51,7 @@ Open http://localhost:8080. Localhost counts as a secure origin, so no HTTPS is 
    | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. Defaults to `15`: this box runs the missed check-in and escalation timers. `0` turns them off. Keep them off on every other machine that uses the same database. |
    | Variable | `RECHECK_DEMO_STAFF` | `true` keeps the demo role picker working. The front end needs it until it supports Auth0 sign-in. |
    | Variable | `RECHECK_DEMO_CHECKINS` | Optional. Defaults to `true` on this box: a new visit's first check-in opens at enrolment instead of one CTAS interval later, and desk staff see "Open check-in now" on Visit management. `false` turns both off. |
+   | Variable | `RECHECK_DEMO_PACE` | Optional. Defaults to `4` on this box: staff get four times longer to acknowledge a task (8 minutes for red), and a check-in can be overdue 20 minutes before the visit goes silent. `1` uses the demo rule timings. The CTAS intervals don't change. |
    | Secret | `RECHECK_VAPID_PRIVATE_KEY` | Optional. Turns on check-in reminders by Web Push. Generate with `cd api && uv run python -m recheck.push keygen`. Keep it for the whole event: a new key breaks every saved subscription. Apply `db/migrations/2026-11-08-push-reminders.sql` first. |
    | Variable | `RECHECK_VAPID_SUBJECT` | Optional. A `mailto:` or `https://` contact for the push services. Defaults to `https://<SITE_ADDRESS>`. |
 
