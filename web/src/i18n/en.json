@@ -748,6 +748,7 @@
     "noTask": "No open task",
     "waited": "waiting {{time}}",
     "flags": {
+      "ack": "Acknowledgement {{time}} overdue",
       "reassess": "Reassessment overdue",
       "silent": "Check-in missed",
       "prompt": "Check-in late",

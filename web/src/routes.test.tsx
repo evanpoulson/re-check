@@ -168,7 +168,8 @@ describe('charge nurse', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Handover' })).toBeInTheDocument()
     expect(screen.getByText(/^Shift /)).toBeInTheDocument()
     const patients = screen.getByRole('list', { name: 'Waiting patients' })
-    expect(within(patients).getAllByRole('link')[0]).toHaveTextContent('#1')
+    // The escalated red task is past its acknowledgement deadline, so its patient row says so.
+    expect(within(patients).getAllByRole('link')[0]).toHaveTextContent(/#1.*Acknowledgement \d+ min overdue/)
     expect(screen.getByRole('list', { name: 'Open tasks' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /Overdue staff reassessments/ })).toBeInTheDocument()
   })

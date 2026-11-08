@@ -271,11 +271,17 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
   const { t } = useTranslation()
   const { visit } = row
   const id = visit.visit_id
+  const task = row.open_task
+  const ackLate = task?.status === 'open' && task.ack_due_at ? now - Date.parse(task.ack_due_at) : null
+  const ackOverdue = ackLate !== null && ackLate > 0
+  // Everything overdue, not just the first: acknowledgement, patient check-in, staff reassessment.
   const notes = [
-    row.reassess_overdue && t('handover.flags.reassess'),
+    ackOverdue && t('handover.flags.ack', { time: formatMinutes(ackLate) }),
     row.silent ? t('handover.flags.silent') : row.prompt_overdue && t('handover.flags.prompt'),
+    row.reassess_overdue && t('handover.flags.reassess'),
     row.leave_risk && t('handover.flags.leave'),
   ].filter(Boolean)
+  const urgent = ackOverdue || row.reassess_overdue
   return (
     <li>
       <Link className="review-row" to={`/staff/visits/${id}`} aria-labelledby={`hp-ref-${id}`}>
@@ -289,7 +295,7 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
         </div>
         <div className="review-status">
           {notes.length ? (
-            <span className={row.reassess_overdue ? 'font-semibold text-level-red' : ''}>{notes.join(' · ')}</span>
+            <span className={urgent ? 'font-semibold text-level-red' : ''}>{notes.join(' · ')}</span>
           ) : (
             <span className="text-muted">{t('handover.flags.none')}</span>
           )}
