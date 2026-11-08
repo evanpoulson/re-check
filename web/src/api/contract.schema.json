@@ -1349,6 +1349,80 @@
         }
       ]
     },
+    "PushConfig": {
+      "description": "Whether this server sends reminders, and the key a browser subscribes with.",
+      "properties": {
+        "enabled": {
+          "description": "False when the server has no push key; the screen hides the reminder control.",
+          "title": "Enabled",
+          "type": "boolean"
+        },
+        "public_key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "VAPID application server key: the uncompressed P-256 public key, base64url. Null when disabled.",
+          "title": "Public Key"
+        }
+      },
+      "required": [
+        "enabled"
+      ],
+      "title": "PushConfig",
+      "type": "object"
+    },
+    "PushKeys": {
+      "additionalProperties": false,
+      "properties": {
+        "auth": {
+          "maxLength": 24,
+          "minLength": 22,
+          "pattern": "^[A-Za-z0-9_-]+=*$",
+          "title": "Auth",
+          "type": "string"
+        },
+        "p256dh": {
+          "maxLength": 88,
+          "minLength": 86,
+          "pattern": "^[A-Za-z0-9_-]+=*$",
+          "title": "P256Dh",
+          "type": "string"
+        }
+      },
+      "required": [
+        "p256dh",
+        "auth"
+      ],
+      "title": "PushKeys",
+      "type": "object"
+    },
+    "PushSubscriptionSave": {
+      "additionalProperties": false,
+      "description": "`PushSubscription.toJSON()` from the browser, minus `expirationTime`.\n\nSaving is idempotent: the same endpoint and keys again change nothing; new\nones replace the device's earlier subscription.",
+      "properties": {
+        "endpoint": {
+          "maxLength": 2048,
+          "pattern": "^https://",
+          "title": "Endpoint",
+          "type": "string"
+        },
+        "keys": {
+          "$ref": "#/$defs/PushKeys"
+        }
+      },
+      "required": [
+        "endpoint",
+        "keys"
+      ],
+      "title": "PushSubscriptionSave",
+      "type": "object"
+    },
     "QualitySummary": {
       "description": "Aggregates only. Individual logs are for incident review (FR20).",
       "properties": {
@@ -3253,6 +3327,15 @@
     },
     "PatientReport": {
       "$ref": "#/$defs/PatientReport"
+    },
+    "PushConfig": {
+      "$ref": "#/$defs/PushConfig"
+    },
+    "PushKeys": {
+      "$ref": "#/$defs/PushKeys"
+    },
+    "PushSubscriptionSave": {
+      "$ref": "#/$defs/PushSubscriptionSave"
     },
     "QualitySummary": {
       "$ref": "#/$defs/QualitySummary"

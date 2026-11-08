@@ -216,5 +216,22 @@
       "label": "Level {{level}}: {{name}}",
       "setAtTriage": "Ito ang level na itinakda ng triage nurse sa pagdating."
     }
+  },
+  "reminders": {
+    "title": "Mga paalala sa check-in",
+    "hint": "Puwedeng mag-vibrate ang telepono mo kapag oras na ng check-in.",
+    "turnOn": "I-on ang mga paalala",
+    "turnOff": "I-off ang mga paalala",
+    "on": "Naka-on ang mga paalala. Magva-vibrate ang telepono mo kapag oras na ng check-in.",
+    "courtesy": "Kung hindi dumating ang paalala, titingnan ka pa rin ng staff.",
+    "blocked": "Naka-block ang mga notification para sa site na ito. Para makatanggap ng paalala, payagan ang mga ito sa settings ng telepono mo.",
+    "failed": "Hindi na-on ang mga paalala. Subukan ulit.",
+    "homeScreenTitle": "Kumuha ng paalala sa check-in sa iPhone",
+    "homeScreen1": "Sa Safari, i-tap ang \"Share\" button.",
+    "homeScreen2": "Piliin ang \"Add to Home Screen\".",
+    "homeScreen3": "Buksan ang Recheck mula sa Home Screen mo, saka i-on ang mga paalala.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "Oras na ng check-in mo.",
+    "dueNow": "Oras na ng check-in mo."
   }
 }

@@ -9,6 +9,8 @@ import type {
   Handover,
   PatientHome,
   PatientReport,
+  PushConfig,
+  PushSubscriptionSave,
   ReportReceipt,
   SessionInfo,
   SignOut,
@@ -80,3 +82,9 @@ export const exchangeToken = (body: TokenExchange) => request<SessionInfo>('POST
 export const getPatientHome = () => request<PatientHome>('GET', endpoints.patientHome())
 export const postReport = (body: PatientReport) => request<ReportReceipt>('POST', endpoints.postReport(), body)
 export const signOut = (body: SignOut) => request<undefined>('POST', endpoints.signOut(), body)
+
+// Check-in reminders by Web Push
+export const getPushConfig = () => request<PushConfig>('GET', endpoints.pushConfig())
+export const savePushSubscription = (body: PushSubscriptionSave) =>
+  request<undefined>('PUT', endpoints.pushSubscription(), body)
+export const endPushSubscription = () => request<undefined>('DELETE', endpoints.pushSubscription())

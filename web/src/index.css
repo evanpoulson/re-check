@@ -639,6 +639,18 @@
     font-size: var(--text-base);
     color: var(--color-muted);
   }
+  /* Check-in reminders: a quieter card under the check-in. */
+  .patient-reminders {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+  .patient-reminders h2 {
+    font-size: var(--text-base);
+    font-weight: 600;
+  }
   /* Compact version of the redesign's glass help bar. */
   .patient-dock {
     position: fixed;

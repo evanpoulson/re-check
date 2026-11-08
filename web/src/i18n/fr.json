@@ -219,5 +219,22 @@
       "label": "Niveau {{level}} : {{name}}",
       "setAtTriage": "C'est le niveau fixé par le personnel infirmier du triage à l'arrivée."
     }
+  },
+  "reminders": {
+    "title": "Rappels du questionnaire",
+    "hint": "Votre téléphone peut vibrer quand c'est l'heure du questionnaire.",
+    "turnOn": "Activer les rappels",
+    "turnOff": "Désactiver les rappels",
+    "on": "Les rappels sont activés. Votre téléphone vibrera quand le questionnaire sera prêt.",
+    "courtesy": "Si un rappel n'arrive pas, le personnel vient quand même vous voir.",
+    "blocked": "Les notifications sont bloquées pour ce site. Pour recevoir les rappels, autorisez-les dans les réglages de votre téléphone.",
+    "failed": "Les rappels n'ont pas pu être activés. Réessayez.",
+    "homeScreenTitle": "Recevoir les rappels sur iPhone",
+    "homeScreen1": "Dans Safari, touchez le bouton Partager.",
+    "homeScreen2": "Choisissez « Sur l'écran d'accueil ».",
+    "homeScreen3": "Ouvrez Recheck depuis votre écran d'accueil, puis activez les rappels.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "C'est l'heure de votre questionnaire.",
+    "dueNow": "C'est l'heure de votre questionnaire."
   }
 }

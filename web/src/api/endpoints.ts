@@ -26,4 +26,6 @@ export const endpoints = {
   signOut: () => '/api/session/sign-out',
   patientHome: () => '/api/patient/home',
   postReport: () => '/api/patient/reports',
+  pushConfig: () => '/api/patient/push',
+  pushSubscription: () => '/api/patient/push/subscription',
 } as const

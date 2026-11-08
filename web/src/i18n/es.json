@@ -219,5 +219,22 @@
       "label": "Nivel {{level}}: {{name}}",
       "setAtTriage": "Este es el nivel que asignó el personal de enfermería de triaje a la llegada."
     }
+  },
+  "reminders": {
+    "title": "Recordatorios del cuestionario",
+    "hint": "Su teléfono puede vibrar cuando sea hora del cuestionario.",
+    "turnOn": "Activar recordatorios",
+    "turnOff": "Desactivar recordatorios",
+    "on": "Los recordatorios están activados. Su teléfono vibrará cuando toque el cuestionario.",
+    "courtesy": "Si un recordatorio no llega, el personal igual lo revisará.",
+    "blocked": "Las notificaciones están bloqueadas para este sitio. Para recibir recordatorios, permítalas en los ajustes de su teléfono.",
+    "failed": "No se pudieron activar los recordatorios. Inténtelo de nuevo.",
+    "homeScreenTitle": "Reciba recordatorios en el iPhone",
+    "homeScreen1": "En Safari, toque el botón Compartir.",
+    "homeScreen2": "Elija «Añadir a pantalla de inicio».",
+    "homeScreen3": "Abra Recheck desde su pantalla de inicio y active los recordatorios.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "Es hora de su cuestionario.",
+    "dueNow": "Es hora de su cuestionario."
   }
 }

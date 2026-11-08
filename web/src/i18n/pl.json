@@ -222,5 +222,22 @@
       "label": "Poziom {{level}}: {{name}}",
       "setAtTriage": "Ten poziom ustaliła pielęgniarka triażowa przy przyjęciu."
     }
+  },
+  "reminders": {
+    "title": "Przypomnienia o ankiecie",
+    "hint": "Telefon może zawibrować, gdy przyjdzie czas na ankietę.",
+    "turnOn": "Włącz przypomnienia",
+    "turnOff": "Wyłącz przypomnienia",
+    "on": "Przypomnienia są włączone. Telefon zawibruje, gdy przyjdzie czas na ankietę.",
+    "courtesy": "Nawet jeśli przypomnienie nie dotrze, personel i tak do Ciebie zajrzy.",
+    "blocked": "Powiadomienia z tej strony są zablokowane. Aby otrzymywać przypomnienia, zezwól na nie w ustawieniach telefonu.",
+    "failed": "Nie udało się włączyć przypomnień. Spróbuj ponownie.",
+    "homeScreenTitle": "Przypomnienia na iPhonie",
+    "homeScreen1": "W Safari stuknij przycisk Udostępnij.",
+    "homeScreen2": "Wybierz „Do ekranu początkowego”.",
+    "homeScreen3": "Otwórz Recheck z ekranu początkowego, a potem włącz przypomnienia.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "Czas na Twoją ankietę.",
+    "dueNow": "Czas na Twoją ankietę."
   }
 }

@@ -8,6 +8,7 @@ import { HelpBar } from '@/components/HelpBar'
 import { TriageCard } from '@/components/TriageCard'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
 import { chooseLanguage, LANGUAGES } from '@/i18n'
+import { useDueAlert } from '@/lib/dueAlert'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
 import { clock, durationWords, isolate, waitWords } from '@/lib/time'
 
@@ -62,6 +63,8 @@ export function PatientLayout({ home, dock, about = false, children }: Props) {
   const { t, i18n } = useTranslation()
   const estimate = home?.wait_estimate
   const lang = LANGUAGES.includes(i18n.language as never) ? i18n.language : 'en'
+  // A chime, buzz and flashing title when a check-in comes due with the page open.
+  const dueNow = useDueAlert(home?.next_checkin_due_at, t('reminders.dueNow'))
   // A language change re-renders the heading but not the step, so retitle here too.
   useEffect(() => {
     const heading = document.querySelector('.patient-shell main h1')
@@ -99,6 +102,7 @@ export function PatientLayout({ home, dock, about = false, children }: Props) {
       )}
 
       <OutboxBanner />
+      <p role="status" className="sr-only">{dueNow ? t('reminders.dueNow') : ''}</p>
       <main className="space-y-5">{children}</main>
       <section aria-label={t('patient.waitContext')} className="patient-context">
         <p>{t('patient.placeInLine')}</p>

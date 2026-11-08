@@ -196,6 +196,9 @@ PainAnswered?: PainAnswered
 PatientHome?: PatientHome
 PatientMessage?: PatientMessage
 PatientReport?: PatientReport
+PushConfig?: PushConfig
+PushKeys?: PushKeys
+PushSubscriptionSave?: PushSubscriptionSave
 QualitySummary?: QualitySummary
 QuestionItem?: QuestionItem
 QuestionOption?: QuestionOption
@@ -832,6 +835,43 @@ export interface WaitEstimate {
 as_of: string
 minutes: number
 source: WaitSource
+}
+/**
+ * Whether this server sends reminders, and the key a browser subscribes with.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "PushConfig".
+ */
+export interface PushConfig {
+/**
+ * False when the server has no push key; the screen hides the reminder control.
+ */
+enabled: boolean
+/**
+ * VAPID application server key: the uncompressed P-256 public key, base64url. Null when disabled.
+ */
+public_key?: (string | null)
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "PushKeys".
+ */
+export interface PushKeys {
+auth: string
+p256dh: string
+}
+/**
+ * `PushSubscription.toJSON()` from the browser, minus `expirationTime`.
+ * 
+ * Saving is idempotent: the same endpoint and keys again change nothing; new
+ * ones replace the device's earlier subscription.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "PushSubscriptionSave".
+ */
+export interface PushSubscriptionSave {
+endpoint: string
+keys: PushKeys
 }
 /**
  * Aggregates only. Individual logs are for incident review (FR20).
