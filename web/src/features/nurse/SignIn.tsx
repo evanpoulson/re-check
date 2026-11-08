@@ -15,19 +15,20 @@ export function SignIn() {
   const { signIn } = useStaff()
   const navigate = useNavigate()
   return (
-    <main className="mx-auto max-w-xl p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t('pages.signIn')}</h1>
-        <DemoBadge onLight />
+    <main className="mx-auto max-w-xl px-4 py-16 sm:py-24">
+      <div className="mb-10 flex flex-col items-center gap-4 text-center">
+        <span className="text-lg font-semibold tracking-tight">{t('app.name')}</span>
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.signIn')}</h1>
+        <p className="max-w-md text-lg text-muted">{t('signIn.explain')}</p>
+        <DemoBadge />
       </div>
-      <p className="mb-4 text-muted">{t('signIn.explain')}</p>
-      <div className="space-y-3">
+      <Card className="divide-y divide-line p-0">
         {ROLES.map((role) => {
           const ok = AVAILABLE.includes(role)
           return (
-            <Card key={role} className="flex items-center justify-between gap-3">
+            <div key={role} className="flex items-center justify-between gap-3 px-6 py-5">
               <div>
-                <div className="text-lg font-semibold">{t(`role.${role}`)}</div>
+                <div className={ok ? 'text-lg font-semibold' : 'text-lg font-semibold text-muted'}>{t(`role.${role}`)}</div>
                 {!ok && <div className="text-sm text-muted">{t('signIn.notInBuild')}</div>}
               </div>
               <Button
@@ -39,10 +40,10 @@ export function SignIn() {
               >
                 {t('signIn.continue')}
               </Button>
-            </Card>
+            </div>
           )
         })}
-      </div>
+      </Card>
     </main>
   )
 }

@@ -5,9 +5,9 @@ import { useTranslation } from 'react-i18next'
 export function PrivacyPanel() {
   const { t } = useTranslation()
   return (
-    <details className="rounded-xl border border-line bg-surface p-4">
-      <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-base font-semibold">
-        <ShieldCheck aria-hidden className="size-5 text-brand-700" />
+    <details className="rounded-card bg-surface px-5 py-3 shadow-card">
+      <summary className="flex min-h-11 cursor-pointer items-center gap-2 text-base font-medium text-brand-600">
+        <ShieldCheck aria-hidden className="size-5" />
         {t('privacy.title')}
       </summary>
       <ul className="mt-3 list-disc space-y-1 pl-6 text-base text-muted">

@@ -49,8 +49,8 @@ export function Exchange() {
   if (state.name === 'inactive') {
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-2">
-          <h1 className="text-2xl font-bold">{t('exchange.inactive')}</h1>
+        <Card role="alert" className="space-y-2 text-center">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.inactive')}</h1>
         </Card>
       </PatientLayout>
     )
@@ -60,9 +60,9 @@ export function Exchange() {
     const { conflict, role } = state
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-4">
-          <h1 className="text-2xl font-bold">{t('exchange.takeover.title')}</h1>
-          <p>
+        <Card role="alert" className="space-y-5 text-center">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
+          <p className="text-muted">
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
               time: clock(conflict.signed_in_since),
@@ -84,8 +84,8 @@ export function Exchange() {
   const sending = state.name === 'sending'
   return (
     <PatientLayout>
-      <section aria-labelledby="who" className="space-y-4">
-        <h1 id="who" className="text-[1.75rem] font-extrabold leading-tight tracking-tight">
+      <section aria-labelledby="who" className="space-y-6 pt-4">
+        <h1 id="who" className="text-center text-[2rem] font-semibold leading-tight tracking-tight">
           {t('exchange.who')}
         </h1>
         <div className="grid gap-3">
@@ -95,9 +95,9 @@ export function Exchange() {
             </AnswerButton>
           ))}
         </div>
-        {sending && <p role="status">{t('pages.patientEntry')}</p>}
+        {sending && <p role="status" className="text-center text-muted">{t('pages.patientEntry')}</p>}
         {state.name === 'failed' && (
-          <p role="alert" className="font-semibold text-level-red">
+          <p role="alert" className="rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
             {t('exchange.failed')}
           </p>
         )}

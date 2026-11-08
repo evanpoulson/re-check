@@ -28,7 +28,7 @@ function OutboxBanner() {
   }, [])
   if (count === 0) return null
   return (
-    <p role="status" className="flex items-center gap-2 rounded-data bg-level-amber-bg p-3 font-bold text-level-amber">
+    <p role="status" className="flex items-center gap-2 rounded-card bg-level-amber-bg px-5 py-3 font-semibold text-level-amber">
       <CloudOff aria-hidden className="size-5 shrink-0" />
       {t('outbox.saved', { count })}
     </p>
@@ -53,14 +53,15 @@ export function PatientLayout({ home, dock, children }: Props) {
   const estimate = home?.wait_estimate
   const lang = LANGUAGES.includes(i18n.language as never) ? i18n.language : 'en'
   return (
-    <div className={`mx-auto min-h-dvh max-w-md space-y-4 px-4 pt-4 text-lg ${dock ? 'pb-52' : 'pb-8'}`}>
-      <header className="flex items-center justify-between gap-3">
-        <span className="text-xl font-extrabold tracking-tight">{t('app.name')}</span>
-        <label className="flex items-center gap-2 text-base">
+    <div className={`min-h-dvh text-lg ${dock ? 'pb-56' : 'pb-10'}`}>
+      <header className="glass sticky top-0 z-20 border-b border-line/70">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-1">
+        <span className="text-lg font-semibold tracking-tight">{t('app.name')}</span>
+        <label className="flex items-center gap-1.5 text-[0.9375rem]">
           <Languages aria-hidden className="size-5 text-muted" />
           <span className="sr-only">{t('patient.language')}</span>
           <select
-            className="min-h-11 rounded-data border border-ink bg-surface px-2 font-semibold"
+            className="min-h-11 rounded-tap bg-transparent px-2 font-medium text-brand-600"
             value={lang}
             onChange={(e) => void i18n.changeLanguage(e.target.value)}
           >
@@ -69,16 +70,18 @@ export function PatientLayout({ home, dock, children }: Props) {
             ))}
           </select>
         </label>
+        </div>
       </header>
+      <div className="mx-auto max-w-md space-y-5 px-4 pt-6">
 
       {/* The question bank is English only until translations are supplied. */}
       {lang !== 'en' && (
-        <p role="note" className="rounded-data border-l-8 border-brand-600 bg-brand-50 p-3 text-base">
+        <p role="note" className="rounded-card bg-brand-50 px-5 py-3 text-base">
           {t('patient.languageNotice')}
         </p>
       )}
 
-      <p className="text-base font-semibold text-muted">{t('patient.placeInLine')}</p>
+      <p className="text-[0.9375rem] text-muted">{t('patient.placeInLine')}</p>
       {home && (
         <p className="text-base">
           {estimate
@@ -90,6 +93,7 @@ export function PatientLayout({ home, dock, children }: Props) {
       <OutboxBanner />
       <main className="space-y-5">{children}</main>
       <PrivacyPanel />
+      </div>
       {dock && home ? <HelpBar role={home.role} {...dock} /> : null}
     </div>
   )

@@ -29,7 +29,7 @@ const DISPOSITIONS: Disposition[] = [
   'not_located',
 ]
 const EXCLUSIONS: AppExclusion[] = ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma']
-const FIELD = 'min-h-11 w-full rounded-data border border-ink bg-surface px-3 text-base'
+const FIELD = 'field'
 
 /** Runs one staff action with a submission id created up front and reused on retry. */
 function useAction<A>(visitId: string, fn: (args: A, submissionId: string) => Promise<unknown>) {
@@ -90,10 +90,10 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
 
   return (
     <section aria-labelledby="actions" className="space-y-4">
-      <h2 id="actions" className="text-xl font-bold">{t('actions.title')}</h2>
+      <h2 id="actions" className="text-2xl font-semibold tracking-tight">{t('actions.title')}</h2>
 
       <Card className="space-y-3">
-        <h3 className="font-semibold">{t('actions.task')}</h3>
+        <h3 className="text-lg font-semibold tracking-tight">{t('actions.task')}</h3>
         {!task && <p className="text-muted">{t('actions.noTask')}</p>}
         <div className="flex flex-wrap items-center gap-3">
           <Button disabled={!canAck || ack.pending} onClick={() => ack.run()}>{t('actions.acknowledge')}</Button>
@@ -101,7 +101,7 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <div>
-            <label htmlFor="disposition" className="mb-1 block font-semibold">{t('actions.disposition')}</label>
+            <label htmlFor="disposition" className="mb-1.5 block text-sm font-semibold">{t('actions.disposition')}</label>
             <select id="disposition" className={FIELD} value={disposition} onChange={(e) => setDisposition(e.target.value as Disposition)}>
               {DISPOSITIONS.map((d) => (
                 <option key={d} value={d}>{t(`disposition.${d}`)}</option>
@@ -116,18 +116,18 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
 
       <Card>
         <form onSubmit={submitVitals} noValidate className="space-y-3">
-          <h3 className="font-semibold">{t('actions.vitals')}</h3>
+          <h3 className="text-lg font-semibold tracking-tight">{t('actions.vitals')}</h3>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {(['sbp', 'dbp', 'hr', 'rr', 'spo2', 'temp_c'] as const).map((k) => (
               <div key={k}>
-                <label htmlFor={`v-${k}`} className="mb-1 block text-sm font-semibold">{t(`vitals.${k}`)}</label>
+                <label htmlFor={`v-${k}`} className="mb-1.5 block text-sm font-semibold">{t(`vitals.${k}`)}</label>
                 <input id={`v-${k}`} inputMode="decimal" className={FIELD} value={form[k]} onChange={(e) => set(k, e.target.value)} />
               </div>
             ))}
           </div>
           {vitals.length > 0 && (
             <div>
-              <label htmlFor="v-supersedes" className="mb-1 block text-sm font-semibold">{t('vitals.supersedes')}</label>
+              <label htmlFor="v-supersedes" className="mb-1.5 block text-sm font-semibold">{t('vitals.supersedes')}</label>
               <select id="v-supersedes" className={FIELD} value={form.supersedes} onChange={(e) => set('supersedes', e.target.value)}>
                 <option value="">{t('vitals.newEntry')}</option>
                 {vitals.map((v) => (
@@ -149,7 +149,7 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
       {!visit.app_exclusion && visit.status === 'waiting' && <DeviceCard visit={visit} />}
 
       <Card className="space-y-3">
-        <h3 className="font-semibold">{t('actions.flagHigher')}</h3>
+        <h3 className="text-lg font-semibold tracking-tight">{t('actions.flagHigher')}</h3>
         <p className="text-sm text-muted">{t('actions.flagHelp')}</p>
         <label htmlFor="flag-note" className="block text-sm font-semibold">{t('actions.flagNote')}</label>
         <input id="flag-note" maxLength={280} className={FIELD} value={note} onChange={(e) => setNote(e.target.value)} />
@@ -168,7 +168,7 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
 
       {!visit.app_exclusion && (
         <Card className="space-y-3">
-          <h3 className="font-semibold">{t('actions.stopApp')}</h3>
+          <h3 className="text-lg font-semibold tracking-tight">{t('actions.stopApp')}</h3>
           <p className="text-sm text-muted">{t('actions.stopAppHelp')}</p>
           <label htmlFor="exclusion-reason" className="block text-sm font-semibold">{t('actions.stopAppReason')}</label>
           <select id="exclusion-reason" className={FIELD} value={exclusion} onChange={(e) => setExclusion(e.target.value as AppExclusion)}>
@@ -177,7 +177,7 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
             ))}
           </select>
           <label className="flex min-h-11 items-start gap-2 text-sm">
-            <input type="checkbox" className="mt-1 size-4" checked={confirmExclusion} onChange={(e) => setConfirmExclusion(e.target.checked)} />
+            <input type="checkbox" className="mt-0.5 size-4 accent-level-red" checked={confirmExclusion} onChange={(e) => setConfirmExclusion(e.target.checked)} />
             {t('actions.stopAppConfirm')}
           </label>
           <Button variant="danger" disabled={!confirmExclusion || exclude.pending} onClick={() => exclude.run(exclusion)}>
@@ -188,8 +188,8 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
       )}
 
       <Card className="space-y-3">
-        <h3 className="font-semibold">{t('actions.visitStatus')}</h3>
-        <div className="flex flex-wrap gap-3">
+        <h3 className="text-lg font-semibold tracking-tight">{t('actions.visitStatus')}</h3>
+        <div className="flex flex-wrap gap-2">
           {(['roomed', 'left', 'discharged'] as const).map((s) => (
             <Button key={s} variant="secondary" disabled={status.pending} onClick={() => status.run(s)}>
               {t(`visitStatus.${s}`)}
