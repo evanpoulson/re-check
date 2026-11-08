@@ -6,15 +6,18 @@ over Wi-Fi. Reports go through the same storage, rules, tasks and staff dashboar
 reports, with channel `pager` and no session (see `api/src/recheck/routes/pager.py`).
 
 This folder is the device only. The `/api/pager` routes and their tests (`api/tests/test_pager*.py`) come in a
-separate change. Until then, test against `tools/fake_recheck.py` (steps 1 to 4 below).
+separate change. Until then the pager isn't connected: it runs against its stub (below).
 
 | Path | What it is |
 |---|---|
 | `sketch/sketch.ino` | MCU (STM32): draws text and the circle check's shapes, reads the buttons, drives the LEDs |
 | `python/main.py` | Linux side: pages, reports, the API calls; also runs on a laptop as a simulator |
 | `python/checkin.py` | The check-in: its questions, screens, answers and report body (no hardware, no network) |
+| `python/stub.py` | The stub: the pager API's answers, made on the pager, not connected to anything |
+| `python/stub_bank.json` | The question bank data the stub needs. Made by `tools/make_stub_bank.py`; don't edit by hand |
 | `python/pager_config.example.json` | Copy to `pager_config.json` (git-ignored) and fill in |
-| `tools/fake_recheck.py` | In-memory stand-in for the pager API, for testing with no database writes |
+| `tools/fake_recheck.py` | The stub served over HTTP, for testing a board against a laptop |
+| `tools/make_stub_bank.py` | Writes `python/stub_bank.json` from `question-bank/questionnaire.json` |
 | `tests/` | Screen and report tests (`python -m unittest discover -s pager/tests`) |
 | `wiring-test/sketch.ino` | Checks the buttons, LEDs and OLED before loading the pager |
 
@@ -106,8 +109,26 @@ The check-in uses the phone's data (`PatientHome`), as extra fields on the pager
 - **`items`**: the visit's follow-up questions, as `QuestionItem`s.
 - **`attention_prompt`**: the circle check, while a check-in is open.
 
-The pager API doesn't send these yet. Until it does, the pager asks the four fixed questions and sends the circle
-check as not asked. `tools/fake_recheck.py` sends both, so every screen can be tested now.
+The pager API doesn't send these yet. Against it, the pager asks the four fixed questions and sends the circle
+check as not asked. The stub sends both, so every screen works now.
+
+### The stub (not connected)
+
+With `"api_base": "stub"` in `pager_config.json`, or no config at all, the pager answers itself with `python/stub.py`.
+Nothing goes over the network. Every answer has the real API's shape, and the visit behaves as its database row does:
+- **The visit.** Waiting, with `triaged_at`, and `next_prompt_due_at` that a scheduled check-in moves by the CTAS
+  interval from `db/schema.sql` (15, 30, 60 or 120 minutes). "Called" lasts 15 minutes after rooming.
+- **Questions.** The follow-ups are the server's own `QuestionItem`s, with the bank's branching, for the complaint group
+  in `"stub_group"` (default `chest_back_pain`).
+- **The circle check.** Prompts are made as `attention.py` makes them, and each can be answered once and only before it
+  expires.
+- **Receipts.** `patient_message` follows `rules.py` (it is never `clinician_told`), and `follow_up_items` follows
+  `routes/reports.py`.
+- **Errors.** The route's errors: 404 with no waiting patient, 409 for a check-in that isn't due or a reused
+  `submission_id`, and 422 for an old bank version, an unknown item or a bad circle prompt.
+
+It stores nothing and raises no staff tasks. `tests/test_stub.py` keeps it in step with the bank and the server's rules.
+After a question bank change, run `python pager/tools/make_stub_bank.py`.
 
 MVP limits:
 - English only (the OLED font is ASCII; server text is turned into ASCII).
@@ -128,7 +149,7 @@ The buttons use internal pull-ups. Nothing connects to 3.3 V or 5 V.
 
 ## Testing, in order
 
-1. **Screens (no hardware).** Run `python -m unittest discover -s pager/tests`. It draws every question in
+1. **Screens and the stub (no hardware).** Run `python -m unittest discover -s pager/tests`. It draws every question in
    `question-bank/questionnaire.json` at every cursor position against the OLED's 8 x 21 characters. It also covers
    every answer and report body, and checks the pager's copy of the fixed wording and the urgent signs against the
    bank, the phone and the server. `api/tests/test_pager_contract.py` (in the API change) checks the bodies against
@@ -141,8 +162,9 @@ The buttons use internal pull-ups. Nothing connects to 3.3 V or 5 V.
    - Load the app (below). `call` and `unassign` show the other screens.
    - `group head_injury` (or `chest_back_pain`, `neuro_change`, `confused_drowsy`, `general`) and `cedis 404` choose the
      visit's follow-up questions. The console prints each report and scores each circle check.
-4. **Simulator against any server.** `cd pager/python && python main.py`. Keys: `a` LEFT, `s` CONFIRM, `d` RIGHT, then Enter.
-   The circle check prints each shape as a small picture (`O` circle, `#` square) on the board's timing.
+4. **Simulator.** `cd pager/python && python main.py`. Keys: `a` LEFT, `s` CONFIRM, `d` RIGHT, then Enter.
+   With no config it uses the stub. The circle check prints each shape as a small picture (`O` circle, `#` square)
+   on the board's timing.
 5. **Backend.** In `api/`, run `uv run pytest tests/test_pager.py tests/test_pager_contract.py` (offline) and
    `uv run pytest tests/test_pager_live.py tests/test_reports_live.py` (live, always rolled back).
 6. **End to end on the deployed server.**
@@ -154,7 +176,8 @@ The buttons use internal pull-ups. Nothing connects to 3.3 V or 5 V.
 ## Loading the app in Arduino App Lab
 
 1. Open the **Blink LED** example and choose **Copy**. The copy already has the Bridge libraries.
-2. Replace `sketch/sketch.ino` and `python/main.py`, and add `python/checkin.py` and `python/pager_config.json`.
+2. Replace `sketch/sketch.ino` and `python/main.py`. Add `python/checkin.py`, `python/stub.py`, `python/stub_bank.json`
+   and `python/pager_config.json` (`"api_base": "stub"` until the pager is connected).
 3. **Add sketch libraries**: `Adafruit SSD1306`, `Adafruit GFX Library` and `Adafruit BusIO`.
    App Lab doesn't add dependencies on its own.
 4. **Run.** Expect "RECHECK PAGER Starting..." then "Connecting...". A blinking red LED with a blank screen means the OLED

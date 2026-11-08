@@ -487,8 +487,7 @@ class AgainstTheFakeServer(unittest.TestCase):
         try:
             base = f"http://127.0.0.1:{server.server_address[1]}"
             api = pager.Api(base, "42", "test-key-test-key")
-            fake.visit.update(state="waiting", checkin_open=True, triaged_at=fake.now(), next_due=fake.now(),
-                              group="chest_back_pain", cedis=None, answers={}, findings=[], prompt=None)
+            fake.visit.assign(group="chest_back_pain", checkin_open=True)
             io = RecIo()
             ui = PagerUI(api, io, "42", sleep=lambda s: None)
             ui.poll()
@@ -505,18 +504,19 @@ class AgainstTheFakeServer(unittest.TestCase):
             press(ui, CONFIRM)                                                # circle check: Start
             self.assertEqual(len(io.plays), 1)
             ui.flow.played()
-            expected = fake.visit["prompt"]["expected"]
+            expected = fake.visit.prompts[fake.visit.open_prompt]["expected"]
             press(ui, *([RIGHT] * expected), CONFIRM)
             pick("Yes")                                                       # the pain moved
             pick("No")                                                        # not suddenly worse: send
-            self.assertIn("Care team told", text(ui))
+            self.assertIn("A nurse or doctor", text(ui))                      # the server never says "told"
             self.assertIn(pager.MORE_QUESTIONS, text(ui))
+            self.assertEqual(fake.visit.log[-1]["attention"], "correct")
             press(ui, CONFIRM)                                                # on to the follow-ups
             self.assertIn("1/2 Pain moved to", text(ui))
             pick("[ ] Chest")
             pick("Next (1 ticked)")
             pick("Less than 15 minutes ago")
-            self.assertEqual(fake.visit["answers"], {"pain_moved": True, "pain_sudden_worse": False,
+            self.assertEqual(fake.visit.answers, {"pain_moved": True, "pain_sudden_worse": False,
                                                      "pain_new_location": ["chest"], "change_started": "under_15_min"})
             self.assertIn("Answers sent", text(ui))
             ui.poll()

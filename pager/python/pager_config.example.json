@@ -1,5 +1,6 @@
 {
-  "api_base": "http://192.168.43.10:8765",
+  "api_base": "stub",
   "pager_no": "42",
-  "pager_key": "dev-pager-key-not-secret"
+  "pager_key": "dev-pager-key-not-secret",
+  "stub_group": "chest_back_pain"
 }

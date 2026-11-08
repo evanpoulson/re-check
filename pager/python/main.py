@@ -85,15 +85,25 @@ MORE_QUESTIONS = "Next: a few more"   # the result screen when the server asked 
 
 
 def load_config(path: str = CONFIG_PATH) -> dict:
-    cfg = {"api_base": "", "pager_no": "42", "pager_key": ""}
+    cfg = {"api_base": "stub", "pager_no": "42", "pager_key": "", "stub_group": "chest_back_pain"}
     try:
         with open(path, encoding="utf-8") as f:
             cfg.update(json.load(f))
     except FileNotFoundError:
-        print(f"{path} not found: copy pager_config.example.json to pager_config.json")
-    cfg["api_base"] = str(cfg["api_base"]).rstrip("/")
+        print(f"{path} not found: using the stub (copy pager_config.example.json to connect)")
+    cfg["api_base"] = str(cfg["api_base"]).rstrip("/") or "stub"
     cfg["pager_no"] = str(cfg["pager_no"])
     return cfg
+
+
+def make_api(cfg: dict):
+    """The real API, or with "api_base": "stub" the stub on the pager itself (not connected to anything)."""
+    if cfg["api_base"] == "stub":
+        from stub import StubApi, StubVisit
+
+        print(f"Not connected: answers come from the stub (complaint group {cfg['stub_group']}).")
+        return StubApi(StubVisit(cfg["pager_no"], group=cfg["stub_group"]), cfg["pager_no"], error=ApiError)
+    return Api(cfg["api_base"], cfg["pager_no"], cfg["pager_key"])
 
 
 def parse_time(value: str | None) -> datetime | None:
@@ -564,7 +574,7 @@ def run_board() -> None:
 
     cfg = load_config()
     events: "queue.Queue[int]" = queue.Queue()
-    ui = PagerUI(Api(cfg["api_base"], cfg["pager_no"], cfg["pager_key"]), BoardIo(Bridge), cfg["pager_no"])
+    ui = PagerUI(make_api(cfg), BoardIo(Bridge), cfg["pager_no"])
     Bridge.provide("button", lambda code: events.put(int(code)))
     App.run(user_loop=lambda: ui.tick(events))
 
@@ -572,7 +582,7 @@ def run_board() -> None:
 def run_console() -> None:
     cfg = load_config()
     events: "queue.Queue[int]" = queue.Queue()
-    ui = PagerUI(Api(cfg["api_base"], cfg["pager_no"], cfg["pager_key"]), ConsoleIo(), cfg["pager_no"])
+    ui = PagerUI(make_api(cfg), ConsoleIo(), cfg["pager_no"])
     keys = {"a": LEFT, "s": CONFIRM, "d": RIGHT}
 
     def read_keys() -> None:

@@ -15,8 +15,34 @@ sys.path.insert(0, os.path.join(HERE, "..", "python"))
 sys.path.insert(0, os.path.join(HERE, "..", "tools"))
 
 import checkin  # noqa: E402
-import fake_recheck as fake  # noqa: E402
+import stub  # noqa: E402
 from checkin import CONFIRM, LEFT, RIGHT, UNSURE, WIDTH, Flow  # noqa: E402
+
+
+with open(os.path.join(ROOT, "question-bank", "questionnaire.json"), encoding="utf-8") as _f:
+    QUESTIONNAIRE = json.load(_f)
+
+
+def _walk(items):
+    for item in items:
+        yield item
+        yield from _walk(item.get("item", []))
+
+
+ITEMS = {i["linkId"]: i for i in _walk(QUESTIONNAIRE["item"])}   # the bank itself
+FOLLOW_UP = [i["linkId"] for i in ITEMS["follow_up"]["item"]]
+
+
+def ext(item, name):
+    for e in item.get("extension", []):
+        if e["url"].endswith(name):
+            return next(v for k, v in e.items() if k.startswith("value"))
+    return None
+
+
+def question_item(key):
+    """A follow-up as the server sends it (the stub keeps the server's QuestionItem)."""
+    return stub.FOLLOW_UP[key]["item"]
 
 PROMPT = {"prompt_id": "p-1", "show_ms": 1000, "gap_ms": 500, "expires_at": "2026-11-08T15:15:00+00:00",
           "steps": [{"shape": "circle", "x": 0.0, "y": 0.0}, {"shape": "square", "x": 1.0, "y": 1.0},
@@ -34,7 +60,7 @@ def assert_fits(testcase, lines):
 
 def every_item():
     """Every follow-up question in the bank, as the server sends it."""
-    return [fake.question_item(key) for key in fake.FOLLOW_UP]
+    return [question_item(key) for key in FOLLOW_UP]
 
 
 def walk_screens(testcase, flow):
@@ -49,17 +75,17 @@ class Wording(unittest.TestCase):
 
     def test_base_questions_match_the_bank(self):
         for key, text in checkin.BASE_TEXT.items():
-            self.assertEqual(fake.ITEMS[key]["text"], text, key)
+            self.assertEqual(ITEMS[key]["text"], text, key)
 
     def test_options_match_the_bank(self):
         for key, options in (("feeling_now", checkin.FEELING_NOW), ("feeling_change", checkin.FEELING_CHANGE),
                              ("new_findings", checkin.FINDINGS)):
-            bank = [(o["valueCoding"]["code"], o["valueCoding"]["display"]) for o in fake.ITEMS[key]["answerOption"]]
+            bank = [(o["valueCoding"]["code"], o["valueCoding"]["display"]) for o in ITEMS[key]["answerOption"]]
             self.assertEqual(bank, options, key)
-        self.assertEqual(fake._ext(fake.ITEMS["new_findings"], "none-option"), checkin.NONE_OF_THESE)
+        self.assertEqual(ext(ITEMS["new_findings"], "none-option"), checkin.NONE_OF_THESE)
 
     def test_the_bank_order_is_the_pager_order(self):
-        base = [i["linkId"] for i in fake.ITEMS["base"]["item"]]
+        base = [i["linkId"] for i in ITEMS["base"]["item"]]
         self.assertEqual(base, [q.key for q in checkin.base_questions(with_circle=True)])
 
     def test_urgent_signs_match_the_server_and_the_phone(self):
@@ -69,10 +95,10 @@ class Wording(unittest.TestCase):
             api = f.read().split("URGENT_FINDINGS = frozenset({")[1].split("})")[0]
         self.assertEqual(set(re.findall(r"'([a-z_]+)'", web)), set(checkin.URGENT_FINDINGS))
         self.assertEqual({c.lower() for c in re.findall(r"FindingCode\.([A-Z_]+)", api)}, set(checkin.URGENT_FINDINGS))
-        self.assertEqual(fake.URGENT, set(checkin.URGENT_FINDINGS))
+        self.assertEqual(stub.URGENT_FINDINGS, set(checkin.URGENT_FINDINGS))
 
     def test_the_bank_is_ascii_and_every_title_fits(self):
-        for key in list(fake.FOLLOW_UP) + list(checkin.BASE_TEXT):
+        for key in list(FOLLOW_UP) + list(checkin.BASE_TEXT):
             self.assertIn(key, checkin.TITLES, f"{key} needs a short title")
         for title in checkin.TITLES.values():
             self.assertLessEqual(len(title), checkin.TITLE_MAX, title)
@@ -86,7 +112,7 @@ class Screens(unittest.TestCase):
     def test_every_question_in_the_bank_fits_at_every_cursor(self):
         state = {"items": every_item(), "attention_prompt": PROMPT}
         flow = Flow(checkin.checkin_questions(state), prompt=PROMPT)
-        self.assertEqual(len(flow.questions), 5 + len(fake.FOLLOW_UP))
+        self.assertEqual(len(flow.questions), 5 + len(FOLLOW_UP))
         for index, q in enumerate(flow.questions):
             flow.index = index
             flow._enter()
@@ -162,11 +188,7 @@ class Screens(unittest.TestCase):
         self.assertEqual(flow.index, 3)
 
     def test_ten_questions_still_fit_the_title_bar(self):
-        fake.visit["group"] = "head_injury"
-        try:
-            items = [fake.question_item(k) for k in fake.follow_ups({})]
-        finally:
-            fake.visit["group"] = "chest_back_pain"
+        items = [question_item(k) for k in stub.follow_ups("head_injury", None, {})]
         flow = Flow(checkin.checkin_questions({"items": items, "attention_prompt": PROMPT}), prompt=PROMPT)
         self.assertEqual(len(flow.questions), 10)
         for index in range(10):
@@ -187,7 +209,7 @@ class Answers(unittest.TestCase):
         return flow.handle(CONFIRM)
 
     def test_a_full_checkin(self):
-        f = self.flow(items=[fake.question_item("pain_moved"), fake.question_item("pain_new_location")],
+        f = self.flow(items=[question_item("pain_moved"), question_item("pain_new_location")],
                       prompt=PROMPT)
         self.pick(f, "Poor")
         self.pick(f, "Not sure")
@@ -225,7 +247,7 @@ class Answers(unittest.TestCase):
         self.assertEqual(f.report()["new_findings"], {"kind": "answered", "value": []})
 
     def test_not_sure_is_never_an_answer(self):
-        f = self.flow(items=[fake.question_item("pain_moved")])
+        f = self.flow(items=[question_item("pain_moved")])
         for _ in range(4):
             self.pick(f, "Not sure")
         f.index = 4
@@ -237,7 +259,7 @@ class Answers(unittest.TestCase):
         self.assertEqual(body["items"]["pain_moved"], {"kind": "missing", "reason": "unsure"})
 
     def test_unreached_questions_are_not_reached(self):
-        f = self.flow(items=[fake.question_item("pain_moved")], prompt=PROMPT)
+        f = self.flow(items=[question_item("pain_moved")], prompt=PROMPT)
         self.pick(f, "Good")
         body = f.report()
         for name in ("feeling_change", "pain", "new_findings"):
@@ -246,7 +268,7 @@ class Answers(unittest.TestCase):
         self.assertEqual(body["items"], {"pain_moved": {"kind": "missing", "reason": "not_reached"}})
 
     def test_an_urgent_sign_sends_now(self):
-        f = self.flow(items=[fake.question_item("pain_moved")], prompt=PROMPT)
+        f = self.flow(items=[question_item("pain_moved")], prompt=PROMPT)
         f.index = 3
         f._enter()
         self.pick(f, "[ ] Harder to breathe")
@@ -300,7 +322,7 @@ class Answers(unittest.TestCase):
         self.assertEqual(f.report()["attention"]["count"], 20)
 
     def test_back_steps_over_a_finished_circle_check(self):
-        f = self.flow(items=[fake.question_item("pain_moved")], prompt=PROMPT)
+        f = self.flow(items=[question_item("pain_moved")], prompt=PROMPT)
         f.index = 4
         f._enter()
         self.pick(f, "I can't do this")
@@ -326,7 +348,7 @@ class Answers(unittest.TestCase):
         self.assertEqual(self.pick(f, "Stop and send"), "send")
 
     def test_a_followup_sends_only_its_answers(self):
-        items = [fake.question_item("pain_new_location"), fake.question_item("change_started")]
+        items = [question_item("pain_new_location"), question_item("change_started")]
         f = Flow(checkin.followup_questions({"items": items}, ["change_started", "pain_new_location"]),
                  mode="followup", version="v1")
         self.assertEqual([q.key for q in f.questions], ["change_started", "pain_new_location"])
@@ -362,8 +384,8 @@ class CircleShapes(unittest.TestCase):
     def test_play_time_is_the_lead_plus_each_shape_and_gap(self):
         self.assertEqual(checkin.play_ms(PROMPT), 600 + 3 * 1500)
 
-    def test_the_fake_server_prompt_is_like_the_real_one(self):
-        p = fake.new_prompt()
+    def test_the_stub_prompt_is_like_the_real_one(self):
+        p = stub.StubVisit()._new_prompt(stub.utcnow())
         circles = sum(s["shape"] == "circle" for s in p["steps"])
         self.assertEqual(circles, p["expected"])
         self.assertTrue(4 <= circles <= 8)
