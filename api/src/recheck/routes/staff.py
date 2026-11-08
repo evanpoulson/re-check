@@ -1,4 +1,5 @@
-"""Staff screens (read side): physician worklist, triage board, visit timeline."""
+"""Staff screens (read side): physician worklist, triage board, visit timeline,
+charge nurse escalations and shift handover."""
 
 from datetime import UTC, datetime
 from typing import Annotated
@@ -6,10 +7,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from .. import views
+from .. import duty, views
 from ..auth import Pool, Staff, require_staff
 from ..contract.codes import StaffRole
-from ..contract.views import TriageBoard, VisitDetail, Worklist
+from ..contract.views import ChargeNurseView, Handover, TriageBoard, VisitDetail, Worklist
+from ..settings import shift_changes, site_timezone, tlp_hours
 
 router = APIRouter(prefix="/api", tags=["staff screens"])
 
@@ -17,6 +19,42 @@ CLINICAL = (StaffRole.TRIAGE_NURSE, StaffRole.PHYSICIAN, StaffRole.CHARGE_NURSE)
 WorklistStaff = Annotated[Staff, Depends(require_staff(StaffRole.PHYSICIAN, StaffRole.CHARGE_NURSE))]
 BoardStaff = Annotated[Staff, Depends(require_staff(StaffRole.TRIAGE_NURSE, StaffRole.CHARGE_NURSE))]
 ClinicalStaff = Annotated[Staff, Depends(require_staff(*CLINICAL))]
+ChargeNurse = Annotated[Staff, Depends(require_staff(StaffRole.CHARGE_NURSE))]
+
+
+@router.get("/escalations", response_model=ChargeNurseView)
+async def escalations(staff: ChargeNurse, pool: Pool) -> ChargeNurseView:
+    """Charge nurse's view (FR18): escalated tasks, anything routed to the charge nurse, triage
+    nurse flags, and every open task while no triage liaison physician is on duty. Highest level first."""
+    now = datetime.now(UTC)
+    on_duty = duty.tlp_on_duty(now, tlp_hours(), site_timezone())
+    async with pool.connection() as conn:
+        visits = await views.waiting_visits(conn, staff.site_id)
+        tasks = await views.tasks_for(conn, [v.visit_id for v in visits], open_only=True)
+    mine = [t for t in tasks if views.for_charge_nurse(t, on_duty)]
+    return ChargeNurseView(generated_at=now, tlp_on_duty=on_duty, tasks=views.by_urgency(mine))
+
+
+@router.get("/handover", response_model=Handover)
+async def handover(staff: ClinicalStaff, pool: Pool) -> Handover:
+    """Shift handover from a fixed template, no AI (FR19): every waiting patient ranked as on the
+    worklist, all open tasks, and who is overdue for a staff reassessment."""
+    now = datetime.now(UTC)
+    start, end = duty.current_shift(now, shift_changes(), site_timezone())
+    async with pool.connection() as conn:
+        visits = await views.waiting_visits(conn, staff.site_id)
+        ids = [v.visit_id for v in visits]
+        tasks = await views.tasks_for(conn, ids, open_only=True)
+        reports = await views.reports_for(conn, ids)
+    rows = views.worklist_rows(visits, tasks, reports, now)
+    return Handover(
+        generated_at=now,
+        shift_start=start,
+        shift_end=end,
+        patients=rows,
+        open_tasks=views.by_urgency(tasks),
+        reassess_overdue=[r.visit.visit_id for r in rows if r.reassess_overdue],
+    )
 
 
 @router.get("/worklist", response_model=Worklist)

@@ -784,6 +784,7 @@ dependencies = [
     { name = "psycopg", extra = ["binary", "pool"] },
     { name = "pydantic" },
     { name = "python-dotenv" },
+    { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -801,6 +802,7 @@ requires-dist = [
     { name = "psycopg", extras = ["binary", "pool"], specifier = ">=3.3.8" },
     { name = "pydantic", specifier = ">=2.14,<3" },
     { name = "python-dotenv", specifier = ">=1.2.4" },
+    { name = "tzdata", specifier = ">=2026.6" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.54.0" },
 ]
 

@@ -89,6 +89,9 @@ RECHECK_PUBLIC_URL=http://localhost:5173   # optional: web app base for QR links
 RECHECK_SITE_ID=foothills-demo             # optional: the demo site staff act for
 RECHECK_COOKIE_SECURE=false                # optional: true when served over HTTPS
 RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when unset)
+RECHECK_SITE_TIMEZONE=America/Edmonton     # optional: local time for duty hours and shifts
+RECHECK_TLP_HOURS=08:00-22:00              # optional demo assumption: physician duty hours; unset = always on duty
+RECHECK_SHIFT_CHANGES=07:00,19:00          # optional demo assumption: nursing shift changes for handover
 ```
 
 Generate a secret with `uv run python -c "import secrets; print(secrets.token_urlsafe(32))"`.
@@ -122,6 +125,8 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/session/sign-out` | signed-in device | `SignOut` → 204, clears the cookie |
 | `GET /api/worklist` | physician or charge nurse | `Worklist`: waiting visits ranked by open task level (red first), then longest wait |
 | `GET /api/triage-board` | triage or charge nurse | `TriageBoard`: task colour and staff reassessment timers, no reasons |
+| `GET /api/escalations` | charge nurse | `ChargeNurseView`: escalated tasks, tasks routed to the charge nurse, nurse flags, and every open task while no triage liaison physician is on duty; highest level first |
+| `GET /api/handover` | triage nurse, physician or charge nurse | `Handover`: current shift window, every waiting patient ranked as on the worklist, open tasks, overdue staff reassessments |
 | `GET /api/visits/{id}` | triage nurse, physician or charge nurse | `VisitDetail`: reports, vitals, flags, sign-ins and task events, oldest first |
 | `POST /api/tasks/{id}/acknowledge` | triage nurse, physician or charge nurse | `AcknowledgeTask` → `Task`; 409 if already acknowledged |
 | `POST /api/tasks/{id}/assess` | triage nurse, physician or charge nurse | `AssessTask` → `Task`; needs acknowledgement first; restarts the staff timer; roomed, treated and released, left or not located also close the visit |
