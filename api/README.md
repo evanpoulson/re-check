@@ -148,8 +148,8 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/status` | triage nurse, physician or charge nurse | `VisitStatusUpdate` → 204; closes the visit and signs out its device |
 | `POST /api/visits/{id}/exclusion` | triage or charge nurse | `VisitExclusionUpdate` → 204; stops patient prompts, staff timer keeps running |
 | `GET /api/events` | any signed-in staff | Server-Sent Events: a `DashboardEvent` per change at the staff member's site |
-| `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only; reused until answered), wait estimate or null, minutes waited |
-| `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
+| `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, whether the next check-in is open (`checkin_open`), circle prompt (patient only, while a check-in is open; reused until answered), wait estimate or null, minutes waited |
+| `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true`; a scheduled check-in before its due time is 409 |
 
 ## Live updates
 
@@ -191,6 +191,6 @@ The timers write to whatever database `RECHECK_DATABASE_URL` points at, and thos
 
 A level is only the task's colour and rank on the staff dashboards; nothing pages or notifies a clinician. So the patient screen never says a clinician has been told (`clinician_told` is never sent): any clinical task shows "a clinician will check on you", "I'm leaving" shows the leaving information, and everything else shows nothing.
 
-Escalate-only: a level only goes up, recipients are only added, an unacknowledged deadline only moves earlier, and a reassuring answer fires nothing. A check-in restarts the patient prompt timer; no report moves the staff reassessment timer. Enrolment also rejects a complaint group or missing exclusion that the CEDIS map contradicts.
+Escalate-only: a level only goes up, recipients are only added, an unacknowledged deadline only moves earlier, and a reassuring answer fires nothing. A scheduled check-in is accepted only once the patient prompt is due, and restarts that timer. Concerns, new findings, leaving and follow-up answers (`purpose: followup`) are accepted at any time and move no timer. No report moves the staff reassessment timer. Enrolment also rejects a complaint group or missing exclusion that the CEDIS map contradicts.
 
 Staff sign-in is a demo stand-in (`recheck/auth.py`): the role is the identity and the audit actor is `demo|<role>`. Real sign-in replaces `current_staff` without changing routes. Seeded visits store a placeholder ciphertext, so their QR can't be re-shown (409).

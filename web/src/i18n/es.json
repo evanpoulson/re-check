@@ -30,6 +30,7 @@
     "titleCompanion": "Está respondiendo por una persona a la que acompaña",
     "nextCheckin": "Próximo cuestionario",
     "startCheckin": "Comenzar el cuestionario",
+    "checkinNotOpen": "Todavía no está abierto. Si algo cambia antes, use los botones de abajo.",
     "reportChange": "Informar un síntoma nuevo",
     "reportChange_companion": "Cuéntenos algo nuevo que note",
     "leaving": "Me voy",

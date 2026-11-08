@@ -30,6 +30,7 @@
     "titleCompanion": "你正在代陪同的人回答",
     "nextCheckin": "下次情況回報",
     "startCheckin": "開始情況回報",
+    "checkinNotOpen": "仲未開放。如果之前有任何變化，請用下面嘅按鈕。",
     "reportChange": "話我們知新的症狀",
     "reportChange_companion": "話我們知你留意到的新情況",
     "leaving": "我要離開",

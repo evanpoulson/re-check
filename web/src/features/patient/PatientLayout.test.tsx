@@ -10,6 +10,7 @@ const home = (over: Partial<PatientHome>): PatientHome => ({
   wait_estimate: null,
   waited_minutes: 130,
   next_checkin_due_at: null,
+  checkin_open: false,
   questionnaire_version: 'v',
   items: [],
   message: 'none',

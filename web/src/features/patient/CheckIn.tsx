@@ -55,6 +55,15 @@ export function CheckIn() {
   // The help buttons stay enabled while sending, so a second tap must not send twice.
   const inFlight = useRef(false)
   const content = useRef<HTMLDivElement>(null)
+  // The check-in opens at its due time: refetch then, rather than waiting for the minute poll.
+  const dueAt = home?.next_checkin_due_at
+  const open = home?.checkin_open
+  useEffect(() => {
+    if (!dueAt || open) return
+    const wait = Math.max(0, Date.parse(dueAt) - Date.now()) + 1000
+    const id = setTimeout(() => void qc.invalidateQueries({ queryKey: ['home'] }), wait)
+    return () => clearTimeout(id)
+  }, [dueAt, open, qc])
   useEffect(() => {
     const heading = content.current?.querySelector('h1')
     if (heading) {
@@ -311,10 +320,15 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
       {home.role === 'companion' && <p className="mt-2 text-base text-muted">{t('patient.companionHint')}</p>}
       {home.message !== 'none' && <p className="mt-3 rounded-card border border-line bg-surface px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
       <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
-        <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
-          {t('patient.startCheckin')}
-          <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
-        </Button>
+        {home.checkin_open ? (
+          <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
+            {t('patient.startCheckin')}
+            <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
+          </Button>
+        ) : (
+          // Not due yet: say when it opens. Help and "Report a change" stay available.
+          <p className="text-base">{t('patient.checkinNotOpen')}</p>
+        )}
         <div className="patient-next">
           <span>{t('patient.nextCheckin')}</span>
           <CountdownChip due={home.next_checkin_due_at} now={now} patient />

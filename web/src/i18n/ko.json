@@ -30,6 +30,7 @@
     "titleCompanion": "함께 온 분을 대신해 답하고 있습니다",
     "nextCheckin": "다음 상태 확인",
     "startCheckin": "상태 확인 시작",
+    "checkinNotOpen": "아직 열리지 않았습니다. 그 전에 달라진 점이 있으면 아래 버튼을 사용하세요.",
     "reportChange": "새로운 증상 알리기",
     "reportChange_companion": "새로 알아차린 점 알리기",
     "leaving": "병원을 떠납니다",

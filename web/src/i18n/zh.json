@@ -30,6 +30,7 @@
     "titleCompanion": "您正在替陪同的人回答",
     "nextCheckin": "下次状况回报",
     "startCheckin": "开始状况回报",
+    "checkinNotOpen": "尚未开放。如果在此之前有任何变化，请使用下方的按钮。",
     "reportChange": "告诉我们新的症状",
     "reportChange_companion": "告诉我们您注意到的新情况",
     "leaving": "我要离开",

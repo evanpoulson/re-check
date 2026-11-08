@@ -482,6 +482,7 @@
     "titleCompanion": "You're answering for someone you're with",
     "nextCheckin": "Next check-in",
     "startCheckin": "Start check-in",
+    "checkinNotOpen": "Not open yet. If anything changes before then, use the buttons below.",
     "reportChange": "Tell us about a new symptom",
     "reportChange_companion": "Tell us about something new you notice",
     "leaving": "I'm leaving",

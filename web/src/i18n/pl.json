@@ -30,6 +30,7 @@
     "titleCompanion": "Tryb osoby towarzyszącej: odpowiedzi w imieniu pacjenta",
     "nextCheckin": "Następna ankieta",
     "startCheckin": "Rozpocznij ankietę",
+    "checkinNotOpen": "Jeszcze nie otwarte. Jeśli coś się zmieni wcześniej, użyj przycisków poniżej.",
     "reportChange": "Zgłoś nowy objaw",
     "reportChange_companion": "Zgłoś nową zauważoną zmianę",
     "leaving": "Wychodzę",
