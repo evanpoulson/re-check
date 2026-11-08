@@ -1,0 +1,13 @@
+{
+  "app": { "name": "Recheck" },
+  "demo": { "badge": "Synthetic data, demo thresholds" },
+  "pages": {
+    "signIn": "Choose a demo role",
+    "enrol": "New visit",
+    "triage": "Triage board",
+    "visit": "Visit",
+    "patientEntry": "Opening your check-in",
+    "checkIn": "Check-in",
+    "notFound": "Page not found"
+  }
+}
