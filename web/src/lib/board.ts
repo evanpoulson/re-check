@@ -1,11 +1,11 @@
-import type { BoardRow, Overall, TaskLevel, TriageBoard, Worklist, WorklistRow } from '@/api/types'
+import type { BoardRow, FeelingChange, FeelingNow, TaskLevel, TriageBoard, Worklist, WorklistRow } from '@/api/types'
 
 export interface BoardItem {
   board: BoardRow
   work: WorklistRow
 }
 
-export type Condition = Overall | 'unknown'
+export type Condition = FeelingChange | 'unknown'
 
 /**
  * Join the triage board with the worklist on visit id. A board row with no
@@ -29,11 +29,22 @@ export function sortQueue(items: BoardItem[]): BoardItem[] {
   )
 }
 
-/** The latest check-in's answer. An unanswered latest check-in is `unknown`, never `same`. */
+/**
+ * Condition is how the latest check-in answered "compared with when staff last
+ * checked". An unanswered latest check-in is `unknown`, never `same`.
+ */
 export function conditionOf(work: WorklistRow): Condition {
   const latest = work.trend[work.trend.length - 1]
-  return latest?.overall ?? 'unknown'
+  return latest?.feeling_change ?? 'unknown'
 }
+
+/** How the latest check-in answered "how are you feeling right now", if it did. */
+export function feelingNowOf(work: WorklistRow): FeelingNow | null {
+  return work.trend[work.trend.length - 1]?.feeling_now ?? null
+}
+
+/** True when the app is not offered, so staff watch this patient directly and there are no patient prompts. */
+export const appNotOffered = (w: WorklistRow): boolean => w.visit.app_exclusion !== null
 
 export const needsReview = ({ board, work }: BoardItem): boolean =>
   board.level !== null ||

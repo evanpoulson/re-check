@@ -17,8 +17,8 @@ export function SignIn() {
   return (
     <main className="mx-auto max-w-xl p-6">
       <div className="mb-4 flex items-center gap-3">
-        <h1 className="text-2xl font-bold">{t('pages.signIn')}</h1>
-        <DemoBadge />
+        <h1 className="text-3xl font-extrabold tracking-tight">{t('pages.signIn')}</h1>
+        <DemoBadge onLight />
       </div>
       <p className="mb-4 text-muted">{t('signIn.explain')}</p>
       <div className="space-y-3">

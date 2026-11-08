@@ -1,7 +1,17 @@
 {
-  "app": { "name": "Recheck" },
-  "demo": { "badge": "Synthetic data, demo thresholds" },
-  "common": { "loading": "Loading…", "none": "None", "yes": "Yes", "no": "No", "sending": "Sending…" },
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "Synthetic data, demo thresholds"
+  },
+  "common": {
+    "loading": "Loading…",
+    "none": "None",
+    "yes": "Yes",
+    "no": "No",
+    "sending": "Sending…"
+  },
   "pages": {
     "signIn": "Choose a demo role",
     "enrol": "New visit",
@@ -11,7 +21,12 @@
     "checkIn": "Check-in",
     "notFound": "Page not found"
   },
-  "nav": { "label": "Staff", "triage": "Triage board", "enrol": "New visit", "signOut": "Sign out" },
+  "nav": {
+    "label": "Staff",
+    "triage": "Triage board",
+    "enrol": "New visit",
+    "signOut": "Sign out"
+  },
   "signIn": {
     "explain": "This is a synthetic demo. Pick a role to continue; there is no real sign-in yet.",
     "continue": "Continue",
@@ -23,13 +38,22 @@
     "charge_nurse": "Charge nurse",
     "quality": "Quality"
   },
-  "language": { "en": "English", "pa": "ਪੰਜਾਬੀ", "tl": "Tagalog" },
-  "channel": { "phone": "Phone", "pager": "Pager", "desk": "Desk" },
+  "language": {
+    "en": "English",
+    "pa": "ਪੰਜਾਬੀ",
+    "tl": "Tagalog"
+  },
+  "channel": {
+    "phone": "Phone",
+    "pager": "Pager",
+    "desk": "Desk"
+  },
   "complaint": {
     "chest_back_pain": "Chest or back pain",
-    "neuro_change": "New neurological change",
+    "neuro_change": "Stroke-like or neurological change",
     "head_injury": "Head injury",
-    "general": "Other complaint"
+    "general": "Other complaint",
+    "confused_drowsy": "Confused or drowsy"
   },
   "level": {
     "red": "Red",
@@ -38,31 +62,20 @@
     "leave_risk": "Leave risk",
     "overdue": "Overdue"
   },
-  "condition": { "better": "Better", "same": "Same", "worse": "Worse", "unknown": "Unknown" },
-  "overall": { "better": "Better", "same": "About the same", "worse": "Worse" },
-  "reporter": { "patient": "Patient", "companion": "Companion", "staff": "Staff" },
+  "condition": {
+    "unknown": "Unknown"
+  },
+  "reporter": {
+    "patient": "Patient",
+    "companion": "Companion",
+    "staff": "Staff"
+  },
   "missing": {
     "unsure": "Not sure",
     "unable_to_respond": "Unable to respond",
     "not_asked": "Not asked",
     "not_reached": "Not reached"
   },
-  "finding": {
-    "chest_pain": "Chest pain",
-    "trouble_breathing": "Trouble breathing",
-    "new_confusion": "New confusion",
-    "fainting": "Fainting",
-    "new_weakness_numbness": "New weakness or numbness",
-    "heavy_bleeding": "Heavy bleeding",
-    "vomiting": "Vomiting",
-    "worst_headache": "Worst headache of my life",
-    "speech_change": "Speech is suddenly different",
-    "facial_droop": "Face is drooping",
-    "drowsiness": "Unusually drowsy",
-    "vision_change": "Vision change",
-    "balance_change": "Balance change"
-  },
-  "concern": { "worried": "I'm worried", "help_now": "I need help now" },
   "disposition": {
     "assessed_stable": "Assessed, stable",
     "tests_ordered": "Tests ordered",
@@ -72,7 +85,12 @@
     "left_before_assessment": "Left before assessment",
     "not_located": "Not located"
   },
-  "visitStatus": { "waiting": "Waiting", "roomed": "Roomed", "left": "Left", "discharged": "Discharged" },
+  "visitStatus": {
+    "waiting": "Waiting",
+    "roomed": "Roomed",
+    "left": "Left",
+    "discharged": "Discharged"
+  },
   "taskEvent": {
     "created": "Task created",
     "reason_added": "Reason added",
@@ -107,17 +125,35 @@
     "overall_worse": "Reported feeling worse",
     "leaving": "Said they are leaving",
     "missed_checkin": "Check-in not answered",
-    "staff_flag": "Flagged higher by staff"
+    "staff_flag": "Flagged higher by staff",
+    "attention_incorrect": "Circle check count did not match",
+    "attention_unanswered": "Circle check shown but not answered",
+    "concern_desk_question": "Question about wait or care",
+    "feeling_worse": "Reported feeling worse"
   },
-  "time": { "in": "in {{value}}", "overdue": "{{value}} overdue", "ago": "{{value}} ago" },
-  "flags": { "noResponse": "No response", "reassessOverdue": "Reassessment overdue" },
-  "sparkline": { "label": "Pain over time: {{values}}", "none": "No pain answers yet" },
-  "qr": { "label": "QR code for {{title}}" },
+  "time": {
+    "in": "in {{value}}",
+    "overdue": "{{value}} overdue",
+    "ago": "{{value}} ago",
+    "notApplicable": "Not applicable"
+  },
+  "flags": {
+    "noResponse": "No response",
+    "reassessOverdue": "Reassessment overdue",
+    "appNotOffered": "App not offered: {{reason}}"
+  },
+  "sparkline": {
+    "label": "Pain over time: {{values}}",
+    "none": "No pain answers yet"
+  },
+  "qr": {
+    "label": "QR code for {{title}}"
+  },
   "timeline": {
     "empty": "Nothing recorded yet.",
     "noFindings": "No new warning signs",
-    "checkin": "{{who}} check-in: {{overall}}, pain {{pain}}, new signs: {{found}}",
-    "concern": "{{who}}: {{concern}}",
+    "checkin": "{{who}} check-in: {{change}}. Feeling {{now}}. Pain {{pain}}. New signs: {{found}}. Circle check: {{attention}}.",
+    "concern": "{{who}} pressed \"{{concern}}\"",
     "finding": "{{who}} reported: {{findings}}",
     "leaving": "{{who}} said they are leaving",
     "vitals": "Vitals recorded by {{role}}: {{values}}",
@@ -133,7 +169,7 @@
     "ctas": "CTAS",
     "complaint": "Complaint",
     "all": "All",
-    "order": "Order: queue (CTAS, then arrival). Flags never move a row.",
+    "order": "Place in line is queue order (CTAS, then arrival). Flags never move a patient.",
     "caption": "Waiting patients in queue order",
     "empty": "No waiting patients match.",
     "failed": "The board could not be loaded.",
@@ -148,8 +184,10 @@
       "lastCheckin": "Last check-in",
       "nextCheckin": "Next check-in",
       "reassess": "Staff reassessment",
-      "pain": "Pain trend"
-    }
+      "pain": "Pain trend",
+      "place": "Place in line"
+    },
+    "noApp": "No app"
   },
   "enrol": {
     "ctas": "CTAS level",
@@ -175,7 +213,16 @@
     "expires": "Links expire at {{time}}.",
     "pagerFallback": "Pager {{pager}} is bound to this visit; the patient QR is the phone fallback.",
     "print": "Print",
-    "another": "Enrol another patient"
+    "another": "Enrol another patient",
+    "cedisHelp": "Optional. Type a code or pick one from the list.",
+    "groupLocked": "Set by the CEDIS code.",
+    "exclusion": "Patient app",
+    "appOffered": "App is offered",
+    "notOffered": "Not offered: {{reason}}",
+    "exclusionHelp": "No QR or prompts. The patient stays on this board and the staff reassessment timer keeps running.",
+    "submitNoQr": "Create visit (no QR)",
+    "noQr": "No QR issued: {{reason}}",
+    "excludedHelp": "Staff watch this patient directly. The staff reassessment timer is running and no patient prompts are sent."
   },
   "visit": {
     "back": "Back to triage board",
@@ -200,13 +247,17 @@
     "pending": "pending",
     "latestAnswers": "Latest check-in",
     "timeline": "Timeline",
-    "failed": "This visit could not be loaded."
+    "failed": "This visit could not be loaded.",
+    "app": "Patient app"
   },
   "answers": {
-    "overall": "Overall",
+    "feelingChange": "Compared with the last check",
+    "feelingNow": "Feeling right now",
     "pain": "Pain",
     "findings": "New warning signs",
-    "from": "From the {{who}} at {{time}}"
+    "attention": "Circle check",
+    "from": "From the {{who}} at {{time}}",
+    "companionOnly": "The patient did not answer this check-in."
   },
   "actions": {
     "title": "Actions",
@@ -222,7 +273,12 @@
     "flagHigher": "Flag higher",
     "flagHelp": "Raises a review task for the physician without changing the queue.",
     "flagNote": "Note (optional, up to 280 characters)",
-    "visitStatus": "Visit status"
+    "visitStatus": "Visit status",
+    "stopApp": "Stop offering the app",
+    "stopAppHelp": "Prompts stop and this patient's phone and companion devices are signed out. The staff reassessment timer keeps running. This cannot be undone.",
+    "stopAppReason": "Reason",
+    "stopAppConfirm": "I understand this cannot be undone.",
+    "stopAppButton": "Stop offering the app"
   },
   "vitals": {
     "sbp": "Systolic BP",
@@ -250,32 +306,19 @@
     "startCheckin": "Start check-in",
     "reportChange": "Report a change",
     "leaving": "I'm leaving",
-    "sendFailed": "That did not send. Please try again, or tell a staff member."
+    "sendFailed": "That did not send. Please try again, or tell a staff member.",
+    "languageNotice": "Questions are shown in English for now. Ask a staff member if you need help in another language."
   },
-  "help": { "worried": "I'm worried", "now": "I need help now" },
-  "flow": {
-    "progress": "Question {{n}} of {{total}}",
-    "next": "Next",
-    "send": "Send",
-    "back": "Back",
-    "finishLater": "Finish later",
-    "finishLaterHelp": "If you stop, we send the answers you gave so far."
+  "pain": {
+    "low": "No pain",
+    "high": "Worst pain"
   },
-  "q": {
-    "overall": {
-      "patient": "Since staff last checked on you, how do you feel?",
-      "companion": "Since staff last checked, how are they?"
-    },
-    "pain": "How bad is your pain right now?",
-    "findings": {
-      "patient": "Have you noticed any of these since staff last checked?",
-      "companion": "Have you noticed any of these in them since staff last checked?"
-    },
-    "findingsHelp": "Choose all that apply."
+  "answer": {
+    "unsure": "I'm not sure"
   },
-  "pain": { "low": "No pain", "high": "Worst pain" },
-  "answer": { "unsure": "I'm not sure", "noneOfThese": "None of these" },
-  "change": { "title": "What has changed?", "send": "Send to staff" },
+  "change": {
+    "send": "Send to staff"
+  },
   "leaving": {
     "title": "Are you leaving?",
     "info": "Please tell a staff member before you go. If you feel worse, return to triage right away.",
@@ -296,7 +339,8 @@
     "reported": "Reported",
     "received": "Received by the care team",
     "waiting": "Waiting to send",
-    "back": "Back"
+    "back": "Back",
+    "stillChecking": "Staff will still check on you on their own schedule."
   },
   "message": {
     "none": "Staff will see your answers.",
@@ -304,11 +348,19 @@
     "clinician_told": "A clinician has been told.",
     "leaving_info": "Please tell staff before you leave. Return to triage right away if you feel worse."
   },
-  "outbox": { "saved": "Saved, will send when connected ({{count}} waiting)." },
+  "outbox": {
+    "saved": "Saved, will send when connected ({{count}} waiting)."
+  },
   "exchange": {
-    "expired": { "title": "This code has expired" },
-    "invalid": { "title": "This code did not work" },
-    "noSession": { "title": "Please scan your code again" },
+    "expired": {
+      "title": "This code has expired"
+    },
+    "invalid": {
+      "title": "This code did not work"
+    },
+    "noSession": {
+      "title": "Please scan your code again"
+    },
     "askDesk": "Ask the triage desk for a new code."
   },
   "privacy": {
@@ -318,5 +370,40 @@
     "stored3": "What staff did in response.",
     "notStored": "We never store your name or health number.",
     "synthetic": "This demo uses synthetic data only."
+  },
+  "exclusion": {
+    "child": "Child",
+    "pregnancy_over_20_weeks": "Pregnancy over 20 weeks",
+    "self_harm_or_violence": "Self-harm or violence",
+    "major_trauma": "Major trauma"
+  },
+  "attention": {
+    "answered": "Counted {{count}} circles",
+    "shownNotAnswered": "Shown but not answered ({{reason}})",
+    "notShown": "Not shown"
+  },
+  "circle": {
+    "intro": "You will see shapes appear one at a time. Count the circles. Ignore the squares.",
+    "once": "You only see them once. If you cannot do this, tap \"I can't do this\" and staff will check on you.",
+    "start": "Start",
+    "watch": "Watch the screen and count the circles.",
+    "cantDo": "I can't do this",
+    "countLabel": "Number of circles",
+    "fewer": "One fewer",
+    "more": "One more",
+    "confirm": "That is my count"
+  },
+  "desk": {
+    "title": "Your question went to the triage nurse",
+    "body": "The triage nurse will come to you. You do not need to do anything else.",
+    "notClinical": "If you feel worse or are worried about your health, press \"I need help now\" instead."
+  },
+  "flow": {
+    "progress": "Question {{n}} of {{total}}",
+    "next": "Next",
+    "send": "Send",
+    "back": "Back",
+    "finishLater": "Finish later",
+    "finishLaterHelp": "If you stop, we send the answers you gave so far."
   }
 }

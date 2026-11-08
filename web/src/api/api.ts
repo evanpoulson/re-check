@@ -15,6 +15,7 @@ import type {
   VisitCreate,
   VisitDetail,
   VisitEnrolled,
+  VisitExclusionUpdate,
   VisitStatusUpdate,
   VitalsCreate,
   VitalsRecord,
@@ -33,6 +34,9 @@ export const acknowledgeTask = (taskId: string, body: AcknowledgeTask) =>
 export const assessTask = (taskId: string, body: AssessTask) => request<Task>('POST', endpoints.assessTask(taskId), body)
 export const updateVisitStatus = (visitId: string, body: VisitStatusUpdate) =>
   request<undefined>('POST', endpoints.visitStatus(visitId), body)
+
+export const updateVisitExclusion = (visitId: string, body: VisitExclusionUpdate) =>
+  request<undefined>('POST', endpoints.visitExclusion(visitId), body)
 
 // Patient and companion
 export const exchangeToken = (body: TokenExchange) => request<SessionInfo>('POST', endpoints.exchangeToken(), body)

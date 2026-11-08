@@ -9,8 +9,10 @@ import { LevelChip } from '@/components/LevelChip'
 import { Sparkline } from '@/components/Sparkline'
 import { StateChip } from '@/components/StateChip'
 import { Card } from '@/components/ui/card'
+import { UserRoundCheck } from 'lucide-react'
 import {
   LEVEL_ORDER,
+  appNotOffered,
   applyFilters,
   conditionOf,
   countByLevel,
@@ -25,8 +27,8 @@ import { cn } from '@/lib/utils'
 import { useDashboardEvents } from './useDashboardEvents'
 
 const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'general']
-const SELECT = 'min-h-11 rounded-lg border border-line bg-surface px-3'
-const pill = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-sm font-semibold'
+const SELECT = 'min-h-11 rounded-data border border-ink bg-surface px-3'
+const pill = 'inline-flex items-center rounded-data px-2 py-0.5 text-sm font-bold'
 
 /** The board data is TriageBoard joined with Worklist on visit id, sorted client side. */
 export function useBoard() {
@@ -56,7 +58,7 @@ export function Triage() {
   return (
     <main className="mx-auto max-w-[88rem] space-y-4 p-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-bold">{t('pages.triage')}</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight">{t('pages.triage')}</h1>
         <span className="inline-flex items-center gap-1.5 text-sm text-muted" role="status">
           <span aria-hidden className={cn('size-2.5 rounded-full', live ? 'bg-brand-600' : 'bg-level-amber')} />
           {live ? t('triage.live') : t('triage.reconnecting')}
@@ -75,7 +77,7 @@ export function Triage() {
       </ul>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex min-h-11 items-center gap-2 rounded-lg border border-line bg-surface px-3 font-semibold">
+        <label className="flex min-h-11 items-center gap-2 rounded-data border border-ink bg-surface px-3 font-semibold">
           <input type="checkbox" checked={filters.needsReview} onChange={(e) => setFilters({ ...filters, needsReview: e.target.checked })} className="size-4" />
           {t('triage.needsReview')}
         </label>
@@ -101,21 +103,22 @@ export function Triage() {
       </div>
 
       <Card className="overflow-x-auto p-0">
-        <table className="w-full min-w-[68rem] border-collapse text-left text-sm">
+        <table className="w-full min-w-[72rem] border-collapse text-left text-sm">
           <caption className="sr-only">{t('triage.caption')}</caption>
-          <thead className="bg-slate-50 text-muted">
+          <thead className="bg-canvas text-muted">
             <tr>
-              {['ref', 'ctas', 'complaint', 'waiting', 'condition', 'flags', 'lastCheckin', 'nextCheckin', 'reassess', 'pain'].map((c) => (
+              {['place', 'ref', 'ctas', 'complaint', 'waiting', 'condition', 'flags', 'lastCheckin', 'nextCheckin', 'reassess', 'pain'].map((c) => (
                 <th key={c} scope="col" className="px-3 py-3 font-semibold">{t(`triage.col.${c}`)}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr><td colSpan={10} className="px-3 py-6 text-center text-muted">{t('triage.empty')}</td></tr>
+              <tr><td colSpan={11} className="px-3 py-6 text-center text-muted">{t('triage.empty')}</td></tr>
             )}
             {rows.map((item) => (
-              <Row key={item.board.visit_id} item={item} now={now} />
+              // The place in line is the patient's position in the full queue, so filtering never renumbers it.
+              <Row key={item.board.visit_id} item={item} place={ordered.indexOf(item) + 1} now={now} />
             ))}
           </tbody>
         </table>
@@ -124,13 +127,19 @@ export function Triage() {
   )
 }
 
-function Row({ item, now }: { item: BoardItem; now: number }) {
+function Row({ item, place, now }: { item: BoardItem; place: number; now: number }) {
   const { t } = useTranslation()
   const { board, work } = item
   const since = sinceMs(work.last_report?.at ?? null, now)
   const flagged = board.level !== null
+  const excluded = appNotOffered(work)
   return (
     <tr className={cn('border-t border-line align-middle', flagged && 'bg-level-amber-bg/40')}>
+      {/* The place in line. It is queue order only and never changes when a flag arrives. */}
+      <th scope="row" className="tabular w-16 border-r-4 border-ink px-3 py-3 text-center text-3xl font-extrabold">
+        <span className="sr-only">{t('triage.col.place')} </span>
+        {place}
+      </th>
       <td className="px-3 py-3 font-semibold">
         <Link to={`/staff/visits/${board.visit_id}`} className="text-brand-700 underline">
           {shortRef(work)}
@@ -143,7 +152,13 @@ function Row({ item, now }: { item: BoardItem; now: number }) {
       <td className="px-3 py-3">
         <div className="flex flex-wrap gap-1.5">
           {board.level && <LevelChip level={board.level} />}
-          {(work.silent || work.prompt_overdue) && board.level !== 'silent' && (
+          {excluded && (
+            <span className={cn(pill, 'gap-1 border border-ink bg-surface text-ink')}>
+              <UserRoundCheck aria-hidden className="size-4" />
+              {t('flags.appNotOffered', { reason: t(`exclusion.${work.visit.app_exclusion}`) })}
+            </span>
+          )}
+          {!excluded && (work.silent || work.prompt_overdue) && board.level !== 'silent' && (
             <span className={cn(pill, 'bg-level-silent-bg text-level-silent')}>{t('flags.noResponse')}</span>
           )}
           {work.leave_risk && board.level !== 'leave_risk' && (
@@ -152,7 +167,7 @@ function Row({ item, now }: { item: BoardItem; now: number }) {
           {board.reassess_overdue && (
             <span className={cn(pill, 'bg-level-overdue-bg text-level-overdue')}>{t('flags.reassessOverdue')}</span>
           )}
-          {!board.level && !work.silent && !work.prompt_overdue && !work.leave_risk && !board.reassess_overdue && (
+          {!excluded && !board.level && !work.silent && !work.prompt_overdue && !work.leave_risk && !board.reassess_overdue && (
             <span className="text-muted">{t('common.none')}</span>
           )}
         </div>
@@ -166,10 +181,12 @@ function Row({ item, now }: { item: BoardItem; now: number }) {
             </span>
           </>
         ) : (
-          <span className="text-muted">{t('triage.noCheckin')}</span>
+          <span className="text-muted">{excluded ? t('triage.noApp') : t('triage.noCheckin')}</span>
         )}
       </td>
-      <td className="px-3 py-3"><CountdownChip due={work.visit.next_prompt_due_at} now={now} /></td>
+      <td className="px-3 py-3">
+        {excluded ? <span className="text-muted">{t('time.notApplicable')}</span> : <CountdownChip due={work.visit.next_prompt_due_at} now={now} />}
+      </td>
       <td className="px-3 py-3"><CountdownChip due={board.staff_reassess_due_at} now={now} /></td>
       <td className="px-3 py-3"><Sparkline trend={work.trend} /></td>
     </tr>

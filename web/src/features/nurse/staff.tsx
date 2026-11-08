@@ -54,7 +54,7 @@ export function useStaff(): StaffContext {
 }
 
 const link = ({ isActive }: { isActive: boolean }) =>
-  cn('rounded-lg px-3 py-2 font-semibold', isActive ? 'bg-brand-50 text-brand-700' : 'text-muted hover:bg-slate-100')
+  cn('rounded-data px-3 py-2 font-bold', isActive ? 'bg-white text-ink' : 'text-white/85 hover:bg-white/10')
 
 /** Chrome for every staff screen. Sends you to sign-in when no demo role is chosen. */
 export function StaffLayout() {
@@ -64,9 +64,9 @@ export function StaffLayout() {
   if (!role) return <Navigate to="/staff/sign-in" replace />
   return (
     <div className="min-h-dvh">
-      <header className="border-b border-line bg-surface no-print">
+      <header className="bg-ink text-white no-print">
         <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-3 px-4 py-3">
-          <span className="text-xl font-bold text-brand-700">{t('app.name')}</span>
+          <span className="text-xl font-extrabold tracking-tight">{t('app.name')}</span>
           <DemoBadge />
           <nav aria-label={t('nav.label')} className="flex gap-1">
             <NavLink to="/staff/triage" className={link}>
@@ -76,9 +76,10 @@ export function StaffLayout() {
               {t('nav.enrol')}
             </NavLink>
           </nav>
-          <span className="ml-auto text-muted">{t(`role.${role}`)}</span>
+          <span className="ml-auto text-white/85">{t(`role.${role}`)}</span>
           <Button
             variant="ghost"
+            className="text-white hover:bg-white/10"
             onClick={() => {
               signOut()
               navigate('/staff/sign-in')
