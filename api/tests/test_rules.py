@@ -49,12 +49,18 @@ def test_reassuring_answers_never_fire(report, att):
 
 
 @given(checkins, attention)
-def test_every_finding_is_red_and_tells_the_patient(report, att):
+def test_every_finding_is_red_and_the_patient_hears_a_clinician_will_check(report, att):
     fires = rules.evaluate(report, att)
     for code in rules.findings_of(report):
         assert rules.Fire(TaskLevel.RED, f"finding_{code.value}") in fires
     if rules.findings_of(report):
-        assert rules.patient_message(report, fires) is PatientMessage.CLINICIAN_TOLD
+        assert rules.patient_message(report, fires) is PatientMessage.CLINICIAN_WILL_CHECK
+
+
+@given(checkins, attention)
+def test_patient_is_never_told_a_clinician_was_notified(report, att):
+    """Red is a dashboard colour; nothing notifies a clinician, so the screen never claims it did."""
+    assert rules.patient_message(report, rules.evaluate(report, att)) is not PatientMessage.CLINICIAN_TOLD
 
 
 @given(checkins, attention)

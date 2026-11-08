@@ -86,13 +86,16 @@ def evaluate(report: Report, attention: AttentionResult | None = None) -> list[F
 
 
 def patient_message(report: Report, fires: list[Fire]) -> PatientMessage:
-    """What the patient screen says after this report (escalation table, FR9, FR10)."""
+    """What the patient screen says after this report.
+
+    A task's level (red, amber, ...) only sets its colour and rank on the staff
+    dashboard; nothing pages or notifies a clinician. So the patient is never
+    told "a clinician has been told" (`clinician_told` is never sent). Any
+    clinical task gets "a clinician will check on you".
+    """
     if isinstance(report, LeavingReport):
         return PatientMessage.LEAVING_INFO
-    levels = {f.level for f in fires}
-    if TaskLevel.RED in levels:
-        return PatientMessage.CLINICIAN_TOLD
-    if levels & {TaskLevel.AMBER, TaskLevel.SILENT, TaskLevel.LEAVE_RISK}:
+    if {f.level for f in fires} & {TaskLevel.RED, TaskLevel.AMBER, TaskLevel.SILENT, TaskLevel.LEAVE_RISK}:
         return PatientMessage.CLINICIAN_WILL_CHECK
     return PatientMessage.NONE
 

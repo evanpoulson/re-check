@@ -192,7 +192,7 @@ async def post_report(
     if report.reporter != session.role:
         raise _unprocessable("reporter must match the role chosen at sign-in")
     if report.channel is not Channel.PHONE:
-        raise _unprocessable("pager reports come through the pager base station, not a phone session")
+        raise _unprocessable("reports come from the signed-in phone (channel: phone)")
     bank = default_bank()
     if isinstance(report, CheckinReport):
         check_items(bank, report)

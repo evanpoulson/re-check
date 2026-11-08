@@ -113,7 +113,7 @@ def test_finding_opens_a_red_task_with_evidence(live_client):
     body = checkin(change="worse", findings=["chest_pain"])
     r = post(live_client, body)
     assert r.status_code == 200, r.text
-    assert r.json()["patient_message"] == "clinician_told"
+    assert r.json()["patient_message"] == "clinician_will_check"
     level, routed, status, ack_window, reasons = open_task(live_client, visit)
     assert (level, routed, status) == ("red", ["physician"], "open")
     assert ack_window == timedelta(minutes=2)
@@ -150,7 +150,7 @@ def test_leaving_and_standalone_finding(live_client):
     base = {"reporter": "patient", "channel": "phone", "captured_at": now()}
     finding = post(live_client, {**base, "submission_id": sid(), "kind": "finding", "findings": ["speech_change"]})
     assert finding.status_code == 200, finding.text
-    assert finding.json()["patient_message"] == "clinician_told"
+    assert finding.json()["patient_message"] == "clinician_will_check"
     assert finding.json()["follow_up_items"] == ["last_known_well"]
     leaving = post(live_client, {**base, "submission_id": sid(), "kind": "leaving"})
     assert leaving.json()["patient_message"] == "leaving_info"
@@ -176,9 +176,9 @@ def test_retry_is_a_duplicate_and_reused_id_is_refused(live_client):
 def test_reporter_and_channel_must_match_the_session(live_client):
     sign_in(live_client, role="companion")
     assert post(live_client, checkin(reporter="patient")).status_code == 422
-    pager = checkin(reporter="companion", pain=None)
-    pager["channel"] = "pager"
-    assert post(live_client, pager).status_code == 422
+    wrong_channel = checkin(reporter="companion", pain=None)
+    wrong_channel["channel"] = "pager"
+    assert post(live_client, wrong_channel).status_code == 422
     ok = post(live_client, checkin(reporter="companion", findings=["new_confusion"]))
     assert ok.status_code == 200, ok.text
 
