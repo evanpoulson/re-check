@@ -1,0 +1,13 @@
+@import 'tailwindcss';
+
+/* Minimal base. Design tokens and component styles arrive in feat/design-system. */
+:root {
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+}
