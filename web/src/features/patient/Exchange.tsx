@@ -7,6 +7,7 @@ import type { Role, SignInConflict } from '@/api/types'
 import { AnswerButton } from '@/components/AnswerButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { chosenLanguage } from '@/i18n'
 import { clock, isolate } from '@/lib/time'
 import { PatientLayout } from './PatientLayout'
 
@@ -34,7 +35,8 @@ export function Exchange() {
     setState({ name: 'sending', role })
     try {
       const session = await exchangeToken({ token, role, ...(takeover ? { takeover_session_id: takeover } : {}) })
-      void i18n.changeLanguage(session.language)
+      // Keep a language the person picked on this phone; otherwise use the visit's.
+      void i18n.changeLanguage(chosenLanguage() ?? session.language)
       navigate('/check-in', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {

@@ -26,9 +26,32 @@ const RESOURCES: Record<Language, object> = { en, tl, pa, fr, es, de, yue, zh, a
 /** Contract order: the most common mother tongues in Alberta, English first. */
 export const LANGUAGES = Object.keys(RESOURCES) as Language[]
 
+// A language picked by hand on this device (the header select) wins over the
+// visit's enrolled language, so signing in or reloading doesn't undo it.
+// Per tab, like the visit session; any storage error just means no saved choice.
+const CHOSEN_KEY = 'recheck.language'
+
+export function chosenLanguage(): Language | undefined {
+  try {
+    const l = sessionStorage.getItem(CHOSEN_KEY)
+    return LANGUAGES.includes(l as Language) ? (l as Language) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export function chooseLanguage(lng: string) {
+  try {
+    sessionStorage.setItem(CHOSEN_KEY, lng)
+  } catch {
+    // Still switch for this page.
+  }
+  return i18n.changeLanguage(lng)
+}
+
 void i18n.use(initReactI18next).init({
   resources: Object.fromEntries(LANGUAGES.map((l) => [l, { translation: RESOURCES[l] }])),
-  lng: 'en',
+  lng: chosenLanguage() ?? 'en',
   fallbackLng: 'en',
   supportedLngs: [...LANGUAGES],
   interpolation: { escapeValue: false },
