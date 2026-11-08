@@ -18,7 +18,7 @@ export function CountdownChip({ due, now, patient = false, className }: {
   if (ms === null) return <span className="text-muted">{t('common.none')}</span>
   if (patient) {
     return (
-      <span className="tabular whitespace-nowrap text-ink">
+      <span dir="auto" className="tabular whitespace-nowrap text-ink">
         {ms < 0 ? t('time.readyNow') : t('duration.inTime', { value: durationWords(ms / 60_000, t) })}
       </span>
     )

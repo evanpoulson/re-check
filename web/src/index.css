@@ -180,7 +180,7 @@
   .brand-mark {
     width: auto;
     height: 32px;
-    margin-right: 9px;
+    margin-inline-end: 9px;
   }
   .brand-period {
     color: var(--color-brand-600);
@@ -776,7 +776,7 @@
     }
     .patient-header .brand-mark {
       height: 26px;
-      margin-right: 6px;
+      margin-inline-end: 6px;
     }
   }
 }

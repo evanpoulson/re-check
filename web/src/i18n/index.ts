@@ -18,8 +18,9 @@ import yue from './yue.json'
 import zh from './zh.json'
 
 // One file per contract `Language` code. Typing this as a Record makes the build
-// fail if the contract gains or drops a language. Only English is written so far;
-// missing keys fall back to English until professional translations are supplied.
+// fail if the contract gains or drops a language. Every patient-facing key has a
+// draft translation (keys.test.ts checks this); staff screens are English only and
+// fall back to en.json.
 const RESOURCES: Record<Language, object> = { en, tl, pa, fr, es, de, yue, zh, ar, ur, vi, ko, hi, ru, pl }
 
 /** Contract order: the most common mother tongues in Alberta, English first. */

@@ -72,5 +72,56 @@ describe('translations', () => {
     }
     expect(problems).toEqual([])
   })
+
+  it('every patient-facing key exists in all 15 languages with the same placeholders', () => {
+    // The patient screens and every component or helper they render.
+    const patientFiles = [
+      ...files('src/features/patient'),
+      ...['HelpBar', 'CircleCheck', 'AnswerButton', 'CountdownChip', 'PrivacyPanel', 'TriageCard', 'Brand', 'PageState'].map(
+        (c) => `src/components/${c}.tsx`,
+      ),
+      'src/lib/time.ts',
+    ]
+    const leaves = (o: unknown, p = ''): [string, string][] =>
+      typeof o === 'string' ? [[p, o]] : Object.entries(o as Record<string, unknown>).flatMap(([k, v]) => leaves(v, p ? `${p}.${k}` : k))
+    const english = Object.fromEntries(leaves(en))
+    const variant = /_(zero|one|two|few|many|other|companion)$/
+    const base = (k: string) => k.replace(variant, '').replace(variant, '')
+    const used = new Set<string>()
+    for (const f of patientFiles) {
+      const src = readFileSync(f, 'utf8')
+      // Literal keys, with their plural and `_companion` context variants.
+      for (const m of src.matchAll(/['"]([a-zA-Z]\w*\.[\w.]+)['"]/g))
+        for (const k of Object.keys(english)) if (k === m[1] || base(k) === m[1]) used.add(k)
+      // Template keys such as t(`message.${code}`): every key under the prefix.
+      for (const m of src.matchAll(/`([a-zA-Z]\w*(?:\.\w+)*\.)\$\{/g))
+        for (const k of Object.keys(english)) if (k.startsWith(m[1]!)) used.add(k)
+    }
+    // Language names are written in their own language and shared by every file.
+    for (const k of used) if (k.startsWith('language.')) used.delete(k)
+    expect(used.size).toBeGreaterThan(100)
+
+    const placeholders = (s: string) => (s.match(/{{\w+}}/g) ?? []).filter((p) => p !== '{{count}}').sort().join(' ')
+    const problems: string[] = []
+    for (const lng of LANGUAGES.filter((l) => l !== 'en')) {
+      const theirs = Object.fromEntries(leaves(i18n.getResourceBundle(lng, 'translation')))
+      const categories = new Intl.PluralRules(lng).resolvedOptions().pluralCategories
+      const checked = new Set<string>()
+      for (const key of used) {
+        const plural = key.match(/^(.*)_(one|other)$/)
+        // Plural keys need every category the language uses, not the English two.
+        const wanted = plural && `${plural[1]}_other` in english ? categories.map((c) => `${plural[1]}_${c}`) : [key]
+        for (const k of wanted) {
+          if (checked.has(k)) continue
+          checked.add(k)
+          const own = theirs[k]
+          const source = english[k] ?? english[key]!
+          if (own === undefined) problems.push(`${lng}: missing ${k}`)
+          else if (placeholders(own) !== placeholders(source)) problems.push(`${lng}: ${k} placeholders differ from English`)
+        }
+      }
+    }
+    expect(problems).toEqual([])
+  })
 })
 
