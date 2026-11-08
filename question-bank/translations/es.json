@@ -1,0 +1,155 @@
+{
+  "language": "es",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "Necesito ayuda ahora",
+      "companion": "La persona necesita ayuda ahora"
+    },
+    "worried": {
+      "text": "Me preocupa estar empeorando",
+      "companion": "Me preocupa que la persona esté empeorando"
+    },
+    "desk_question": {
+      "text": "Pregunta sobre mi espera o mi atención",
+      "companion": "Pregunta sobre la espera o la atención de la persona"
+    },
+    "leaving": {
+      "text": "Me voy",
+      "companion": "La persona se va"
+    },
+    "feeling_now": {
+      "text": "¿Cómo se siente en este momento?",
+      "companion": "¿Cómo ve usted a la persona en este momento?",
+      "options": {
+        "very_good": "Muy bien",
+        "good": "Bien",
+        "ok": "Regular",
+        "poor": "Mal",
+        "very_poor": "Muy mal"
+      }
+    },
+    "feeling_change": {
+      "text": "Comparado con la última revisión del personal, ¿cómo se siente?",
+      "companion": "Comparado con la última revisión del personal, ¿cómo ve usted a la persona?",
+      "options": {
+        "much_better": "Mucho mejor",
+        "better": "Mejor",
+        "same": "Más o menos igual",
+        "worse": "Peor",
+        "much_worse": "Mucho peor"
+      }
+    },
+    "pain": {
+      "text": "¿Cuánto le duele en este momento? 0 es sin dolor y 10 es el peor dolor que pueda imaginar."
+    },
+    "new_findings": {
+      "text": "Desde que llegó, ¿empezó o empeoró alguno de estos problemas? Marque todos los que correspondan.",
+      "companion": "Desde que la persona llegó, ¿ha notado usted que alguno de estos problemas empezó o empeoró? Marque todos los que correspondan.",
+      "options": {
+        "speech_change": "Habla diferente o difícil de entender",
+        "facial_droop": "La cara se ve caída de un lado",
+        "new_weakness_numbness": "Debilidad o adormecimiento nuevo en un lado del cuerpo",
+        "trouble_breathing": "Más dificultad para respirar",
+        "fainting": "Desmayo o casi desmayo",
+        "new_confusion": "Más confusión",
+        "drowsiness": "Dificultad para no dormirse",
+        "worst_headache": "El peor dolor de cabeza jamás sentido",
+        "vomiting": "Vómitos",
+        "vision_change": "Problema nuevo para ver",
+        "balance_change": "Problema nuevo de equilibrio o para caminar",
+        "chest_pain": "Dolor de pecho nuevo o peor",
+        "heavy_bleeding": "Sangrado abundante"
+      },
+      "none": "Ninguno de estos"
+    },
+    "circle_count": {
+      "text": "Cuente los círculos. No tome en cuenta los cuadrados. ¿Cuántos círculos vio?"
+    },
+    "pain_moved": {
+      "text": "¿El dolor se movió o se extendió a otro lugar?",
+      "companion": "¿La persona ha dicho que el dolor se movió o se extendió a otro lugar?"
+    },
+    "pain_new_location": {
+      "text": "¿Hacia dónde se movió o se extendió? Marque todos los que correspondan.",
+      "companion": "Según lo que dice la persona, ¿hacia dónde se movió o se extendió? Marque todos los que correspondan.",
+      "options": {
+        "chest": "Pecho",
+        "between_shoulders": "Entre los omóplatos",
+        "lower_back": "Parte baja de la espalda",
+        "belly": "Barriga (abdomen)",
+        "neck_jaw": "Cuello o mandíbula",
+        "arm": "Brazo",
+        "leg": "Pierna"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "¿El dolor empeoró mucho de repente?",
+      "companion": "¿La persona ha dicho que el dolor empeoró mucho de repente?"
+    },
+    "change_started": {
+      "text": "¿Cuándo empezó este cambio?",
+      "companion": "¿Cuándo empezó este cambio?",
+      "options": {
+        "under_15_min": "Hace menos de 15 minutos",
+        "from_15_to_60_min": "Hace entre 15 y 60 minutos",
+        "over_1_hr": "Hace más de una hora"
+      }
+    },
+    "symptoms_change": {
+      "text": "¿Los síntomas con los que llegó están mejor, igual o peor?",
+      "companion": "¿Los síntomas con los que llegó la persona están mejor, igual o peor?",
+      "options": {
+        "better": "Mejor",
+        "same": "Igual",
+        "worse": "Peor"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "¿Su dolor de cabeza empeoró mucho de repente?",
+      "companion": "¿La persona ha dicho que su dolor de cabeza empeoró mucho de repente?"
+    },
+    "last_known_well": {
+      "text": "¿Cuándo fue la última vez que habló y se movió como de costumbre?",
+      "companion": "¿Cuándo fue la última vez que la persona habló y se movió como de costumbre?",
+      "options": {
+        "under_1_hr": "Hace menos de 1 hora",
+        "from_1_to_3_hr": "Hace entre 1 y 3 horas",
+        "from_3_to_6_hr": "Hace entre 3 y 6 horas",
+        "over_6_hr": "Hace más de 6 horas"
+      }
+    },
+    "harder_to_wake": {
+      "text": "¿Le cuesta más que antes no dormirse?",
+      "companion": "¿Cuesta más que antes despertar a la persona o mantenerla despierta?"
+    },
+    "vomit_count": {
+      "text": "¿Cuántas veces ha vomitado desde que llegó?",
+      "companion": "¿Cuántas veces ha vomitado la persona desde que llegó?",
+      "options": {
+        "zero": "Ninguna",
+        "one": "Una vez",
+        "two_plus": "Dos veces o más"
+      }
+    },
+    "headache_change": {
+      "text": "Comparado con la última revisión, ¿su dolor de cabeza está mejor, igual o peor?",
+      "companion": "Comparado con la última revisión, ¿la persona dice que su dolor de cabeza está mejor, igual o peor?",
+      "options": {
+        "better": "Mejor",
+        "same": "Igual",
+        "worse": "Peor"
+      }
+    },
+    "seizure": {
+      "text": "¿Ha tenido alguna convulsión desde que llegó?",
+      "companion": "¿La persona ha tenido alguna convulsión desde que llegó?"
+    },
+    "more_confused": {
+      "text": "¿Siente más confusión o la mente más nublada que en la última revisión del personal?",
+      "companion": "¿La persona parece más confundida que en la última revisión del personal?"
+    }
+  }
+}

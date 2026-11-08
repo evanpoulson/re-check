@@ -1,1 +1,146 @@
-{}
+{
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "Données fictives, seuils de démonstration"
+  },
+  "common": {
+    "loading": "Chargement…",
+    "none": "Aucun",
+    "yes": "Oui",
+    "no": "Non",
+    "sending": "Envoi…"
+  },
+  "patient": {
+    "language": "Langue",
+    "departmentWait": "Pour les personnes qui arrivent maintenant, l'attente estimée à l'urgence est d'environ {{estimate}}.",
+    "waitUnavailable": "Estimation non disponible.",
+    "waited": "Vous attendez depuis {{waited}}.",
+    "placeInLine": "Vos réponses ne changent jamais votre place dans la file d'attente.",
+    "title": "Votre arrivée est enregistrée",
+    "titleCompanion": "Vous aidez une personne à répondre au questionnaire",
+    "nextCheckin": "Prochain questionnaire",
+    "startCheckin": "Commencer le questionnaire",
+    "reportChange": "Signaler un changement",
+    "leaving": "Je pars",
+    "sendFailed": "L'envoi n'a pas fonctionné. Veuillez réessayer ou avertir un membre du personnel.",
+    "languageNotice": "Cette traduction est une ébauche. Elle n'a pas encore été vérifiée par un traducteur médical. Si quelque chose n'est pas clair, demandez à un membre du personnel.",
+    "signOut": "Déconnecter ce téléphone",
+    "signOutHelp": "Ce téléphone n'enverra plus de questionnaires. La place dans la file d'attente est conservée, et n'importe qui peut se reconnecter en scannant le code QR.",
+    "signOutConfirm": "Se déconnecter",
+    "signOutFailed": "Impossible de déconnecter ce téléphone. Réessayez.",
+    "waitContext": "Renseignements sur la salle d'attente",
+    "contactStaff": "Contacter le personnel"
+  },
+  "pain": {
+    "low": "Aucune douleur",
+    "high": "Pire douleur"
+  },
+  "answer": {
+    "unsure": "Je ne sais pas"
+  },
+  "change": {
+    "send": "Envoyer au personnel"
+  },
+  "leaving": {
+    "title": "Vous partez?",
+    "info": "Veuillez avertir un membre du personnel avant de partir. Si vous vous sentez plus mal, retournez au triage immédiatement.",
+    "confirm": "Oui, je pars",
+    "cancel": "Non, je reste"
+  },
+  "urgent": {
+    "title": "Avertissez un membre du personnel maintenant",
+    "body": "Allez voir le membre du personnel le plus proche ou appelez à l'aide à voix haute.",
+    "sent": "Votre signalement a été reçu.",
+    "queued": "Enregistré sur ce téléphone. Il sera envoyé dès que la connexion reviendra.",
+    "telling": "Je préviens le personnel",
+    "sending": "Envoi de votre signalement…",
+    "failed": "Votre signalement n'a pas été envoyé.",
+    "retry": "Réessayer l'envoi",
+    "followup": "Répondre à une autre question"
+  },
+  "sent": {
+    "title": "Merci, nous avons reçu vos réponses",
+    "queuedTitle": "Enregistré sur ce téléphone",
+    "queuedBody": "L'envoi se fera dès que le téléphone sera connecté.",
+    "reported": "Signalé",
+    "received": "Reçu par l'équipe de soins",
+    "waiting": "En attente d'envoi",
+    "back": "Retour",
+    "stillChecking": "Le personnel viendra quand même vous voir selon son propre horaire."
+  },
+  "message": {
+    "none": "Le personnel verra vos réponses.",
+    "clinician_will_check": "Un membre de l'équipe médicale viendra vous voir.",
+    "clinician_told": "Un membre de l'équipe médicale a été avisé.",
+    "leaving_info": "Veuillez avertir le personnel avant de partir. Retournez au triage immédiatement si vous vous sentez plus mal."
+  },
+  "outbox": {
+    "saved": "Enregistré, l'envoi se fera à la connexion ({{count}} en attente)."
+  },
+  "exchange": {
+    "invalid": {
+      "title": "Ce code n'a pas fonctionné"
+    },
+    "askDesk": "Demandez un nouveau code au bureau de triage.",
+    "who": "Qui utilise ce téléphone?",
+    "role": {
+      "patient": "Je suis la personne qui consulte",
+      "companion": "J'accompagne la personne qui consulte"
+    },
+    "inactive": "Ce code n'est plus actif. Veuillez vous adresser au bureau de triage.",
+    "failed": "Cela n'a pas fonctionné. Veuillez réessayer ou vous adresser au bureau de triage.",
+    "takeover": {
+      "title": "L'autre appareil sera déconnecté",
+      "who": "{{who}} utilise un autre téléphone depuis {{time}}. Un seul téléphone peut être connecté à la fois.",
+      "confirm": "Déconnecter l'autre téléphone et continuer",
+      "cancel": "Annuler"
+    },
+    "signedInAs": {
+      "patient": "La personne qui consulte",
+      "companion": "Quelqu'un qui accompagne la personne"
+    },
+    "signedOut": {
+      "title": "Votre session est fermée.",
+      "help": "Si vous avez besoin d'aide maintenant, avertissez un membre du personnel. Pour vous reconnecter, scannez le code QR de la visite."
+    }
+  },
+  "privacy": {
+    "title": "Ce que nous conservons",
+    "stored1": "Vos réponses et le moment où vous les avez données.",
+    "stored2": "Votre niveau de triage et le groupe de votre motif de consultation.",
+    "stored3": "Les mesures prises par le personnel en réponse.",
+    "notStored": "Nous ne conservons jamais votre nom ni votre numéro d'assurance maladie.",
+    "synthetic": "Cette démonstration utilise uniquement des données fictives."
+  },
+  "circle": {
+    "intro": "Des formes vont apparaître une à la fois. Comptez les cercles. Ne tenez pas compte des carrés.",
+    "once": "Vous ne les verrez qu'une seule fois. Si vous ne pouvez pas le faire, touchez « Je ne peux pas le faire » et le personnel viendra vous voir.",
+    "start": "Commencer",
+    "watch": "Regardez l'écran et comptez les cercles.",
+    "cantDo": "Je ne peux pas le faire",
+    "countLabel": "Nombre de cercles",
+    "fewer": "Un de moins",
+    "more": "Un de plus",
+    "confirm": "C'est mon total"
+  },
+  "desk": {
+    "title": "Votre question a été transmise au personnel infirmier du triage",
+    "body": "Un membre du personnel infirmier viendra vous voir. Vous n'avez rien d'autre à faire.",
+    "notClinical": "Si vous vous sentez plus mal ou si votre santé vous inquiète, appuyez plutôt sur « J'ai besoin d'aide maintenant »."
+  },
+  "flow": {
+    "progress": "Question {{n}} sur {{total}}",
+    "next": "Suivant",
+    "send": "Envoyer",
+    "back": "Retour",
+    "finishLater": "Terminer plus tard",
+    "finishLaterHelp": "Si vous arrêtez, nous enverrons les réponses déjà données.",
+    "sendNow": "Envoyer les signes d'alerte maintenant",
+    "progressLabel": "Progression du questionnaire"
+  },
+  "pages": {
+    "patientEntry": "Ouverture de votre questionnaire"
+  }
+}

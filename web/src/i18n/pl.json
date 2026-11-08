@@ -1,1 +1,146 @@
-{}
+{
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "Dane syntetyczne, progi demonstracyjne"
+  },
+  "common": {
+    "loading": "Ładowanie…",
+    "none": "Brak",
+    "yes": "Tak",
+    "no": "Nie",
+    "sending": "Wysyłanie…"
+  },
+  "patient": {
+    "language": "Język",
+    "departmentWait": "Obecny szacowany czas oczekiwania na oddziale dla nowo przybyłych: około {{estimate}}.",
+    "waitUnavailable": "Brak szacowanego czasu.",
+    "waited": "Dotychczasowy czas oczekiwania: {{waited}}.",
+    "placeInLine": "Odpowiedzi nigdy nie zmieniają miejsca w kolejce.",
+    "title": "Rejestracja potwierdzona",
+    "titleCompanion": "Tryb osoby towarzyszącej",
+    "nextCheckin": "Następna ankieta",
+    "startCheckin": "Rozpocznij ankietę",
+    "reportChange": "Zgłoś zmianę",
+    "leaving": "Wychodzę",
+    "sendFailed": "Nie udało się wysłać. Proszę spróbować ponownie lub powiedzieć o tym komuś z personelu.",
+    "languageNotice": "To tłumaczenie jest wersją roboczą. Nie zostało jeszcze sprawdzone przez tłumacza medycznego. W razie niejasności proszę zapytać personel.",
+    "signOut": "Wyloguj ten telefon",
+    "signOutHelp": "Ten telefon przestanie wysyłać ankiety. Miejsce w kolejce zostaje zachowane, a każdy może zalogować się ponownie, skanując kod QR.",
+    "signOutConfirm": "Wyloguj",
+    "signOutFailed": "Nie udało się wylogować tego telefonu. Proszę spróbować ponownie.",
+    "waitContext": "Informacje o poczekalni",
+    "contactStaff": "Kontakt z personelem"
+  },
+  "pain": {
+    "low": "Brak bólu",
+    "high": "Najgorszy ból"
+  },
+  "answer": {
+    "unsure": "Nie wiem"
+  },
+  "change": {
+    "send": "Wyślij do personelu"
+  },
+  "leaving": {
+    "title": "Potwierdzenie wyjścia",
+    "info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia proszę natychmiast wrócić do punktu triażu.",
+    "confirm": "Tak, wychodzę",
+    "cancel": "Nie, zostaję"
+  },
+  "urgent": {
+    "title": "Proszę natychmiast powiedzieć personelowi",
+    "body": "Proszę podejść do najbliższej osoby z personelu lub głośno zawołać o pomoc.",
+    "sent": "Zgłoszenie zostało odebrane.",
+    "queued": "Zapisano na tym telefonie. Wysyłka nastąpi po odzyskaniu połączenia.",
+    "telling": "Mówię personelowi",
+    "sending": "Wysyłanie zgłoszenia…",
+    "failed": "Zgłoszenie nie zostało wysłane.",
+    "retry": "Wyślij ponownie",
+    "followup": "Odpowiedz na pytanie uzupełniające"
+  },
+  "sent": {
+    "title": "Dziękujemy, odpowiedzi zostały odebrane",
+    "queuedTitle": "Zapisano na tym telefonie",
+    "queuedBody": "Wysyłka nastąpi, gdy tylko pojawi się połączenie.",
+    "reported": "Zgłoszono",
+    "received": "Odebrane przez zespół medyczny",
+    "waiting": "Czeka na wysłanie",
+    "back": "Wstecz",
+    "stillChecking": "Personel i tak będzie sprawdzać stan pacjenta według własnego harmonogramu."
+  },
+  "message": {
+    "none": "Personel zobaczy odpowiedzi.",
+    "clinician_will_check": "Lekarz przyjdzie sprawdzić stan zdrowia.",
+    "clinician_told": "Lekarz został powiadomiony.",
+    "leaving_info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia proszę natychmiast wrócić do punktu triażu."
+  },
+  "outbox": {
+    "saved": "Zapisano, wysyłka po połączeniu (oczekujące: {{count}})."
+  },
+  "exchange": {
+    "invalid": {
+      "title": "Ten kod nie zadziałał"
+    },
+    "askDesk": "Proszę poprosić o nowy kod w punkcie triażu.",
+    "who": "Kto korzysta z tego telefonu?",
+    "role": {
+      "patient": "Jestem pacjentem / pacjentką",
+      "companion": "Jestem osobą towarzyszącą"
+    },
+    "inactive": "Ten kod jest już nieaktywny. Proszę zgłosić się do punktu triażu.",
+    "failed": "Nie udało się. Proszę spróbować ponownie lub zgłosić się do punktu triażu.",
+    "takeover": {
+      "title": "Drugie urządzenie zostanie wylogowane",
+      "who": "{{who}}: zalogowano na innym telefonie od {{time}}. Zalogowany może być tylko jeden telefon.",
+      "confirm": "Wyloguj drugi telefon i kontynuuj",
+      "cancel": "Anuluj"
+    },
+    "signedInAs": {
+      "patient": "Pacjent",
+      "companion": "Osoba towarzysząca"
+    },
+    "signedOut": {
+      "title": "Nastąpiło wylogowanie.",
+      "help": "W razie potrzeby pomocy proszę od razu powiedzieć personelowi. Aby zalogować się ponownie, proszę zeskanować kod QR tej wizyty."
+    }
+  },
+  "privacy": {
+    "title": "Co przechowujemy",
+    "stored1": "Odpowiedzi i czas ich udzielenia.",
+    "stored2": "Poziom triażu i grupę dolegliwości.",
+    "stored3": "Działania personelu podjęte w odpowiedzi.",
+    "notStored": "Nigdy nie przechowujemy imienia i nazwiska ani numeru ubezpieczenia zdrowotnego.",
+    "synthetic": "To demo korzysta wyłącznie z danych syntetycznych."
+  },
+  "circle": {
+    "intro": "Na ekranie będą pojawiać się kolejno kształty. Proszę liczyć kółka, a kwadraty pomijać.",
+    "once": "Każdy kształt pojawi się tylko raz. Jeśli nie da się tego zrobić, proszę dotknąć „Nie mogę tego zrobić”, a personel przyjdzie sprawdzić stan zdrowia.",
+    "start": "Start",
+    "watch": "Proszę patrzeć na ekran i liczyć kółka.",
+    "cantDo": "Nie mogę tego zrobić",
+    "countLabel": "Liczba kółek",
+    "fewer": "O jedno mniej",
+    "more": "O jedno więcej",
+    "confirm": "To mój wynik"
+  },
+  "desk": {
+    "title": "Pytanie trafiło do pielęgniarki triażowej",
+    "body": "Pielęgniarka triażowa podejdzie. Nie trzeba robić nic więcej.",
+    "notClinical": "W razie pogorszenia lub obaw o zdrowie proszę zamiast tego nacisnąć „Potrzebuję pomocy teraz”."
+  },
+  "flow": {
+    "progress": "Pytanie {{n}} z {{total}}",
+    "next": "Dalej",
+    "send": "Wyślij",
+    "back": "Wstecz",
+    "finishLater": "Dokończ później",
+    "finishLaterHelp": "Po przerwaniu wyślemy dotychczasowe odpowiedzi.",
+    "sendNow": "Wyślij teraz objawy alarmowe",
+    "progressLabel": "Postęp ankiety"
+  },
+  "pages": {
+    "patientEntry": "Otwieranie ankiety"
+  }
+}

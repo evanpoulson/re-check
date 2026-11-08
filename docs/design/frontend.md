@@ -16,7 +16,7 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
 - A calm identity after apple.com's design language: the system font (SF Pro on Apple devices, Segoe UI on Windows), a light grey canvas with white cards, near-black text, one blue for actions and links, translucent "glass" bars, and no green for "fine". Shape encodes meaning: pills are things you tap, 18px cards hold content, and the small radius is for data chips.
-- Desktop-first staff UI, the 15 most common mother tongues in Alberta. Question wording is English only until the bank's translations exist.
+- Desktop-first staff UI, the 15 most common mother tongues in Alberta. Patient screens and question wording are translated (unreviewed drafts); staff screens stay in English.
 - **The question bank is the source of every wording.** `question-bank/` is copied into `web/src/api/bank/` by `npm run gen:contract` and read by `bank.ts`, `cedis.ts` and `enableWhen.ts`. Nothing the bank owns is retyped in the UI.
 
 ## Routes
@@ -155,7 +155,7 @@ Every screen shows "Your answers never change your place in line.", the departme
 5. **Sent and status.** A patient-safe timeline: Reported, Received. It says staff will still check on their own schedule, and never implies "all clear". Task level and reasons never reach the patient.
 6. **Leaving.** `LeavingReport` with `leaving_info` ("tell staff before you go").
 7. **Offline, saved and pending.** Answers queue locally and retry with the same `submission_id`. A clear "Saved, will send when connected" state looks different from "no problem".
-8. **Language.** For any language other than English, a plain notice says questions are shown in English for now.
+8. **Language.** For a language whose translation is still a draft, a plain notice says a medical translator has not checked it yet and to ask staff if anything is unclear.
 
 ```
  +----------------------------+     +----------------------------+
@@ -186,7 +186,7 @@ The frontend uses the contract exactly. Types are generated from `contract_json_
 - **Routes and transport.** The contract defines no HTTP paths and no realtime transport. Paths, including sign-in, sign-out, Show QR and staff sign-out, live in one file, `web/src/api/endpoints.ts`, and the frontend runs against typed MSW mocks until the FastAPI routes exist. The mocks run on the real bank.
 - **Not in the contract, so assumed in the mocks only:** how a desk question reaches the nurse (the mock opens a triage-nurse-only task at level `overdue`), and the task level for a wrong or missing circle count (the mock uses `overdue`, "non-urgent in-person check").
 - **Reporter and session.** The role chosen at sign-in is the report's `reporter`; the server rejects any other. The bank's hidden `session_role` item carries it for branching, so "Who is answering?" is never asked.
-- **Translations.** Question text for `pa` and `tl` comes from the question bank when it exists.
+- **Translations.** Question text for every language comes from `question-bank/translations/`.
 
 Possible later contract improvements, only if the backend chooses to add them: a missed-check count (rows carry only booleans), and a richer `BoardRow` with the signed-in state, last report, trend and findings so the board need not join the worklist. "Condition" is derived on the client; confirm the rule.
 

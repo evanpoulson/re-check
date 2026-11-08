@@ -4,6 +4,9 @@ The bank lives in `question-bank/` at the repo root as FHIR R4 resources:
 
 - `questionnaire.json`: every question, its wording and its branching (`enableWhen`).
 - `cedis-groups.json`: CEDIS complaint code to complaint group and app exclusion.
+- `translations/<language>.json`: the patient-facing wording in one language,
+  keyed like `english_wording()`. A file written for an older bank version is
+  ignored, so patients see English rather than a translation of old wording.
 
 This module only does branch selection: which questions to show. Clinical
 review triggers and staff routing live in the rules, not here.
@@ -14,13 +17,13 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Iterator, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from functools import cache
 from pathlib import Path
 from typing import Any
 
 from .contract.answers import ItemAnswer
-from .contract.codes import AppExclusion, ComplaintGroup, Reporter
+from .contract.codes import AppExclusion, ComplaintGroup, Language, Reporter
 from .contract.visits import VisitCreate
 
 BANK_DIR = Path(__file__).resolve().parents[3] / "question-bank"
@@ -28,6 +31,9 @@ BANK_DIR = Path(__file__).resolve().parents[3] / "question-bank"
 EXT = "urn:recheck:fhir:"
 CODES = "urn:recheck:codes:"
 HIDDEN = "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden"
+
+TRANSLATION_STATUSES = ("draft", "reviewed")
+"""`draft` has not been checked by a certified medical translator; patients see a notice."""
 
 CODE_RE = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
 VERSION_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,63}$")
@@ -88,6 +94,22 @@ class QuestionBank:
     items: dict[str, dict[str, Any]]
     group_by_cedis: dict[str, ComplaintGroup]
     exclusion_by_cedis: dict[str, AppExclusion]
+    translations: dict[str, dict[str, Any]] = field(default_factory=dict)
+    """Current translation files by language code. English is the bank itself."""
+
+    def wording(self, key: str, role: Reporter, language: str = "en") -> tuple[str, dict[str, str]]:
+        """An item's question text and option labels for this answerer, in `language`.
+
+        Falls back to English for a language with no current translation.
+        """
+        english = english_wording(self.questionnaire)[key]
+        local = self.translations.get(language, {}).get("items", {}).get(key, english)
+        if role is Reporter.COMPANION and "companion" in english:
+            text = local.get("companion", english["companion"])
+        else:
+            text = local.get("text", english["text"])
+        labels = {code: local.get("options", {}).get(code, label) for code, label in english.get("options", {}).items()}
+        return text, labels
 
     def complaint_group(self, cedis_code: str | None) -> ComplaintGroup:
         """The complaint group for a CEDIS code. Unknown or missing codes fall back to general."""
@@ -283,6 +305,52 @@ def _check_items(questionnaire: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
     return items
 
 
+def english_wording(questionnaire: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """Every string a patient or companion can see, keyed by item linkId.
+
+    Each entry has `text`, and where the bank has them `companion` (the companion's
+    wording), `options` (label by option code) and `none` (the "none of these"
+    label). Hidden items and groups are left out. Translation files use this shape.
+    """
+    wording: dict[str, dict[str, Any]] = {}
+    for item in walk(questionnaire["item"]):
+        if item["type"] == "group" or ext_value(item, HIDDEN):
+            continue
+        entry: dict[str, Any] = {"text": item["text"]}
+        if companion := ext_value(item, "companion-text"):
+            entry["companion"] = companion
+        if item.get("answerOption"):
+            entry["options"] = {o["valueCoding"]["code"]: o["valueCoding"]["display"] for o in item["answerOption"]}
+        if none := ext_value(item, "none-option"):
+            entry["none"] = none
+        wording[item["linkId"]] = entry
+    return wording
+
+
+def _shape(node: Any) -> Any:
+    """The keys of a wording tree, with every string replaced by None."""
+    return {k: _shape(v) for k, v in node.items()} if isinstance(node, dict) else None
+
+
+def _load_translations(directory: Path, questionnaire: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    expected = _shape(english_wording(questionnaire))
+    languages = {lang.value for lang in Language} - {"en"}
+    translations: dict[str, dict[str, Any]] = {}
+    for path in sorted((directory / "translations").glob("*.json")):
+        data = _read(path)
+        lang = data.get("language")
+        if lang != path.stem or lang not in languages:
+            raise BankError(f"{path.name}: language {lang!r} must match the file name and a contract language")
+        if data.get("status") not in TRANSLATION_STATUSES:
+            raise BankError(f"{path.name}: status must be one of {TRANSLATION_STATUSES}")
+        if data.get("bankVersion") != questionnaire["version"]:
+            continue  # written for older wording: show English instead
+        if _shape(data.get("items")) != expected:
+            raise BankError(f"{path.name}: items do not match the bank's patient-facing wording")
+        translations[lang] = data
+    return translations
+
+
 def load_bank(directory: Path = BANK_DIR) -> QuestionBank:
     """Load and check the bank. Raises BankError if the files disagree with each other."""
     questionnaire = _read(directory / "questionnaire.json")
@@ -306,6 +374,7 @@ def load_bank(directory: Path = BANK_DIR) -> QuestionBank:
         items=items,
         group_by_cedis=groups,
         exclusion_by_cedis=exclusions,
+        translations=_load_translations(directory, questionnaire),
     )
     bank.attention_params()
     return bank

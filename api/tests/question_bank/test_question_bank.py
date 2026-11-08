@@ -24,6 +24,7 @@ from recheck.question_bank import (
     QuestionBank,
     check_enrolment,
     default_bank,
+    english_wording,
     ext_value,
     ext_values,
     load_bank,
@@ -108,10 +109,65 @@ def test_every_question_cites_evidence_listed_in_sources(bank):
             assert f"`{ref}`" in sources, f"{key}: evidence {ref!r} is missing from SOURCES.md"
 
 
-def test_translations_are_marked_pending(bank):
-    """Every contract language other than English is pending until translated."""
-    expected = {lang.value for lang in Language} - {"en"}
-    assert set(ext_values(bank.questionnaire, "translation-pending")) == expected
+def test_every_language_has_a_current_translation(bank):
+    """A bank wording change bumps the version, which needs every translation redone."""
+    assert set(bank.translations) == {lang.value for lang in Language} - {"en"}
+    for path in (BANK_DIR / "translations").glob("*.json"):
+        assert json.loads(path.read_text())["bankVersion"] == bank.version, f"{path.name} is for an older bank"
+
+
+def test_translations_cover_every_visible_string_and_nothing_hidden(bank):
+    wording = english_wording(bank.questionnaire)
+    assert "session_role" not in wording and "cedis_code" not in wording
+    assert wording["new_findings"]["none"] == "None of these"
+    for lang, data in bank.translations.items():
+        for key, entry in data["items"].items():
+            for field in ("text", "companion", "none"):
+                if field in entry:
+                    assert entry[field].strip(), f"{lang}: {key}.{field} is empty"
+            assert all(v.strip() for v in entry.get("options", {}).values()), f"{lang}: {key} has an empty option"
+
+
+def test_wording_follows_role_and_language(bank):
+    text, labels = bank.wording("feeling_now", Reporter.COMPANION, "en")
+    assert text == "How do they seem right now?"
+    pa_text, pa_labels = bank.wording("feeling_now", Reporter.PATIENT, "pa")
+    assert pa_text == bank.translations["pa"]["items"]["feeling_now"]["text"] != bank.items["feeling_now"]["text"]
+    assert list(pa_labels) == list(labels)
+    # No translation file for the language: English.
+    assert bank.wording("feeling_now", Reporter.PATIENT, "xx")[0] == bank.items["feeling_now"]["text"]
+
+
+def translation_for(questionnaire: dict, lang: str, version: str) -> dict:
+    return {"language": lang, "bankVersion": version, "status": "draft", "items": english_wording(questionnaire)}
+
+
+def test_translation_for_an_older_bank_falls_back_to_english(tmp_path):
+    q, m = raw("questionnaire.json"), raw("cedis-groups.json")
+    write_bank(tmp_path, q, m)
+    (tmp_path / "translations").mkdir()
+    (tmp_path / "translations" / "pa.json").write_text(json.dumps(translation_for(q, "pa", "2000-01-01.1")))
+    assert load_bank(tmp_path).translations == {}
+
+
+def test_translation_that_misses_a_string_is_rejected(tmp_path):
+    q, m = raw("questionnaire.json"), raw("cedis-groups.json")
+    write_bank(tmp_path, q, m)
+    (tmp_path / "translations").mkdir()
+    bad = translation_for(q, "pa", q["version"])
+    del bad["items"]["pain"]
+    (tmp_path / "translations" / "pa.json").write_text(json.dumps(bad))
+    with pytest.raises(BankError, match="pa.json"):
+        load_bank(tmp_path)
+
+
+def test_translation_needs_a_known_status_and_language(tmp_path):
+    q, m = raw("questionnaire.json"), raw("cedis-groups.json")
+    write_bank(tmp_path, q, m)
+    (tmp_path / "translations").mkdir()
+    (tmp_path / "translations" / "en.json").write_text(json.dumps(translation_for(q, "en", q["version"])))
+    with pytest.raises(BankError, match="language"):
+        load_bank(tmp_path)
 
 
 # --- CEDIS mapping ---------------------------------------------------------
@@ -323,3 +379,13 @@ def test_rejects_unknown_group_target(tmp_path):
     q, m = broken(mutate_m=mutate)
     with pytest.raises(BankError, match="abdominal_pain"):
         load_bank(write_bank(tmp_path, q, m))
+
+
+def test_api_serves_follow_ups_in_the_visit_language(bank):
+    from recheck.routes.patient import question_item
+
+    pa = bank.translations["pa"]["items"]["vomit_count"]
+    item = question_item(bank, "vomit_count", Reporter.COMPANION, "pa")
+    assert item.text == pa["companion"]
+    assert [o.text for o in item.options] == [pa["options"][o.code] for o in item.options]
+    assert question_item(bank, "vomit_count", Reporter.PATIENT, "en").text == bank.items["vomit_count"]["text"]

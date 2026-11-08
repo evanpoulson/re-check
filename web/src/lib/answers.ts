@@ -44,4 +44,4 @@ export function itemAnswerText(a: ItemAnswer, t: TFunction): string {
 }
 
 /** The button wording for a concern code, from the bank. */
-export const concernText = (code: string): string => text(code, 'patient')
+export const concernText = (code: string): string => text(code, 'patient', 'en')

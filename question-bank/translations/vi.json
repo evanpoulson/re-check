@@ -1,0 +1,155 @@
+{
+  "language": "vi",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "Tôi cần giúp ngay",
+      "companion": "Người bệnh cần giúp ngay"
+    },
+    "worried": {
+      "text": "Tôi lo là mình đang nặng hơn",
+      "companion": "Tôi lo là người bệnh đang nặng hơn"
+    },
+    "desk_question": {
+      "text": "Câu hỏi về việc chờ hoặc chăm sóc của tôi",
+      "companion": "Câu hỏi về việc chờ hoặc chăm sóc của người bệnh"
+    },
+    "leaving": {
+      "text": "Tôi sẽ rời đi",
+      "companion": "Người bệnh sẽ rời đi"
+    },
+    "feeling_now": {
+      "text": "Lúc này quý vị cảm thấy thế nào?",
+      "companion": "Lúc này người bệnh trông thế nào?",
+      "options": {
+        "very_good": "Rất tốt",
+        "good": "Tốt",
+        "ok": "Tạm được",
+        "poor": "Không khỏe",
+        "very_poor": "Rất không khỏe"
+      }
+    },
+    "feeling_change": {
+      "text": "So với lần nhân viên kiểm tra gần nhất, quý vị cảm thấy thế nào?",
+      "companion": "So với lần nhân viên kiểm tra người bệnh gần nhất, người bệnh trông thế nào?",
+      "options": {
+        "much_better": "Đỡ hơn nhiều",
+        "better": "Đỡ hơn",
+        "same": "Gần như không đổi",
+        "worse": "Tệ hơn",
+        "much_worse": "Tệ hơn nhiều"
+      }
+    },
+    "pain": {
+      "text": "Hiện giờ quý vị đau đến mức nào? 0 là không đau, 10 là đau nhất mà quý vị có thể tưởng tượng."
+    },
+    "new_findings": {
+      "text": "Từ lúc đến đây, quý vị có điều nào dưới đây mới xuất hiện hoặc nặng hơn không? Chọn tất cả những điều đúng.",
+      "companion": "Từ lúc người bệnh đến đây, quý vị có thấy điều nào dưới đây mới xuất hiện hoặc nặng hơn không? Chọn tất cả những điều đúng.",
+      "options": {
+        "speech_change": "Giọng nói khác thường hoặc nói khó hiểu",
+        "facial_droop": "Một bên mặt trông bị xệ xuống",
+        "new_weakness_numbness": "Mới bị yếu hoặc tê một bên người",
+        "trouble_breathing": "Khó thở hơn",
+        "fainting": "Bị ngất hoặc suýt ngất",
+        "new_confusion": "Lú lẫn hơn",
+        "drowsiness": "Khó giữ tỉnh, cứ muốn ngủ thiếp đi",
+        "worst_headache": "Đau đầu dữ dội nhất từ trước đến nay",
+        "vomiting": "Nôn ói",
+        "vision_change": "Mới có vấn đề về mắt nhìn",
+        "balance_change": "Mới có vấn đề về thăng bằng hoặc đi lại",
+        "chest_pain": "Đau ngực mới xuất hiện hoặc nặng hơn",
+        "heavy_bleeding": "Chảy máu nhiều"
+      },
+      "none": "Không có điều nào ở trên"
+    },
+    "circle_count": {
+      "text": "Hãy đếm các hình tròn. Bỏ qua các hình vuông. Quý vị đã thấy bao nhiêu hình tròn?"
+    },
+    "pain_moved": {
+      "text": "Cơn đau có chuyển hoặc lan sang chỗ mới không?",
+      "companion": "Người bệnh có nói cơn đau đã chuyển hoặc lan sang chỗ mới không?"
+    },
+    "pain_new_location": {
+      "text": "Cơn đau đã chuyển hoặc lan đến đâu? Chọn tất cả những chỗ đúng.",
+      "companion": "Người bệnh nói cơn đau đã chuyển hoặc lan đến đâu? Chọn tất cả những chỗ đúng.",
+      "options": {
+        "chest": "Ngực",
+        "between_shoulders": "Giữa hai xương bả vai",
+        "lower_back": "Lưng dưới",
+        "belly": "Bụng",
+        "neck_jaw": "Cổ hoặc hàm",
+        "arm": "Cánh tay",
+        "leg": "Chân"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "Cơn đau có đột nhiên nặng hơn nhiều không?",
+      "companion": "Người bệnh có nói cơn đau đột nhiên nặng hơn nhiều không?"
+    },
+    "change_started": {
+      "text": "Thay đổi này bắt đầu khi nào?",
+      "companion": "Thay đổi này bắt đầu khi nào?",
+      "options": {
+        "under_15_min": "Chưa đến 15 phút trước",
+        "from_15_to_60_min": "15 đến 60 phút trước",
+        "over_1_hr": "Hơn một giờ trước"
+      }
+    },
+    "symptoms_change": {
+      "text": "Các triệu chứng lúc quý vị mới đến đã đỡ hơn, vẫn như cũ hay tệ hơn?",
+      "companion": "Các triệu chứng lúc người bệnh mới đến đã đỡ hơn, vẫn như cũ hay tệ hơn?",
+      "options": {
+        "better": "Đỡ hơn",
+        "same": "Vẫn như cũ",
+        "worse": "Tệ hơn"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "Cơn đau đầu của quý vị có đột nhiên nặng hơn nhiều không?",
+      "companion": "Người bệnh có nói cơn đau đầu đột nhiên nặng hơn nhiều không?"
+    },
+    "last_known_well": {
+      "text": "Lần cuối quý vị nói chuyện và cử động bình thường là khi nào?",
+      "companion": "Lần cuối người bệnh nói chuyện và cử động bình thường là khi nào?",
+      "options": {
+        "under_1_hr": "Chưa đến 1 giờ trước",
+        "from_1_to_3_hr": "1 đến 3 giờ trước",
+        "from_3_to_6_hr": "3 đến 6 giờ trước",
+        "over_6_hr": "Hơn 6 giờ trước"
+      }
+    },
+    "harder_to_wake": {
+      "text": "Quý vị có thấy khó giữ tỉnh hơn trước không?",
+      "companion": "Người bệnh có khó đánh thức hoặc khó giữ tỉnh hơn trước không?"
+    },
+    "vomit_count": {
+      "text": "Từ lúc đến đây, quý vị đã nôn bao nhiêu lần?",
+      "companion": "Từ lúc đến đây, người bệnh đã nôn bao nhiêu lần?",
+      "options": {
+        "zero": "Không lần nào",
+        "one": "Một lần",
+        "two_plus": "Hai lần trở lên"
+      }
+    },
+    "headache_change": {
+      "text": "So với lần kiểm tra trước, cơn đau đầu của quý vị đỡ hơn, vẫn như cũ hay tệ hơn?",
+      "companion": "So với lần kiểm tra trước, người bệnh nói cơn đau đầu đỡ hơn, vẫn như cũ hay tệ hơn?",
+      "options": {
+        "better": "Đỡ hơn",
+        "same": "Vẫn như cũ",
+        "worse": "Tệ hơn"
+      }
+    },
+    "seizure": {
+      "text": "Từ lúc đến đây, quý vị có bị co giật (lên cơn động kinh) không?",
+      "companion": "Từ lúc đến đây, người bệnh có bị co giật (lên cơn động kinh) không?"
+    },
+    "more_confused": {
+      "text": "So với lần nhân viên kiểm tra gần nhất, đầu óc quý vị có mơ hồ hoặc lú lẫn hơn không?",
+      "companion": "So với lần nhân viên kiểm tra gần nhất, người bệnh có lú lẫn hơn không?"
+    }
+  }
+}

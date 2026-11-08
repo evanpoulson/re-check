@@ -1,10 +1,11 @@
 // Generates, from the backend:
 //   src/api/contract.schema.json and contract.d.ts  (the Pydantic contract)
-//   src/api/bank/questionnaire.json and cedis-groups.json  (copies of question-bank/)
+//   src/api/bank/questionnaire.json, cedis-groups.json and translations/*.json
+//   (copies of question-bank/)
 // Run `npm run gen:contract`. Commit the outputs; re-running must not change
 // them. `npm run check:contract` fails if the committed files are out of date.
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { compile } from 'json-schema-to-typescript'
@@ -60,11 +61,21 @@ const outputs = {
   [resolve(out, 'bank/questionnaire.json')]: lf(readFileSync(resolve(bank, 'questionnaire.json'), 'utf8')),
   [resolve(out, 'bank/cedis-groups.json')]: lf(readFileSync(resolve(bank, 'cedis-groups.json'), 'utf8')),
 }
+const translations = existsSync(resolve(bank, 'translations'))
+  ? readdirSync(resolve(bank, 'translations')).filter((f) => f.endsWith('.json')).sort()
+  : []
+for (const f of translations) {
+  outputs[resolve(out, 'bank/translations', f)] = lf(readFileSync(resolve(bank, 'translations', f), 'utf8'))
+}
+const copiedDir = resolve(out, 'bank/translations')
+const copied = existsSync(copiedDir) ? readdirSync(copiedDir).filter((f) => f.endsWith('.json')) : []
+const orphans = copied.filter((f) => !translations.includes(f))
 
 if (check) {
   const stale = Object.entries(outputs).filter(
     ([file, content]) => !existsSync(file) || lf(readFileSync(file, 'utf8')) !== content,
   )
+  stale.push(...orphans.map((f) => [resolve(copiedDir, f)]))
   if (stale.length > 0) {
     console.error('Out of date with the backend. Run `npm run gen:contract` and commit:')
     for (const [file] of stale) console.error('  ' + file.replace(web, 'web'))
@@ -72,7 +83,8 @@ if (check) {
   }
   console.log('Contract and question bank copies are up to date.')
 } else {
-  mkdirSync(resolve(out, 'bank'), { recursive: true })
+  mkdirSync(copiedDir, { recursive: true })
+  for (const f of orphans) rmSync(resolve(copiedDir, f))
   for (const [file, content] of Object.entries(outputs)) writeFileSync(file, content)
-  console.log('wrote src/api/contract.*, src/api/bank/*.json')
+  console.log('wrote src/api/contract.*, src/api/bank/*.json, src/api/bank/translations/*.json')
 }

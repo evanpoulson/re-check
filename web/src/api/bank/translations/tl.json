@@ -1,0 +1,155 @@
+{
+  "language": "tl",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "Kailangan ko ng tulong ngayon",
+      "companion": "Kailangan niya ng tulong ngayon"
+    },
+    "worried": {
+      "text": "Nag-aalala ako na lumalala ang lagay ko",
+      "companion": "Nag-aalala ako na lumalala ang lagay niya"
+    },
+    "desk_question": {
+      "text": "Tanong tungkol sa aking paghihintay o pangangalaga",
+      "companion": "Tanong tungkol sa kanyang paghihintay o pangangalaga"
+    },
+    "leaving": {
+      "text": "Aalis na ako",
+      "companion": "Aalis na ang pasyente"
+    },
+    "feeling_now": {
+      "text": "Ano po ang pakiramdam ninyo ngayon?",
+      "companion": "Sa tingin ninyo, ano po ang lagay niya ngayon?",
+      "options": {
+        "very_good": "Napakabuti",
+        "good": "Mabuti",
+        "ok": "Ayos lang",
+        "poor": "Masama",
+        "very_poor": "Napakasama"
+      }
+    },
+    "feeling_change": {
+      "text": "Kumpara noong huling tiningnan kayo ng staff, ano po ang pakiramdam ninyo ngayon?",
+      "companion": "Kumpara noong huling tiningnan siya ng staff, ano po ang lagay niya ngayon sa tingin ninyo?",
+      "options": {
+        "much_better": "Mas bumuti nang husto",
+        "better": "Mas bumuti",
+        "same": "Halos ganoon pa rin",
+        "worse": "Lumala",
+        "much_worse": "Lumala nang husto"
+      }
+    },
+    "pain": {
+      "text": "Gaano po kasakit ngayon? Ang 0 ay walang sakit, ang 10 ay ang pinakamatinding sakit na maiisip ninyo."
+    },
+    "new_findings": {
+      "text": "Mula nang dumating kayo, may nagsimula o lumala po ba sa mga ito? Piliin ang lahat ng naaangkop.",
+      "companion": "Mula nang dumating siya, may napansin po ba kayong nagsimula o lumala sa mga ito? Piliin ang lahat ng naaangkop.",
+      "options": {
+        "speech_change": "Iba ang pagsasalita o mahirap intindihin",
+        "facial_droop": "Nakalaylay ang isang bahagi ng mukha",
+        "new_weakness_numbness": "Bagong panghihina o pamamanhid sa isang bahagi ng katawan",
+        "trouble_breathing": "Mas nahihirapang huminga",
+        "fainting": "Nahimatay o muntik nang mahimatay",
+        "new_confusion": "Mas nalilito",
+        "drowsiness": "Hirap manatiling gising",
+        "worst_headache": "Pinakamatinding sakit ng ulo sa buong buhay",
+        "vomiting": "Pagsusuka",
+        "vision_change": "Bagong problema sa paningin",
+        "balance_change": "Bagong problema sa balanse o paglalakad",
+        "chest_pain": "Bago o lumalang sakit sa dibdib",
+        "heavy_bleeding": "Malakas na pagdurugo"
+      },
+      "none": "Wala sa mga ito"
+    },
+    "circle_count": {
+      "text": "Bilangin ang mga bilog. Huwag pansinin ang mga parisukat. Ilang bilog ang nakita ninyo?"
+    },
+    "pain_moved": {
+      "text": "Lumipat o kumalat po ba ang sakit sa ibang bahagi ng katawan?",
+      "companion": "Sinabi po ba niya na lumipat o kumalat ang sakit sa ibang bahagi ng katawan?"
+    },
+    "pain_new_location": {
+      "text": "Saan ito lumipat o kumalat? Piliin ang lahat ng naaangkop.",
+      "companion": "Ayon sa kanya, saan ito lumipat o kumalat? Piliin ang lahat ng naaangkop.",
+      "options": {
+        "chest": "Dibdib",
+        "between_shoulders": "Likod, sa pagitan ng mga balikat",
+        "lower_back": "Ibabang bahagi ng likod",
+        "belly": "Tiyan",
+        "neck_jaw": "Leeg o panga",
+        "arm": "Braso",
+        "leg": "Binti"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "Biglang lumala po ba nang husto ang sakit?",
+      "companion": "Sinabi po ba niya na biglang lumala nang husto ang sakit?"
+    },
+    "change_started": {
+      "text": "Kailan po nagsimula ang pagbabagong ito?",
+      "companion": "Kailan po nagsimula ang pagbabagong ito?",
+      "options": {
+        "under_15_min": "Wala pang 15 minuto ang nakalipas",
+        "from_15_to_60_min": "15 hanggang 60 minuto ang nakalipas",
+        "over_1_hr": "Mahigit isang oras na ang nakalipas"
+      }
+    },
+    "symptoms_change": {
+      "text": "Ang mga sintomas po ba na ipinunta ninyo rito ay bumuti, pareho lang, o lumala?",
+      "companion": "Ang mga sintomas po ba na ipinunta niya rito ay bumuti, pareho lang, o lumala?",
+      "options": {
+        "better": "Bumuti",
+        "same": "Pareho lang",
+        "worse": "Lumala"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "Biglang lumala po ba nang husto ang sakit ng ulo ninyo?",
+      "companion": "Sinabi po ba niya na biglang lumala nang husto ang sakit ng ulo niya?"
+    },
+    "last_known_well": {
+      "text": "Kailan po kayo huling nakapagsalita at nakakilos nang normal?",
+      "companion": "Kailan po siya huling nakapagsalita at nakakilos nang normal?",
+      "options": {
+        "under_1_hr": "Wala pang 1 oras ang nakalipas",
+        "from_1_to_3_hr": "1 hanggang 3 oras ang nakalipas",
+        "from_3_to_6_hr": "3 hanggang 6 na oras ang nakalipas",
+        "over_6_hr": "Mahigit 6 na oras ang nakalipas"
+      }
+    },
+    "harder_to_wake": {
+      "text": "Mas nahihirapan po ba kayong manatiling gising kaysa kanina?",
+      "companion": "Mas mahirap po ba siyang gisingin o panatilihing gising kaysa kanina?"
+    },
+    "vomit_count": {
+      "text": "Ilang beses na po kayong nagsuka mula nang dumating kayo?",
+      "companion": "Ilang beses na po siyang nagsuka mula nang dumating siya?",
+      "options": {
+        "zero": "Wala",
+        "one": "Isang beses",
+        "two_plus": "Dalawang beses o higit pa"
+      }
+    },
+    "headache_change": {
+      "text": "Kumpara noong huling check, ang sakit ng ulo po ba ninyo ay bumuti, pareho lang, o lumala?",
+      "companion": "Kumpara noong huling check, ayon sa kanya, ang sakit ng ulo niya ay bumuti, pareho lang, o lumala?",
+      "options": {
+        "better": "Bumuti",
+        "same": "Pareho lang",
+        "worse": "Lumala"
+      }
+    },
+    "seizure": {
+      "text": "Nagkaroon po ba kayo ng seizure (kombulsyon o pangingisay) mula nang dumating kayo?",
+      "companion": "Nagkaroon po ba siya ng seizure (kombulsyon o pangingisay) mula nang dumating siya?"
+    },
+    "more_confused": {
+      "text": "Mas nalilito o naguguluhan po ba kayo ngayon kaysa noong huling tiningnan kayo ng staff?",
+      "companion": "Mas nalilito po ba siya ngayon kaysa noong huling tiningnan siya ng staff?"
+    }
+  }
+}

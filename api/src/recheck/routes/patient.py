@@ -29,10 +29,10 @@ router = APIRouter(prefix="/api/patient", tags=["patient home"])
 _rng = random.SystemRandom()
 
 
-def question_item(bank: QuestionBank, key: str, role: Reporter) -> QuestionItem:
-    """A bank item in the answerer's wording (the mock's questionItem)."""
+def question_item(bank: QuestionBank, key: str, role: Reporter, language: str = "en") -> QuestionItem:
+    """A bank item in the answerer's wording and the visit's language (the mock's questionItem)."""
     item = bank.items[key]
-    text = (ext_value(item, "companion-text") if role is Reporter.COMPANION else None) or item.get("text") or key
+    text, labels = bank.wording(key, role, language)
     if item["type"] == "boolean":
         input_type = ItemInputType.YES_NO
     elif item["type"] == "integer":
@@ -42,8 +42,7 @@ def question_item(bank: QuestionBank, key: str, role: Reporter) -> QuestionItem:
     else:
         input_type = ItemInputType.CHOICE
     options = [
-        QuestionOption(code=o["valueCoding"]["code"], text=o["valueCoding"].get("display") or o["valueCoding"]["code"])
-        for o in item.get("answerOption", [])
+        QuestionOption(code=code, text=label) for code, label in labels.items()
     ]
     allow_unsure = ext_value(item, "allow-unsure")
     return QuestionItem(
@@ -142,7 +141,7 @@ async def patient_home(
         now, later = bank.follow_ups(
             ComplaintGroup(complaint_group), cedis_code, await answers_so_far(conn, session.visit_id)
         )
-        items = [question_item(bank, key, session.role) for key in now + later]
+        items = [question_item(bank, key, session.role, language) for key in now + later]
         prompt = await attention_prompt(conn, bank, session.visit_id) if session.role is Reporter.PATIENT else None
         latest, last_ok = await load_snapshots(conn, site_id)
 
