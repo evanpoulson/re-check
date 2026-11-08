@@ -15,7 +15,6 @@
   "patient": {
     "language": "Langue",
     "waitUnavailable": "Estimation non disponible.",
-    "title": "Votre arrivée est enregistrée",
     "titleCompanion": "Vous aidez une personne à répondre au questionnaire",
     "nextCheckin": "Prochain questionnaire",
     "startCheckin": "Commencer le questionnaire",
@@ -51,7 +50,6 @@
     "reported": "Signalé",
     "received": "Reçu par l'équipe de soins",
     "waiting": "En attente d'envoi",
-    "back": "Retour",
     "stillChecking": "Le personnel viendra quand même vous voir selon son propre horaire."
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "Je suis la personne qui consulte",
       "companion": "J'accompagne la personne qui consulte"
     },
-    "inactive": "Ce code n'est plus actif. Veuillez vous adresser au bureau de triage.",
     "failed": "Cela n'a pas fonctionné. Veuillez réessayer ou vous adresser au bureau de triage.",
     "takeover": {
       "title": "L'autre appareil sera déconnecté",
@@ -84,8 +81,7 @@
       "companion": "Quelqu'un qui accompagne la personne"
     },
     "signedOut": {
-      "title": "Votre session est fermée.",
-      "help": "Si vous avez besoin d'aide maintenant, avertissez un membre du personnel. Pour vous reconnecter, scannez le code QR de la visite."
+      "title": "Votre session est fermée."
     }
   },
   "privacy": {

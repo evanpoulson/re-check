@@ -15,7 +15,6 @@
   "patient": {
     "language": "语言",
     "waitUnavailable": "暂时无法估计等候时间。",
-    "title": "您已完成登记",
     "titleCompanion": "您正在协助病人登记",
     "nextCheckin": "下次状况回报",
     "startCheckin": "开始状况回报",
@@ -51,7 +50,6 @@
     "reported": "已报告",
     "received": "医护团队已收到",
     "waiting": "等待发送",
-    "back": "返回",
     "stillChecking": "工作人员仍会按他们自己的安排来查看您的情况。"
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "我是病人",
       "companion": "我是病人的陪同者"
     },
-    "inactive": "这个QR码已失效。请与分诊台联系。",
     "failed": "操作没有成功。请重试，或与分诊台联系。",
     "takeover": {
       "title": "这将使另一部设备退出登录",
@@ -84,8 +81,7 @@
       "companion": "病人的陪同者"
     },
     "signedOut": {
-      "title": "您已退出登录。",
-      "help": "如需立即帮助，请告诉工作人员。如要重新登录，请扫描本次就诊的QR码。"
+      "title": "您已退出登录。"
     }
   },
   "privacy": {
