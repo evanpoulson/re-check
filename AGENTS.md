@@ -14,7 +14,7 @@ The prototype is a standalone companion to Connect Care and Epic Rover. Use synt
 | Database | PostgreSQL with [TimescaleDB from Tiger Data](https://www.tigerdata.com/timescaledb) |
 | Rules tests | pytest and Hypothesis |
 
-The repository currently has [Pydantic contracts](api/README.md), contract tests, and a [TimescaleDB schema](db/schema.sql) with [SQL checks](db/tests/schema_checks.sql). FastAPI routes, generated client types, React screens, the question bank, rules, scheduled jobs, and live delivery are implementation work. Staff authentication and the dashboard transport are open choices.
+The repository currently has [Pydantic contracts](api/README.md), contract tests, and a [TimescaleDB schema](db/schema.sql) with [SQL checks](db/tests/schema_checks.sql). It also has the FHIR [question bank](question-bank/README.md) with its loader. FastAPI routes, generated client types, React screens, rules, scheduled jobs, and live delivery are implementation work. Staff authentication and the dashboard transport are open choices.
 
 Use the contract for request and response shapes and keep database constraints aligned with it. Derive the acting identity and site permissions from the session, and authorize access to any referenced visit. Reports identify the reporter separately from the channel. Reuse the same client-generated submission UUID on retry, and set `app.actor` with transaction-local scope on writes as the `recheck_app` database role. Keep credentials and escalation decisions on the server.
 
@@ -23,7 +23,7 @@ Use the contract for request and response shapes and keep database constraints a
 See the [project plan](docs/recheck-project-plan.md) for pages, parallel workstreams, and sponsor evidence.
 
 - Enrol a synthetic CTAS 2–5 visit. Return separate single-use patient and companion links once, including a phone fallback for pager visits. Exchange a token for an HttpOnly visit-session cookie. Store token and session hashes, and expire or revoke access when the visit ends.
-- Start with a short check-in and branch into chest or back pain, new neurological changes, or head injury. Select follow-ups from the presenting complaint and new findings. Let patients and companions report a concern at any time.
+- Start with a short check-in based on the Martha's Rule wellness question, and branch into chest or back pain, new neurological changes, head injury, or confused and drowsy presentations. Select follow-ups from the CEDIS presenting complaint and new findings, using the fixed question bank in [`question-bank/`](question-bank/README.md). Let patients and companions report a concern at any time. Don't offer the app to children, pregnancy over 20 weeks, self-harm or violence presentations, or major trauma; keep them on the staff list.
 - Show changes and missed checks on the staff worklist. Route urgent concerns to the on-duty triage liaison physician or configured backup. Give the triage nurse a quiet overview and the charge nurse an escalation and handover view.
 - Demo the full loop first: QR report → staff alert → acknowledgement → assessment or backup escalation. Use synthetic cases for worsening chest pain, a companion reporting sudden speech changes, and an unanswered head-injury check. Aim for under five seconds from online report to dashboard. Add pager, voice, and live wait estimates after the core loop works.
 

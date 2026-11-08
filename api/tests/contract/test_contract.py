@@ -18,6 +18,7 @@ from recheck.contract.codes import Disposition, StaffRole, TaskLevel, TaskStatus
 from recheck.contract.reports import CheckinReport, ConcernReport
 from recheck.contract.staff import StaffRef
 from recheck.contract.tasks import EvidenceRef, Task, TaskReason
+from recheck.contract.visits import VisitEnrolled, VisitExclusionUpdate
 
 NOW = "2026-11-07T20:15:00-07:00"
 
@@ -30,9 +31,11 @@ def checkin(**overrides):
         "channel": "phone",
         "captured_at": NOW,
         "questionnaire_version": "2026-11-07.1",
-        "overall": {"kind": "answered", "value": "worse"},
+        "feeling_now": {"kind": "answered", "value": "poor"},
+        "feeling_change": {"kind": "answered", "value": "worse"},
         "pain": {"kind": "answered", "value": 7},
         "new_findings": {"kind": "answered", "value": []},
+        "attention": {"kind": "answered", "prompt_id": str(uuid4()), "count": 5},
     }
     body.update(overrides)
     return body
@@ -102,12 +105,63 @@ def test_duplicate_findings_are_rejected():
         )
 
 
+NOT_ASKED = {"kind": "missing", "reason": "not_asked"}
+
+
 def test_companion_cannot_report_pain():
     with pytest.raises(ValidationError, match="self-reported"):
-        patient_report_adapter.validate_python(checkin(reporter="companion"))
-    patient_report_adapter.validate_python(
-        checkin(reporter="companion", pain={"kind": "missing", "reason": "not_asked"})
+        patient_report_adapter.validate_python(checkin(reporter="companion", attention=NOT_ASKED))
+    patient_report_adapter.validate_python(checkin(reporter="companion", pain=NOT_ASKED, attention=NOT_ASKED))
+
+
+def test_companion_cannot_do_the_attention_check():
+    with pytest.raises(ValidationError, match="attention check"):
+        patient_report_adapter.validate_python(checkin(reporter="companion", pain=NOT_ASKED))
+    with pytest.raises(ValidationError, match="attention check"):
+        patient_report_adapter.validate_python(
+            checkin(reporter="companion", pain=NOT_ASKED, attention={**NOT_ASKED, "prompt_id": str(uuid4())})
+        )
+
+
+def test_unanswered_attention_prompt_keeps_its_id():
+    prompt = str(uuid4())
+    report = patient_report_adapter.validate_python(
+        checkin(attention={"kind": "missing", "reason": "unsure", "prompt_id": prompt})
     )
+    assert str(report.attention.prompt_id) == prompt
+
+
+def test_wellness_questions_use_five_point_scales():
+    patient_report_adapter.validate_python(
+        checkin(
+            feeling_now={"kind": "answered", "value": "very_good"},
+            feeling_change={"kind": "missing", "reason": "unsure"},
+        )
+    )
+    with pytest.raises(ValidationError):
+        patient_report_adapter.validate_python(checkin(feeling_change={"kind": "answered", "value": "not_sure"}))
+    with pytest.raises(ValidationError):
+        patient_report_adapter.validate_python(checkin(overall={"kind": "answered", "value": "worse"}))
+
+
+@pytest.mark.parametrize("count", [-1, 21, "5", 5.0])
+def test_attention_count_is_a_strict_small_integer(count):
+    with pytest.raises(ValidationError):
+        patient_report_adapter.validate_python(
+            checkin(attention={"kind": "answered", "prompt_id": str(uuid4()), "count": count})
+        )
+
+
+def test_desk_question_is_a_concern():
+    body = {
+        "kind": "concern",
+        "submission_id": str(uuid4()),
+        "reporter": "patient",
+        "channel": "phone",
+        "captured_at": NOW,
+        "concern": "desk_question",
+    }
+    assert isinstance(patient_report_adapter.validate_python(body), ConcernReport)
 
 
 def test_staff_cannot_send_patient_reports():
@@ -151,6 +205,31 @@ def visit(**overrides):
 def test_enrolment_rejects_ctas_outside_waiting_room(ctas):
     with pytest.raises(ValidationError):
         VisitCreate.model_validate(visit(ctas=ctas))
+
+
+def test_app_exclusion_means_no_channel():
+    VisitCreate.model_validate(visit(app_exclusion="child", channel=None))
+    VisitCreate.model_validate(visit(complaint_group="confused_drowsy"))
+    with pytest.raises(ValidationError):
+        VisitCreate.model_validate(visit(app_exclusion="child"))
+    with pytest.raises(ValidationError):
+        VisitCreate.model_validate(visit(channel=None))
+
+
+def test_enrolled_links_match_the_offer():
+    now = datetime(2026, 11, 7, 20, 15, tzinfo=timezone.utc)
+    VisitEnrolled(visit_id=uuid4(), patient_link="p", companion_link="c", links_expire_at=now)
+    VisitEnrolled(visit_id=uuid4(), app_exclusion="child", patient_link=None, companion_link=None, links_expire_at=None)
+    with pytest.raises(ValidationError):
+        VisitEnrolled(visit_id=uuid4(), patient_link=None, companion_link="c", links_expire_at=now)
+    with pytest.raises(ValidationError):
+        VisitEnrolled(visit_id=uuid4(), app_exclusion="child", patient_link="p", companion_link="c", links_expire_at=now)
+
+
+def test_exclusion_update_needs_a_reason():
+    VisitExclusionUpdate.model_validate({"submission_id": str(uuid4()), "app_exclusion": "major_trauma"})
+    with pytest.raises(ValidationError):
+        VisitExclusionUpdate.model_validate({"submission_id": str(uuid4()), "app_exclusion": None})
 
 
 def test_pager_number_must_match_channel():

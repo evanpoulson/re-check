@@ -3,8 +3,8 @@
 -- Matches the API contract in api/src/recheck/contract and the data model in
 -- AGENTS.md and docs/research/recheck-waiting-room.md, section 5.
 --
--- Tables: visit, visit_session, submission, report, vitals, task, task_reason,
--- audit_log.
+-- Tables: visit, visit_session, submission, attention_prompt, report, vitals,
+-- task, task_reason, audit_log.
 --
 -- Time-series tables (report, vitals, audit_log) are hypertables partitioned on
 -- the server's received time. Hypertable primary keys must include the time
@@ -12,8 +12,9 @@
 -- caught by the submission table, which is a regular table keyed on the
 -- client-generated ID.
 --
--- Append-only: report, vitals, task_reason, submission and audit_log reject
--- UPDATE, DELETE and TRUNCATE. visit and task can be updated but not deleted.
+-- Append-only: attention_prompt, report, vitals, task_reason, submission and
+-- audit_log reject UPDATE, DELETE and TRUNCATE. visit and task can be updated
+-- but not deleted.
 -- Corrections are new rows that point at the row they replace.
 --
 -- Escalate-only: a task's level, escalation and status can only move forward,
@@ -34,7 +35,11 @@ CREATE EXTENSION IF NOT EXISTS timescaledb;
 -- Enumerated types (mirror api/src/recheck/contract/codes.py)
 -- ---------------------------------------------------------------------------
 
-CREATE TYPE complaint_group AS ENUM ('chest_back_pain', 'neuro_change', 'head_injury', 'general');
+-- Mapped from the CEDIS complaint by question-bank/cedis-groups.json.
+CREATE TYPE complaint_group AS ENUM ('chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general');
+
+-- Why the patient app was not offered. Staff watch these patients directly.
+CREATE TYPE app_exclusion AS ENUM ('child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma');
 
 CREATE TYPE visit_status AS ENUM ('waiting', 'roomed', 'left', 'discharged');
 
@@ -46,7 +51,9 @@ CREATE TYPE reporter AS ENUM ('patient', 'companion', 'staff');
 
 CREATE TYPE staff_role AS ENUM ('triage_nurse', 'physician', 'charge_nurse', 'quality');
 
-CREATE TYPE checkin_overall AS ENUM ('better', 'same', 'worse');
+-- Wellness questions adapted from the Patient Wellness Questionnaire (Martha's Rule).
+CREATE TYPE feeling_now AS ENUM ('very_good', 'good', 'ok', 'poor', 'very_poor');
+CREATE TYPE feeling_change AS ENUM ('much_better', 'better', 'same', 'worse', 'much_worse');
 
 -- Why a question has no answer. Never a negative.
 CREATE TYPE missing_reason AS ENUM ('unsure', 'unable_to_respond', 'not_asked', 'not_reached');
@@ -67,7 +74,8 @@ CREATE TYPE finding_code AS ENUM (
     'balance_change'
 );
 
-CREATE TYPE concern_code AS ENUM ('worried', 'help_now');
+-- desk_question is non-clinical and goes to the triage nurse only.
+CREATE TYPE concern_code AS ENUM ('worried', 'help_now', 'desk_question');
 
 CREATE TYPE report_kind AS ENUM ('checkin', 'concern', 'finding', 'leaving', 'staff_flag');
 
@@ -128,15 +136,18 @@ CREATE TABLE visit (
     complaint_group          complaint_group  NOT NULL,
     cedis_code               text             CHECK (cedis_code ~ '^[0-9]{3}$'),
     language                 text             NOT NULL CHECK (language IN ('en', 'pa', 'tl')),
-    channel                  channel          NOT NULL CHECK (channel IN ('phone', 'pager')),
+    -- Set when the app is not offered: no channel, no QR, no prompts. The
+    -- visit stays on the staff list and the staff timer still runs.
+    app_exclusion            app_exclusion,
+    channel                  channel          CHECK (channel IN ('phone', 'pager')),
     pager_no                 text             CHECK (pager_no ~ '^[0-9]{1,6}$'),
-    -- Every visit gets a patient link (phone is the fallback for pager
+    -- Every app visit gets a patient link (phone is the fallback for pager
     -- patients) and a companion link (FR11).
-    patient_token_hash       bytea            NOT NULL UNIQUE CHECK (octet_length(patient_token_hash) = 32),
-    companion_token_hash     bytea            NOT NULL UNIQUE CHECK (octet_length(companion_token_hash) = 32),
+    patient_token_hash       bytea            UNIQUE CHECK (octet_length(patient_token_hash) = 32),
+    companion_token_hash     bytea            UNIQUE CHECK (octet_length(companion_token_hash) = 32),
     patient_token_used_at    timestamptz,
     companion_token_used_at  timestamptz,
-    tokens_expire_at         timestamptz      NOT NULL,
+    tokens_expire_at         timestamptz,
     triaged_at               timestamptz      NOT NULL DEFAULT now(),
     status                   visit_status     NOT NULL DEFAULT 'waiting',
     closed_at                timestamptz,
@@ -145,6 +156,16 @@ CREATE TABLE visit (
     staff_reassess_due_at    timestamptz,
     last_staff_check_at      timestamptz,
     CONSTRAINT visit_pager_matches_channel CHECK ((channel = 'pager') = (pager_no IS NOT NULL)),
+    -- An app visit has a channel and QR tokens. A visit without the app never
+    -- has patient prompts. A visit excluded after enrolment keeps its channel
+    -- and token history; visit_exclusion_guard handles that change.
+    CONSTRAINT visit_app_offer CHECK (
+        CASE WHEN app_exclusion IS NULL THEN
+            num_nulls(channel, patient_token_hash, companion_token_hash, tokens_expire_at) = 0
+        ELSE
+            next_prompt_due_at IS NULL
+        END
+    ),
     CONSTRAINT visit_closed_matches_status CHECK ((status = 'waiting') = (closed_at IS NULL))
 );
 
@@ -167,10 +188,19 @@ LANGUAGE sql IMMUTABLE AS $$
 $$;
 
 -- Start both timers from the CTAS schedule when the nurse creates a visit.
+-- A visit without the app has no patient prompts, only the staff timer.
 CREATE FUNCTION visit_set_first_due() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
-    NEW.next_prompt_due_at := coalesce(NEW.next_prompt_due_at, NEW.triaged_at + ctas_interval(NEW.ctas));
+    IF NEW.app_exclusion IS NOT NULL
+       AND num_nonnulls(NEW.channel, NEW.pager_no, NEW.patient_token_hash, NEW.companion_token_hash,
+                        NEW.tokens_expire_at, NEW.patient_token_used_at, NEW.companion_token_used_at) > 0 THEN
+        RAISE EXCEPTION 'a visit enrolled without the app has no channel, pager or QR tokens'
+            USING ERRCODE = 'check_violation';
+    END IF;
+    IF NEW.app_exclusion IS NULL THEN
+        NEW.next_prompt_due_at := coalesce(NEW.next_prompt_due_at, NEW.triaged_at + ctas_interval(NEW.ctas));
+    END IF;
     NEW.staff_reassess_due_at := coalesce(NEW.staff_reassess_due_at, NEW.triaged_at + ctas_interval(NEW.ctas));
     RETURN NEW;
 END
@@ -179,6 +209,26 @@ $$;
 CREATE TRIGGER visit_set_first_due
     BEFORE INSERT ON visit
     FOR EACH ROW EXECUTE FUNCTION visit_set_first_due();
+
+-- Staff can stop offering the app after enrolment. The exclusion can't be
+-- removed or changed once set. Patient prompts stop; the staff timer and the
+-- token history stay.
+CREATE FUNCTION visit_exclusion_guard() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.app_exclusion IS NOT NULL AND NEW.app_exclusion IS DISTINCT FROM OLD.app_exclusion THEN
+        RAISE EXCEPTION 'an app exclusion cannot be removed or changed' USING ERRCODE = 'check_violation';
+    END IF;
+    IF NEW.app_exclusion IS NOT NULL THEN
+        NEW.next_prompt_due_at := NULL;
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER visit_exclusion_guard
+    BEFORE UPDATE ON visit
+    FOR EACH ROW EXECUTE FUNCTION visit_exclusion_guard();
 
 -- ---------------------------------------------------------------------------
 -- visit_session: a device bound to a visit by exchanging a one-time token
@@ -196,6 +246,20 @@ CREATE TABLE visit_session (
 
 CREATE INDEX visit_session_visit_idx ON visit_session (visit_id);
 
+-- Excluding a visit after enrolment signs out its patient and companion devices.
+CREATE FUNCTION visit_revoke_sessions_on_exclusion() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE visit_session SET revoked_at = now() WHERE visit_id = NEW.id AND revoked_at IS NULL;
+    RETURN NULL;
+END
+$$;
+
+CREATE TRIGGER visit_revoke_sessions_on_exclusion
+    AFTER UPDATE OF app_exclusion ON visit
+    FOR EACH ROW WHEN (OLD.app_exclusion IS NULL AND NEW.app_exclusion IS NOT NULL)
+    EXECUTE FUNCTION visit_revoke_sessions_on_exclusion();
+
 -- ---------------------------------------------------------------------------
 -- submission: one row per client-generated submission ID
 -- A retry with the same ID and fingerprint is a duplicate; the same ID with a
@@ -210,6 +274,31 @@ CREATE TABLE submission (
     visit_id     uuid         REFERENCES visit (id),
     received_at  timestamptz  NOT NULL DEFAULT now()
 );
+
+-- ---------------------------------------------------------------------------
+-- attention_prompt: the circle-counting check issued for one patient check-in
+-- The server picks the sequence and keeps it here so it can score the answer.
+-- Not a clinical test: a wrong or missing count only asks staff to check the
+-- patient in person.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE attention_prompt (
+    id                 uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id           uuid         NOT NULL REFERENCES visit (id),
+    questionnaire_version text      NOT NULL,
+    issued_at          timestamptz  NOT NULL DEFAULT now(),
+    expires_at         timestamptz  NOT NULL,
+    -- [{"shape": "circle" | "square", "x": 0..1, "y": 0..1}, ...]
+    steps              jsonb        NOT NULL CHECK (jsonb_typeof(steps) = 'array' AND jsonb_array_length(steps) > 0),
+    show_ms            integer      NOT NULL CHECK (show_ms >= 200),
+    gap_ms             integer      NOT NULL CHECK (gap_ms >= 0),
+    expected_count     smallint     NOT NULL CHECK (expected_count BETWEEN 0 AND 20),
+    CONSTRAINT attention_prompt_expires_after_issue CHECK (expires_at > issued_at),
+    -- Lets a report reference (prompt, visit) so it can't use another visit's prompt.
+    CONSTRAINT attention_prompt_visit_uq UNIQUE (id, visit_id)
+);
+
+CREATE INDEX attention_prompt_visit_idx ON attention_prompt (visit_id, issued_at DESC);
 
 -- ---------------------------------------------------------------------------
 -- report: every input path writes this same record (hypertable)
@@ -227,12 +316,19 @@ CREATE TABLE report (
     channel                channel          NOT NULL,
     -- Check-in answers: each is a value or a missing reason, never both.
     questionnaire_version  text,
-    overall                checkin_overall,
-    overall_missing        missing_reason,
+    feeling_now            feeling_now,
+    feeling_now_missing    missing_reason,
+    feeling_change         feeling_change,
+    feeling_change_missing missing_reason,
     pain                   smallint         CHECK (pain BETWEEN 0 AND 10),
     pain_missing           missing_reason,
     findings               finding_code[],
     findings_missing       missing_reason,
+    -- Circle-counting check: the prompt shown (kept even if unanswered) and the
+    -- count given. Expiry and single use are checked by the server.
+    attention_prompt_id    uuid,
+    attention_count        smallint         CHECK (attention_count BETWEEN 0 AND 20),
+    attention_missing      missing_reason,
     -- Complaint-specific answers keyed by question bank item key (FR6).
     items                  jsonb            NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(items) = 'object'),
     concern                concern_code,
@@ -240,6 +336,8 @@ CREATE TABLE report (
     note                   text             CHECK (char_length(note) BETWEEN 1 AND 280),
     entered_by             text,
     PRIMARY KEY (id, received_at),
+    CONSTRAINT report_attention_prompt_fk FOREIGN KEY (attention_prompt_id, visit_id)
+        REFERENCES attention_prompt (id, visit_id),
     CONSTRAINT report_staff_only_from_desk CHECK (
         (reporter = 'staff') = (channel = 'desk')
         AND (reporter = 'staff') = (kind = 'staff_flag')
@@ -248,13 +346,18 @@ CREATE TABLE report (
     CONSTRAINT report_checkin_shape CHECK (
         CASE WHEN kind = 'checkin' THEN
             questionnaire_version IS NOT NULL
-            AND num_nonnulls(overall, overall_missing) = 1
+            AND num_nonnulls(feeling_now, feeling_now_missing) = 1
+            AND num_nonnulls(feeling_change, feeling_change_missing) = 1
             AND num_nonnulls(pain, pain_missing) = 1
             AND num_nonnulls(findings, findings_missing) = 1
-            -- Pain is self-reported.
-            AND (reporter <> 'companion' OR pain IS NULL)
+            AND num_nonnulls(attention_count, attention_missing) = 1
+            AND (attention_count IS NULL OR attention_prompt_id IS NOT NULL)
+            -- Pain and the attention check are the patient's own.
+            AND (reporter <> 'companion' OR num_nonnulls(pain, attention_count, attention_prompt_id) = 0)
         ELSE
-            num_nonnulls(questionnaire_version, overall, overall_missing, pain, pain_missing, findings_missing) = 0
+            num_nonnulls(questionnaire_version, feeling_now, feeling_now_missing, feeling_change,
+                         feeling_change_missing, pain, pain_missing, findings_missing,
+                         attention_prompt_id, attention_count, attention_missing) = 0
             AND items = '{}'
         END
     ),
@@ -438,6 +541,7 @@ $$;
 
 CREATE TRIGGER visit_audit         AFTER INSERT OR UPDATE ON visit         FOR EACH ROW EXECUTE FUNCTION audit_write('visit');
 CREATE TRIGGER visit_session_audit AFTER INSERT OR UPDATE ON visit_session FOR EACH ROW EXECUTE FUNCTION audit_write('visit_session');
+CREATE TRIGGER attention_prompt_audit AFTER INSERT ON attention_prompt    FOR EACH ROW EXECUTE FUNCTION audit_write('attention_prompt');
 CREATE TRIGGER report_audit        AFTER INSERT ON report                  FOR EACH ROW EXECUTE FUNCTION audit_write('report');
 CREATE TRIGGER vitals_audit        AFTER INSERT ON vitals                  FOR EACH ROW EXECUTE FUNCTION audit_write('vitals');
 CREATE TRIGGER task_audit          AFTER INSERT OR UPDATE ON task          FOR EACH ROW EXECUTE FUNCTION audit_write('task');
@@ -445,6 +549,7 @@ CREATE TRIGGER task_reason_audit   AFTER INSERT ON task_reason             FOR E
 
 -- Append-only tables: no UPDATE, DELETE or TRUNCATE for anyone.
 -- Row triggers don't fire on TRUNCATE, so it gets a statement trigger.
+CREATE TRIGGER attention_prompt_append_only BEFORE UPDATE OR DELETE ON attention_prompt FOR EACH ROW EXECUTE FUNCTION block_change('attention_prompt');
 CREATE TRIGGER report_append_only      BEFORE UPDATE OR DELETE ON report      FOR EACH ROW EXECUTE FUNCTION block_change('report');
 CREATE TRIGGER vitals_append_only      BEFORE UPDATE OR DELETE ON vitals      FOR EACH ROW EXECUTE FUNCTION block_change('vitals');
 CREATE TRIGGER task_reason_append_only BEFORE UPDATE OR DELETE ON task_reason FOR EACH ROW EXECUTE FUNCTION block_change('task_reason');
@@ -459,6 +564,7 @@ CREATE TRIGGER task_no_delete          BEFORE DELETE ON task          FOR EACH R
 CREATE TRIGGER visit_no_truncate         BEFORE TRUNCATE ON visit         FOR EACH STATEMENT EXECUTE FUNCTION block_change('visit');
 CREATE TRIGGER visit_session_no_truncate BEFORE TRUNCATE ON visit_session FOR EACH STATEMENT EXECUTE FUNCTION block_change('visit_session');
 CREATE TRIGGER submission_no_truncate    BEFORE TRUNCATE ON submission    FOR EACH STATEMENT EXECUTE FUNCTION block_change('submission');
+CREATE TRIGGER attention_prompt_no_truncate BEFORE TRUNCATE ON attention_prompt FOR EACH STATEMENT EXECUTE FUNCTION block_change('attention_prompt');
 CREATE TRIGGER report_no_truncate        BEFORE TRUNCATE ON report        FOR EACH STATEMENT EXECUTE FUNCTION block_change('report');
 CREATE TRIGGER vitals_no_truncate        BEFORE TRUNCATE ON vitals        FOR EACH STATEMENT EXECUTE FUNCTION block_change('vitals');
 CREATE TRIGGER task_no_truncate          BEFORE TRUNCATE ON task          FOR EACH STATEMENT EXECUTE FUNCTION block_change('task');
@@ -480,8 +586,8 @@ BEGIN
 END
 $$;
 
-REVOKE ALL ON visit, visit_session, submission, report, vitals, task, task_reason, audit_log FROM PUBLIC, recheck_app;
-GRANT SELECT, INSERT ON visit, visit_session, submission, report, vitals, task, task_reason, audit_log TO recheck_app;
+REVOKE ALL ON visit, visit_session, submission, attention_prompt, report, vitals, task, task_reason, audit_log FROM PUBLIC, recheck_app;
+GRANT SELECT, INSERT ON visit, visit_session, submission, attention_prompt, report, vitals, task, task_reason, audit_log TO recheck_app;
 GRANT UPDATE ON visit, visit_session, task TO recheck_app;
 GRANT USAGE ON SEQUENCE audit_log_id_seq TO recheck_app;
 

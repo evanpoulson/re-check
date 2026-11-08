@@ -18,6 +18,10 @@ Python back end: API contract, rules, scheduled checks and simulator (see `AGENT
 | `views.py` | Physician worklist, triage board, charge nurse view, handover, quality page |
 | `events.py` | Live dashboard notifications |
 
+## Question bank
+
+`src/recheck/question_bank.py` loads the FHIR question bank in `../question-bank/`, checks it against the contract code lists and picks follow-up questions from the complaint group and earlier answers. `src/recheck/attention.py` generates and scores the circle-counting check. See `../question-bank/README.md`.
+
 Conventions:
 
 - Request bodies reject unknown fields, and numbers aren't coerced from strings.

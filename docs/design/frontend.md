@@ -52,7 +52,8 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 Fields exactly as the contract and schema:
 
 - `ctas` 2 to 5 as a segmented control. CTAS 1 is disabled with "never in the waiting room".
-- `complaint_group`: `chest_back_pain`, `neuro_change`, `head_injury` or `general`.
+- `complaint_group`: `chest_back_pain`, `neuro_change`, `head_injury`, `confused_drowsy` or `general`. With a CEDIS code, the server rejects a group the [CEDIS map](../../question-bank/cedis-groups.json) contradicts.
+- `app_exclusion` (optional): child, pregnancy over 20 weeks, self-harm or violence, or major trauma. An excluded visit gets no channel and no QR, and stays on the staff list.
 - Optional 3-digit `cedis_code`.
 - `language`: `en`, `pa` or `tl`.
 - `channel`: phone or pager. `pager_no` (1 to 6 digits) appears only for pager. A pager already bound to a waiting patient is rejected by the schema, so show the server error inline.
@@ -84,7 +85,7 @@ Columns:
 
 - Visit ref (pager number or short ref), CTAS, complaint group, language and channel.
 - **Waiting time** since `triaged_at`.
-- **Condition** (`StateChip`): the last check-in `overall` (better, same, worse or unknown) plus the latest findings.
+- **Condition** (`StateChip`): the last check-in `feeling_change` (much better to much worse, or unknown) plus the latest findings.
 - **Flags:** `LevelChip` for the open task level, `MissedChip` ("Missed 1" or "Missed 2+"), prompt overdue, reassessment overdue and `LinkChip`.
 - **Time since last check-in**, with who answered (patient or companion) and the channel.
 - **Next check-in due** and **staff reassessment due** as two separate countdowns.
@@ -133,7 +134,7 @@ Every screen shows the wait range when present, "Your answers never change your 
 
 1. **Home and waiting.** Next check-in countdown, "Report a change", "I'm leaving" and the latest `PatientMessage`.
 2. **Check-in.** One question per screen, with a progress bar and Back.
-   - Overall: better, same or worse, plus "Not sure" (`missing: unsure`).
+   - Wellness: `feeling_now` (very good to very poor) and `feeling_change` (much better to much worse), each with "Not sure" (`missing: unsure`). See the [question bank](../../question-bank/README.md).
    - Pain from 0 to 10 on a slider with word labels, plus "Not sure". **Hidden for a companion** and sent as missing, because the schema forbids companion pain.
    - New warning signs: multi-select over the 13 `FindingCode`s with an explicit "None of these". Companion wording becomes "Are they...".
    - Complaint items from `PatientHome.items` by `input_type` (`yes_no`, `choice`, `multi_choice`, `scale`), each with "Not sure" or "Can't tell".
@@ -163,7 +164,7 @@ Every screen shows the wait range when present, "Your answers never change your 
 1. **The triage board row is too thin.** `BoardRow` has only CTAS, complaint, `triaged_at`, level and the reassessment due and overdue fields. The project plan already says to extend it. The dashboard needs the last report (time, who, channel), `trend`, latest findings, prompt due and overdue, `silent`, `leave_risk`, a missed-check count and queue-order data. Recommendation: extend `BoardRow` with these fields from `WorklistRow` instead of sorting the severity-ranked `Worklist` on the client.
 2. **No missed-check count.** Rows carry only booleans. Add `missed_checkins: int`.
 3. **No connected state.** The schema has `patient_token_used_at` and `companion_token_used_at`, but `VisitSummary` does not expose them. Add `patient_linked` and `companion_linked`.
-4. **"Condition" is not a field.** It is derived from the last `overall`, the findings and the task level. Confirm the rule.
+4. **"Condition" is not a field.** It is derived from the last `feeling_change`, the findings and the task level. Confirm the rule.
 5. **Staff identity** for acknowledge and assess is defined only as `StaffRef`. The demo role picker covers the hackathon.
 6. **The FastAPI routes do not exist yet.** The frontend works against generated types (`@hey-api/openapi-ts`) and MSW mocks.
 7. **Translated question text** for `pa` and `tl` must come from the question bank.
