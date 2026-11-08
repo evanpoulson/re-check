@@ -726,9 +726,15 @@
     width: 100%;
   }
 }
+/* Headings get focus from code on each new step so screen readers announce them.
+   That is not keyboard focus, so it shows no ring; real focus elsewhere still does. */
+.patient-shell h1[tabindex="-1"]:focus {
+  outline: none;
+}
 /* Keep focused headings clear of the sticky top bar (WCAG 2.4.11). */
 html:has(.patient-shell) {
-  scroll-padding-top: 72px;
+  /* The header is about 3.3rem tall, so this grows with the text size (72px at 100%). */
+  scroll-padding-top: calc(3.5rem + 16px);
 }
 html:has(.patient-shell.has-dock) {
   scroll-padding-bottom: calc(var(--dock-h, 142px) + 16px);
