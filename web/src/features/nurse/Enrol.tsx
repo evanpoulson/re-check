@@ -205,14 +205,6 @@ export function Enrol() {
                 </select>
                 {mapped?.group && <p id="complaint-locked" className="enrol-help enrol-lock"><Lock aria-hidden />{t('enrol.groupLocked')}</p>}
               </div>
-              {form.complaint_group === 'general' && (
-                <div>
-                  <label htmlFor="complaint-detail" className="enrol-label">{t('enrol.complaintDetail')}</label>
-                  <input id="complaint-detail" className="field" maxLength={200} value={form.complaint_detail}
-                    onChange={(event) => set('complaint_detail', event.target.value)} aria-describedby="complaint-detail-help" />
-                  <p id="complaint-detail-help" className="enrol-help">{t('enrol.complaintDetailHelp')}</p>
-                </div>
-              )}
             </section>
           </Card>
 

@@ -478,7 +478,6 @@ export function enrol(body: VisitCreate): VisitEnrolled {
       ctas: body.ctas,
       complaint_group: body.complaint_group,
       cedis_code: body.cedis_code ?? null,
-      complaint_detail: body.complaint_detail?.trim() ?? null,
       language: body.language,
       app_exclusion: exclusion,
       channel: exclusion ? null : (body.channel ?? 'phone'),

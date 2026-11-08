@@ -5,7 +5,6 @@ export interface EnrolForm {
   ctas: number | null
   complaint_group: ComplaintGroup
   cedis_code: string
-  complaint_detail: string
   language: Language
   /** Set when the patient app is not offered. Then there is no channel, pager or QR. */
   app_exclusion: AppExclusion | null
@@ -22,7 +21,6 @@ export const emptyEnrol: EnrolForm = {
   ctas: 2,
   complaint_group: 'general',
   cedis_code: '',
-  complaint_detail: '',
   language: 'en',
   app_exclusion: null,
   channel: 'phone',
@@ -62,8 +60,6 @@ export function validateEnrol(
     language: form.language,
   }
   if (cedis) body.cedis_code = cedis
-  const detail = form.complaint_detail.trim()
-  if (form.complaint_group === 'general' && detail) body.complaint_detail = detail
   if (form.app_exclusion) {
     body.app_exclusion = form.app_exclusion
   } else {

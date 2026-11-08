@@ -217,18 +217,6 @@ def test_enrolment_rejects_ctas_outside_waiting_room(ctas):
         VisitCreate.model_validate(visit(ctas=ctas))
 
 
-def test_enrolment_accepts_optional_detail_only_for_other_complaints():
-    body = visit(complaint_group="general")
-    assert "complaint_detail" not in VisitCreate.model_validate(body).model_dump()
-    detail = VisitCreate.model_validate({**body, "complaint_detail": "  Ankle swelling  "})
-    assert detail.model_dump()["complaint_detail"] == "Ankle swelling"
-    for invalid in (" ", "x" * 201, "ankle\x00"):
-        with pytest.raises(ValidationError):
-            VisitCreate.model_validate({**body, "complaint_detail": invalid})
-    with pytest.raises(ValidationError):
-        VisitCreate.model_validate(visit(complaint_detail="Ankle swelling"))
-
-
 def test_app_exclusion_means_no_channel():
     VisitCreate.model_validate(visit(app_exclusion="child", channel=None))
     VisitCreate.model_validate(visit(complaint_group="confused_drowsy"))

@@ -300,8 +300,6 @@
     "exclusionLocked": "This CEDIS code excludes the patient from the app.",
     "openVisit": "Open visit",
     "showLink": "Show check-in link",
-    "complaintDetail": "Issue (optional)",
-    "complaintDetailHelp": "Briefly describe the presenting issue. Leave out names and health numbers.",
     "appOffered": "App is offered",
     "exclusionDisclosure": "Who isn’t covered?",
     "exclusionReason": "Reason the app is off",
