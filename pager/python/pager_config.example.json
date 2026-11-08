@@ -1,0 +1,5 @@
+{
+  "api_base": "http://192.168.43.10:8765",
+  "pager_no": "42",
+  "pager_key": "dev-pager-key-not-secret"
+}
