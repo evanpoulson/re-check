@@ -123,7 +123,7 @@ export function Triage() {
 
       <section aria-labelledby="board-filters" className="space-y-3">
         <h2 id="board-filters" className="sr-only">{t('triage.filters')}</h2>
-        <ul className="grid grid-cols-5 gap-1.5 sm:flex sm:flex-wrap sm:gap-2" aria-label={t('triage.counts')}>
+        <ul className="grid grid-cols-[repeat(auto-fit,minmax(3.1rem,1fr))] gap-1.5 sm:flex sm:flex-wrap sm:gap-2" aria-label={t('triage.counts')}>
           {LEVEL_ORDER.map((level: TaskLevel) => {
             const { icon: Icon, cls } = LEVEL_STYLE[level]
             const on = filters.level === level
@@ -155,7 +155,7 @@ export function Triage() {
           </button>
           <div className="flex items-center gap-2">
             <span id="ctas-filter" className="text-[0.9375rem] text-muted">{t('triage.ctas')}</span>
-            <div className="filter-group" role="group" aria-labelledby="ctas-filter">
+            <div className="filter-group flex-wrap" role="group" aria-labelledby="ctas-filter">
               {[null, 2, 3, 4, 5].map((n) => (
                 <button key={n ?? 'all'} type="button" aria-pressed={filters.ctas === n} className="min-w-11" onClick={() => setFilters({ ...filters, ctas: n })}>
                   {n ?? t('triage.all')}
