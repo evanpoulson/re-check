@@ -120,7 +120,7 @@ Columns:
 
 ### Missed check-ins
 
-After one or two missed prompts the row shows "No response" with a distinct reason (unable to respond, not reached or not connected) and the `silent` level. The one-or-two threshold is a server rule. The UI renders what the API returns.
+After one or two missed prompts the row shows "No response" with the `silent` level, and shows any missing reason the latest check-in recorded (`unable_to_respond`, `not_reached`). The one-or-two threshold is a server rule. The UI renders what the API returns.
 
 ### Live updates
 
