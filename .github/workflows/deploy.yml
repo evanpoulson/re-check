@@ -76,6 +76,8 @@ jobs:
           # Check-in reminders by Web Push; unset turns them off. The timers send them.
           RECHECK_VAPID_PRIVATE_KEY: ${{ secrets.RECHECK_VAPID_PRIVATE_KEY }}
           RECHECK_VAPID_SUBJECT: ${{ vars.RECHECK_VAPID_SUBJECT }}
+          # Shared key the hardware pagers send as X-Pager-Key; unset turns the pager routes off.
+          RECHECK_PAGER_KEY: ${{ secrets.RECHECK_PAGER_KEY }}
         run: |
           profiles=https
           if [ -n "$RECHECK_POLLER_DATABASE_URL" ]; then profiles=https,poller; fi
@@ -96,6 +98,7 @@ jobs:
             printf 'RECHECK_DEMO_CHECKINS=%s\n' "$RECHECK_DEMO_CHECKINS"
             printf 'RECHECK_VAPID_PRIVATE_KEY=%s\n' "$RECHECK_VAPID_PRIVATE_KEY"
             printf 'RECHECK_VAPID_SUBJECT=%s\n' "$RECHECK_VAPID_SUBJECT"
+            printf 'RECHECK_PAGER_KEY=%s\n' "$RECHECK_PAGER_KEY"
           } | ssh box 'umask 077 && cat > ~/re-check/.env'
 
       - name: Pull and restart
