@@ -119,5 +119,21 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/sign-out` | triage or charge nurse | `StaffSignOut` → 204 |
 | `POST /api/session` | QR holder | `TokenExchange` → `SessionInfo` + HttpOnly `recheck_session` cookie; 409 `SignInConflict`, 404 unknown QR, 410 closed visit |
 | `POST /api/session/sign-out` | signed-in device | `SignOut` → 204, clears the cookie |
+| `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
+
+## Rules and tasks
+
+`recheck/rules.py` decides which review tasks a report raises; `recheck/tasks.py` applies them to the visit's one active task in the same transaction that stores the report. They match the synthetic cohort and the web mocks (ruleset `2026-11-07.demo`). All levels, codes and deadlines are demo values for clinical review.
+
+| Report | Task level | Reason code |
+| --- | --- | --- |
+| Any new finding (check-in or standalone) | red, ack in 2 min | `finding_<code>`, one per finding |
+| Feeling much worse / worse | red / amber | `feeling_worse` |
+| "I need help now" / "I'm worried" | red / amber | `concern_help_now` / `concern_worried` |
+| Question about my wait or care | overdue, to the triage nurse | `concern_desk_question` |
+| "I'm leaving" | leave risk | `leaving` |
+| Circle count wrong / shown but unanswered | overdue | `attention_incorrect` / `attention_unanswered` |
+
+Escalate-only: a level only goes up, recipients are only added, an unacknowledged deadline only moves earlier, and a reassuring answer fires nothing. A check-in restarts the patient prompt timer; no report moves the staff reassessment timer. Enrolment also rejects a complaint group or missing exclusion that the CEDIS map contradicts.
 
 Staff sign-in is a demo stand-in (`recheck/auth.py`): the role is the identity and the audit actor is `demo|<role>`. Real sign-in replaces `current_staff` without changing routes. Seeded visits store a placeholder ciphertext, so their QR can't be re-shown (409).
