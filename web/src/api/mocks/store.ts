@@ -330,7 +330,7 @@ function raise(
   routedTo: Task['routed_to'] = ['physician'],
 ): Task {
   const reason = {
-    rule_id: `demo-${reasonCode}-v1`,
+    rule_id: `demo_${reasonCode}_v1`,
     rule_version: '2026-11-07.demo',
     level,
     reason_code: reasonCode,
