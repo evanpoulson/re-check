@@ -58,8 +58,12 @@ def site_id() -> str:
 
 
 def scheduler_seconds() -> float:
-    """How often the timer checks run (missed check-ins, escalation). 0 turns them off."""
-    return float(_get("RECHECK_SCHEDULER_SECONDS") or "15")
+    """How often the timer checks run (missed check-ins, escalation), in seconds.
+
+    Off (0) unless set: the timers make permanent changes to the shared demo
+    database, so only the demo machine turns them on (RECHECK_SCHEDULER_SECONDS=15).
+    """
+    return float(_get("RECHECK_SCHEDULER_SECONDS") or "0")
 
 
 def cookie_secure() -> bool:

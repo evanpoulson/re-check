@@ -88,6 +88,7 @@ RECHECK_SECRET_KEY=...                     # 32+ chars: encrypts QR tokens, sign
 RECHECK_PUBLIC_URL=http://localhost:5173   # optional: web app base for QR links ({url}/v/{token})
 RECHECK_SITE_ID=foothills-demo             # optional: the demo site staff act for
 RECHECK_COOKIE_SECURE=false                # optional: true when served over HTTPS
+RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when unset)
 ```
 
 Generate a secret with `uv run python -c "import secrets; print(secrets.token_urlsafe(32))"`.
@@ -144,12 +145,12 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | "I'm leaving" | leave risk | `leaving` |
 | Circle count wrong / shown but unanswered | overdue | `attention_incorrect` / `attention_unanswered` |
 
-Timers (`recheck/scheduler.py`) run inside the API every `RECHECK_SCHEDULER_SECONDS` (default 15; `0` turns them off):
+Timers (`recheck/scheduler.py`) run inside the API every `RECHECK_SCHEDULER_SECONDS` seconds. They are **off by default**; set `RECHECK_SCHEDULER_SECONDS=15` to turn them on:
 
 - **Missed check-in.** A waiting app visit whose patient prompt is 5 minutes overdue gets a silent `missed_checkin` reason, once per due time.
 - **Escalation.** A red task still unacknowledged past its deadline (2 minutes) is marked escalated and routed to the charge nurse too. The timeline dates it at that deadline.
 
-The timers write to whatever database `RECHECK_DATABASE_URL` points at, and those writes can't be undone. Set `RECHECK_SCHEDULER_SECONDS=0` when developing against the shared demo database, and leave it on for the demo.
+The timers write to whatever database `RECHECK_DATABASE_URL` points at, and those writes can't be undone, so leave them off while developing against the shared demo database. Turn them on only on the machine that runs the demo, by adding `RECHECK_SCHEDULER_SECONDS=15` to its `.env`.
 
 A level is only the task's colour and rank on the staff dashboards; nothing pages or notifies a clinician. So the patient screen never says a clinician has been told (`clinician_told` is never sent): any clinical task shows "a clinician will check on you", "I'm leaving" shows the leaving information, and everything else shows nothing.
 
