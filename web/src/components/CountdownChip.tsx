@@ -13,7 +13,7 @@ export function CountdownChip({ due, now, patient = false }: { due: string | nul
   const overdue = ms < 0
   if (patient) {
     return (
-      <span className="tabular whitespace-nowrap text-ink">
+      <span dir="auto" className="tabular whitespace-nowrap text-ink">
         {overdue ? t('time.readyNow') : t('duration.inTime', { value: durationWords(ms / 60_000, t) })}
       </span>
     )

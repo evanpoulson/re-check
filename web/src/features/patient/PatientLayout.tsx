@@ -9,7 +9,7 @@ import { TriageCard } from '@/components/TriageCard'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
 import { LANGUAGES } from '@/i18n'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
-import { clock, durationWords, waitWords } from '@/lib/time'
+import { clock, durationWords, isolate, waitWords } from '@/lib/time'
 
 /** Says plainly that saved reports have not reached staff yet. Retries on reconnect and on a timer. */
 function OutboxBanner() {
@@ -106,15 +106,15 @@ export function PatientLayout({ home, dock, about = false, children }: Props) {
           <dl className="patient-wait">
             <div>
               <dt>{t('patient.waitedLabel')}</dt>
-              <dd>{durationWords(home.waited_minutes, t)}</dd>
+              <dd dir="auto">{durationWords(home.waited_minutes, t)}</dd>
             </div>
             <div>
               <dt>{t('patient.estimateLabel')}</dt>
-              <dd>
+              <dd dir="auto">
                 {estimate ? (
                   <>
                     {t('patient.estimateValue', { estimate: waitWords(estimate.minutes, t) })}{' '}
-                    <span className="patient-wait-note">{t('patient.estimateNote', { time: clock(estimate.as_of) })}</span>
+                    <span className="patient-wait-note">{t('patient.estimateNote', { time: isolate(clock(estimate.as_of, lang)) })}</span>
                   </>
                 ) : (
                   t('patient.waitUnavailable')
