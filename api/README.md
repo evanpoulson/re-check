@@ -60,7 +60,23 @@ uv run python -m recheck.synthetic.load --tokens-out ../.seed-tokens.json   # lo
 
 ## Develop
 
+The project pins Python 3.12 in `.python-version`; `uv` downloads it if needed.
+
+Put the database URL in the repository's root `.env` (git-ignored). Connect as `recheck_api`, never `tsdbadmin`:
+
+```sh
+RECHECK_DATABASE_URL=postgres://recheck_api:PASSWORD@HOST:PORT/tsdb?sslmode=require
+```
+
 ```sh
 uv sync
-uv run pytest
+uv run pytest                 # all tests; live database tests skip without RECHECK_DATABASE_URL
+uv run pytest -m "not live"   # never touch the database
+uv run uvicorn recheck.main:app --reload --loop asyncio:SelectorEventLoop
 ```
+
+Then open `http://127.0.0.1:8000/api/health` and `http://127.0.0.1:8000/docs`. `/api/health` returns 503 if the database can't be reached. Keep `--loop`: async psycopg doesn't work on Windows' default event loop.
+
+## Database access
+
+`recheck/db.py` holds one async pool, opened when the app starts. Every write uses `write_tx(pool, actor)`, which opens a transaction and sets `app.actor` for it; the schema rejects writes without it.
