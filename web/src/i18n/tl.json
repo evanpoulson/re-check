@@ -65,7 +65,12 @@
     "info": "Pakisabihan po ang isang staff bago kayo umalis. Kung lumala ang pakiramdam ninyo, bumalik agad sa triage.",
     "confirm": "Oo, aalis na ako",
     "cancel": "Hindi, dito lang ako",
-    "after": "Kung lumala ang lagay ninyo pagkaalis, tumawag sa 911 o pumunta sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811."
+    "after": "Kung lumala ang lagay ninyo pagkaalis, tumawag sa 911 o pumunta sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811.",
+    "title_companion": "Aalis na po ba ang pasyente?",
+    "info_companion": "Pakisabihan po ang isang staff bago siya umalis. Kung mukhang lumalala ang lagay niya, ibalik siya agad sa triage.",
+    "confirm_companion": "Oo, aalis na siya",
+    "cancel_companion": "Hindi, dito lang siya",
+    "after_companion": "Kung lumala ang lagay niya pagkaalis, tumawag sa 911 o dalhin siya sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811."
   },
   "sent": {
     "title": "Salamat po, natanggap namin ang inyong mga sagot",
@@ -83,7 +88,8 @@
     "none": "Makikita ng staff ang inyong mga sagot.",
     "clinician_will_check": "Titingnan kayo ng isang doktor o nurse.",
     "clinician_told": "Sinabihan namin ang isang doktor o nurse.",
-    "leaving_info": "Pakisabihan po ang staff bago kayo umalis. Kung lumala ang lagay ninyo pagkaalis, tumawag sa 911 o pumunta sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811."
+    "leaving_info": "Pakisabihan po ang staff bago kayo umalis. Kung lumala ang lagay ninyo pagkaalis, tumawag sa 911 o pumunta sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811.",
+    "leaving_info_companion": "Pakisabihan po ang staff bago umalis ang pasyente. Kung lumala ang lagay niya pagkaalis, tumawag sa 911 o dalhin siya sa pinakamalapit na emergency department. Para sa payong pangkalusugan anumang oras, tumawag sa 811."
   },
   "outbox": {
     "saved": "Hindi pa naipapadala. Patuloy naming susubukan. Kung lumala ang pakiramdam ninyo, sabihan ang isang staff ngayon."

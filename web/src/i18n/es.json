@@ -65,7 +65,12 @@
     "info": "Por favor, avise a un miembro del personal antes de irse. Si se siente peor, regrese a triaje de inmediato.",
     "confirm": "Sí, me voy",
     "cancel": "No, me quedo",
-    "after": "Si empeora después de irse, llame al 911 o vaya a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811."
+    "after": "Si empeora después de irse, llame al 911 o vaya a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811.",
+    "title_companion": "¿La persona se va?",
+    "info_companion": "Por favor, avise a un miembro del personal antes de que se vaya. Si la persona parece estar peor, tráigala a triaje de inmediato.",
+    "confirm_companion": "Sí, la persona se va",
+    "cancel_companion": "No, la persona se queda",
+    "after_companion": "Si la persona empeora después de irse, llame al 911 o llévela a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811."
   },
   "sent": {
     "title": "Gracias, recibimos sus respuestas",
@@ -84,7 +89,8 @@
     "none": "El personal verá sus respuestas.",
     "clinician_will_check": "Un médico o el personal de enfermería vendrá a verle.",
     "clinician_told": "Avisamos a un médico o al personal de enfermería.",
-    "leaving_info": "Por favor, avise al personal antes de irse. Si empeora después de irse, llame al 911 o vaya a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811."
+    "leaving_info": "Por favor, avise al personal antes de irse. Si empeora después de irse, llame al 911 o vaya a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811.",
+    "leaving_info_companion": "Por favor, avise al personal antes de que la persona se vaya. Si empeora después de irse, llame al 911 o llévela a la sala de urgencias más cercana. Para consejos de salud a cualquier hora, llame al 811."
   },
   "outbox": {
     "saved": "Todavía no se envió. Seguiremos intentándolo. Si se siente peor, avise a un miembro del personal ahora."

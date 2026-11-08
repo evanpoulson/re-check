@@ -65,7 +65,12 @@
     "info": "Veuillez avertir un membre du personnel avant de partir. Si vous vous sentez plus mal, retournez au triage immédiatement.",
     "confirm": "Oui, je pars",
     "cancel": "Non, je reste",
-    "after": "Si votre état s'aggrave après votre départ, appelez le 911 ou allez à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811."
+    "after": "Si votre état s'aggrave après votre départ, appelez le 911 ou allez à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811.",
+    "title_companion": "La personne s'en va?",
+    "info_companion": "Veuillez avertir un membre du personnel avant son départ. Si son état semble s'aggraver, ramenez-la au triage immédiatement.",
+    "confirm_companion": "Oui, la personne s'en va",
+    "cancel_companion": "Non, la personne reste",
+    "after_companion": "Si son état s'aggrave après son départ, appelez le 911 ou amenez-la à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811."
   },
   "sent": {
     "title": "Merci, nous avons reçu vos réponses",
@@ -84,7 +89,8 @@
     "none": "Le personnel verra vos réponses.",
     "clinician_will_check": "Un médecin ou le personnel infirmier viendra vous voir.",
     "clinician_told": "Nous avons avisé un médecin ou le personnel infirmier.",
-    "leaving_info": "Veuillez avertir le personnel avant de partir. Si votre état s'aggrave après votre départ, appelez le 911 ou allez à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811."
+    "leaving_info": "Veuillez avertir le personnel avant de partir. Si votre état s'aggrave après votre départ, appelez le 911 ou allez à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811.",
+    "leaving_info_companion": "Veuillez avertir le personnel avant le départ de la personne. Si son état s'aggrave après son départ, appelez le 911 ou amenez-la à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811."
   },
   "outbox": {
     "saved": "Pas encore envoyé. Nous continuons d'essayer. Si vous vous sentez plus mal, avertissez un membre du personnel maintenant."

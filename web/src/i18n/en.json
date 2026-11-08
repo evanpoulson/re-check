@@ -463,7 +463,12 @@
     "info": "Please tell a staff member before you go. If you feel worse, return to triage right away.",
     "confirm": "Yes, I'm leaving",
     "cancel": "No, I'm staying",
-    "after": "If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
+    "after": "If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811.",
+    "title_companion": "Is the patient leaving?",
+    "info_companion": "Please tell a staff member before they go. If they seem worse, bring them back to triage right away.",
+    "confirm_companion": "Yes, they're leaving",
+    "cancel_companion": "No, they're staying",
+    "after_companion": "If they get worse after leaving, call 911 or take them to the nearest emergency department. For health advice any time, call 811."
   },
   "sent": {
     "title": "Thank you, we have your answers",
@@ -481,7 +486,8 @@
     "none": "Staff will see your answers.",
     "clinician_will_check": "A doctor or nurse will check on you.",
     "clinician_told": "We told a doctor or nurse.",
-    "leaving_info": "Please tell staff before you leave. If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811."
+    "leaving_info": "Please tell staff before you leave. If you get worse after leaving, call 911 or go to the nearest emergency department. For health advice any time, call 811.",
+    "leaving_info_companion": "Please tell staff before the patient leaves. If they get worse after leaving, call 911 or take them to the nearest emergency department. For health advice any time, call 811."
   },
   "outbox": {
     "saved": "Not sent yet. We will keep trying. If you feel worse, tell a staff member now."

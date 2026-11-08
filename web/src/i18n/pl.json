@@ -65,7 +65,12 @@
     "info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia proszę natychmiast wrócić do punktu triażu.",
     "confirm": "Tak, wychodzę",
     "cancel": "Nie, zostaję",
-    "after": "W razie pogorszenia po wyjściu proszę zadzwonić pod 911 lub udać się na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811."
+    "after": "W razie pogorszenia po wyjściu proszę zadzwonić pod 911 lub udać się na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811.",
+    "title_companion": "Czy ta osoba wychodzi?",
+    "info_companion": "Przed jej wyjściem proszę powiedzieć o tym personelowi. Jeśli stan tej osoby wydaje się gorszy, proszę natychmiast przyprowadzić ją z powrotem do punktu triażu.",
+    "confirm_companion": "Tak, ta osoba wychodzi",
+    "cancel_companion": "Nie, ta osoba zostaje",
+    "after_companion": "Jeśli stan tej osoby pogorszy się po wyjściu, proszę zadzwonić pod 911 lub zawieźć ją na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811."
   },
   "sent": {
     "title": "Dziękujemy, odpowiedzi zostały odebrane",
@@ -85,7 +90,8 @@
     "none": "Personel zobaczy odpowiedzi.",
     "clinician_will_check": "Lekarz lub pielęgniarka przyjdzie sprawdzić stan zdrowia.",
     "clinician_told": "Poinformowaliśmy lekarza lub pielęgniarkę.",
-    "leaving_info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia po wyjściu proszę zadzwonić pod 911 lub udać się na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811."
+    "leaving_info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia po wyjściu proszę zadzwonić pod 911 lub udać się na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811.",
+    "leaving_info_companion": "Przed wyjściem tej osoby proszę powiedzieć o tym personelowi. Jeśli jej stan pogorszy się po wyjściu, proszę zadzwonić pod 911 lub zawieźć ją na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811."
   },
   "outbox": {
     "saved": "Jeszcze nie wysłano. Będziemy próbować dalej. W razie pogorszenia proszę od razu powiedzieć komuś z personelu."
