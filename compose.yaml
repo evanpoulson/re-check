@@ -1,0 +1,64 @@
+# Recheck: web (nginx + built React app) → api (FastAPI) → Tiger Cloud.
+#
+#   docker compose up --build              # local: http://localhost:8080
+#   COMPOSE_PROFILES=https,poller ...      # EC2: adds Caddy (HTTPS) and the wait-time poller
+#
+# Settings come from the root .env (git-ignored); see infra/README.md.
+# There is no database container: the app uses the Tiger Cloud service in RECHECK_DATABASE_URL.
+name: recheck
+
+x-api-image: &api-image
+  build:
+    context: .
+    dockerfile: api/Dockerfile
+  image: recheck-api:local
+  env_file:
+    - path: .env
+      required: false
+  restart: unless-stopped
+
+services:
+  api:
+    <<: *api-image
+    environment:
+      # QR links point at {RECHECK_PUBLIC_URL}/v/{token}.
+      RECHECK_PUBLIC_URL: ${RECHECK_PUBLIC_URL:-http://localhost:8080}
+
+  web:
+    build: ./web
+    image: recheck-web:local
+    depends_on:
+      - api
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    restart: unless-stopped
+
+  # Polls the AHS wait-times feed every 5 minutes as the recheck_poller role.
+  # Needs RECHECK_POLLER_DATABASE_URL and the wait_site seed (api/README.md).
+  poller:
+    <<: *api-image
+    profiles: [poller]
+    command: ["python", "-m", "recheck.wait_times.poller"]
+
+  caddy:
+    image: caddy:2
+    profiles: [https]
+    depends_on:
+      - web
+    environment:
+      # Hostname Caddy gets a certificate for, e.g. 34-210-1-2.sslip.io (written by the deploy workflow).
+      SITE_ADDRESS: ${SITE_ADDRESS:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Keep certificates across deploys so Let's Encrypt isn't asked again.
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

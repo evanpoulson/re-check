@@ -8,7 +8,8 @@ from ..auth import Pool, clear_session_cookie, session_cookie_hash, set_session_
 from ..contract.visits import SessionInfo, SignInConflict, SignOut, TokenExchange
 from ..db import write_tx
 from ..security import new_token, token_hash
-from .. import submissions
+from .. import events, submissions
+from ..contract.codes import DashboardEventType
 
 router = APIRouter(prefix="/api/session", tags=["patient session"])
 
@@ -71,6 +72,7 @@ async def exchange_token(body: TokenExchange, response: Response, pool: Pool) ->
                 "INSERT INTO visit_session (visit_id, role, session_hash, replaces) VALUES (%s, %s, %s, %s)",
                 [visit_id, body.role, token_hash(session_token), replaces],
             )
+            await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
     except errors.UniqueViolation:
         # Lost a race with another sign-in despite the lock; report whoever won.
         async with pool.connection() as conn:
@@ -113,6 +115,7 @@ async def sign_out(body: SignOut, request: Request, pool: Pool) -> Response:
                         "WHERE id = %s AND revoked_at IS NULL",
                         [session_id],
                     )
+                    await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
                     await submissions.record(
                         conn, body.submission_id, actor=actor, endpoint=endpoint, fp=fp, visit_id=visit_id
                     )

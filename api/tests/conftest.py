@@ -8,6 +8,8 @@ from psycopg import AsyncConnection
 
 # Offline tests need a secret; a real one in .env takes precedence.
 os.environ.setdefault("RECHECK_SECRET_KEY", "test-secret-key-test-secret-key-123456")
+# Tests sign staff in with the demo role picker; the Auth0 tests mock Auth0 itself.
+os.environ.setdefault("RECHECK_DEMO_STAFF", "true")
 
 from recheck.main import create_app  # noqa: E402
 from recheck.settings import database_url  # noqa: E402
