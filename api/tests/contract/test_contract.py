@@ -428,3 +428,26 @@ def test_database_allows_exactly_the_contract_languages():
     check = re.search(r"language\s+text\s+NOT NULL CHECK \(language IN \(([^)]*)\)\)", schema)
     assert check, "visit.language CHECK not found in db/schema.sql"
     assert set(re.findall(r"'([a-z]+)'", check.group(1))) == {lang.value for lang in Language}
+
+
+# --- check-in reminders ------------------------------------------------------
+
+
+def test_push_subscription_is_endpoint_and_keys_only():
+    from recheck.contract import PushSubscriptionSave
+
+    keys = {"p256dh": "B" + "A" * 86, "auth": "A" * 22}
+    saved = PushSubscriptionSave.model_validate({"endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": keys})
+    assert saved.keys.auth == "A" * 22
+    with pytest.raises(ValidationError):
+        PushSubscriptionSave.model_validate({"endpoint": "http://fcm.googleapis.com/x", "keys": keys})
+    with pytest.raises(ValidationError):
+        # The browser's toJSON() adds expirationTime; the client sends only endpoint and keys.
+        PushSubscriptionSave.model_validate(
+            {"endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": keys, "expirationTime": None}
+        )
+
+
+def test_push_config_never_carries_visit_details():
+    schema = contract_json_schema()["$defs"]
+    assert set(schema["PushConfig"]["properties"]) == {"enabled", "public_key"}

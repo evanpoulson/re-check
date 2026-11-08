@@ -197,5 +197,22 @@
       "label": "第 {{level}} 级：{{name}}",
       "setAtTriage": "这是分诊护士在到达时评定的级别。"
     }
+  },
+  "reminders": {
+    "title": "状况回报提醒",
+    "hint": "到了状况回报的时间，您的手机可以振动提醒。",
+    "turnOn": "开启提醒",
+    "turnOff": "关闭提醒",
+    "on": "提醒已开启。到了状况回报的时间，您的手机会振动。",
+    "courtesy": "即使没有收到提醒，工作人员也会继续照看您。",
+    "blocked": "此网站的通知已被阻止。如需接收提醒，请在手机设置中允许通知。",
+    "failed": "无法开启提醒。请重试。",
+    "homeScreenTitle": "在 iPhone 上接收状况回报提醒",
+    "homeScreen1": "在 Safari 中，轻点“分享”按钮。",
+    "homeScreen2": "选择“添加到主屏幕”。",
+    "homeScreen3": "从主屏幕打开 Recheck，然后开启提醒。",
+    "notificationTitle": "Recheck",
+    "notificationBody": "该做状况回报了。",
+    "dueNow": "该做状况回报了。"
   }
 }

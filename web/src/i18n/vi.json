@@ -197,5 +197,22 @@
       "label": "Mức {{level}}: {{name}}",
       "setAtTriage": "Đây là mức do y tá phân loại đặt khi đến."
     }
+  },
+  "reminders": {
+    "title": "Nhắc lần kiểm tra",
+    "hint": "Điện thoại của bạn có thể rung khi đến giờ kiểm tra.",
+    "turnOn": "Bật nhắc nhở",
+    "turnOff": "Tắt nhắc nhở",
+    "on": "Đã bật nhắc nhở. Điện thoại của bạn sẽ rung khi đến giờ kiểm tra.",
+    "courtesy": "Nếu không nhận được lời nhắc, nhân viên vẫn sẽ đến xem bạn.",
+    "blocked": "Thông báo của trang này đang bị chặn. Để nhận lời nhắc, hãy cho phép trong phần cài đặt điện thoại.",
+    "failed": "Không bật được nhắc nhở. Hãy thử lại.",
+    "homeScreenTitle": "Nhận lời nhắc trên iPhone",
+    "homeScreen1": "Trong Safari, chạm vào nút Chia sẻ.",
+    "homeScreen2": "Chọn \"Thêm vào MH chính\".",
+    "homeScreen3": "Mở Recheck từ màn hình chính, rồi bật nhắc nhở.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "Đã đến giờ kiểm tra của bạn.",
+    "dueNow": "Đã đến giờ kiểm tra của bạn."
   }
 }

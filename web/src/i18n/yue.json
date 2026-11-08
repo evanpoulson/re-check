@@ -197,5 +197,22 @@
       "label": "第 {{level}} 級：{{name}}",
       "setAtTriage": "呢個係分流護士喺到達時評定嘅級別。"
     }
+  },
+  "reminders": {
+    "title": "情況回報提示",
+    "hint": "到時間做情況回報時，你部手機可以震動提示你。",
+    "turnOn": "開啟提示",
+    "turnOff": "關閉提示",
+    "on": "提示已開啟。到時間做情況回報時，你部手機會震動。",
+    "courtesy": "就算收唔到提示，職員都會繼續照顧你。",
+    "blocked": "呢個網站嘅通知已被封鎖。如要收到提示，請喺手機設定入面允許通知。",
+    "failed": "未能開啟提示。請再試一次。",
+    "homeScreenTitle": "喺 iPhone 收情況回報提示",
+    "homeScreen1": "喺 Safari 撳「分享」按鈕。",
+    "homeScreen2": "揀「加至主畫面」。",
+    "homeScreen3": "喺主畫面打開 Recheck，然後開啟提示。",
+    "notificationTitle": "Recheck",
+    "notificationBody": "係時候做情況回報喇。",
+    "dueNow": "係時候做情況回報喇。"
   }
 }

@@ -100,4 +100,7 @@ export const handlers = [
     const body = (await request.json()) as PatientReport
     return reply(() => store.submitReport(body), 201)
   }),
+  http.get(endpoints.pushConfig(), () => reply(() => store.pushConfig())),
+  http.put(endpoints.pushSubscription(), () => reply(() => store.savePushSubscription())),
+  http.delete(endpoints.pushSubscription(), () => reply(() => store.endPushSubscription())),
 ]

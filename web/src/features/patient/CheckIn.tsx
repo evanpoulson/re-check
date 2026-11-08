@@ -22,6 +22,7 @@ import { sendReport } from '@/lib/outbox'
 import { useNow } from '@/lib/time'
 import { CheckinFlow } from './CheckinFlow'
 import { PatientLayout } from './PatientLayout'
+import { Reminders } from './Reminders'
 
 type View =
   | { name: 'home' }
@@ -161,6 +162,7 @@ export function CheckIn() {
         )}
 
         {view.name === 'home' && <Home home={home} now={now} setView={setView} onSignOut={endSession} />}
+        {view.name === 'home' && <Reminders />}
 
         {view.name === 'checkin' && (
           <CheckinFlow

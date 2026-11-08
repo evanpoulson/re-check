@@ -25,6 +25,7 @@ import type {
   ItemAnswer,
   PatientHome,
   PatientReport,
+  PushConfig,
   QuestionItem,
   ReportReceipt,
   ReportRecord,
@@ -1370,4 +1371,20 @@ export function submitReport(body: PatientReport): ReportReceipt {
   save(s)
   notify(r.visit.visit_id, 'report.received')
   return receipt
+}
+
+// Check-in reminders. The mocks send nothing, and the mock service worker holds
+// the page's only service worker scope, so reminders are off in mock mode.
+export function pushConfig(): PushConfig {
+  requireSession()
+  return { enabled: false, public_key: null }
+}
+
+export function savePushSubscription(): void {
+  requireSession()
+  throw new MockError(409, 'check-in reminders are off on this server')
+}
+
+export function endPushSubscription(): void {
+  requireSession()
 }

@@ -197,5 +197,22 @@
       "label": "{{level}}등급: {{name}}",
       "setAtTriage": "도착 시 중증도 분류 간호사가 정한 등급입니다."
     }
+  },
+  "reminders": {
+    "title": "상태 확인 알림",
+    "hint": "상태 확인 시간이 되면 휴대폰이 진동으로 알려 드릴 수 있습니다.",
+    "turnOn": "알림 켜기",
+    "turnOff": "알림 끄기",
+    "on": "알림이 켜져 있습니다. 상태 확인 시간이 되면 휴대폰이 진동합니다.",
+    "courtesy": "알림이 오지 않아도 직원이 계속 확인합니다.",
+    "blocked": "이 사이트의 알림이 차단되어 있습니다. 알림을 받으려면 휴대폰 설정에서 허용하세요.",
+    "failed": "알림을 켜지 못했습니다. 다시 시도하세요.",
+    "homeScreenTitle": "iPhone에서 알림 받기",
+    "homeScreen1": "Safari에서 공유 버튼을 누르세요.",
+    "homeScreen2": "'홈 화면에 추가'를 선택하세요.",
+    "homeScreen3": "홈 화면에서 Recheck를 연 다음 알림을 켜세요.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "상태 확인 시간입니다.",
+    "dueNow": "상태 확인 시간입니다."
   }
 }

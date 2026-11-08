@@ -889,5 +889,22 @@
       "none": "Nothing overdue",
       "ackDueNow": "Acknowledgement due now"
     }
+  },
+  "reminders": {
+    "title": "Check-in reminders",
+    "hint": "Your phone can buzz when it's time for a check-in.",
+    "turnOn": "Turn on reminders",
+    "turnOff": "Turn off reminders",
+    "on": "Reminders are on. Your phone will buzz when a check-in is due.",
+    "courtesy": "If a reminder doesn't arrive, staff still check on you.",
+    "blocked": "Notifications are blocked for this site. To get reminders, allow them in your phone's settings.",
+    "failed": "Reminders couldn't be turned on. Try again.",
+    "homeScreenTitle": "Get check-in reminders on iPhone",
+    "homeScreen1": "In Safari, tap the Share button.",
+    "homeScreen2": "Choose \"Add to Home Screen\".",
+    "homeScreen3": "Open Recheck from your Home Screen, then turn on reminders.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "It's time for your check-in.",
+    "dueNow": "It's time for your check-in."
   }
 }

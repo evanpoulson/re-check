@@ -200,5 +200,22 @@
       "label": "Stufe {{level}}: {{name}}",
       "setAtTriage": "Diese Stufe hat die Triage-Pflegekraft bei der Ankunft festgelegt."
     }
+  },
+  "reminders": {
+    "title": "Erinnerungen an die Abfrage",
+    "hint": "Ihr Handy kann vibrieren, wenn die nächste Abfrage fällig ist.",
+    "turnOn": "Erinnerungen einschalten",
+    "turnOff": "Erinnerungen ausschalten",
+    "on": "Erinnerungen sind eingeschaltet. Ihr Handy vibriert, wenn eine Abfrage fällig ist.",
+    "courtesy": "Auch wenn eine Erinnerung nicht ankommt, sieht das Personal weiter nach Ihnen.",
+    "blocked": "Mitteilungen sind für diese Website blockiert. Erlauben Sie sie in den Einstellungen Ihres Handys, um Erinnerungen zu erhalten.",
+    "failed": "Die Erinnerungen konnten nicht eingeschaltet werden. Versuchen Sie es noch einmal.",
+    "homeScreenTitle": "Erinnerungen auf dem iPhone erhalten",
+    "homeScreen1": "Tippen Sie in Safari auf „Teilen“.",
+    "homeScreen2": "Wählen Sie „Zum Home-Bildschirm“.",
+    "homeScreen3": "Öffnen Sie Recheck vom Home-Bildschirm und schalten Sie die Erinnerungen ein.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "Ihre Abfrage ist jetzt fällig.",
+    "dueNow": "Ihre Abfrage ist jetzt fällig."
   }
 }

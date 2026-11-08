@@ -455,6 +455,58 @@ END
 $$;
 SELECT pg_temp.expect_error($q$DELETE FROM site_setting$q$, 'permission denied');
 
+-- Check-in reminders. A subscription needs an open session, is ended (never
+-- edited) and keeps its endpoint and keys out of the audit log. Each reminder
+-- slot is sent once and records its outcome once.
+INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
+VALUES ('00000000-0000-0000-0000-0000000000b1', 'demo', 2, 'general', 'en', 'phone', sha256('push-token'), sha256('push-cipher'));
+INSERT INTO visit_session (id, visit_id, role, session_hash)
+VALUES ('00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000b1', 'patient', sha256('push-session'));
+INSERT INTO push_subscription (id, session_id, endpoint, p256dh, auth)
+VALUES ('00000000-0000-0000-0000-0000000000b3', '00000000-0000-0000-0000-0000000000b2',
+        'https://fcm.googleapis.com/fcm/send/abc', repeat('A', 87), repeat('B', 22));
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO push_subscription (session_id, endpoint, p256dh, auth)
+       VALUES ('00000000-0000-0000-0000-0000000000b2', 'https://fcm.googleapis.com/fcm/send/def', repeat('A', 87), repeat('B', 22))$q$,
+    'push_subscription_one_open_uq');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO push_subscription (session_id, endpoint, p256dh, auth)
+       VALUES ('00000000-0000-0000-0000-0000000000d3', 'https://fcm.googleapis.com/fcm/send/ghi', repeat('A', 87), repeat('B', 22))$q$,
+    'signed-in device');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO push_subscription (session_id, endpoint, p256dh, auth)
+       VALUES ('00000000-0000-0000-0000-0000000000b2', 'http://example.com/push', repeat('A', 87), repeat('B', 22))$q$,
+    'push_subscription_endpoint_check');
+SELECT pg_temp.expect_error(
+    $q$UPDATE push_subscription SET endpoint = 'https://fcm.googleapis.com/x' WHERE id = '00000000-0000-0000-0000-0000000000b3'$q$,
+    'only be ended');
+INSERT INTO push_send (id, visit_id, subscription_id, due_at, slot)
+VALUES ('00000000-0000-0000-0000-0000000000b4', '00000000-0000-0000-0000-0000000000b1',
+        '00000000-0000-0000-0000-0000000000b3', '2026-11-08T12:00:00Z', 0);
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO push_send (visit_id, subscription_id, due_at, slot)
+       VALUES ('00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000b3', '2026-11-08T12:00:00Z', 0)$q$,
+    'push_send_once');
+UPDATE push_send SET finished_at = now(), outcome = 'sent', status_code = 201 WHERE id = '00000000-0000-0000-0000-0000000000b4';
+SELECT pg_temp.expect_error(
+    $q$UPDATE push_send SET outcome = 'failed' WHERE id = '00000000-0000-0000-0000-0000000000b4'$q$,
+    'outcome, once');
+UPDATE push_subscription SET ended_at = now(), ended_reason = 'turned_off' WHERE id = '00000000-0000-0000-0000-0000000000b3';
+SELECT pg_temp.expect_error(
+    $q$UPDATE push_subscription SET ended_reason = 'gone' WHERE id = '00000000-0000-0000-0000-0000000000b3'$q$,
+    'only be ended');
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM audit_log WHERE event LIKE 'push_subscription.%') <> 2 THEN
+        RAISE EXCEPTION 'push subscription changes were not audited';
+    END IF;
+    IF EXISTS (SELECT FROM audit_log WHERE payload ?| ARRAY['endpoint', 'p256dh', 'auth']) THEN
+        RAISE EXCEPTION 'push endpoint or keys leaked into audit_log';
+    END IF;
+END
+$$;
+SELECT pg_temp.expect_error($q$DELETE FROM push_send$q$, 'permission denied');
+
 RESET ROLE;
 
 -- Append-only triggers hold even for the table owner.
@@ -465,6 +517,8 @@ SELECT pg_temp.expect_error($q$DELETE FROM wait_site$q$, 'append-only');
 SELECT pg_temp.expect_error($q$TRUNCATE wait_snapshot$q$, 'append-only');
 SELECT pg_temp.expect_error($q$DELETE FROM report$q$, 'append-only');
 SELECT pg_temp.expect_error($q$TRUNCATE audit_log$q$, 'append-only');
+SELECT pg_temp.expect_error($q$DELETE FROM push_subscription$q$, 'append-only');
+SELECT pg_temp.expect_error($q$TRUNCATE push_send$q$, 'append-only');
 
 SELECT 'schema checks passed';
 
