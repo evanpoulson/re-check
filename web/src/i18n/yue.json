@@ -15,7 +15,6 @@
   "patient": {
     "language": "語言",
     "waitUnavailable": "暫時未能估計輪候時間。",
-    "title": "你已完成登記",
     "titleCompanion": "你正在協助病人登記",
     "nextCheckin": "下次情況回報",
     "startCheckin": "開始情況回報",
@@ -51,7 +50,6 @@
     "reported": "已報告",
     "received": "醫護團隊已收到",
     "waiting": "等待傳送",
-    "back": "返回",
     "stillChecking": "職員仍會按他們自己的安排來查看你的情況。"
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "我是病人",
       "companion": "我是病人的陪同者"
     },
-    "inactive": "這個QR碼已失效。請向分流站職員查詢。",
     "failed": "未能完成。請再試一次，或向分流站職員查詢。",
     "takeover": {
       "title": "這會令另一部裝置登出",
@@ -84,8 +81,7 @@
       "companion": "病人的陪同者"
     },
     "signedOut": {
-      "title": "你已登出。",
-      "help": "如現在需要協助，請告訴職員。如要再次登入，請掃描今次求診的QR碼。"
+      "title": "你已登出。"
     }
   },
   "privacy": {

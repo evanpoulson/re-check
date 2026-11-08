@@ -15,7 +15,6 @@
   "patient": {
     "language": "Wika",
     "waitUnavailable": "Walang tantiya sa ngayon.",
-    "title": "Naka-check in na po kayo",
     "titleCompanion": "Tumutulong po kayo sa isang check-in",
     "nextCheckin": "Susunod na check-in",
     "startCheckin": "Simulan ang check-in",
@@ -51,7 +50,6 @@
     "reported": "Iniulat",
     "received": "Natanggap ng care team",
     "waiting": "Naghihintay maipadala",
-    "back": "Bumalik",
     "stillChecking": "Titingnan pa rin kayo ng staff ayon sa sarili nilang iskedyul."
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "Ako ang pasyente",
       "companion": "Kasama ako ng pasyente"
     },
-    "inactive": "Hindi na aktibo ang code na ito. Pakikausap po ang triage desk.",
     "failed": "Hindi iyon gumana. Pakisubukang muli, o kausapin ang triage desk.",
     "takeover": {
       "title": "Masa-sign out nito ang isa pang device",
@@ -84,8 +81,7 @@
       "companion": "Isang kasama ng pasyente"
     },
     "signedOut": {
-      "title": "Na-sign out na po kayo.",
-      "help": "Kung kailangan ninyo ng tulong ngayon, sabihan ang isang staff. Para mag-sign in muli, i-scan ang QR code ng pagbisitang ito."
+      "title": "Na-sign out na po kayo."
     }
   },
   "privacy": {

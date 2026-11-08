@@ -15,7 +15,6 @@
   "patient": {
     "language": "Ngôn ngữ",
     "waitUnavailable": "Hiện chưa có thời gian ước tính.",
-    "title": "Quý vị đã đăng ký xong",
     "titleCompanion": "Quý vị đang giúp người bệnh đăng ký",
     "nextCheckin": "Lần kiểm tra tiếp theo",
     "startCheckin": "Bắt đầu kiểm tra",
@@ -51,7 +50,6 @@
     "reported": "Đã báo",
     "received": "Đội ngũ chăm sóc đã nhận",
     "waiting": "Đang chờ gửi",
-    "back": "Quay lại",
     "stillChecking": "Nhân viên vẫn sẽ đến kiểm tra quý vị theo lịch riêng của họ."
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "Tôi là người bệnh",
       "companion": "Tôi đi cùng người bệnh"
     },
-    "inactive": "Mã này không còn hiệu lực. Vui lòng hỏi quầy phân loại bệnh nhân.",
     "failed": "Không thực hiện được. Vui lòng thử lại hoặc hỏi quầy phân loại bệnh nhân.",
     "takeover": {
       "title": "Thao tác này sẽ đăng xuất thiết bị kia",
@@ -84,8 +81,7 @@
       "companion": "Người đi cùng người bệnh"
     },
     "signedOut": {
-      "title": "Quý vị đã được đăng xuất.",
-      "help": "Nếu cần giúp ngay, hãy báo cho nhân viên. Để đăng nhập lại, hãy quét mã QR của lượt khám này."
+      "title": "Quý vị đã được đăng xuất."
     }
   },
   "privacy": {

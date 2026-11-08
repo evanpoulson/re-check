@@ -15,7 +15,6 @@
   "patient": {
     "language": "Idioma",
     "waitUnavailable": "Estimación no disponible.",
-    "title": "Su llegada está registrada",
     "titleCompanion": "Usted está ayudando a una persona a responder el cuestionario",
     "nextCheckin": "Próximo cuestionario",
     "startCheckin": "Comenzar el cuestionario",
@@ -51,7 +50,6 @@
     "reported": "Informado",
     "received": "Recibido por el equipo de atención",
     "waiting": "Pendiente de envío",
-    "back": "Volver",
     "stillChecking": "El personal igual hará sus revisiones según su propio horario."
   },
   "message": {
@@ -71,7 +69,6 @@
       "patient": "Soy la persona que vino a atenderse",
       "companion": "Acompaño a la persona que vino a atenderse"
     },
-    "inactive": "Este código ya no está activo. Por favor, hable con el mostrador de triaje.",
     "failed": "No funcionó. Por favor, intente de nuevo o hable con el mostrador de triaje.",
     "takeover": {
       "title": "Esto cerrará la sesión en el otro dispositivo",
@@ -84,8 +81,7 @@
       "companion": "Alguien que acompaña a la persona"
     },
     "signedOut": {
-      "title": "Se cerró su sesión.",
-      "help": "Si necesita ayuda ahora, avise a un miembro del personal. Para volver a iniciar sesión, escanee el código QR de la visita."
+      "title": "Se cerró su sesión."
     }
   },
   "privacy": {
