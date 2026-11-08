@@ -42,6 +42,18 @@
   --color-level-overdue: #48484a;
   --color-level-overdue-bg: #ececf0;
 
+  /*
+    Staff type scale (visit pages first): 13 / 15 / 16 body / 17 / 21 / 28 px, in rem so
+    it follows the user's text size. `cn` knows these names (lib/utils.ts).
+  */
+  --text-note: 0.8125rem;
+  --text-small: 0.9375rem;
+  --text-lead: 1.0625rem;
+  --text-title: 1.3125rem;
+  --text-title--line-height: 1.3;
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 1.2;
+
   --radius-data: 8px;
   --radius-card: 18px;
   --radius-tap: 980px;
@@ -121,6 +133,18 @@
 @media print {
   .no-print {
     display: none !important;
+  }
+  /* Printing a re-shown visit QR prints only the QR. */
+  body:has(.print-qr) * {
+    visibility: hidden;
+  }
+  body:has(.print-qr) .print-qr,
+  body:has(.print-qr) .print-qr * {
+    visibility: visible;
+  }
+  body:has(.print-qr) .print-qr {
+    position: absolute;
+    inset: 0 0 auto 0;
   }
 }
 
@@ -409,7 +433,7 @@
     border-radius: var(--radius-data) var(--radius-data) 0 0;
     border-bottom: 3px solid transparent;
     color: var(--color-muted);
-    font-size: 17px;
+    font-size: var(--text-lead);
     font-weight: 500;
     white-space: nowrap;
     transition: color 150ms, background 150ms;

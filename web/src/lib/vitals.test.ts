@@ -5,15 +5,22 @@ const run = (patch: Partial<typeof emptyVitals>) =>
   validateVitals({ ...emptyVitals, ...patch }, 'v1', 's1', '2026-11-07T18:00:00.000Z')
 
 describe('validateVitals (mirrors VitalsCreate)', () => {
-  it('needs at least one measurement', () => expect(run({})).toEqual({ ok: false, error: 'none' }))
-  it('needs sbp and dbp together', () => expect(run({ sbp: '120' })).toEqual({ ok: false, error: 'bpPair' }))
-  it('needs dbp lower than sbp', () => expect(run({ sbp: '80', dbp: '80' })).toEqual({ ok: false, error: 'bpOrder' }))
+  it('needs at least one measurement', () => expect(run({})).toEqual({ ok: false, errors: { none: true } }))
+  it('needs sbp and dbp together, and names the missing one', () => {
+    expect(run({ sbp: '120' })).toEqual({ ok: false, errors: { dbp: 'bpPair' } })
+    expect(run({ dbp: '80' })).toEqual({ ok: false, errors: { sbp: 'bpPair' } })
+  })
+  it('needs dbp lower than sbp', () => expect(run({ sbp: '80', dbp: '80' })).toEqual({ ok: false, errors: { dbp: 'bpOrder' } }))
 
   it('rejects typos but not abnormal values', () => {
-    expect(run({ hr: '900' })).toEqual({ ok: false, error: 'range' })
-    expect(run({ hr: 'abc' })).toEqual({ ok: false, error: 'range' })
-    expect(run({ temp_c: '50' })).toEqual({ ok: false, error: 'range' })
+    expect(run({ hr: '900' })).toEqual({ ok: false, errors: { hr: 'range' } })
+    expect(run({ hr: 'abc' })).toEqual({ ok: false, errors: { hr: 'range' } })
+    expect(run({ temp_c: '50' })).toEqual({ ok: false, errors: { temp_c: 'range' } })
     expect(run({ hr: '30', spo2: '60' }).ok).toBe(true) // abnormal but plausible
+  })
+
+  it('reports every field with a problem, not just the first', () => {
+    expect(run({ hr: '900', rr: '1', spo2: '98.5' })).toEqual({ ok: false, errors: { hr: 'range', rr: 'range', spo2: 'range' } })
   })
 
   it('builds the body with only the entered values and the correction link', () => {

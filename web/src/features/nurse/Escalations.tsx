@@ -10,7 +10,7 @@ import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
-import { clock, formatMinutes, useNow } from '@/lib/time'
+import { clock, formatMinutes, isDueNow, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useDashboardEvents } from './useDashboardEvents'
 
@@ -163,7 +163,7 @@ function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<st
                 {task.status === 'open' ? (
                   <span className={overdue ? 'font-semibold text-level-red' : ''}>
                     {t('review.filters.open')}
-                    {ackDelta !== null && ` · ${t(overdue ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(ackDelta) })}`}
+                    {ackDelta !== null && ` · ${isDueNow(ackDelta) ? t('review.dueNow') : t(overdue ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(ackDelta) })}`}
                   </span>
                 ) : (
                   <span>{t('review.filters.acknowledged')}</span>
@@ -234,7 +234,7 @@ function HandoverView({ data, now }: { data: Handover; now: number }) {
                     </div>
                     <div className="review-status">
                       <span className="font-semibold text-level-red">
-                        {due ? t('review.staffDue', { timing: t('review.overdueBy', { time: formatMinutes(Date.parse(due) - now) }) }) : null}
+                        {due ? t('review.staffDue', { timing: isDueNow(Date.parse(due) - now) ? t('review.dueNow') : t('review.overdueBy', { time: formatMinutes(Date.parse(due) - now) }) }) : null}
                       </span>
                       <p>
                         {row.visit.last_staff_check_at
@@ -276,7 +276,7 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
   const ackOverdue = ackLate !== null && ackLate > 0
   // Everything overdue, not just the first: acknowledgement, patient check-in, staff reassessment.
   const notes = [
-    ackOverdue && t('handover.flags.ack', { time: formatMinutes(ackLate) }),
+    ackOverdue && (isDueNow(ackLate) ? t('handover.flags.ackDueNow') : t('handover.flags.ack', { time: formatMinutes(ackLate) })),
     row.silent ? t('handover.flags.silent') : row.prompt_overdue && t('handover.flags.prompt'),
     row.reassess_overdue && t('handover.flags.reassess'),
     row.leave_risk && t('handover.flags.leave'),

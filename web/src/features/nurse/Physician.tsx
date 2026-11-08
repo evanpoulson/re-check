@@ -7,7 +7,7 @@ import { getWorklist } from '@/api/api'
 import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { shortRef } from '@/lib/board'
-import { clock, formatMinutes, useNow } from '@/lib/time'
+import { clock, formatMinutes, isDueNow, useNow } from '@/lib/time'
 import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
 import { useDashboardEvents } from './useDashboardEvents'
@@ -36,7 +36,8 @@ export function Physician() {
       .join(' ').toLocaleLowerCase().includes(term),
   )
   const filters = ['all', 'open', 'acknowledged'] as const
-  const duration = (delta: number) => t(delta < 0 ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(delta) })
+  const duration = (delta: number) =>
+    isDueNow(delta) ? t('review.dueNow') : t(delta < 0 ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(delta) })
 
   return (
     <main id="main-content" className="staff-page">

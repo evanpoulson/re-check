@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
 import { useOutletContext } from 'react-router'
 import { optionLabel } from '@/api/bank'
-import type { CheckinReport, PatientReport, StaffRole, TaskLevel, TimelineEntry, VisitDetail } from '@/api/types'
+import type { CheckinReport, PatientReport, StaffRole, Task, TaskEvent, TaskLevel, TimelineEntry, VisitDetail } from '@/api/types'
 import { choiceText, concernText, findingsText } from '@/lib/answers'
 
 /** What every visit page gets from the visit layout. */
@@ -19,8 +19,10 @@ export interface VisitContext {
   /** May press Acknowledge: a routed role, or a desk nurse confirming they have seen the report. */
   canAcknowledge: boolean
   now: number
+  /** The assessment this page just recorded, with its outcome, until the page is left. */
+  completed: Task | null
   /** Called when an assessment completes, so the layout can move focus to the result. */
-  onComplete: () => void
+  onComplete: (task: Task) => void
 }
 
 export const useVisit = () => useOutletContext<VisitContext>()
@@ -64,3 +66,14 @@ export function reportSummary(report: PatientReport, t: TFunction): string {
 
 export const reasonText = (code: string, t: TFunction) =>
   t(`reason.${code}`, { defaultValue: code.replaceAll('_', ' ') })
+
+/** Role names inside a sentence: "routed to physician, charge nurse". */
+export const rolesText = (roles: readonly StaffRole[], t: TFunction) =>
+  roles.map((r) => t(`role.${r}`).toLocaleLowerCase()).join(', ')
+
+/** The most recent "assessed" event on this visit, if any. */
+export const lastAssessed = (detail: VisitDetail): TaskEvent | undefined =>
+  detail.timeline.filter((e): e is TaskEvent => 'event' in e && e.event === 'assessed').at(-1)
+
+/** The newest patient or companion report of any kind. */
+export const lastReport = (detail: VisitDetail): ReportEntry | undefined => detail.timeline.filter(isReport).at(-1)
