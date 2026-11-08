@@ -46,6 +46,12 @@ Open http://localhost:8080. Localhost counts as a secure origin, so no HTTPS is 
    | Secret | `RECHECK_DATABASE_URL` | `postgres://recheck_api:...@...tsdb.cloud.timescale.com:.../tsdb?sslmode=require` |
    | Secret | `RECHECK_SECRET_KEY` | 32+ random characters. Keep it the same for the whole event, or the desk can't re-show QRs and staff are signed out. |
    | Secret | `RECHECK_POLLER_DATABASE_URL` | Optional. Set it to start the wait-time poller. |
+   | Variable | `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` | Staff sign-in (see `auth0/README.md`). Unused until the API reads them. |
+   | Secret | `AUTH0_CLIENT_SECRET` | Staff sign-in |
+   | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. Defaults to `15`: this box runs the missed check-in and escalation timers. `0` turns them off. Keep them off on every other machine that uses the same database. |
+   | Variable | `RECHECK_DEMO_STAFF` | Optional. `true` keeps the demo role picker as a fallback once Auth0 sign-in ships. |
+
+   In the Auth0 application, allow `https://<SITE_ADDRESS>/api/staff/callback` as a callback URL and `https://<SITE_ADDRESS>/staff/sign-in` as a logout URL.
 
    Avoid `$` in these values: compose treats it as a variable in `.env`.
 4. **Tiger.** If the service has an IP allow list, add the Elastic IP.
