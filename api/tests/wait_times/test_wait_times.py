@@ -15,7 +15,7 @@ from recheck.wait_times.ahs import find, parse_feed, parse_wait_text
 from recheck.wait_times.estimate import STALE_AFTER, Snapshot, current_estimate, waited_minutes
 from recheck.wait_times.poller import snapshot_rows
 
-FEED = json.loads((Path(__file__).parent / "feed.json").read_text())
+FEED = json.loads((Path(__file__).parent / "feed.json").read_text(encoding="utf-8"))
 NOW = datetime(2026, 11, 7, 19, 0, tzinfo=UTC)
 
 
