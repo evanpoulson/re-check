@@ -67,9 +67,9 @@ export function reportSummary(report: PatientReport, t: TFunction): string {
 export const reasonText = (code: string, t: TFunction) =>
   t(`reason.${code}`, { defaultValue: code.replaceAll('_', ' ') })
 
-/** Role names inside a sentence: "routed to physician, charge nurse". */
-export const rolesText = (roles: readonly StaffRole[], t: TFunction) =>
-  roles.map((r) => t(`role.${r}`).toLocaleLowerCase()).join(', ')
+/** Role names inside a sentence: "physician and charge nurse", or "physician or charge nurse". */
+export const rolesText = (roles: readonly StaffRole[], t: TFunction, type: 'conjunction' | 'disjunction' = 'conjunction') =>
+  new Intl.ListFormat('en', { type }).format(roles.map((r) => t(`role.${r}`).toLocaleLowerCase()))
 
 /** The most recent "assessed" event on this visit, if any. */
 export const lastAssessed = (detail: VisitDetail): TaskEvent | undefined =>

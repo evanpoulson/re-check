@@ -1,21 +1,21 @@
 import { Navigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { signedInText } from '@/lib/session'
 import { clock } from '@/lib/time'
 import { StopAppCard, VisitQrCard, VisitStatusCard } from '../VisitActions'
 import { Divider, Fact, Facts, PageHeading, SectionCard } from './parts'
 import { useVisit } from './model'
 
+/** Routine actions first; the irreversible app exclusion sits alone at the bottom. */
 export function ManagementPage() {
   const { t } = useTranslation()
-  const { detail, stale, isDesk } = useVisit()
+  const { detail, stale, isDesk, canFlag } = useVisit()
   if (!isDesk) return <Navigate to=".." relative="path" replace />
   const { visit } = detail
 
   return (
     <>
-      <PageHeading title={t('visitTabs.manage')} lead={t('visitPage.manage.lead')} />
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_35.5rem]">
+      <PageHeading title={t('visitTabs.manage')} lead={t(canFlag ? 'visitPage.manage.leadTriage' : 'visitPage.manage.leadCharge')} />
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <div className="min-w-0 space-y-5">
           <SectionCard title={t('visit.details')}>
             <Facts>
@@ -31,16 +31,20 @@ export function ManagementPage() {
               <Fact label={t('visit.triaged')} value={clock(visit.triaged_at)} />
               <Fact label={t('visit.lastStaffCheck')} value={visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')} />
               <Fact label={t('visit.status')} value={t(`visitStatus.${visit.status}`)} />
-              {!visit.app_exclusion && <Fact label={t('visit.device')} value={signedInText(visit, t)} />}
             </Facts>
           </SectionCard>
-          <VisitQrCard visit={visit} stale={stale} />
           <VisitStatusCard visit={visit} stale={stale} />
         </div>
         <div className="min-w-0">
-          <StopAppCard key={visit.app_exclusion ?? 'offered'} visit={visit} stale={stale} />
+          <VisitQrCard visit={visit} stale={stale} />
         </div>
       </div>
+      <section aria-labelledby="danger-zone" className="space-y-3 border-t border-line pt-6">
+        <h3 id="danger-zone" className="text-lead font-semibold">{t('visitPage.manage.dangerZone')}</h3>
+        <div className="max-w-2xl">
+          <StopAppCard key={visit.app_exclusion ?? 'offered'} visit={visit} stale={stale} />
+        </div>
+      </section>
     </>
   )
 }

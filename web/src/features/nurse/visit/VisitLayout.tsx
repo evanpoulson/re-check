@@ -162,6 +162,7 @@ export function VisitLayout() {
             now={now}
             empty={visit.app_exclusion ? t('time.notApplicable') : undefined}
             note={t('visitPage.separateClock')}
+            noteWide
           />
         </div>
 
@@ -183,7 +184,7 @@ export function VisitLayout() {
       </div>
 
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-x-6 gap-y-1 px-4 py-5 text-sm text-muted sm:px-8">
+        <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-x-6 gap-y-1 px-4 py-5 text-note text-muted sm:px-8">
           <p>{t('visitPage.boundaryRecord')}</p>
           <p>{t('visitPage.boundaryScope')}</p>
         </div>
@@ -197,7 +198,7 @@ function ConcernBanner({ task }: { task: Task }) {
   const { t } = useTranslation()
   const reason = getPrimaryTaskReason(task)
   return (
-    <section aria-labelledby="active-concern" className={cn('flex items-center gap-3 rounded-data border border-l-4 p-4', LEVEL_TONE[task.level])}>
+    <section aria-labelledby="active-concern" className={cn('flex items-center gap-3 rounded-data border border-l-4 p-3 sm:p-4', LEVEL_TONE[task.level])}>
       <CircleAlert aria-hidden size={20} className="shrink-0" />
       <div className="min-w-0 space-y-1">
         <p className="text-small font-bold">
@@ -206,7 +207,7 @@ function ConcernBanner({ task }: { task: Task }) {
         <h2 id="active-concern" className="text-title font-semibold text-ink">
           {reason ? reasonText(reason.reason_code, t) : t('actions.task')}
         </h2>
-        <p className="text-sm">
+        <p className="text-note sm:text-small">
           {task.status === 'open' ? t('visitPage.ackPending') : t('visitPage.ackDone', { time: clock(task.acknowledged_at ?? task.created_at) })}
           {' · '}
           {t('visitPage.assessPending')}
@@ -221,13 +222,15 @@ function ConcernBanner({ task }: { task: Task }) {
  * One of the two independent clocks. Overdue gets the overdue style, its hourglass and a
  * warm edge. The staff clock keeps a blue edge only while it is not overdue.
  */
-function Clock({ label, due, now, empty, note, highlight }: {
+function Clock({ label, due, now, empty, note, noteWide, highlight }: {
   label: string
   due: string | null
   now: number
   /** Shown instead of a countdown, e.g. "Not applicable". */
   empty?: string
   note: string
+  /** Only on wider screens, where there is room for it. */
+  noteWide?: boolean
   highlight?: boolean
 }) {
   const overdue = !empty && isOverdue(untilMs(due, now))
@@ -235,14 +238,14 @@ function Clock({ label, due, now, empty, note, highlight }: {
     <div
       className={cn(
         'min-w-0 rounded-data border bg-surface px-3 py-2.5 sm:px-4',
-        overdue ? 'border-level-amber bg-level-overdue-bg' : highlight ? 'border-brand-500' : 'border-line',
+        overdue ? 'border-level-amber' : highlight ? 'border-brand-500' : 'border-line',
       )}
     >
       <p className="text-small font-semibold">{label}</p>
       <p className="text-lead font-bold sm:text-title">
         {empty ?? <CountdownChip due={due} now={now} className="whitespace-normal" />}
       </p>
-      <p className="text-note text-muted sm:text-small">{note}</p>
+      <p className={cn('text-note text-muted sm:text-small', noteWide && 'hidden sm:block')}>{note}</p>
     </div>
   )
 }
