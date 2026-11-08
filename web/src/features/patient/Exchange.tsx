@@ -54,7 +54,7 @@ export function Exchange() {
         {/* There is no way to check a code without signing in, so this shows after the role is picked.
             A short heading, then the instruction in body text. */}
         <Card role="alert" className="space-y-3">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.expired.title')}</h1>
+          <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('exchange.expired.title')}</h1>
           <p>{t('exchange.expired.help')}</p>
           <p className="font-semibold">{t('exchange.help')}</p>
         </Card>
@@ -67,7 +67,7 @@ export function Exchange() {
     return (
       <PatientLayout>
         <Card className="space-y-5">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
+          <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
           <p>
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
@@ -92,7 +92,7 @@ export function Exchange() {
     <PatientLayout about>
       <section aria-labelledby="who" className="space-y-6 pt-4">
         <div className="space-y-3 text-center">
-          <h1 id="who" className="text-[2rem] font-semibold leading-tight tracking-tight">
+          <h1 id="who" className="text-heading font-semibold leading-tight tracking-tight">
             {t('exchange.who')}
           </h1>
           <p className="text-base text-muted">{t('exchange.intro')}</p>

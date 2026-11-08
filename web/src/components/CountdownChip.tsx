@@ -1,7 +1,7 @@
-import { Hourglass } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { durationWords, formatMinutes, isDueNow, isOverdue, untilMs } from '@/lib/time'
 import { cn } from '@/lib/utils'
+import { LevelChip } from './LevelChip'
 
 /**
  * "in 12 min", "Due now" or "12 min overdue". `null` renders a dash. The patient view
@@ -26,10 +26,7 @@ export function CountdownChip({ due, now, patient = false, className }: {
   // Overdue uses the overdue chip (colour, icon and text), like every other status.
   if (isOverdue(ms)) {
     return (
-      <span className={cn('tabular inline-flex items-center gap-1 rounded-full bg-level-overdue-bg px-2.5 py-0.5 text-[0.8125rem] font-semibold whitespace-nowrap text-level-overdue', className)}>
-        <Hourglass aria-hidden className="size-4 shrink-0" />
-        {t('time.overdue', { value: formatMinutes(ms) })}
-      </span>
+      <LevelChip level="overdue" label={t('time.overdue', { value: formatMinutes(ms) })} className={cn('tabular', className)} />
     )
   }
   // Within a minute either side of the deadline: "Due now", never "in 0 min" or "0 min overdue".

@@ -137,7 +137,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
         <div className="question-progress-row">
           {index > 0 && !playing ? (
             <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
-              <ChevronLeft aria-hidden size={16} className="rtl:rotate-180" />
+              <ChevronLeft aria-hidden className="size-4 rtl:rotate-180" />
               {t('flow.back')}
             </button>
           ) : <span />}
@@ -151,11 +151,17 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
       ) : (
         <>
           <StepView step={step} reporter={reporter} draft={draft} setDraft={setDraft} />
-          <div className="grid gap-3">
-            {/* Stays enabled: a disabled button gives no reason, so say what is missing instead. */}
-            <Button size="lg" disabled={sending} onClick={() => (answered(step, draft) ? next(draft) : setNeedAnswerFor(stepKey ?? null))}>
+          {/*
+            Stays enabled: a disabled button gives no reason, so say what is missing instead.
+            Sticks just above the help dock, so Next is on screen even when the answers run
+            past a short phone's screen. A sibling of the question, so it can stick over it.
+          */}
+          <div className="flow-next">
+            <Button size="lg" className="w-full" disabled={sending} onClick={() => (answered(step, draft) ? next(draft) : setNeedAnswerFor(stepKey ?? null))}>
               {hasNewFindings ? t('flow.sendNow') : last ? t('flow.send') : t('flow.next')}
             </Button>
+          </div>
+          <div className="grid gap-3">
             {/* Below the button, so the button does not move under the help dock. */}
             {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="font-semibold text-level-red">{t('flow.chooseAnswer')}</p>}
             <Button variant="ghost" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
@@ -178,7 +184,7 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 tabIndex={-1} id="q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+    <h1 tabIndex={-1} id="q" className="text-heading font-semibold leading-tight tracking-tight">
       {children}
     </h1>
   )

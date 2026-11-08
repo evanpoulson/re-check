@@ -50,14 +50,14 @@ export function SignIn() {
     <main id="main-content" className="mx-auto max-w-md px-4 py-16 sm:py-24">
       <div className="mb-10 flex flex-col items-center gap-4 text-center">
         <Brand />
-        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.signIn')}</h1>
-        <p className="max-w-md text-lg text-muted">{t(auth0 ? 'signIn.explain' : 'signIn.explainDemo')}</p>
+        <h1 className="text-display font-semibold tracking-tight">{t('pages.signIn')}</h1>
+        <p className="max-w-md text-lead text-muted">{t(auth0 ? 'signIn.explain' : 'signIn.explainDemo')}</p>
         <DemoBadge />
       </div>
 
       {(error || demoError) && (
         <p role="alert" className="mb-6 flex items-start gap-2 rounded-xl border border-level-red bg-surface p-4 text-level-red">
-          <CircleAlert aria-hidden size={20} className="mt-0.5 shrink-0" />
+          <CircleAlert aria-hidden className="size-5 mt-0.5 shrink-0" />
           {t(demoError ? 'signIn.error.demo' : error!)}
         </p>
       )}
@@ -76,9 +76,9 @@ export function SignIn() {
           {auth0 && (
             <div className="grid gap-2">
               <Button size="lg" className="justify-between" onClick={() => window.location.assign(endpoints.staffLogin('/staff/sign-in'))}>
-                {t('signIn.auth0')} <LogIn size={18} aria-hidden />
+                {t('signIn.auth0')} <LogIn aria-hidden className="size-[1.125rem]" />
               </Button>
-              <p className="text-center text-sm text-muted">{t('signIn.auth0Hint')}</p>
+              <p className="text-center text-small text-muted">{t('signIn.auth0Hint')}</p>
             </div>
           )}
           {demo && (
@@ -95,7 +95,7 @@ export function SignIn() {
                   // On success the session changes and this page redirects to the role's home.
                   signInDemo(r).catch(() => setDemoError(true)).finally(() => setBusy(false))
                 }}>
-                  {t(`signIn.open.${r}`)} <ArrowRight size={18} aria-hidden />
+                  {t(`signIn.open.${r}`)} <ArrowRight aria-hidden className="size-[1.125rem] rtl:-scale-x-100" />
                 </Button>
               ))}
             </section>

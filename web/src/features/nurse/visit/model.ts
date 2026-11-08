@@ -1,7 +1,7 @@
 import type { TFunction } from 'i18next'
 import { useOutletContext } from 'react-router'
 import { optionLabel } from '@/api/bank'
-import type { CheckinReport, PatientReport, StaffRole, Task, TaskEvent, TaskLevel, TimelineEntry, VisitDetail } from '@/api/types'
+import type { CheckinReport, PatientReport, StaffRole, Task, TaskEvent, TimelineEntry, VisitDetail } from '@/api/types'
 import { choiceText, concernText, findingsText } from '@/lib/answers'
 
 /** What every visit page gets from the visit layout. */
@@ -26,15 +26,6 @@ export interface VisitContext {
 }
 
 export const useVisit = () => useOutletContext<VisitContext>()
-
-/** Tinted background and text for each task level. Colour always comes with text. */
-export const LEVEL_TONE: Record<TaskLevel, string> = {
-  red: 'border-level-red bg-level-red-bg text-level-red',
-  amber: 'border-level-amber bg-level-amber-bg text-level-amber',
-  silent: 'border-level-silent bg-level-silent-bg text-level-silent',
-  leave_risk: 'border-level-leave bg-level-leave-bg text-level-leave',
-  overdue: 'border-level-overdue bg-level-overdue-bg text-level-overdue',
-}
 
 export type ReportEntry = Extract<TimelineEntry, { report_id: string }>
 export type CheckinEntry = ReportEntry & { report: CheckinReport }

@@ -12,6 +12,7 @@ import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
 import { clock, formatMinutes, isDueNow, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
+import { TaskStatus } from './TaskStatus'
 import { useDashboardEvents } from './useDashboardEvents'
 
 const visitRef = (visit: Pick<VisitSummary, 'visit_id' | 'pager_no'> | undefined, visitId: string) =>
@@ -62,7 +63,7 @@ export function Escalations() {
             void handover.refetch()
           }}
         >
-          <RefreshCw size={16} aria-hidden className={query.isFetching ? 'animate-spin' : ''} />
+          <RefreshCw aria-hidden className={cn('size-[1em]', query.isFetching && 'animate-spin')} />
           <span className="hidden sm:inline">{t('review.refresh')}</span>
         </Button>
       </header>
@@ -115,7 +116,7 @@ function EscalationList({ tasks, tlpOnDuty, visits, now }: {
   const { t } = useTranslation()
   return (
     <>
-      <p className="mb-4 text-[0.9375rem] text-muted">
+      <p className="mb-4 text-small text-muted">
         {t(tlpOnDuty ? 'escalations.lead' : 'escalations.leadNoTlp')}
       </p>
       <section className="review-surface" aria-label={t('escalations.tabs.escalations')}>
@@ -138,17 +139,12 @@ function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<st
         const row = visits.get(task.visit_id)
         const ref = visitRef(row?.visit, task.visit_id)
         const reason = getPrimaryTaskReason(task)
-        const ackDelta = task.ack_due_at ? Date.parse(task.ack_due_at) - now : null
-        const overdue = task.status === 'open' && ackDelta !== null && ackDelta < 0
         const id = task.task_id
         return (
           <li key={id}>
             <Link className="review-row" to={`/staff/visits/${task.visit_id}`} aria-labelledby={`esc-reason-${id} esc-ref-${id}`}>
               <div className="concern-cell">
-                <div className="flex flex-wrap items-center gap-2">
-                  <LevelChip level={task.level} />
-                  {task.escalated && <span className="task-label task-red">{t('escalations.backup')}</span>}
-                </div>
+                <LevelChip level={task.level} />
                 <h2 id={`esc-reason-${id}`}>
                   {reason ? t(`reason.${reason.reason_code}`, { defaultValue: reason.reason_code.replaceAll('_', ' ') }) : t(`taskLevel.${task.level}`)}
                 </h2>
@@ -160,22 +156,10 @@ function TaskList({ tasks, visits, now, label }: { tasks: Task[]; visits: Map<st
                 </p>
               </div>
               <div className="review-status">
-                {task.status === 'open' ? (
-                  <span className={overdue ? 'font-semibold text-level-red' : ''}>
-                    {t('review.filters.open')}
-                    {ackDelta !== null && ` · ${isDueNow(ackDelta) ? t('review.dueNow') : t(overdue ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(ackDelta) })}`}
-                  </span>
-                ) : (
-                  <span>{t('review.filters.acknowledged')}</span>
-                )}
-                <p>
-                  {task.status === 'open'
-                    ? t('escalations.raised', { time: clock(task.created_at) })
-                    : t('visitPage.ackDone', { time: clock(task.acknowledged_at ?? task.created_at) })
-                      + (task.acknowledged_by ? ` · ${t(`role.${task.acknowledged_by.role}`)}` : '')}
-                </p>
+                <TaskStatus task={task} now={now} />
+                {task.status === 'open' && <p>{t('escalations.raised', { time: clock(task.created_at) })}</p>}
               </div>
-              <ArrowRight size={18} aria-hidden className="row-arrow" />
+              <ArrowRight aria-hidden className="row-arrow size-[1.125rem] rtl:-scale-x-100" />
             </Link>
           </li>
         )
@@ -194,7 +178,7 @@ function HandoverView({ data, now }: { data: Handover; now: number }) {
 
   return (
     <div className="space-y-6">
-      <p className="text-[1.0625rem]">
+      <p className="text-lead">
         <span className="font-semibold">{t('handover.shift', { start: clock(data.shift_start), end: clock(data.shift_end) })}</span>
         <span className="text-muted"> · {t('handover.template')}</span>
       </p>
@@ -242,7 +226,7 @@ function HandoverView({ data, now }: { data: Handover; now: number }) {
                           : t('visitPage.noStaffCheck')}
                       </p>
                     </div>
-                    <ArrowRight size={18} aria-hidden className="row-arrow" />
+                    <ArrowRight aria-hidden className="row-arrow size-[1.125rem] rtl:-scale-x-100" />
                   </Link>
                 </li>
               )
@@ -258,7 +242,7 @@ function HandoverSection({ title, count, children }: { title: string; count: num
   const id = `handover-${title.replace(/\W+/g, '-').toLowerCase()}`
   return (
     <section aria-labelledby={id}>
-      <h2 id={id} className="mb-2 text-[1.1875rem] font-semibold">
+      <h2 id={id} className="mb-2 text-title font-semibold">
         {title} <span className="tabular-nums font-normal text-muted">({count})</span>
       </h2>
       <div className="review-surface">{children}</div>
@@ -287,8 +271,8 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
       <Link className="review-row" to={`/staff/visits/${id}`} aria-labelledby={`hp-ref-${id}`}>
         <div className="concern-cell">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="tabular-nums text-sm font-semibold text-muted">#{row.rank}</span>
-            {row.open_task ? <LevelChip level={row.open_task.level} /> : <span className="text-sm text-muted">{t('handover.noTask')}</span>}
+            <span className="tabular-nums text-small font-semibold text-muted">#{row.rank}</span>
+            {row.open_task ? <LevelChip level={row.open_task.level} /> : <span className="text-small text-muted">{t('handover.noTask')}</span>}
           </div>
           <h2 id={`hp-ref-${id}`}>{visitRef(visit, id)}</h2>
           <p>{t(`complaint.${visit.complaint_group}`)} · CTAS {visit.ctas} · {t('handover.waited', { time: formatMinutes(now - Date.parse(visit.triaged_at)) })}</p>
@@ -300,7 +284,7 @@ function PatientRow({ row, now }: { row: WorklistRow; now: number }) {
             <span className="text-muted">{t('handover.flags.none')}</span>
           )}
         </div>
-        <ArrowRight size={18} aria-hidden className="row-arrow" />
+        <ArrowRight aria-hidden className="row-arrow size-[1.125rem] rtl:-scale-x-100" />
       </Link>
     </li>
   )

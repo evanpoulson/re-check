@@ -14,13 +14,13 @@ interface Props {
 }
 
 /**
- * Large text or a very small screen: fewer than about 19.5 rem across or 30 rem
+ * Large text or a small screen: fewer than about 19.5 rem across or 40 rem (640px)
  * tall. The three quieter buttons then fold behind "More options" so the dock
  * never covers most of the question. "I need help now" always stays visible.
  */
 function isCompact() {
   const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16
-  return window.innerWidth / rem < 19.5 || window.innerHeight / rem < 30
+  return window.innerWidth / rem < 19.5 || window.innerHeight / rem < 40
 }
 
 /**
@@ -67,14 +67,14 @@ export function HelpBar({ role, onConcern, onLeaving, disabled, helpOnly }: Prop
       <div className="patient-dock-inner">
         {help && (
           <button type="button" className="patient-help" onClick={() => onConcern('help_now')}>
-            <CircleAlert size={20} aria-hidden className="shrink-0" />
+            <CircleAlert aria-hidden className="size-5 shrink-0" />
             {text(help.linkId, role)}
           </button>
         )}
         {compact && !helpOnly && (
           <button type="button" className="patient-help-more" aria-expanded={open} aria-controls={moreId} onClick={() => setOpen(!open)}>
             {t('patient.moreOptions')}
-            {open ? <ChevronDown aria-hidden size={18} className="shrink-0" /> : <ChevronUp aria-hidden size={18} className="shrink-0" />}
+            {open ? <ChevronDown aria-hidden className="size-[1.125rem] shrink-0" /> : <ChevronUp aria-hidden className="size-[1.125rem] shrink-0" />}
           </button>
         )}
         {showOthers && (

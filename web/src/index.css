@@ -37,22 +37,36 @@
   --color-level-amber-bg: #fff4d6;
   --color-level-silent: #6e3fc8;
   --color-level-silent-bg: #f3edfc;
-  --color-level-leave: #b14300;
-  --color-level-leave-bg: #fff0e3;
+  /* Leave risk is petrol, not orange, so it never reads as amber (also under deuteranopia). */
+  --color-level-leave: #005f73;
+  --color-level-leave-bg: #e1f1f4;
   --color-level-overdue: #48484a;
   --color-level-overdue-bg: #ececf0;
 
   /*
-    Staff type scale (visit pages first): 13 / 15 / 16 body / 17 / 21 / 28 px, in rem so
-    it follows the user's text size. `cn` knows these names (lib/utils.ts).
+    The one type scale, for staff and patient screens: 13 / 15 / 16 / 18 / 21 / 28 / 40 px,
+    in rem so it follows the user's text size. Tailwind's own sizes (text-sm, text-xl...)
+    are switched off, so nothing can step outside it. `cn` knows these names (lib/utils.ts).
   */
+  --text-*: initial;
   --text-note: 0.8125rem;
+  --text-note--line-height: 1.4;
   --text-small: 0.9375rem;
-  --text-lead: 1.0625rem;
+  --text-small--line-height: 1.45;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.45;
   --text-title: 1.3125rem;
   --text-title--line-height: 1.3;
   --text-heading: 1.75rem;
   --text-heading--line-height: 1.2;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+
+  /* Every staff page shares one container and left edge with the header (S-4). */
+  --staff-max: 1280px;
+  --staff-pad: 32px;
 
   --radius-data: 8px;
   --radius-card: 18px;
@@ -95,19 +109,20 @@
 @layer components {
   /* Translucent bar, as in apple.com's navigation. */
   .glass {
-    background: rgb(251 251 253 / 0.8);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    backdrop-filter: saturate(180%) blur(20px);
+    background: rgb(251 251 253 / 0.92);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
   }
   /* A form field: white, hairline border, blue ring on focus. */
   .field {
     min-height: 2.75rem;
     width: 100%;
     border-radius: 12px;
-    border: 1px solid var(--color-line);
+    /* 3.6:1 on white: a control boundary needs 3:1 (WCAG 1.4.11). */
+    border: 1px solid var(--color-answer);
     background: var(--color-surface);
     padding-inline: 0.875rem;
-    font-size: 1rem;
+    font-size: var(--text-base);
     transition: border-color 150ms, box-shadow 150ms;
   }
   .field:focus-visible {
@@ -136,17 +151,10 @@
   [dir='rtl'] .field.select {
     background-position: left 0.75rem center;
   }
-  /* "Lead phrase. Grey continuation." headings. */
-  .headline-split > em {
-    font-style: normal;
-    color: var(--color-muted);
-  }
-  /* Small uppercase eyebrow above a title, as in "NEW" on apple.com. */
+  /* A short label above content: one to three words, sentence case. Arabic and Urdu have no capitals, so it never relies on them. */
   .eyebrow {
-    font-size: 0.75rem;
+    font-size: var(--text-note);
     font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
     color: var(--color-muted);
   }
 }
@@ -173,14 +181,15 @@
   .brand {
     display: inline-flex;
     align-items: center;
-    font-size: 25px;
-    letter-spacing: -1px;
+    font-size: var(--text-title);
+    letter-spacing: -0.04em;
     font-weight: 600;
   }
   .brand-mark {
     width: auto;
-    height: 32px;
-    margin-inline-end: 9px;
+    /* In em, so the mark grows with the wordmark and the user's text size. */
+    height: 1.5em;
+    margin-inline-end: 0.35em;
   }
   .brand-period {
     color: var(--color-brand-600);
@@ -192,13 +201,17 @@
     z-index: 20;
     min-height: 56px;
     display: flex;
-    gap: 22px;
+    /* At large text the bar wraps onto more rows instead of running off the screen. */
+    flex-wrap: wrap;
+    gap: 0 22px;
     align-items: center;
-    padding: 6px 32px;
+    /* The brand starts at the same left edge as every page below it; sign-out stays at the far right. */
+    padding-block: 6px;
+    padding-inline: max(var(--staff-pad), calc((100% - var(--staff-max)) / 2 + var(--staff-pad))) var(--staff-pad);
     border-bottom: 1px solid rgb(210 210 215 / 0.7);
-    background: rgb(251 251 253 / 0.8);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    backdrop-filter: saturate(180%) blur(20px);
+    background: rgb(251 251 253 / 0.92);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
   }
   .staff-header nav {
     display: flex;
@@ -211,10 +224,9 @@
     min-height: 44px;
     padding: 8px 12px;
     color: rgb(29 29 31 / 0.8);
-    font-size: 0.875rem;
+    font-size: var(--text-small);
     transition: color 150ms;
   }
-  .staff-nav-link:hover,
   .staff-nav-link.is-active {
     color: var(--color-ink);
   }
@@ -222,21 +234,32 @@
     font-weight: 600;
   }
   .staff-identity {
-    margin-left: auto;
+    margin-inline-start: auto;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: var(--text-small);
     color: var(--color-muted);
   }
-  .staff-page {
-    max-width: 1280px;
-    padding: 28px 32px;
-    margin: auto;
+  /* The staff page container. The visit page uses .staff-container for its bands. */
+  .staff-page,
+  .staff-container {
+    max-width: var(--staff-max);
+    padding-inline: var(--staff-pad);
+    margin-inline: auto;
   }
-  /* The triage board is a wide table, so its page is wider than the others. */
+  .staff-page {
+    padding-block: 28px;
+  }
+  /*
+    The triage board is a wide table: it starts at the same left edge as every other
+    page and the header, and only grows to the right (up to 1440px).
+  */
   .staff-page-wide {
     max-width: 1440px;
+    margin-inline: max(0px, calc((100% - var(--staff-max)) / 2)) auto;
   }
   /*
     A table that scrolls sideways in its own box. Edge shadows show on whichever
@@ -255,18 +278,28 @@
       radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) right / 14px 100% no-repeat scroll,
       var(--color-surface);
   }
+  /* The action (Refresh) lines up with the <h1>, not the title-and-subtitle block. */
   .page-heading {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 24px;
     margin-bottom: 18px;
   }
+  .page-heading > div {
+    min-width: 0;
+  }
   .page-heading h1 {
-    font-size: 34px;
-    line-height: 1.15;
-    letter-spacing: -0.9px;
+    overflow-wrap: break-word;
+    font-size: var(--text-heading);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
     font-weight: 600;
+  }
+  /* The heading is 1.2 x 28px tall; a 44px button sits centred on it. */
+  .page-heading > button {
+    margin-top: calc((var(--text-heading) * 1.2 - 2.75rem) / 2);
   }
   .page-heading p {
     margin-top: 8px;
@@ -295,7 +328,7 @@
   .filter-group button {
     min-height: 44px;
     padding: 6px 12px;
-    font-size: 14px;
+    font-size: var(--text-small);
     border-radius: var(--radius-tap);
     cursor: pointer;
     white-space: nowrap;
@@ -306,23 +339,41 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
     font-weight: 600;
   }
+  /* A search box that looks like a field: 3:1 border, the magnifier inside, a round focus ring. */
   .search-field {
+    position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: var(--color-muted);
     min-width: 0;
+    color: var(--color-muted);
+  }
+  .search-field > svg {
+    position: absolute;
+    inset-inline-start: 0.875rem;
+    pointer-events: none;
   }
   .search-field input {
     min-height: 44px;
-    font-size: 14px;
-    width: 190px;
+    width: 16rem;
     min-width: 0;
-    background: transparent;
+    padding-inline: 2.5rem 0.875rem;
+    border: 1px solid var(--color-answer);
+    border-radius: var(--radius-tap);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: var(--text-small);
+  }
+  .search-field input::placeholder {
+    color: var(--color-muted);
+  }
+  .search-field input:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
   }
   .review-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 235px) 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 17rem) 1.125rem;
     align-items: center;
     gap: 16px;
     padding: 14px 20px;
@@ -333,58 +384,39 @@
   .review-row {
     transition: background 0.15s;
   }
-  .review-row:hover {
-    background: #f9faf8;
+  @media (hover: hover) {
+    .review-row:hover {
+      background: #f9faf8;
+    }
   }
   .review-row:focus-visible {
     outline-offset: -4px;
   }
-  .task-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .task-label::before {
-    content: '';
-    height: 6px;
-    width: 6px;
-    background: currentColor;
-    border-radius: 50%;
-  }
-  .task-red {
-    color: var(--color-level-red);
-  }
-  .task-amber,
-  .task-leave_risk {
-    color: var(--color-level-amber);
-  }
-  .task-silent,
-  .task-overdue {
-    color: var(--color-muted);
-  }
   .concern-cell h2 {
-    font-size: 19px;
-    line-height: 1.25;
+    font-size: var(--text-lead);
+    line-height: 1.3;
     font-weight: 600;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.01em;
     margin: 4px 0;
   }
   .concern-cell p {
-    font-size: 14px;
+    font-size: var(--text-small);
     color: var(--color-muted);
   }
   .concern-cell p strong {
     color: var(--color-ink);
     font-weight: 550;
   }
+  /* Status in sentence-case bold, then its timing and notes below in grey. */
   .review-status {
-    font-size: 14px;
+    font-size: var(--text-small);
+  }
+  .review-status > :first-child {
+    font-weight: 600;
   }
   .review-status p {
     color: var(--color-muted);
-    font-size: 13px;
+    font-size: var(--text-note);
     margin-top: 2px;
   }
   .row-arrow {
@@ -400,7 +432,7 @@
     color: var(--color-muted);
   }
   .page-state h2 {
-    font-size: 22px;
+    font-size: var(--text-title);
     font-weight: 600;
     color: var(--color-ink);
   }
@@ -423,7 +455,7 @@
     gap: 8px;
     align-items: center;
     min-height: 44px;
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
     color: var(--color-brand-600);
     margin-bottom: 16px;
   }
@@ -432,41 +464,6 @@
       text-decoration: underline;
       text-underline-offset: 4px;
     }
-  }
-  .visit-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 28px;
-  }
-  .visit-heading h1 {
-    font-size: 32px;
-    line-height: 1.2;
-    font-weight: 600;
-    letter-spacing: -0.6px;
-  }
-  .visit-heading p {
-    color: var(--color-muted);
-    margin-top: 8px;
-  }
-  .concern-panel {
-    padding: 28px;
-    background: var(--color-surface);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-  }
-  .concern-panel h2 {
-    font-size: 28px;
-    line-height: 1.2;
-    letter-spacing: -0.5px;
-    font-weight: 600;
-    margin: 12px 0;
-  }
-  .concern-panel .routing {
-    font-size: 15px;
-    color: var(--color-muted);
-    margin-top: 12px;
   }
   /* Visit page tabs: the current page is a white tab with a blue rule underneath. */
   .visit-tab {
@@ -482,8 +479,10 @@
     white-space: nowrap;
     transition: color 150ms, background 150ms;
   }
-  .visit-tab:hover {
-    color: var(--color-ink);
+  @media (hover: hover) {
+    .visit-tab:hover {
+      color: var(--color-ink);
+    }
   }
   .visit-tab.is-active {
     background: var(--color-surface);
@@ -531,28 +530,10 @@
     cursor: not-allowed;
     color: var(--color-muted);
   }
-  .section-title {
-    font-size: 19px;
-    font-weight: 600;
-    margin-bottom: 16px;
-  }
-  .disclosure {
-    border-top: 1px solid var(--color-line);
-    padding-top: 16px;
-  }
-  .disclosure > summary {
-    cursor: pointer;
-    min-height: 44px;
-    font-weight: 550;
-    font-size: 16px;
-  }
-  .disclosure[open] > summary {
-    margin-bottom: 16px;
-  }
   .patient-shell {
     min-height: 100dvh;
     padding-bottom: 40px;
-    font-size: 1.125rem;
+    font-size: var(--text-lead);
   }
   /* --dock-h is the help dock's measured height, so nothing hides behind it at large text. */
   .patient-shell.has-dock {
@@ -560,7 +541,7 @@
   }
   .patient-context {
     color: var(--color-muted);
-    font-size: 1rem;
+    font-size: var(--text-base);
     line-height: 1.5;
     margin: 16px 0;
     padding-top: 12px;
@@ -581,7 +562,7 @@
   }
   .patient-wait-note {
     display: block;
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
   }
   .patient-shell main {
     margin-bottom: 16px;
@@ -590,10 +571,10 @@
   .patient-shell h1 {
     overflow-wrap: break-word;
     hyphens: auto;
-    font-size: 1.875rem;
+    font-size: var(--text-heading);
     font-weight: 600;
     line-height: 1.2;
-    letter-spacing: -0.6px;
+    letter-spacing: -0.02em;
   }
   .patient-checkin-card {
     margin-top: 20px;
@@ -603,11 +584,11 @@
     box-shadow: var(--shadow-card);
   }
   .patient-checkin-card h2 {
-    font-size: 21px;
+    font-size: var(--text-title);
     font-weight: 600;
   }
   .patient-checkin-card p {
-    font-size: 16px;
+    font-size: var(--text-base);
     color: var(--color-muted);
     margin: 8px 0 20px;
   }
@@ -619,7 +600,7 @@
     padding-top: 16px;
     margin-top: 16px;
     border-top: 1px solid var(--color-line);
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   /* Compact version of the redesign's glass help bar. */
@@ -627,9 +608,9 @@
     position: fixed;
     inset: auto 0 0;
     z-index: 10;
-    background: rgb(251 251 253 / 0.8);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    backdrop-filter: saturate(180%) blur(20px);
+    background: rgb(251 251 253 / 0.92);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
     border-top: 1px solid rgb(210 210 215 / 0.7);
     padding: 8px 16px max(8px, env(safe-area-inset-bottom));
   }
@@ -657,7 +638,7 @@
     min-height: 44px;
     padding: 6px;
     border-radius: 12px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     font-weight: 500;
     line-height: 1.2;
     text-align: center;
@@ -680,7 +661,7 @@
   }
   .patient-dock .patient-help-secondary {
     padding-inline: 4px;
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
     color: var(--color-brand-600);
     background: var(--color-surface);
     border: 1px solid var(--color-brand-500);
@@ -695,7 +676,7 @@
   .question-progress {
     display: grid;
     gap: 4px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   /* Back and "Question n of m" share a row that keeps its height when Back is hidden. */
@@ -708,23 +689,23 @@
   }
   .question-progress .back-link {
     margin-bottom: 0;
-    font-size: 1rem;
+    font-size: var(--text-base);
   }
   .question-progress progress {
     width: 100%;
     height: 6px;
-    accent-color: var(--color-brand-700);
+    accent-color: var(--color-ink);
   }
   /* Answer lists: 8px gaps so more answers and the Next button fit above the dock. */
   .answer-list {
     display: grid;
     gap: 8px;
   }
-  /* Pain 0 to 10: rows of 6 and 5, the second centred. A 6px gap keeps each
-     button near 44px wide on a 320px phone. */
+  /* Pain 0 to 10: rows of 6 and 5, the second centred. A 4px gap keeps each
+     button at least 44px wide on a 320px phone. */
   .pain-scale,
   .pain-scale-labels {
-    --pain-gap: 0.375rem;
+    --pain-gap: 0.25rem;
   }
   .pain-scale {
     display: flex;
@@ -732,15 +713,16 @@
     justify-content: center;
     gap: var(--pain-gap);
   }
+  /* Never below a 44px target: at large text the rows hold fewer numbers instead. */
   .pain-scale > * {
-    flex: 0 0 calc((100% - 5 * var(--pain-gap)) / 6);
+    flex: 0 0 max(44px, calc((100% - 5 * var(--pain-gap)) / 6));
   }
   .pain-scale-labels {
     display: flex;
     justify-content: space-between;
     gap: 12px;
     margin-top: 8px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   /* "Worst pain" sits under 10, which is inset by half a cell: (cell + gap) / 2. */
@@ -772,11 +754,7 @@
   }
   @media (max-width: 359px) {
     .patient-header .brand {
-      font-size: 21px;
-    }
-    .patient-header .brand-mark {
-      height: 26px;
-      margin-inline-end: 6px;
+      font-size: var(--text-lead);
     }
   }
 }
@@ -785,10 +763,24 @@
 .staff-who {
   white-space: nowrap;
 }
+.staff-header > a {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+/* Hover only where there is a pointer: on touch a tapped link would stay highlighted. */
+@media (hover: hover) {
+  .staff-nav-link:hover {
+    color: var(--color-ink);
+  }
+}
 @media (max-width: 1100px) {
+  :root {
+    --staff-pad: 24px;
+  }
   .staff-header {
-    padding: 6px 24px;
-    gap: 16px;
+    gap: 0 16px;
   }
   .staff-header nav {
     gap: 2px;
@@ -804,7 +796,7 @@
     display: none;
   }
   .staff-identity {
-    font-size: 13px;
+    font-size: var(--text-note);
   }
   /* Icon only; the text stays for screen readers and in the tooltip. */
   .demo-badge.is-compact {
@@ -819,19 +811,19 @@
     clip-path: inset(50%);
     white-space: nowrap;
   }
-  .staff-page {
-    padding: 32px 24px;
-  }
   .list-toolbar {
     flex-wrap: wrap;
   }
 }
 @media (max-width: 760px) {
+  :root {
+    --staff-pad: 16px;
+  }
   .staff-header {
     position: static;
     flex-wrap: wrap;
     gap: 0 12px;
-    padding: 4px 16px;
+    padding-block: 4px;
   }
   .staff-header nav {
     order: 3;
@@ -843,22 +835,17 @@
     display: none;
   }
   .staff-nav-link {
-    font-size: 14px;
     padding: 8px;
   }
   .staff-page {
-    padding: 24px 20px;
+    padding-block: 24px;
   }
   .page-heading {
-    align-items: flex-start;
     gap: 12px;
     margin-bottom: 24px;
   }
-  .page-heading h1 {
-    font-size: 29px;
-  }
   .page-heading p {
-    font-size: 15px;
+    font-size: var(--text-small);
   }
   .page-heading > button {
     font-size: 0;
@@ -866,32 +853,32 @@
     min-width: 44px;
   }
   .page-heading > button svg {
-    width: 18px;
-    height: 18px;
+    width: 1.125rem;
+    height: 1.125rem;
   }
   .filter-group {
     width: 100%;
   }
+  /* Each filter takes the room its label needs, so "To acknowledge 2" stays on one line. */
   .filter-group button {
-    flex: 1;
-    font-size: 13px;
+    flex: 1 1 auto;
+    font-size: var(--text-note);
     padding: 6px 7px;
-    min-height: 44px;
   }
   .list-toolbar {
     padding: 12px;
     gap: 8px;
   }
   .search-field {
-    padding-inline: 8px;
     width: 100%;
   }
+  /* 16px, so iOS doesn't zoom into the field. */
   .search-field input {
-    font-size: 16px;
+    font-size: var(--text-base);
     width: 100%;
   }
   .review-row {
-    grid-template-columns: minmax(0, 1fr) 18px;
+    grid-template-columns: minmax(0, 1fr) 1.125rem;
     gap: 6px 12px;
     padding: 12px 14px;
   }
@@ -902,16 +889,18 @@
     grid-column: 2;
     grid-row: 1 / span 2;
   }
-
-  .visit-heading h1 {
-    font-size: 28px;
+}
+@media (max-width: 450px) {
+  :root {
+    --staff-pad: 12px;
   }
-  .visit-heading {
-    margin-bottom: 24px;
-  }
-  .concern-panel {
-    padding: 20px;
-  }
+  .staff-header { gap: 4px 8px; padding-block: 6px; }
+  .staff-header nav { flex-wrap: wrap; gap: 0; }
+  .staff-nav-link { padding-inline: 6px; font-size: var(--text-note); }
+  .staff-identity { gap: 2px; }
+  .staff-page { padding-block: 16px; }
+  .page-heading { margin-bottom: 12px; }
+  .filter-group { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -920,11 +909,6 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
-  }
-}
-@media (max-width: 760px) {
-  .concern-panel {
-    width: 100%;
   }
 }
 /* Headings get focus from code on each new step so screen readers announce them.
@@ -940,49 +924,30 @@ html:has(.patient-shell) {
 html:has(.patient-shell.has-dock) {
   scroll-padding-bottom: calc(var(--dock-h, 142px) + 16px);
 }
+/* The question's Next button stays in view above the dock (PT-5). A grey strip behind it
+   hides answers scrolling underneath; focus scrolls clear of both. */
+.patient-shell.has-dock .flow-next {
+  position: sticky;
+  bottom: var(--dock-h, 142px);
+  z-index: 5;
+  margin-inline: -0.25rem;
+  padding: 0.5rem 0.25rem;
+  background: var(--color-canvas);
+}
+html:has(.patient-shell.has-dock .flow-next) {
+  scroll-padding-bottom: calc(var(--dock-h, 142px) + 5rem);
+}
+/* Progress is status, not an action, so it is ink rather than blue. */
 .question-progress progress::-webkit-progress-bar {
   background: var(--color-line);
   border-radius: 4px;
 }
 .question-progress progress::-webkit-progress-value {
-  background: var(--color-brand-500);
+  background: var(--color-ink);
   border-radius: 4px;
 }
 .question-progress progress {
   appearance: none;
   border: 0;
   border-radius: 4px;
-}
-@media (min-width: 761px) and (max-width: 1100px) {
-}
-.staff-header > a {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-.filter-group button {
-  min-height: 44px;
-}
-.worklist-footer {
-  align-items: center;
-}
-.worklist-footer a {
-  min-height: 44px;
-}
-@media (max-width: 760px) {
-  .worklist-footer {
-    align-items: flex-start;
-  }
-}
-
-@media (max-width: 450px) {
-  .staff-header { gap: 4px 8px; padding: 6px 12px; }
-  .staff-header nav { flex-wrap: wrap; gap: 0; }
-  .staff-nav-link { padding-inline: 6px; font-size: 13px; }
-  .staff-identity { gap: 2px; }
-  .staff-page { padding: 16px 12px; }
-  .page-heading { margin-bottom: 12px; }
-  .filter-group { flex-wrap: wrap; }
-  .filter-group button { white-space: normal; }
 }

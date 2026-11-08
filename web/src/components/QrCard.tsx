@@ -37,17 +37,17 @@ export function QrCard({
 
   return (
     <Card className="flex flex-col items-center gap-4 p-8 text-center print:break-inside-avoid">
-      <Heading className="text-2xl font-semibold tracking-tight">{title}</Heading>
+      <Heading className="text-title font-semibold tracking-tight">{title}</Heading>
       <div className="overflow-hidden rounded-card ring-1 ring-line">
         <QRCodeSVG id={svgId} value={link} size={216} marginSize={4} level="M" fgColor="#1d1d1f" role="img" aria-label={t('qr.label', { title })} />
       </div>
-      <p className="max-w-xs text-[0.9375rem] text-muted">{hint}</p>
+      <p className="max-w-xs text-small text-muted">{hint}</p>
       <div className="flex w-full min-w-0 items-center gap-2 rounded-xl bg-canvas py-1 pr-1 pl-3 no-print">
-        <span className="min-w-0 flex-1 truncate text-start text-xs text-muted" title={link}>{link}</span>
+        <span className="min-w-0 flex-1 truncate text-start text-note text-muted" title={link}>{link}</span>
         <button
           type="button"
           onClick={() => void copy()}
-          className="inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-tap px-3 text-sm font-medium text-brand-600 hover:bg-brand-50"
+          className="inline-flex min-h-9 shrink-0 cursor-pointer items-center gap-1.5 rounded-tap px-3 text-small font-medium text-brand-600 hover:bg-brand-50"
         >
           {copied ? <Check aria-hidden className="size-4" /> : <Copy aria-hidden className="size-4" />}
           <span aria-live="polite">{copied ? t('qr.copied') : t('qr.copy')}</span>

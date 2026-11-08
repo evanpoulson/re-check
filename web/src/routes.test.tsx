@@ -364,7 +364,7 @@ describe('triage board', () => {
     renderApp('/staff/triage')
     const rows = within(await screen.findByRole('table')).getAllByRole('row').slice(1)
     const child = rows[4]!
-    expect(child).toHaveTextContent('App not offered: Child')
+    expect(child).toHaveTextContent(/App not offered\s*Child/)
     expect(child).toHaveTextContent('Not applicable')
     expect(child).not.toHaveTextContent('No response')
   })
@@ -762,8 +762,20 @@ describe('physician review flow', () => {
     const list = await screen.findByRole('list', { name: 'Review tasks' })
     expect(within(list).getAllByRole('listitem')).toHaveLength(2)
     expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('New chest pain reported')
-    await user.click(screen.getByRole('button', { name: /Needs assessment/ }))
+    await user.click(screen.getByRole('button', { name: /To assess/ }))
     expect(await screen.findByText('No acknowledged tasks')).toBeInTheDocument()
+  })
+
+  it('offers "Clear search" when a search finds nothing', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    const user = userEvent.setup()
+    renderApp('/staff/physician')
+    await screen.findByRole('list', { name: 'Review tasks' })
+    await user.type(screen.getByRole('searchbox', { name: 'Find a visit or concern' }), 'zzz')
+    expect(await screen.findByText('No matching visits')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Clear search' }))
+    expect(within(await screen.findByRole('list', { name: 'Review tasks' })).getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getByRole('searchbox', { name: 'Find a visit or concern' })).toHaveFocus()
   })
 
   it('requires acknowledgement and an explicit disposition before completing an assessment', async () => {
