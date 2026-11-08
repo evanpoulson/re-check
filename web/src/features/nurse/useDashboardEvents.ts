@@ -9,10 +9,11 @@ import { useEffect, useState } from 'react'
  */
 export function useDashboardEvents(): { live: boolean } {
   const qc = useQueryClient()
-  const [live, setLive] = useState(true)
+  const [live, setLive] = useState(() => navigator.onLine)
   useEffect(() => {
     const refetch = () => {
       void qc.invalidateQueries({ queryKey: ['board'] })
+      void qc.invalidateQueries({ queryKey: ['worklist'] })
       void qc.invalidateQueries({ queryKey: ['visit'] })
     }
     const id = setInterval(refetch, 5000)

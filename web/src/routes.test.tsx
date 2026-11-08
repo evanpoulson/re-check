@@ -427,3 +427,46 @@ describe('the loop and the backend rules', () => {
     })
   })
 })
+
+describe('physician review flow', () => {
+  it('shows ranked active concerns and filters acknowledged tasks', async () => {
+    localStorage.setItem('recheck-demo-role', 'physician')
+    const user = userEvent.setup()
+    renderApp('/staff/physician')
+    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    const list = await screen.findByRole('list', { name: 'Review tasks' })
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('New chest pain reported')
+    await user.click(screen.getByRole('button', { name: /Acknowledged/ }))
+    expect(await screen.findByText('No acknowledged tasks')).toBeInTheDocument()
+  })
+
+  it('requires acknowledgement and an explicit disposition before completing an assessment', async () => {
+    localStorage.setItem('recheck-demo-role', 'physician')
+    const user = userEvent.setup()
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    renderApp(`/staff/visits/${visit.visit_id}`)
+    await user.click(await screen.findByRole('button', { name: 'Acknowledge' }))
+    const save = await screen.findByRole('button', { name: 'Record assessment' })
+    expect(save).toBeDisabled()
+    await user.selectOptions(screen.getByLabelText('Outcome of the assessment'), 'tests_ordered')
+    await user.click(save)
+    expect(await screen.findByRole('heading', { name: 'Assessment recorded' })).toBeInTheDocument()
+    expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
+    await user.click(screen.getByText('Vitals & other staff actions'))
+    await user.click(screen.getByRole('button', { name: 'Flag higher' }))
+    await user.click(await screen.findByRole('button', { name: 'Acknowledge' }))
+    expect(await screen.findByRole('button', { name: 'Record assessment' })).toBeDisabled()
+    expect(screen.getByLabelText('Outcome of the assessment')).toHaveValue('')
+  })
+
+  it('attributes mock physician actions to the chosen demo role', async () => {
+    localStorage.setItem('recheck-demo-role', 'physician')
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const task = (await getVisitDetail(visit.visit_id)).open_task!
+    const acknowledged = await acknowledgeTask(task.task_id, { submission_id: newSubmissionId() })
+    expect(acknowledged.acknowledged_by?.role).toBe('physician')
+    const assessed = await assessTask(task.task_id, { submission_id: newSubmissionId(), disposition: 'tests_ordered' })
+    expect(assessed.assessed_by?.role).toBe('physician')
+  })
+})

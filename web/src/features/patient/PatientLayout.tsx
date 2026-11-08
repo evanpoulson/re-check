@@ -2,6 +2,7 @@ import { CloudOff, Languages } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import type { ConcernCode, PatientHome } from '@/api/types'
+import { Brand } from '@/components/Brand'
 import { HelpBar } from '@/components/HelpBar'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
 import { LANGUAGES } from '@/i18n'
@@ -50,9 +51,9 @@ export function PatientLayout({ home, dock, children }: Props) {
   const wait = home?.wait_range
   const lang = LANGUAGES.includes(i18n.language as never) ? i18n.language : 'en'
   return (
-    <div className={`mx-auto min-h-dvh max-w-md space-y-4 px-4 pt-4 text-lg ${dock ? 'pb-52' : 'pb-8'}`}>
-      <header className="flex items-center justify-between gap-3">
-        <span className="text-xl font-extrabold tracking-tight">{t('app.name')}</span>
+    <div className={`patient-shell ${dock ? 'has-dock' : ''}`}>
+      <header className="patient-header">
+        <Brand />
         <label className="flex items-center gap-2 text-base">
           <Languages aria-hidden className="size-5 text-muted" />
           <span className="sr-only">{t('patient.language')}</span>
@@ -62,7 +63,9 @@ export function PatientLayout({ home, dock, children }: Props) {
             onChange={(e) => void i18n.changeLanguage(e.target.value)}
           >
             {LANGUAGES.map((l) => (
-              <option key={l} value={l}>{t(`language.${l}`)}</option>
+              <option key={l} value={l}>
+                {t(`language.${l}`)}
+              </option>
             ))}
           </select>
         </label>
@@ -75,10 +78,10 @@ export function PatientLayout({ home, dock, children }: Props) {
         </p>
       )}
 
-      <p className="text-base font-semibold text-muted">
+      <section aria-label="While you wait" className="patient-context">
         {t('patient.placeInLine')}
-        {wait ? ` ${t('patient.wait', { low: wait.low_minutes, high: wait.high_minutes })}` : ''}
-      </p>
+        {wait && <span>{t('patient.wait', { low: wait.low_minutes, high: wait.high_minutes })}</span>}
+      </section>
       <OutboxBanner />
       <main className="space-y-5">{children}</main>
       <PrivacyPanel />

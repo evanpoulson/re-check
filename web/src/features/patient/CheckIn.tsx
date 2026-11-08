@@ -1,10 +1,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome } from '@/api/api'
 import { options, text } from '@/api/bank'
 import { ApiError, newSubmissionId } from '@/api/client'
-import type { CheckinReport, ConcernCode, FindingCode, PatientHome, PatientMessage, PatientReport, ReportReceipt } from '@/api/types'
+import type {
+  CheckinReport,
+  ConcernCode,
+  FindingCode,
+  PatientHome,
+  PatientMessage,
+  PatientReport,
+  ReportReceipt,
+} from '@/api/types'
 import { AnswerButton } from '@/components/AnswerButton'
 import { CountdownChip } from '@/components/CountdownChip'
 import { Button } from '@/components/ui/button'
@@ -35,14 +44,29 @@ export function CheckIn() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
+  const content = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const heading = content.current?.querySelector('h1')
+    if (heading) {
+      heading.tabIndex = -1
+      heading.focus()
+    }
+  }, [view.name])
 
-  if (isPending) return <PatientLayout><p role="status">{t('common.loading')}</p></PatientLayout>
+  if (isPending)
+    return (
+      <PatientLayout>
+        <p role="status">{t('common.loading')}</p>
+      </PatientLayout>
+    )
   if (error || !home) {
     const noSession = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
         <Card role="alert" className="space-y-2">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{t(noSession ? 'exchange.noSession.title' : 'exchange.invalid.title')}</h1>
+          <h1 className="text-[1.75rem] font-extrabold leading-tight">
+            {t(noSession ? 'exchange.noSession.title' : 'exchange.invalid.title')}
+          </h1>
           <p>{t('exchange.askDesk')}</p>
         </Card>
       </PatientLayout>
@@ -84,11 +108,16 @@ export function CheckIn() {
   const concern = (c: ConcernCode) => {
     if (c === 'desk_question') {
       // Non-clinical: it goes to the triage nurse, so it never shows the urgent screen.
-      return void deliver({ kind: 'concern', concern: c, ...common() }, (receipt) => ({ name: 'desk', queued: receipt === null }))
+      return void deliver({ kind: 'concern', concern: c, ...common() }, (receipt) => ({
+        name: 'desk',
+        queued: receipt === null,
+      }))
     }
     return void deliver({ kind: 'concern', concern: c, ...common() }, (receipt) =>
       // A help request always shows the "tell staff now" screen, even if it could not be sent yet.
-      receipt ? { name: 'urgent', queued: false, followUps: receipt.follow_up_items ?? [] } : { name: 'urgent', queued: true, followUps: [] },
+      receipt
+        ? { name: 'urgent', queued: false, followUps: receipt.follow_up_items ?? [] }
+        : { name: 'urgent', queued: true, followUps: [] },
     )
   }
 
@@ -96,114 +125,137 @@ export function CheckIn() {
   const refreshPrompt = () => void qc.invalidateQueries({ queryKey: ['home'] })
 
   return (
-    <PatientLayout home={home} dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}>
-      {failed && (
-        <p role="alert" className="rounded-data border-l-8 border-level-red bg-level-red-bg p-3 font-bold text-level-red">
-          {t('patient.sendFailed')}
-        </p>
-      )}
+    <PatientLayout
+      home={home}
+      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
+    >
+      <div ref={content} className="space-y-5">
+        {failed && (
+          <p
+            role="alert"
+            className="rounded-data border-l-8 border-level-red bg-level-red-bg p-3 font-bold text-level-red"
+          >
+            {t('patient.sendFailed')}
+          </p>
+        )}
 
-      {view.name === 'home' && <Home home={home} now={now} setView={setView} />}
+        {view.name === 'home' && <Home home={home} now={now} setView={setView} />}
 
-      {view.name === 'checkin' && (
-        <CheckinFlow
-          key={`full-${home.attention_prompt?.prompt_id ?? 'none'}`}
-          home={home}
-          sending={sending}
-          onSubmit={submitCheckin}
-          onCancel={() => setView({ name: 'home' })}
-          onPromptExpired={refreshPrompt}
-        />
-      )}
+        {view.name === 'checkin' && (
+          <CheckinFlow
+            key={`full-${home.attention_prompt?.prompt_id ?? 'none'}`}
+            home={home}
+            sending={sending}
+            onSubmit={submitCheckin}
+            onCancel={() => setView({ name: 'home' })}
+            onPromptExpired={refreshPrompt}
+          />
+        )}
 
-      {view.name === 'followup' && (
-        <CheckinFlow
-          key="followup"
-          home={home}
-          mode="followup"
-          itemKeys={view.keys}
-          sending={sending}
-          onSubmit={submitCheckin}
-          onCancel={() => setView({ name: 'home' })}
-          onPromptExpired={refreshPrompt}
-        />
-      )}
+        {view.name === 'followup' && (
+          <CheckinFlow
+            key="followup"
+            home={home}
+            mode="followup"
+            itemKeys={view.keys}
+            sending={sending}
+            onSubmit={submitCheckin}
+            onCancel={() => setView({ name: 'home' })}
+            onPromptExpired={refreshPrompt}
+          />
+        )}
 
-      {view.name === 'change' && (
-        <ReportChange
-          home={home}
-          sending={sending}
-          onCancel={() => setView({ name: 'home' })}
-          onSend={(findings) => void deliver({ kind: 'finding', findings: findings as [FindingCode, ...FindingCode[]], ...common() }, afterReport)}
-        />
-      )}
-
-      {view.name === 'confirmLeave' && (
-        <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{t('leaving.title')}</h1>
-          <p>{t('leaving.info')}</p>
-          <Button
-            size="lg"
-            variant="danger"
-            className="w-full"
-            disabled={sending}
-            onClick={() =>
-              void deliver({ kind: 'leaving', ...common() }, (r) =>
-                r ? { name: 'sent', queued: false, message: r.patient_message } : { name: 'sent', queued: true, message: 'leaving_info' },
+        {view.name === 'change' && (
+          <ReportChange
+            home={home}
+            sending={sending}
+            onCancel={() => setView({ name: 'home' })}
+            onSend={(findings) =>
+              void deliver(
+                { kind: 'finding', findings: findings as [FindingCode, ...FindingCode[]], ...common() },
+                afterReport,
               )
             }
-          >
-            {t('leaving.confirm')}
-          </Button>
-          <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
-            {t('leaving.cancel')}
-          </Button>
-        </Card>
-      )}
+          />
+        )}
 
-      {view.name === 'urgent' && (
-        <Card role="alert" className="space-y-3 border-2 border-level-red bg-level-red-bg">
-          <h1 className="text-3xl font-extrabold leading-tight text-level-red">{t('urgent.title')}</h1>
-          <p className="text-xl">{t('urgent.body')}</p>
-          <p className="font-bold">{view.queued ? t('urgent.queued') : t('urgent.sent')}</p>
-          <Button
-            size="lg"
-            variant="danger"
-            className="w-full"
-            onClick={() => setView(view.followUps.length > 0 ? { name: 'followup', keys: view.followUps } : { name: 'home' })}
-          >
-            {t('urgent.telling')}
-          </Button>
-        </Card>
-      )}
+        {view.name === 'confirmLeave' && (
+          <Card className="space-y-3">
+            <h1 className="text-[1.75rem] font-extrabold leading-tight">{t('leaving.title')}</h1>
+            <p>{t('leaving.info')}</p>
+            <Button
+              size="lg"
+              variant="danger"
+              className="w-full"
+              disabled={sending}
+              onClick={() =>
+                void deliver({ kind: 'leaving', ...common() }, (r) =>
+                  r
+                    ? { name: 'sent', queued: false, message: r.patient_message }
+                    : { name: 'sent', queued: true, message: 'leaving_info' },
+                )
+              }
+            >
+              {t('leaving.confirm')}
+            </Button>
+            <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('leaving.cancel')}
+            </Button>
+          </Card>
+        )}
 
-      {view.name === 'desk' && (
-        <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{view.queued ? t('sent.queuedTitle') : t('desk.title')}</h1>
-          <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
-          <p className="text-base text-muted">{t('desk.notClinical')}</p>
-          <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-            {t('sent.back')}
-          </Button>
-        </Card>
-      )}
+        {view.name === 'urgent' && (
+          <Card role="alert" className="space-y-3 border-2 border-level-red bg-level-red-bg">
+            <h1 className="text-3xl font-extrabold leading-tight text-level-red">{t('urgent.title')}</h1>
+            <p className="text-xl">{t('urgent.body')}</p>
+            <p className="font-bold">{view.queued ? t('urgent.queued') : t('urgent.sent')}</p>
+            <Button
+              size="lg"
+              variant="danger"
+              className="w-full"
+              onClick={() =>
+                setView(view.followUps.length > 0 ? { name: 'followup', keys: view.followUps } : { name: 'home' })
+              }
+            >
+              {t('urgent.telling')}
+            </Button>
+          </Card>
+        )}
 
-      {view.name === 'sent' && (
-        <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
-          <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
-          {/* Never "all clear": staff still check on their own schedule. */}
-          <p className="text-base text-muted">{t('sent.stillChecking')}</p>
-          {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
-          <ol className="space-y-1 border-l-4 border-ink pl-4 text-base">
-            <li>{t('sent.reported')}</li>
-            <li className={view.queued ? 'text-muted' : ''}>{view.queued ? t('sent.waiting') : t('sent.received')}</li>
-          </ol>
-          <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-            {t('sent.back')}
-          </Button>
-        </Card>
-      )}
+        {view.name === 'desk' && (
+          <Card className="space-y-3">
+            <h1 className="text-[1.75rem] font-extrabold leading-tight">
+              {view.queued ? t('sent.queuedTitle') : t('desk.title')}
+            </h1>
+            <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
+            <p className="text-base text-muted">{t('desk.notClinical')}</p>
+            <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('sent.back')}
+            </Button>
+          </Card>
+        )}
+
+        {view.name === 'sent' && (
+          <Card className="space-y-3">
+            <h1 className="text-[1.75rem] font-extrabold leading-tight">
+              {view.queued ? t('sent.queuedTitle') : t('sent.title')}
+            </h1>
+            <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+            {/* Never "all clear": staff still check on their own schedule. */}
+            <p className="text-base text-muted">{t('sent.stillChecking')}</p>
+            {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
+            <ol className="space-y-1 border-l-4 border-ink pl-4 text-base">
+              <li>{t('sent.reported')}</li>
+              <li className={view.queued ? 'text-muted' : ''}>
+                {view.queued ? t('sent.waiting') : t('sent.received')}
+              </li>
+            </ol>
+            <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('sent.back')}
+            </Button>
+          </Card>
+        )}
+      </div>
     </PatientLayout>
   )
 }
@@ -211,29 +263,46 @@ export function CheckIn() {
 function Home({ home, now, setView }: { home: PatientHome; now: number; setView: (v: View) => void }) {
   const { t } = useTranslation()
   return (
-    <div className="space-y-5">
-      <h1 className="text-[1.75rem] font-extrabold leading-tight">{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
-      {home.message !== 'none' && <p className="rounded-data bg-brand-50 p-3">{t(`message.${home.message}`)}</p>}
-      <Card className="space-y-1">
-        <div className="text-base font-semibold text-muted">{t('patient.nextCheckin')}</div>
-        <div className="text-xl">
+    <div>
+      <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
+      <p className="patient-home-intro">
+        {home.role === 'companion'
+          ? 'Tell us if you notice a change while the patient waits.'
+          : 'Tell us how you’re feeling while you wait.'}
+      </p>
+      {home.message !== 'none' && <p className="mt-5 rounded-data bg-brand-50 p-4">{t(`message.${home.message}`)}</p>}
+      <section className="patient-checkin-card">
+        <h2>A quick check-in</h2>
+        <p>A few questions to help staff notice changes.</p>
+        <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
+          {t('patient.startCheckin')}
+          <ArrowRight size={20} aria-hidden />
+        </Button>
+        <div className="patient-next">
+          <span>{t('patient.nextCheckin')}</span>
           <CountdownChip due={home.next_checkin_due_at} now={now} />
         </div>
-      </Card>
-      <div className="grid gap-3">
-        <Button size="lg" onClick={() => setView({ name: 'checkin' })}>
-          {t('patient.startCheckin')}
-        </Button>
-        <Button size="lg" variant="secondary" onClick={() => setView({ name: 'change' })}>
-          {t('patient.reportChange')}
-        </Button>
-      </div>
+      </section>
+      <Button size="lg" variant="ghost" className="mt-3 w-full" onClick={() => setView({ name: 'change' })}>
+        {t('patient.reportChange')}
+        <ArrowRight size={18} aria-hidden />
+      </Button>
     </div>
   )
 }
 
 /** Report one or more new warning signs outside a scheduled check-in. Options come from the bank. */
-function ReportChange({ home, onSend, onCancel, sending }: { home: PatientHome; onSend: (f: FindingCode[]) => void; onCancel: () => void; sending: boolean }) {
+function ReportChange({
+  home,
+  onSend,
+  onCancel,
+  sending,
+}: {
+  home: PatientHome
+  onSend: (f: FindingCode[]) => void
+  onCancel: () => void
+  sending: boolean
+}) {
   const { t } = useTranslation()
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
@@ -245,7 +314,11 @@ function ReportChange({ home, onSend, onCancel, sending }: { home: PatientHome; 
         {options('new_findings').map((o) => {
           const code = o.code as FindingCode
           return (
-            <AnswerButton key={code} selected={picked.includes(code)} onClick={() => setPicked(picked.includes(code) ? picked.filter((x) => x !== code) : [...picked, code])}>
+            <AnswerButton
+              key={code}
+              selected={picked.includes(code)}
+              onClick={() => setPicked(picked.includes(code) ? picked.filter((x) => x !== code) : [...picked, code])}
+            >
               {o.text}
             </AnswerButton>
           )

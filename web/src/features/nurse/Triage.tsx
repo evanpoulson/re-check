@@ -48,15 +48,15 @@ export function Triage() {
   const now = useNow()
   const [filters, setFilters] = useState<Filters>({ needsReview: false, ctas: null, complaint: null })
 
-  if (isPending) return <main className="p-6">{t('common.loading')}</main>
-  if (isError) return <main className="p-6 font-semibold text-level-red" role="alert">{t('triage.failed')}</main>
+  if (isPending) return <main id="main-content" className="p-6">{t('common.loading')}</main>
+  if (isError) return <main id="main-content" className="p-6 font-semibold text-level-red" role="alert">{t('triage.failed')}</main>
 
   const ordered = sortQueue(data)
   const rows = applyFilters(ordered, filters)
   const counts = countByLevel(ordered)
 
   return (
-    <main className="mx-auto max-w-[88rem] space-y-4 p-4">
+    <main id="main-content" className="mx-auto max-w-[88rem] space-y-4 p-4">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-3xl font-extrabold tracking-tight">{t('pages.triage')}</h1>
         <span className="inline-flex items-center gap-1.5 text-sm text-muted" role="status">

@@ -1,7 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { acknowledgeTask, assessTask, postFlagHigher, postVitals, updateVisitExclusion, updateVisitStatus } from '@/api/api'
+import {
+  acknowledgeTask,
+  assessTask,
+  postFlagHigher,
+  postVitals,
+  updateVisitExclusion,
+  updateVisitStatus,
+} from '@/api/api'
 import { ApiError, newSubmissionId } from '@/api/client'
 import type { AppExclusion, Disposition, VisitDetail, VitalsRecord } from '@/api/types'
 import { Button } from '@/components/ui/button'
@@ -30,9 +37,14 @@ function useAction<A>(visitId: string, fn: (args: A, submissionId: string) => Pr
     onSuccess: async () => {
       id.current = newSubmissionId()
       setError(null)
-      await Promise.all([qc.invalidateQueries({ queryKey: ['visit', visitId] }), qc.invalidateQueries({ queryKey: ['board'] })])
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['visit', visitId] }),
+        qc.invalidateQueries({ queryKey: ['board'] }),
+        qc.invalidateQueries({ queryKey: ['worklist'] }),
+      ])
     },
-    onError: (e) => setError(e instanceof ApiError ? ((e.body as { detail?: string } | undefined)?.detail ?? e.message) : String(e)),
+    onError: (e) =>
+      setError(e instanceof ApiError ? ((e.body as { detail?: string } | undefined)?.detail ?? e.message) : String(e)),
   })
   return { run: m.mutate, pending: m.isPending, error }
 }
@@ -41,13 +53,15 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
   const { t } = useTranslation()
   const { visit, open_task: task } = detail
   const vitals = detail.timeline.filter((e): e is VitalsRecord => 'vitals_id' in e)
-  const [disposition, setDisposition] = useState<Disposition>('assessed_stable')
+  const [disposition, setDisposition] = useState<Disposition | ''>('')
   const [note, setNote] = useState('')
   const [form, setForm] = useState<VitalsForm>(emptyVitals)
   const [vitalsError, setVitalsError] = useState<VitalsError | null>(null)
 
   const ack = useAction(visit.visit_id, (_: void, submission_id) => acknowledgeTask(task!.task_id, { submission_id }))
-  const assess = useAction(visit.visit_id, (d: Disposition, submission_id) => assessTask(task!.task_id, { submission_id, disposition: d }))
+  const assess = useAction(visit.visit_id, (d: Disposition, submission_id) =>
+    assessTask(task!.task_id, { submission_id, disposition: d }),
+  )
   const flag = useAction(visit.visit_id, (n: string, submission_id) =>
     postFlagHigher({ submission_id, visit_id: visit.visit_id, ...(n.trim() ? { note: n.trim() } : {}) }),
   )
@@ -79,112 +93,204 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
 
   return (
     <section aria-labelledby="actions" className="space-y-4">
-      <h2 id="actions" className="text-xl font-bold">{t('actions.title')}</h2>
+      <h2 id="actions" className="sr-only">
+        {t('actions.title')}
+      </h2>
 
-      <Card className="space-y-3">
-        <h3 className="font-semibold">{t('actions.task')}</h3>
+      <div className="action-panel space-y-4">
+        <h3>{canAck ? 'Review this concern' : canAssess ? 'Record your assessment' : 'No active review task'}</h3>
         {!task && <p className="text-muted">{t('actions.noTask')}</p>}
-        <div className="flex flex-wrap items-center gap-3">
-          <Button disabled={!canAck || ack.pending} onClick={() => ack.run()}>{t('actions.acknowledge')}</Button>
-          <span className="text-sm text-muted">{t('actions.ackHelp')}</span>
-        </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <div>
-            <label htmlFor="disposition" className="mb-1 block font-semibold">{t('actions.disposition')}</label>
-            <select id="disposition" className={FIELD} value={disposition} onChange={(e) => setDisposition(e.target.value as Disposition)}>
-              {DISPOSITIONS.map((d) => (
-                <option key={d} value={d}>{t(`disposition.${d}`)}</option>
-              ))}
-            </select>
-          </div>
-          <Button disabled={!canAssess || assess.pending} onClick={() => assess.run(disposition)}>{t('actions.assess')}</Button>
-        </div>
-        {task && !canAssess && task.status === 'open' && <p className="text-sm text-muted">{t('actions.ackFirst')}</p>}
-        {(ack.error || assess.error) && <p role="alert" className="font-semibold text-level-red">{ack.error ?? assess.error}</p>}
-      </Card>
-
-      <Card>
-        <form onSubmit={submitVitals} noValidate className="space-y-3">
-          <h3 className="font-semibold">{t('actions.vitals')}</h3>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {(['sbp', 'dbp', 'hr', 'rr', 'spo2', 'temp_c'] as const).map((k) => (
-              <div key={k}>
-                <label htmlFor={`v-${k}`} className="mb-1 block text-sm font-semibold">{t(`vitals.${k}`)}</label>
-                <input id={`v-${k}`} inputMode="decimal" className={FIELD} value={form[k]} onChange={(e) => set(k, e.target.value)} />
-              </div>
-            ))}
-          </div>
-          {vitals.length > 0 && (
+        {canAck && (
+          <>
+            <p className="text-muted">Acknowledge to let the team know you have seen this concern.</p>
+            <Button disabled={ack.pending} onClick={() => ack.run()}>
+              {ack.pending ? 'Acknowledging…' : t('actions.acknowledge')}
+            </Button>
+            <p className="text-sm text-muted">Acknowledgement does not record an assessment.</p>
+          </>
+        )}
+        {canAssess && (
+          <>
+            <p className="text-muted">Complete this task after the patient has been assessed.</p>
             <div>
-              <label htmlFor="v-supersedes" className="mb-1 block text-sm font-semibold">{t('vitals.supersedes')}</label>
-              <select id="v-supersedes" className={FIELD} value={form.supersedes} onChange={(e) => set('supersedes', e.target.value)}>
-                <option value="">{t('vitals.newEntry')}</option>
-                {vitals.map((v) => (
-                  <option key={v.vitals_id} value={v.vitals_id}>
-                    {new Date(v.measured_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    {v.sbp !== null ? ` BP ${v.sbp}/${v.dbp}` : ''}
-                    {v.hr !== null ? ` HR ${v.hr}` : ''}
+              <label htmlFor="disposition" className="mb-2 block font-semibold">
+                {t('actions.disposition')}
+              </label>
+              <select
+                id="disposition"
+                className={FIELD}
+                value={disposition}
+                onChange={(e) => setDisposition(e.target.value as Disposition | '')}
+              >
+                <option value="">Choose a disposition</option>
+                {DISPOSITIONS.map((d) => (
+                  <option key={d} value={d}>
+                    {t(`disposition.${d}`)}
                   </option>
                 ))}
               </select>
             </div>
-          )}
-          {vitalsError && <p role="alert" className="font-semibold text-level-red">{t(`vitals.errors.${vitalsError}`)}</p>}
-          {vitalsAction.error && <p role="alert" className="font-semibold text-level-red">{vitalsAction.error}</p>}
-          <Button type="submit" disabled={vitalsAction.pending}>{t('actions.recordVitals')}</Button>
-        </form>
-      </Card>
-
-      <Card className="space-y-3">
-        <h3 className="font-semibold">{t('actions.flagHigher')}</h3>
-        <p className="text-sm text-muted">{t('actions.flagHelp')}</p>
-        <label htmlFor="flag-note" className="block text-sm font-semibold">{t('actions.flagNote')}</label>
-        <input id="flag-note" maxLength={280} className={FIELD} value={note} onChange={(e) => setNote(e.target.value)} />
-        <Button
-          variant="secondary"
-          disabled={flag.pending}
-          onClick={() => {
-            flag.run(note)
-            setNote('')
-          }}
-        >
-          {t('actions.flagHigher')}
-        </Button>
-        {flag.error && <p role="alert" className="font-semibold text-level-red">{flag.error}</p>}
-      </Card>
-
-      {!visit.app_exclusion && (
-        <Card className="space-y-3">
-          <h3 className="font-semibold">{t('actions.stopApp')}</h3>
-          <p className="text-sm text-muted">{t('actions.stopAppHelp')}</p>
-          <label htmlFor="exclusion-reason" className="block text-sm font-semibold">{t('actions.stopAppReason')}</label>
-          <select id="exclusion-reason" className={FIELD} value={exclusion} onChange={(e) => setExclusion(e.target.value as AppExclusion)}>
-            {EXCLUSIONS.map((x) => (
-              <option key={x} value={x}>{t(`exclusion.${x}`)}</option>
-            ))}
-          </select>
-          <label className="flex min-h-11 items-start gap-2 text-sm">
-            <input type="checkbox" className="mt-1 size-4" checked={confirmExclusion} onChange={(e) => setConfirmExclusion(e.target.checked)} />
-            {t('actions.stopAppConfirm')}
-          </label>
-          <Button variant="danger" disabled={!confirmExclusion || exclude.pending} onClick={() => exclude.run(exclusion)}>
-            {t('actions.stopAppButton')}
-          </Button>
-          {exclude.error && <p role="alert" className="font-semibold text-level-red">{exclude.error}</p>}
-        </Card>
-      )}
-
-      <Card className="space-y-3">
-        <h3 className="font-semibold">{t('actions.visitStatus')}</h3>
-        <div className="flex flex-wrap gap-3">
-          {(['roomed', 'left', 'discharged'] as const).map((s) => (
-            <Button key={s} variant="secondary" disabled={status.pending} onClick={() => status.run(s)}>
-              {t(`visitStatus.${s}`)}
+            <Button disabled={!disposition || assess.pending} onClick={() => disposition && assess.run(disposition)}>
+              {assess.pending ? 'Recording…' : t('actions.assess')}
             </Button>
-          ))}
+          </>
+        )}
+        {(ack.error || assess.error) && (
+          <p role="alert" className="font-semibold text-level-red">
+            {ack.error ?? assess.error}
+          </p>
+        )}
+      </div>
+      <details className="disclosure secondary-actions">
+        <summary>Vitals &amp; other staff actions</summary>
+        <div className="space-y-4">
+          <Card>
+            <form onSubmit={submitVitals} noValidate className="space-y-3">
+              <h3 className="font-semibold">{t('actions.vitals')}</h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {(['sbp', 'dbp', 'hr', 'rr', 'spo2', 'temp_c'] as const).map((k) => (
+                  <div key={k}>
+                    <label htmlFor={`v-${k}`} className="mb-1 block text-sm font-semibold">
+                      {t(`vitals.${k}`)}
+                    </label>
+                    <input
+                      id={`v-${k}`}
+                      inputMode="decimal"
+                      className={FIELD}
+                      value={form[k]}
+                      onChange={(e) => set(k, e.target.value)}
+                    />
+                  </div>
+                ))}
+              </div>
+              {vitals.length > 0 && (
+                <div>
+                  <label htmlFor="v-supersedes" className="mb-1 block text-sm font-semibold">
+                    {t('vitals.supersedes')}
+                  </label>
+                  <select
+                    id="v-supersedes"
+                    className={FIELD}
+                    value={form.supersedes}
+                    onChange={(e) => set('supersedes', e.target.value)}
+                  >
+                    <option value="">{t('vitals.newEntry')}</option>
+                    {vitals.map((v) => (
+                      <option key={v.vitals_id} value={v.vitals_id}>
+                        {new Date(v.measured_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {v.sbp !== null ? ` BP ${v.sbp}/${v.dbp}` : ''}
+                        {v.hr !== null ? ` HR ${v.hr}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {vitalsError && (
+                <p role="alert" className="font-semibold text-level-red">
+                  {t(`vitals.errors.${vitalsError}`)}
+                </p>
+              )}
+              {vitalsAction.error && (
+                <p role="alert" className="font-semibold text-level-red">
+                  {vitalsAction.error}
+                </p>
+              )}
+              <Button type="submit" disabled={vitalsAction.pending}>
+                {t('actions.recordVitals')}
+              </Button>
+            </form>
+          </Card>
+
+          <Card className="space-y-3">
+            <h3 className="font-semibold">{t('actions.flagHigher')}</h3>
+            <p className="text-sm text-muted">{t('actions.flagHelp')}</p>
+            <label htmlFor="flag-note" className="block text-sm font-semibold">
+              {t('actions.flagNote')}
+            </label>
+            <input
+              id="flag-note"
+              maxLength={280}
+              className={FIELD}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+            />
+            <Button
+              variant="secondary"
+              disabled={flag.pending}
+              onClick={() => {
+                flag.run(note)
+                setNote('')
+              }}
+            >
+              {t('actions.flagHigher')}
+            </Button>
+            {flag.error && (
+              <p role="alert" className="font-semibold text-level-red">
+                {flag.error}
+              </p>
+            )}
+          </Card>
+
+          {!visit.app_exclusion && (
+            <Card className="space-y-3">
+              <h3 className="font-semibold">{t('actions.stopApp')}</h3>
+              <p className="text-sm text-muted">{t('actions.stopAppHelp')}</p>
+              <label htmlFor="exclusion-reason" className="block text-sm font-semibold">
+                {t('actions.stopAppReason')}
+              </label>
+              <select
+                id="exclusion-reason"
+                className={FIELD}
+                value={exclusion}
+                onChange={(e) => setExclusion(e.target.value as AppExclusion)}
+              >
+                {EXCLUSIONS.map((x) => (
+                  <option key={x} value={x}>
+                    {t(`exclusion.${x}`)}
+                  </option>
+                ))}
+              </select>
+              <label className="flex min-h-11 items-start gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  className="mt-1 size-4"
+                  checked={confirmExclusion}
+                  onChange={(e) => setConfirmExclusion(e.target.checked)}
+                />
+                {t('actions.stopAppConfirm')}
+              </label>
+              <Button
+                variant="danger"
+                disabled={!confirmExclusion || exclude.pending}
+                onClick={() => exclude.run(exclusion)}
+              >
+                {t('actions.stopAppButton')}
+              </Button>
+              {exclude.error && (
+                <p role="alert" className="font-semibold text-level-red">
+                  {exclude.error}
+                </p>
+              )}
+            </Card>
+          )}
+
+          <Card className="space-y-3">
+            <h3 className="font-semibold">{t('actions.visitStatus')}</h3>
+            <div className="flex flex-wrap gap-3">
+              {(['roomed', 'left', 'discharged'] as const).map((s) => (
+                <Button key={s} variant="secondary" disabled={status.pending} onClick={() => status.run(s)}>
+                  {t(`visitStatus.${s}`)}
+                </Button>
+              ))}
+            </div>
+            {status.error && (
+              <p role="alert" className="font-semibold text-level-red">
+                {status.error}
+              </p>
+            )}
+          </Card>
         </div>
-        {status.error && <p role="alert" className="font-semibold text-level-red">{status.error}</p>}
-      </Card>
+      </details>
     </section>
   )
 }

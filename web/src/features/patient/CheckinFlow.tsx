@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { allowUnsure, noneOption, options, text } from '@/api/bank'
 import { newSubmissionId } from '@/api/client'
@@ -33,6 +33,7 @@ interface Props {
 export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending }: Props) {
   const { t } = useTranslation()
   const [index, setIndex] = useState(0)
+  useEffect(() => { document.getElementById('q')?.focus() }, [index])
   // The QR already says who is answering, so preselect it. The answer becomes the report's reporter.
   const [reporter, setReporter] = useState<Role>(home.role)
   const [draft, setDraft] = useState<CheckinDraft>({ items: {} })
@@ -95,7 +96,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 
   return (
     <section aria-labelledby="q" className="space-y-5">
-      <p className="text-base text-muted">{t('flow.progress', { n: index + 1, total: steps.length })}</p>
+      <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label="Check-in progress" value={index + 1} max={steps.length} /></div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
         <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
@@ -132,7 +133,7 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 id="q" className="text-[1.75rem] font-extrabold leading-tight tracking-tight">
+    <h1 tabIndex={-1} id="q" className="text-[1.75rem] font-extrabold leading-tight tracking-tight">
       {children}
     </h1>
   )

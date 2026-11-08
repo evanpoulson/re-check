@@ -68,7 +68,7 @@ export function Enrol() {
     const { visit, pager } = done
     const excluded = visit.app_exclusion
     return (
-      <main className="mx-auto max-w-4xl space-y-5 p-6">
+      <main id="main-content" className="mx-auto max-w-4xl space-y-5 p-6">
         <h1 className="text-3xl font-extrabold tracking-tight">{t('enrol.doneTitle')}</h1>
         {excluded ? (
           <Card className="space-y-2 border-l-[10px] border-l-brand-600">
@@ -115,7 +115,7 @@ export function Enrol() {
   }
 
   return (
-    <main className="mx-auto max-w-2xl p-6">
+    <main id="main-content" className="mx-auto max-w-2xl p-6">
       <h1 className="mb-4 text-3xl font-extrabold tracking-tight">{t('pages.enrol')}</h1>
       <Card>
         <form onSubmit={submit} noValidate className="space-y-5">

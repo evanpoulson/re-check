@@ -2,7 +2,8 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { StaffRole } from '@/api/types'
-import { DemoBadge } from '@/components/DemoBadge'
+import { Brand } from '@/components/Brand'
+import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -53,43 +54,62 @@ export function useStaff(): StaffContext {
   return v
 }
 
-const link = ({ isActive }: { isActive: boolean }) =>
-  cn('rounded-data px-3 py-2 font-bold', isActive ? 'bg-white text-ink' : 'text-white/85 hover:bg-white/10')
+const link = ({ isActive }: { isActive: boolean }) => cn('staff-nav-link', isActive && 'is-active')
 
-/** Chrome for every staff screen. Sends you to sign-in when no demo role is chosen. */
+/** Demo navigation only; the backend must authorize every staff action. */
 export function StaffLayout() {
   const { t } = useTranslation()
   const { role, signOut } = useStaff()
   const navigate = useNavigate()
   if (!role) return <Navigate to="/staff/sign-in" replace />
   return (
-    <div className="min-h-dvh">
-      <header className="bg-ink text-white no-print">
-        <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-3 px-4 py-3">
-          <span className="text-xl font-extrabold tracking-tight">{t('app.name')}</span>
-          <DemoBadge />
-          <nav aria-label={t('nav.label')} className="flex gap-1">
-            <NavLink to="/staff/triage" className={link}>
-              {t('nav.triage')}
-            </NavLink>
-            <NavLink to="/staff/visits/new" className={link}>
-              {t('nav.enrol')}
-            </NavLink>
-          </nav>
-          <span className="ml-auto text-white/85">{t(`role.${role}`)}</span>
+    <div className="staff-shell">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <header className="staff-header no-print">
+        <LinkBrand />
+        <nav aria-label={t('nav.label')}>
+          <NavLink to="/staff/physician" className={link}>
+            <ClipboardList size={18} aria-hidden />
+            Review worklist
+          </NavLink>
+          <NavLink to="/staff/triage" className={link}>
+            <LayoutList size={18} aria-hidden />
+            {t('nav.triage')}
+          </NavLink>
+          <NavLink to="/staff/visits/new" className={link}>
+            <Plus size={18} aria-hidden />
+            {t('nav.enrol')}
+          </NavLink>
+        </nav>
+        <div className="staff-identity">
+          <span>{t(`role.${role}`)}</span>
           <Button
             variant="ghost"
-            className="text-white hover:bg-white/10"
+            aria-label="Change demo role"
             onClick={() => {
               signOut()
               navigate('/staff/sign-in')
             }}
           >
-            {t('nav.signOut')}
+            <LogOut size={18} aria-hidden />
           </Button>
         </div>
       </header>
+      <section aria-label="Demo context" className="demo-strip">
+        <span>Synthetic demo</span>
+        <span>Emergency department · Waiting-room follow-up</span>
+        <span>Demo role · not staff authentication</span>
+      </section>
       <Outlet />
     </div>
+  )
+}
+function LinkBrand() {
+  return (
+    <NavLink to="/staff/physician" aria-label="Recheck review worklist">
+      <Brand />
+    </NavLink>
   )
 }

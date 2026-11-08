@@ -7,8 +7,8 @@ import { Card } from '@/components/ui/card'
 import { useStaff } from './staff'
 
 const ROLES: StaffRole[] = ['triage_nurse', 'physician', 'charge_nurse', 'quality']
-// Only the triage nurse screens are part of this build.
-const AVAILABLE: StaffRole[] = ['triage_nurse']
+// Demo navigation does not provide staff authorization.
+const AVAILABLE: StaffRole[] = ['triage_nurse', 'physician']
 
 export function SignIn() {
   const { t } = useTranslation()
@@ -34,7 +34,7 @@ export function SignIn() {
                 disabled={!ok}
                 onClick={() => {
                   signIn(role)
-                  navigate('/staff/triage')
+                  navigate(role === 'physician' ? '/staff/physician' : '/staff/triage')
                 }}
               >
                 {t('signIn.continue')}

@@ -1,6 +1,6 @@
 # Recheck web
 
-React, Vite, TypeScript and Tailwind front end for the triage nurse and patient screens. Design: [`docs/design/frontend.md`](../docs/design/frontend.md).
+React, Vite, TypeScript and Tailwind front end for patient check-in and staff review. Current visual guidelines and verification notes: [`docs/design/review-flow.md`](../docs/design/review-flow.md). The older frontend document is provisional.
 
 ## Run it
 
@@ -56,10 +56,18 @@ The contract defines no HTTP paths. `src/api/endpoints.ts` holds proposed ones; 
 
 ## Routes
 
-`/staff/sign-in`, `/staff/triage`, `/staff/visits/new`, `/staff/visits/:id`, `/v/:token`, `/check-in`. They match `docs/recheck-project-plan.md`.
+`/staff/sign-in`, `/staff/physician`, `/staff/triage`, `/staff/visits/new`, `/staff/visits/:id`, `/v/:token`, `/check-in`. They match `docs/recheck-project-plan.md`.
 
 ## Notes
 
 - The question bank is English only. Punjabi (`pa`) and Tagalog (`tl`) show a notice and fall back to English until translations are supplied.
 - The mocks are demo logic, not the rules engine. Task levels they assume where the contract is silent (a desk question, a wrong circle count) are listed in the design doc.
 - The font (Atkinson Hyperlegible Next) is self-hosted through `@fontsource-variable`, so the app works offline and makes no third-party request.
+
+## Physician demo
+
+Choose **Physician** in the demo role picker, or open `/staff/physician` after choosing a role. The worklist ranks active review tasks using the supplied server rank, independently of the triage board. Open a concern, acknowledge it, then choose an assessment outcome. A completed task disappears from the worklist. Filters, search, refresh and retry are functional. Secondary vitals and visit-management actions are available in the visit's disclosure.
+
+The selected role is demo navigation only. Browser mocks attribute physician acknowledgements and assessments to that role; production must derive identity and permissions from the authenticated server session.
+
+**Integration limitation inherited from main:** backend source contracts and question-bank files have advanced to the single-QR session model, while the checked-in generated frontend snapshot and mocks still use role-specific QR tokens. `check:contract` therefore currently fails even without this frontend change. Coordinate regeneration and the associated exchange/enrolment/mock migration before connecting to the new backend. See the design notes for verification details.

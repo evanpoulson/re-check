@@ -1,4 +1,5 @@
 import { createBrowserRouter, createMemoryRouter, Navigate, Outlet, type RouteObject } from 'react-router'
+import { Physician } from '@/features/nurse/Physician'
 import { Enrol } from '@/features/nurse/Enrol'
 import { SignIn } from '@/features/nurse/SignIn'
 import { StaffLayout, StaffProvider } from '@/features/nurse/staff'
@@ -22,6 +23,7 @@ export const routes: RouteObject[] = [
       {
         element: <StaffLayout />,
         children: [
+          { path: '/staff/physician', element: <Physician /> },
           { path: '/staff/triage', element: <Triage /> },
           { path: '/staff/visits/new', element: <Enrol /> },
           { path: '/staff/visits/:id', element: <VisitDetailPage /> },

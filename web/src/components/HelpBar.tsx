@@ -1,6 +1,6 @@
+import { CircleAlert } from 'lucide-react'
 import { alwaysVisible, text } from '@/api/bank'
 import type { ConcernCode, Role } from '@/api/types'
-import { Button } from '@/components/ui/button'
 
 interface Props {
   role: Role
@@ -11,8 +11,7 @@ interface Props {
 
 /**
  * The four always-visible buttons from the question bank, docked to the bottom
- * of every patient screen. "I need help now" is full width; the other three share
- * a row. Wording (and companion wording) comes from the bank. "Question about my
+ * of every patient screen. Urgent help leads; other concerns stay quieter. Wording (and companion wording) comes from the bank. "Question about my
  * wait or care" is non-clinical and goes to the triage nurse, not a physician.
  */
 export function HelpBar({ role, onConcern, onLeaving, disabled }: Props) {
@@ -22,27 +21,22 @@ export function HelpBar({ role, onConcern, onLeaving, disabled }: Props) {
   const press = (b: (typeof buttons)[number]) => (b.concern ? onConcern(b.concern as ConcernCode) : onLeaving())
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-10 border-t-2 border-ink bg-surface px-3 pb-3 pt-2">
-      <div className="mx-auto max-w-md space-y-2">
+    <section aria-label="Contact staff" className="patient-dock">
+      <div className="patient-dock-inner">
         {help && (
-          <Button variant="danger" size="lg" className="w-full" disabled={disabled} onClick={() => press(help)}>
+          <button type="button" className="patient-help" disabled={disabled} onClick={() => press(help)}>
+            <CircleAlert size={20} aria-hidden />
             {text(help.linkId, role)}
-          </Button>
+          </button>
         )}
-        <div className="grid grid-cols-3 gap-2">
+        <div className="patient-other-help">
           {rest.map((b) => (
-            <Button
-              key={b.linkId}
-              variant="secondary"
-              disabled={disabled}
-              onClick={() => press(b)}
-              className="min-h-14 px-2 text-sm leading-tight"
-            >
+            <button type="button" key={b.linkId} disabled={disabled} onClick={() => press(b)}>
               {text(b.linkId, role)}
-            </Button>
+            </button>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   )
 }

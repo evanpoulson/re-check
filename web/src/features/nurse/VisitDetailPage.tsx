@@ -2,6 +2,10 @@ import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, Check, Circle } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
+import { PageState } from '@/components/PageState'
+import { Sparkline } from '@/components/Sparkline'
+import { taskLabel } from '@/lib/taskLabels'
+import { useStaff } from './staff'
 import { getVisitDetail } from '@/api/api'
 import type { CheckinReport, Task, VisitDetail } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
@@ -16,75 +20,150 @@ import { VisitActions } from './VisitActions'
 export function VisitDetailPage() {
   const { t } = useTranslation()
   const { id = '' } = useParams()
+  const { role } = useStaff()
   useDashboardEvents()
   const now = useNow()
-  const { data, isPending, isError } = useQuery({ queryKey: ['visit', id], queryFn: () => getVisitDetail(id) })
-
-  if (isPending) return <main className="p-6">{t('common.loading')}</main>
-  if (isError) return <main role="alert" className="p-6 font-semibold text-level-red">{t('visit.failed')}</main>
-
-  const { visit, open_task: task } = data
-  return (
-    <main className="mx-auto grid max-w-[88rem] gap-6 p-4 lg:grid-cols-[1fr_26rem]">
-      <div className="space-y-5">
-        <Link to="/staff/triage" className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700">
-          <ArrowLeft aria-hidden className="size-4" />
-          {t('visit.back')}
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ['visit', id],
+    queryFn: () => getVisitDetail(id),
+    retry: false,
+  })
+  const back = role === 'triage_nurse' ? '/staff/triage' : '/staff/physician'
+  if (isPending || isError)
+    return (
+      <main id="main-content" className="staff-page">
+        <Link className="back-link" to={back}>
+          <ArrowLeft size={16} aria-hidden />
+          Back to worklist
         </Link>
-
-        <Card className="space-y-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight">
-              {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : t('visit.title', { ref: visit.visit_id.slice(0, 4) })}
-            </h1>
-            {task && <LevelChip level={task.level} />}
-          </div>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
-            <Field label={t('visit.ctas')} value={String(visit.ctas)} />
-            <Field label={t('visit.complaint')} value={t(`complaint.${visit.complaint_group}`)} />
-            <Field label={t('visit.cedis')} value={visit.cedis_code ?? t('common.none')} />
-            <Field label={t('visit.language')} value={t(`language.${visit.language}`)} />
-            <Field label={t('visit.channel')} value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')} />
-            <Field label={t('visit.app')} value={visit.app_exclusion ? t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) }) : t('enrol.appOffered')} />
-            <Field label={t('visit.status')} value={t(`visitStatus.${visit.status}`)} />
-            <Field label={t('visit.triaged')} value={clock(visit.triaged_at)} />
-          </dl>
-        </Card>
-
-        <Card className="space-y-2">
-          <h2 className="text-xl font-extrabold">{t('visit.timers')}</h2>
-          <p className="text-sm text-muted">{t('visit.timersHelp')}</p>
-          <dl className="grid gap-2 sm:grid-cols-3">
-            <div>
-              <dt className="text-sm font-semibold text-muted">{t('visit.nextPrompt')}</dt>
-              <dd>{visit.app_exclusion ? t('time.notApplicable') : <CountdownChip due={visit.next_prompt_due_at} now={now} />}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-semibold text-muted">{t('visit.nextReassess')}</dt>
-              <dd><CountdownChip due={visit.staff_reassess_due_at} now={now} /></dd>
-            </div>
-            <div>
-              <dt className="text-sm font-semibold text-muted">{t('visit.lastStaffCheck')}</dt>
-              <dd>{visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')}</dd>
-            </div>
-          </dl>
-        </Card>
-
-        {task ? <TaskCard task={task} /> : (
-          <Card><p className="text-muted">{t('visit.noTask')}</p></Card>
+        <PageState
+          loading={isPending}
+          title={isPending ? 'Loading visit' : 'Visit could not be loaded'}
+          retry={isError ? () => void refetch() : undefined}
+        />
+      </main>
+    )
+  const { visit, open_task: task } = data
+  const trend = data.timeline
+    .filter((e) => 'report_id' in e && e.report.kind === 'checkin')
+    .flatMap((e) => {
+      if (!('report_id' in e) || e.report.kind !== 'checkin') return []
+      const r = e.report
+      return [
+        {
+          at: e.received_at,
+          pain: r.pain.kind === 'answered' ? r.pain.value : null,
+          feeling_now: r.feeling_now.kind === 'answered' ? r.feeling_now.value : null,
+          feeling_change: r.feeling_change.kind === 'answered' ? r.feeling_change.value : null,
+        },
+      ]
+    })
+  return (
+    <main id="main-content" className="staff-page">
+      <Link to={back} className="back-link">
+        <ArrowLeft aria-hidden size={16} />
+        {role === 'triage_nurse' ? 'Back to triage board' : 'Back to review worklist'}
+      </Link>
+      <header className="visit-heading">
+        <div>
+          <h1>
+            {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : `Visit P-${visit.visit_id.slice(0, 4)}`}
+          </h1>
+          <p>
+            {t(`complaint.${visit.complaint_group}`)} · Initial CTAS {visit.ctas} · Triaged {clock(visit.triaged_at)}
+          </p>
+        </div>
+        <span className="text-sm text-muted">{t(`visitStatus.${visit.status}`)}</span>
+      </header>
+      <div className="visit-layout">
+        {task ? (
+          <TaskCard task={task} />
+        ) : (
+          <section className="concern-panel">
+            <h2>
+              {data.timeline.some((e) => 'event' in e && e.event === 'assessed')
+                ? 'Assessment recorded'
+                : 'No active review task'}
+            </h2>
+            <p className="text-muted">Staff reassessments continue independently of patient check-ins.</p>
+          </section>
         )}
-
-        <LatestAnswers detail={data} />
-
-        <Card className="space-y-3">
-          <h2 className="text-xl font-extrabold">{t('visit.timeline')}</h2>
-          <Timeline entries={data.timeline} />
-        </Card>
+        <aside className="visit-actions">
+          <VisitActions key={`${id}:${task?.task_id ?? 'none'}`} detail={data} />
+        </aside>
+        <div className="visit-main">
+          <section>
+            <h2 className="section-title">Two separate check-in schedules</h2>
+            <dl className="timers">
+              <div>
+                <dt>Patient check-in</dt>
+                <dd>
+                  {visit.app_exclusion ? (
+                    t('time.notApplicable')
+                  ) : (
+                    <CountdownChip due={visit.next_prompt_due_at} now={now} />
+                  )}
+                </dd>
+              </div>
+              <div>
+                <dt>Staff reassessment</dt>
+                <dd>
+                  <CountdownChip due={visit.staff_reassess_due_at} now={now} />
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-sm text-muted">Patient answers do not reset the staff reassessment timer.</p>
+          </section>
+          {trend.length > 0 && (
+            <section className="border-t border-line pt-5">
+              <h2 className="section-title">Patient-reported pain</h2>
+              <div className="flex flex-wrap items-center gap-6">
+                <Sparkline trend={trend} width={180} height={48} />
+                <ol className="flex flex-wrap gap-6">
+                  {trend.map((point, i) => (
+                    <li key={i}>
+                      <strong className="text-xl font-semibold">
+                        {point.pain === null ? 'No answer' : `${point.pain}/10`}
+                      </strong>
+                      <p className="text-sm text-muted">{clock(point.at)}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </section>
+          )}
+          <LatestAnswers detail={data} />
+          <section className="border-t border-line pt-5">
+            <h2 className="section-title">{t('visit.timeline')}</h2>
+            <Timeline entries={data.timeline} />
+          </section>
+          <details className="disclosure">
+            <summary>Visit details</summary>
+            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+              <Field label={t('visit.ctas')} value={String(visit.ctas)} />
+              <Field label={t('visit.complaint')} value={t(`complaint.${visit.complaint_group}`)} />
+              <Field label={t('visit.cedis')} value={visit.cedis_code ?? t('common.none')} />
+              <Field label={t('visit.language')} value={t(`language.${visit.language}`)} />
+              <Field
+                label={t('visit.channel')}
+                value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')}
+              />
+              <Field
+                label={t('visit.app')}
+                value={
+                  visit.app_exclusion
+                    ? t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) })
+                    : t('enrol.appOffered')
+                }
+              />
+              <Field
+                label={t('visit.lastStaffCheck')}
+                value={visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')}
+              />
+            </dl>
+          </details>
+        </div>
       </div>
-
-      <aside>
-        <VisitActions detail={data} />
-      </aside>
     </main>
   )
 }
@@ -101,42 +180,55 @@ function Field({ label, value }: { label: string; value: string }) {
 /** Why it was flagged, and where the task is: created, delivered, acknowledged, assessed. */
 function TaskCard({ task }: { task: Task }) {
   const { t } = useTranslation()
+  const reason = task.reasons.find((r) => r.level === task.level) ?? task.reasons[0]
   const steps = [
-    { key: 'created', at: task.created_at, by: null as string | null },
+    { key: 'created', at: task.created_at, by: null },
     { key: 'delivered', at: task.delivered_at, by: null },
-    { key: 'acknowledged', at: task.acknowledged_at, by: task.acknowledged_by ? t(`role.${task.acknowledged_by.role}`) : null },
-    { key: 'assessed', at: task.assessed_at, by: task.assessed_by ? t(`role.${task.assessed_by.role}`) : null },
+    { key: 'acknowledged', at: task.acknowledged_at, by: task.acknowledged_by?.role },
+    { key: 'assessed', at: task.assessed_at, by: task.assessed_by?.role },
   ]
   return (
-    <Card className="space-y-4">
-      <h2 className="text-xl font-extrabold">{t('visit.whyFlagged')}</h2>
-      <ul className="space-y-2">
-        {task.reasons.map((r, i) => (
-          <li key={i} className="rounded-data bg-canvas p-3">
-            <div className="flex items-center gap-2">
-              <LevelChip level={r.level} />
-              <span className="font-semibold">{t(`reason.${r.reason_code}`, { defaultValue: r.reason_code })}</span>
-            </div>
-            <div className="mt-1 text-sm text-muted">
-              {t('visit.ruleLine', { rule: r.rule_id, version: r.rule_version, count: r.evidence.length })}
-            </div>
-          </li>
-        ))}
-      </ul>
-      <ol className="grid gap-2 sm:grid-cols-2" aria-label={t('visit.steps')}>
-        {steps.map((s) => (
-          <li key={s.key} className="flex items-center gap-2">
-            {s.at ? <Check aria-hidden className="size-5 text-brand-700" /> : <Circle aria-hidden className="size-5 text-line" />}
-            <span className="font-semibold">{t(`taskStep.${s.key}`)}</span>
-            <span className="tabular text-muted">
-              {s.at ? clock(s.at) : t('visit.pending')}
-              {s.by ? `, ${s.by}` : ''}
-              {s.key === 'assessed' && task.disposition ? `, ${t(`disposition.${task.disposition}`)}` : ''}
+    <section className="concern-panel">
+      <span className={`task-label task-${task.level}`}>{taskLabel[task.level]}</span>
+      <h2>{t(`reason.${reason.reason_code}`, { defaultValue: reason.reason_code.replaceAll('_', ' ') })}</h2>
+      <p className="routing">
+        Routed to {task.routed_to.map((role) => t(`role.${role}`)).join(', ')}
+        {task.escalated ? ' · Backup notified' : ''}
+      </p>
+      <ol className="task-progress" aria-label={t('visit.steps')}>
+        {steps.map((step) => (
+          <li key={step.key}>
+            <span>
+              {step.at ? <Check size={15} aria-hidden /> : <Circle size={15} aria-hidden className="text-muted" />}
+              {t(`taskStep.${step.key}`)}
             </span>
+            <p>{step.at ? clock(step.at) : t('visit.pending')}</p>
+            {step.by && <p>{t(`role.${step.by}`)}</p>}
           </li>
         ))}
       </ol>
-    </Card>
+      <details className="disclosure mt-5">
+        <summary>Review reasons &amp; evidence ({task.reasons.length})</summary>
+        <ul className="space-y-4">
+          {task.reasons.map((r, i) => (
+            <li key={i}>
+              <div className="flex flex-wrap items-center gap-2">
+                <LevelChip level={r.level} />
+                <span>{t(`reason.${r.reason_code}`, { defaultValue: r.reason_code.replaceAll('_', ' ') })}</span>
+              </div>
+              <p className="mt-1 text-sm text-muted">
+                {clock(r.fired_at)} · Rule {r.rule_id} · v{r.rule_version}
+              </p>
+              {r.evidence.map((e) => (
+                <p className="mt-1 break-all text-sm text-muted" key={`${e.kind}-${e.id}`}>
+                  {e.kind}: {e.id}
+                </p>
+              ))}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </section>
   )
 }
 
@@ -159,9 +251,11 @@ function LatestAnswers({ detail }: { detail: VisitDetail }) {
     ...Object.entries(c.items ?? {}).map(([k, a]): [string, string] => [humanKey(k), itemAnswerText(a, t)]),
   ]
   return (
-    <Card className="space-y-2">
-      <h2 className="text-xl font-extrabold">{t('visit.latestAnswers')}</h2>
-      <p className="text-sm text-muted">{t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}</p>
+    <Card className="space-y-3">
+      <h2 className="text-lg font-semibold">{t('visit.latestAnswers')}</h2>
+      <p className="text-sm text-muted">
+        {t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}
+      </p>
       {c.reporter === 'companion' && <p className="text-sm font-semibold">{t('answers.companionOnly')}</p>}
       <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
         {rows.map(([k, v]) => (
