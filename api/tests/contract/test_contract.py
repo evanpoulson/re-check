@@ -398,7 +398,7 @@ def test_patient_screens_cannot_see_staff_fields():
 
 
 def test_database_allows_exactly_the_contract_languages():
-    schema = (Path(__file__).parents[3] / "db" / "schema.sql").read_text()
+    schema = (Path(__file__).parents[3] / "db" / "schema.sql").read_text(encoding="utf-8")
     check = re.search(r"language\s+text\s+NOT NULL CHECK \(language IN \(([^)]*)\)\)", schema)
     assert check, "visit.language CHECK not found in db/schema.sql"
     assert set(re.findall(r"'([a-z]+)'", check.group(1))) == {lang.value for lang in Language}

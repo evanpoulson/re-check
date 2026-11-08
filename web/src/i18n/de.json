@@ -142,5 +142,35 @@
   },
   "pages": {
     "patientEntry": "Ihre Abfrage wird geöffnet"
+  },
+  "triageInfo": {
+    "title": "So funktioniert die Triage",
+    "sickestFirst": "In der Notaufnahme werden die am schwersten Erkrankten zuerst behandelt. Es geht nicht nach der Reihenfolge der Ankunft.",
+    "levels": "Bei der Ankunft schätzt eine Triage-Pflegekraft ein, wie dringend die Behandlung ist. In Kanada gibt es 5 Stufen. Stufe 1 ist am dringendsten.",
+    "checkins": "Die Antworten aus der Abfrage helfen dem Personal, Veränderungen zu bemerken. Eine medizinische Fachkraft entscheidet, wie es weitergeht.",
+    "worse": "Wenn es Ihnen schlechter geht, sagen Sie sofort dem Personal Bescheid.",
+    "leaving": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen.",
+    "level": {
+      "heading": "Ihre Triage-Stufe",
+      "heading_companion": "Triage-Stufe der betreuten Person",
+      "label": "Stufe {{level}}: {{name}}",
+      "setAtTriage": "Diese Stufe hat die Triage-Pflegekraft bei der Ankunft festgelegt.",
+      "2": {
+        "name": "Sehr dringend",
+        "body": "Die Pflegekraft hat Anzeichen gefunden, die sehr bald behandelt werden müssen. Das Personal schaut oft nach."
+      },
+      "3": {
+        "name": "Dringend",
+        "body": "Eine Behandlung ist bald nötig, aber im Moment besteht keine Lebensgefahr. Schwerer Erkrankte können zuerst drankommen."
+      },
+      "4": {
+        "name": "Weniger dringend",
+        "body": "Im Moment ist es kein Notfall. Die Wartezeit kann lang sein. Sie sind hier richtig."
+      },
+      "5": {
+        "name": "Nicht dringend",
+        "body": "Dies kann ohne Gefahr warten. Die Wartezeit kann lang sein. Sie sind hier richtig."
+      }
+    }
   }
 }

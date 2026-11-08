@@ -142,5 +142,35 @@
   },
   "pages": {
     "patientEntry": "Otwieranie ankiety"
+  },
+  "triageInfo": {
+    "title": "Jak działa triaż",
+    "sickestFirst": "Szpitalny oddział ratunkowy najpierw przyjmuje osoby w najcięższym stanie. Kolejność przyjścia nie decyduje.",
+    "levels": "Po przyjściu każdej osoby pielęgniarka triażowa ocenia, jak pilnie potrzebna jest pomoc. W Kanadzie jest 5 poziomów. Poziom 1 jest najpilniejszy.",
+    "checkins": "Odpowiedzi w ankiecie pomagają personelowi zauważyć zmiany. O dalszym postępowaniu decyduje lekarz.",
+    "worse": "W razie pogorszenia proszę od razu powiedzieć personelowi.",
+    "leaving": "Przed wyjściem proszę powiedzieć o tym personelowi.",
+    "level": {
+      "heading": "Poziom triażu",
+      "heading_companion": "Poziom triażu tej osoby",
+      "label": "Poziom {{level}}: {{name}}",
+      "setAtTriage": "Ten poziom ustaliła pielęgniarka triażowa przy przyjęciu.",
+      "2": {
+        "name": "Bardzo pilne",
+        "body": "Pielęgniarka zauważyła objawy, które wymagają pomocy bardzo szybko. Personel będzie często sprawdzać stan."
+      },
+      "3": {
+        "name": "Pilne",
+        "body": "Pomoc jest potrzebna wkrótce, ale teraz nie ma zagrożenia życia. Osoby w cięższym stanie mogą zostać przyjęte wcześniej."
+      },
+      "4": {
+        "name": "Mniej pilne",
+        "body": "To teraz nie jest nagły przypadek. Czekanie może być długie. To właściwe miejsce."
+      },
+      "5": {
+        "name": "Niepilne",
+        "body": "To może bezpiecznie poczekać. Czekanie może być długie. To właściwe miejsce."
+      }
+    }
   }
 }

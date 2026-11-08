@@ -4,7 +4,7 @@
 -- AGENTS.md and docs/research/recheck-waiting-room.md, section 5.
 --
 -- Tables: visit, visit_session, submission, attention_prompt, report, vitals,
--- task, task_reason, audit_log, wait_site, wait_snapshot.
+-- task, task_reason, audit_log, wait_site, wait_snapshot, site_setting.
 --
 -- Time-series tables (report, vitals, audit_log, wait_snapshot) are hypertables partitioned on
 -- the server's received time. Hypertable primary keys must include the time
@@ -650,6 +650,19 @@ CREATE TABLE wait_snapshot (
 SELECT create_hypertable('wait_snapshot', by_range('fetched_at', interval '7 days'));
 
 -- ---------------------------------------------------------------------------
+-- site_setting: switches the triage nurse can change for the whole site
+-- A site with no row uses the defaults. show_triage_level lets patients see
+-- the level set at triage, in plain words (docs/research §4a). It is off by
+-- default because no public AHS policy says staff share it.
+-- ---------------------------------------------------------------------------
+
+CREATE TABLE site_setting (
+    site_id            text         PRIMARY KEY CHECK (site_id ~ '^[a-z0-9][a-z0-9_-]{0,31}$'),
+    show_triage_level  boolean      NOT NULL DEFAULT false,
+    updated_at         timestamptz  NOT NULL DEFAULT now()
+);
+
+-- ---------------------------------------------------------------------------
 -- audit_log: append-only record of every write (hypertable)
 -- ---------------------------------------------------------------------------
 
@@ -701,6 +714,7 @@ CREATE TRIGGER task_reason_audit   AFTER INSERT ON task_reason             FOR E
 -- Site mapping changes are audited. wait_snapshot is not: it is already an
 -- append-only log of each fetch, and auditing it would double every poll.
 CREATE TRIGGER wait_site_audit     AFTER INSERT OR UPDATE ON wait_site     FOR EACH ROW EXECUTE FUNCTION audit_write('wait_site');
+CREATE TRIGGER site_setting_audit  AFTER INSERT OR UPDATE ON site_setting  FOR EACH ROW EXECUTE FUNCTION audit_write('site_setting');
 
 -- Append-only tables: no UPDATE, DELETE or TRUNCATE for anyone.
 -- Row triggers don't fire on TRUNCATE, so it gets a statement trigger.
@@ -712,6 +726,7 @@ CREATE TRIGGER submission_append_only  BEFORE UPDATE OR DELETE ON submission  FO
 CREATE TRIGGER audit_log_append_only   BEFORE UPDATE OR DELETE ON audit_log   FOR EACH ROW EXECUTE FUNCTION block_change('audit_log');
 CREATE TRIGGER wait_snapshot_append_only BEFORE UPDATE OR DELETE ON wait_snapshot FOR EACH ROW EXECUTE FUNCTION block_change('wait_snapshot');
 CREATE TRIGGER wait_site_no_delete     BEFORE DELETE ON wait_site     FOR EACH ROW EXECUTE FUNCTION block_change('wait_site');
+CREATE TRIGGER site_setting_no_delete  BEFORE DELETE ON site_setting  FOR EACH ROW EXECUTE FUNCTION block_change('site_setting');
 
 -- Records that change state are kept, never deleted.
 CREATE TRIGGER visit_no_delete         BEFORE DELETE ON visit         FOR EACH ROW EXECUTE FUNCTION block_change('visit');
@@ -729,6 +744,7 @@ CREATE TRIGGER task_reason_no_truncate   BEFORE TRUNCATE ON task_reason   FOR EA
 CREATE TRIGGER audit_log_no_truncate     BEFORE TRUNCATE ON audit_log     FOR EACH STATEMENT EXECUTE FUNCTION block_change('audit_log');
 CREATE TRIGGER wait_site_no_truncate     BEFORE TRUNCATE ON wait_site     FOR EACH STATEMENT EXECUTE FUNCTION block_change('wait_site');
 CREATE TRIGGER wait_snapshot_no_truncate BEFORE TRUNCATE ON wait_snapshot FOR EACH STATEMENT EXECUTE FUNCTION block_change('wait_snapshot');
+CREATE TRIGGER site_setting_no_truncate  BEFORE TRUNCATE ON site_setting  FOR EACH STATEMENT EXECUTE FUNCTION block_change('site_setting');
 
 -- ---------------------------------------------------------------------------
 -- App role: read and insert everywhere, update only where state changes,
@@ -753,6 +769,10 @@ GRANT USAGE ON SEQUENCE audit_log_id_seq TO recheck_app;
 -- The API reads wait estimates; site mappings are changed by an admin.
 REVOKE ALL ON wait_site, wait_snapshot FROM PUBLIC, recheck_app;
 GRANT SELECT ON wait_site, wait_snapshot TO recheck_app;
+
+-- The triage nurse changes site settings through the API.
+REVOKE ALL ON site_setting FROM PUBLIC, recheck_app;
+GRANT SELECT, INSERT, UPDATE ON site_setting TO recheck_app;
 
 -- Poller role: reads the site map and inserts snapshots, nothing else. It is
 -- created without a password; give it one by hand, outside Git:

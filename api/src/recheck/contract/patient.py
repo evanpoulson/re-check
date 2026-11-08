@@ -9,7 +9,7 @@ from uuid import UUID
 from pydantic import Field
 
 from .codes import ItemInputType, Language, PatientMessage, Reporter, WaitSource
-from .common import Code, OutputModel, Timestamp, Version
+from .common import Code, Ctas, OutputModel, Timestamp, Version
 
 
 class WaitEstimate(OutputModel):
@@ -78,3 +78,10 @@ class PatientHome(OutputModel):
         default=None, description="Present for the patient role on a due check-in; never for a companion."
     )
     message: PatientMessage
+    triage_level: Ctas | None = Field(
+        default=None,
+        description=(
+            "The level set at triage, sent only when the site shows it (SiteSettings.show_triage_level). "
+            "The screen explains it in plain words and never shows a target time."
+        ),
+    )

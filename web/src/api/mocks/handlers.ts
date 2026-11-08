@@ -9,6 +9,7 @@ import type {
   VisitCreate,
   StaffSignOut,
   SignOut,
+  SiteSettingsUpdate,
   StaffRole,
   VisitExclusionUpdate,
   VisitStatusUpdate,
@@ -43,6 +44,11 @@ export const handlers = [
     return reply(() => store.enrol(body), 201)
   }),
   http.get(endpoints.triageBoard(), () => reply(() => store.triageBoard())),
+  http.get(endpoints.siteSettings(), () => reply(() => store.siteSettings())),
+  http.put(endpoints.siteSettings(), async ({ request }) => {
+    const body = (await request.json()) as SiteSettingsUpdate
+    return reply(() => store.updateSiteSettings(body))
+  }),
   http.get(endpoints.worklist(), () => reply(() => store.worklist())),
   http.get(withParam(endpoints.visitDetail), ({ params }) => reply(() => store.visitDetail(String(params.id)))),
   http.post(withParam(endpoints.vitals), async ({ request }) => {

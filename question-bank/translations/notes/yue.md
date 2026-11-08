@@ -10,3 +10,4 @@
 - "Warning signs" (sendNow) = 危險徵狀; check tone.
 - Health number = 醫療保健號碼 (Alberta Personal Health Number).
 - "I'm not sure" = 我不確定 (does not mean no).
+- **Triage card (`triageInfo`):** Level names are "非常緊急 / 緊急 / 次緊急 / 非緊急"; levels 3–5 match Hong Kong Hospital Authority usage, but its level 2 is "危急", in colloquial written Cantonese. Check that "第 {{level}} 級" reads naturally. No target times are shown on purpose; please keep it that way.

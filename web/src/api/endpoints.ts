@@ -11,6 +11,7 @@ export const endpoints = {
   vitals: (visitId: string) => `/api/visits/${visitId}/vitals`,
   flagHigher: (visitId: string) => `/api/visits/${visitId}/flag`,
   triageBoard: () => '/api/triage-board',
+  siteSettings: () => '/api/site-settings',
   worklist: () => '/api/worklist',
   acknowledgeTask: (taskId: string) => `/api/tasks/${taskId}/acknowledge`,
   assessTask: (taskId: string) => `/api/tasks/${taskId}/assess`,

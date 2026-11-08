@@ -656,5 +656,42 @@
       "stepConfirm": "2. Confirm the irreversible change",
       "stopHelp": "Disabled until a reason is selected and the irreversible change is confirmed."
     }
+  },
+  "triageInfo": {
+    "title": "How triage works",
+    "sickestFirst": "The emergency department sees the sickest people first. It is not first come, first served.",
+    "levels": "When each person arrives, a triage nurse checks how urgent their needs are. Canada uses 5 levels. Level 1 is the most urgent.",
+    "checkins": "Check-in answers help staff notice changes. A clinician decides what happens next.",
+    "worse": "If you feel worse, tell staff right away.",
+    "leaving": "Please tell staff before you leave.",
+    "level": {
+      "heading": "Your triage level",
+      "heading_companion": "The patient's triage level",
+      "label": "Level {{level}}: {{name}}",
+      "setAtTriage": "This is the level the triage nurse set on arrival.",
+      "2": {
+        "name": "Very urgent",
+        "body": "The nurse found signs that need care very soon. Staff will check often."
+      },
+      "3": {
+        "name": "Urgent",
+        "body": "Care is needed soon, but it is not life-threatening right now. People who are sicker may be seen first."
+      },
+      "4": {
+        "name": "Less urgent",
+        "body": "This is not an emergency right now. The wait may be long. You are in the right place."
+      },
+      "5": {
+        "name": "Not urgent",
+        "body": "This can safely wait. The wait may be long. You are in the right place."
+      }
+    }
+  },
+  "siteSettings": {
+    "title": "Patient screens",
+    "showLevel": "Show patients their triage level",
+    "showLevelHelp": "Applies to every patient at this site. When off, patients see only How triage works. Target times are never shown.",
+    "saving": "Saving…",
+    "failed": "That setting did not save. Try again."
   }
 }

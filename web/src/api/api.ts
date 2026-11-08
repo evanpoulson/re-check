@@ -10,6 +10,8 @@ import type {
   ReportReceipt,
   SessionInfo,
   SignOut,
+  SiteSettings,
+  SiteSettingsUpdate,
   StaffSignOut,
   Task,
   TokenExchange,
@@ -48,6 +50,9 @@ export const getSignInOptions = () => request<SignInOptions>('GET', endpoints.st
 // Nurse
 export const enrolVisit = (body: VisitCreate) => request<VisitEnrolled>('POST', endpoints.enrolVisit(), body)
 export const getTriageBoard = () => request<TriageBoard>('GET', endpoints.triageBoard())
+export const getSiteSettings = () => request<SiteSettings>('GET', endpoints.siteSettings())
+export const updateSiteSettings = (body: SiteSettingsUpdate) =>
+  request<SiteSettings>('PUT', endpoints.siteSettings(), body)
 export const getWorklist = () => request<Worklist>('GET', endpoints.worklist())
 export const getVisitDetail = (id: string) => request<VisitDetail>('GET', endpoints.visitDetail(id))
 export const postVitals = (body: VitalsCreate) => request<VitalsRecord>('POST', endpoints.vitals(body.visit_id), body)
