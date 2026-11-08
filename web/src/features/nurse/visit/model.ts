@@ -10,10 +10,13 @@ export interface VisitContext {
   /** The last refresh failed: the page shows what it has, but actions are off. */
   stale: boolean
   role: StaffRole | null
-  isNurse: boolean
+  /** Desk roles (triage and charge nurse): vitals and visit management, as the API's DeskStaff allows. */
+  isDesk: boolean
+  /** Flag higher is the triage nurse's alone (the API's flag route). */
+  canFlag: boolean
   /** The open task is routed to this role. */
   canAct: boolean
-  /** May press Acknowledge: a routed role, or the triage nurse confirming they have seen the report. */
+  /** May press Acknowledge: a routed role, or a desk nurse confirming they have seen the report. */
   canAcknowledge: boolean
   now: number
   /** Called when an assessment completes, so the layout can move focus to the result. */

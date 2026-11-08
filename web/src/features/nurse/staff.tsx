@@ -9,7 +9,7 @@ import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
 import { DemoBadge } from '@/components/DemoBadge'
 import { PageState } from '@/components/PageState'
-import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
+import { BellRing, ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -75,10 +75,11 @@ export function useStaff(): StaffContext {
 
 const link = ({ isActive }: { isActive: boolean }) => cn('staff-nav-link', isActive && 'is-active')
 
-/** Where each role starts. The charge nurse starts on the triage board and can also open the worklist. */
+/** Where each role starts. The charge nurse starts on escalations and can also open the triage board and worklist. */
 export function staffHome(role: StaffRole): string | null {
   if (role === 'physician') return '/staff/physician'
-  if (role === 'triage_nurse' || role === 'charge_nurse') return '/staff/triage'
+  if (role === 'triage_nurse') return '/staff/triage'
+  if (role === 'charge_nurse') return '/staff/escalations'
   return null
 }
 
@@ -117,6 +118,9 @@ export function StaffLayout() {
         <NavLink to={home} aria-label={t('nav.home')}><Brand /></NavLink>
         <nav aria-label={t('nav.label')}>
           {/* Same order for every role, so each role's home comes first. */}
+          {role === 'charge_nurse' && (
+            <NavLink to="/staff/escalations" className={link}><BellRing size={18} aria-hidden />{t('nav.escalations')}</NavLink>
+          )}
           {SEES_TRIAGE.includes(role) && (
             <>
               <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>

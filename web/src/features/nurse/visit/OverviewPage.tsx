@@ -13,7 +13,7 @@ const LINK_BUTTON = 'inline-flex min-h-11 items-center justify-center gap-2 roun
 
 export function OverviewPage() {
   const { t } = useTranslation()
-  const { detail, stale, canAcknowledge, isNurse } = useVisit()
+  const { detail, stale, canAcknowledge, canFlag } = useVisit()
   const task = detail.open_task
   const checkins = detail.timeline.filter(isCheckin)
   const latest = checkins.at(-1)
@@ -43,7 +43,7 @@ export function OverviewPage() {
               </Link>
             </SectionCard>
           )}
-          {isNurse && <FlagHigherCard visit={detail.visit} stale={stale} />}
+          {canFlag && <FlagHigherCard visit={detail.visit} stale={stale} />}
         </div>
       </div>
     </>

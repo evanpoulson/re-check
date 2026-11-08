@@ -27,7 +27,9 @@ export function VisitLayout() {
     queryFn: () => getVisitDetail(id),
     retry: false,
   })
-  const isNurse = role === 'triage_nurse'
+  // Mirrors the API's role checks (routes/actions.py, routes/visits.py).
+  const isDesk = role === 'triage_nurse' || role === 'charge_nurse'
+  const canFlag = role === 'triage_nurse'
   const task = data?.open_task ?? null
   const { pathname } = useLocation()
   const completedTitle = useRef<HTMLHeadingElement>(null)
@@ -47,11 +49,13 @@ export function VisitLayout() {
   const tabName = t(page === 'assessment' || page === 'timeline' || page === 'manage' ? `visitTabs.${page}` : 'visitTabs.overview')
   usePageTitle(visitName ? `${visitName} · ${tabName}` : t('pages.visit'))
 
-  const toTriage = role !== 'physician'
+  const [backTo, backLabel] = role === 'physician'
+    ? ['/staff/physician', t('visit.backToReview')]
+    : role === 'charge_nurse' ? ['/staff/escalations', t('visit.backToEscalations')] : ['/staff/triage', t('visit.back')]
   const back = (
-    <Link to={toTriage ? '/staff/triage' : '/staff/physician'} className="back-link mb-0!">
+    <Link to={backTo} className="back-link mb-0!">
       <ArrowLeft aria-hidden size={18} />
-      {toTriage ? t('visit.back') : t('visit.backToReview')}
+      {backLabel}
     </Link>
   )
 
@@ -73,9 +77,10 @@ export function VisitLayout() {
     detail: data,
     stale: isError,
     role,
-    isNurse,
+    isDesk,
+    canFlag,
     canAct: !!role && !!task?.routed_to.includes(role),
-    canAcknowledge: isNurse || (!!role && !!task?.routed_to.includes(role)),
+    canAcknowledge: isDesk || (!!role && !!task?.routed_to.includes(role)),
     now,
     onComplete: () => { focusCompletion.current = true },
   }
@@ -83,7 +88,7 @@ export function VisitLayout() {
     { to: '', label: t('visitTabs.overview'), end: true },
     { to: 'assessment', label: t('visitTabs.assessment') },
     { to: 'timeline', label: t('visitTabs.timeline') },
-    ...(isNurse ? [{ to: 'manage', label: t('visitTabs.manage') }] : []),
+    ...(isDesk ? [{ to: 'manage', label: t('visitTabs.manage') }] : []),
   ]
 
   return (
