@@ -10,7 +10,8 @@ from ..db import write_tx
 from ..question_bank import EnrolmentConflict, check_enrolment, default_bank
 from ..security import decrypt_token, encrypt_token, new_token, token_hash
 from ..settings import public_url
-from .. import submissions
+from .. import events, submissions
+from ..contract.codes import DashboardEventType
 
 router = APIRouter(prefix="/api/visits", tags=["visits"])
 
@@ -71,6 +72,7 @@ async def enrol_visit(body: VisitCreate, staff: DeskStaff, pool: Pool, response:
         await submissions.record(
             conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp, visit_id=visit_id
         )
+        await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
     return VisitEnrolled(
         visit_id=visit_id,
         app_exclusion=body.app_exclusion,
@@ -148,6 +150,7 @@ async def staff_sign_out_device(visit_id: UUID, body: StaffSignOut, staff: DeskS
                 """,
                 [visit_id],
             )
+            await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
             await submissions.record(
                 conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp, visit_id=visit_id
             )

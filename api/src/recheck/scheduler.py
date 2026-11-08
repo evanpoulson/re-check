@@ -19,8 +19,8 @@ from dataclasses import dataclass
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 
-from . import tasks
-from .contract.codes import TaskLevel
+from . import events, tasks
+from .contract.codes import DashboardEventType, TaskLevel
 from .db import write_tx
 from .rules import Fire
 from .views import SILENT_AFTER
@@ -64,7 +64,8 @@ async def run_checks(conn: AsyncConnection) -> Round:
     missed = await cur.fetchall()
     for visit_id, last_report in missed:
         evidence = [{"kind": "report", "id": str(last_report)}] if last_report else []
-        await tasks.raise_task(conn, visit_id, [MISSED_CHECKIN], evidence)
+        task_id = await tasks.raise_task(conn, visit_id, [MISSED_CHECKIN], evidence)
+        await events.notify(conn, DashboardEventType.TASK_CHANGED, visit_id, task_id)
 
     # Unacknowledged reds past their deadline go to the charge nurse too.
     cur = await conn.execute(
@@ -75,10 +76,12 @@ async def run_checks(conn: AsyncConnection) -> Round:
         FROM visit v
         WHERE v.id = t.visit_id AND v.status = 'waiting'
           AND t.level = 'red' AND t.status = 'open' AND NOT t.escalated AND t.ack_due_at <= now()
-        RETURNING t.id
+        RETURNING t.id, t.visit_id
         """
     )
     escalated = await cur.fetchall()
+    for task_id, visit_id in escalated:
+        await events.notify(conn, DashboardEventType.TASK_CHANGED, visit_id, task_id)
     return Round(ran=True, missed=len(missed), escalated=len(escalated))
 
 

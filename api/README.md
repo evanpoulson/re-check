@@ -129,8 +129,25 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/flag` | triage nurse | `FlagHigher` → `FlagRecord`; opens or raises an amber task (`staff_flag`) |
 | `POST /api/visits/{id}/status` | triage nurse, physician or charge nurse | `VisitStatusUpdate` → 204; closes the visit and signs out its device |
 | `POST /api/visits/{id}/exclusion` | triage or charge nurse | `VisitExclusionUpdate` → 204; stops patient prompts, staff timer keeps running |
+| `GET /api/events` | any signed-in staff | Server-Sent Events: a `DashboardEvent` per change at the staff member's site |
 | `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only; reused until answered), wait estimate or null, minutes waited |
 | `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
+
+## Live updates
+
+Every write sends a `DashboardEvent` ("something changed on visit X") with `pg_notify` inside its own transaction, so a notice goes out only if the change commits. One listener per API process passes it to the staff screens at that site over `GET /api/events`. A screen refetches the view it shows on each notice:
+
+```js
+const events = new EventSource('/api/events')  // sends the staff cookie; reconnects by itself
+events.onmessage = () => refetch()             // e.data is the DashboardEvent JSON
+```
+
+| Change | Notice |
+| --- | --- |
+| Enrolment, sign-in, sign-out, close, exclusion | `visit.changed` |
+| Patient report | `report.received`, plus `task.changed` if it raised a task |
+| Flag, acknowledge, assess, timers | `task.changed` |
+| Vitals | `vitals.recorded` |
 
 ## Rules and tasks
 
