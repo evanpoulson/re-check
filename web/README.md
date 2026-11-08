@@ -19,7 +19,7 @@ Open the address Vite prints (usually http://localhost:5173). By default the app
 4. Back on the **Triage board**, the flag appears as a level chip, with a coloured bar on the row's left edge. The place-in-line numeral on the left does not change: the queue stays in CTAS then arrival order.
 5. Click the patient row to open the visit page. On the **Assessment** tab, **Acknowledge**, then **Record assessment**. Acknowledging and assessing are separate steps. **Stop offering the app** (in the Danger zone on **Visit management**) signs the patient out.
 
-Seeded demo patients, if you want to skip enrolment. One device is signed in per visit; opening a link on a second device asks to take over.
+The mocks seed a waiting room of 25 synthetic visits, timed relative to when the state is first created. Clear `localStorage` to reseed. These five are the demo cases. One device is signed in per visit; opening a link on a second device asks to take over.
 
 | Case | QR link (choose patient or companion) |
 | --- | --- |
@@ -28,6 +28,31 @@ Seeded demo patients, if you want to skip enrolment. One device is signed in per
 | Head injury, CTAS 3, check-in missed (silent) | `/v/demo-head-token` |
 | Confused or drowsy, CTAS 3, companion-only check-in | `/v/demo-confused-token` |
 | Child, CTAS 4, app not offered | no QR |
+
+The other 20 fill the board, worklist, Escalations and Handover. Each app visit has a QR link at `/v/demo-<case>-token`. Several already have a device signed in, so scanning asks to take over.
+
+| Case | Level and state |
+| --- | --- |
+| `breathing`: CTAS 2, new trouble breathing, Tagalog | Red, acknowledged; reassessment overdue |
+| `headache`: CTAS 2, headache, pager 214, Spanish | No task |
+| `droop`: CTAS 3, arm weakness, companion reports facial droop, Punjabi | Red, escalated to backup |
+| `backpain`: CTAS 3, back pain, "I need help now", Mandarin | Red, escalated to backup |
+| `flank`: CTAS 3, flank pain, phone went quiet, Arabic | Silent, acknowledged |
+| `vomiting`: CTAS 3, vomiting, pager 118, Vietnamese | Amber, acknowledged; check-in overdue |
+| `sugar`: CTAS 3, hypoglycemia, companion is worried | Amber, open |
+| `cut`: CTAS 3, facial cut, says they are leaving | Leave risk, open |
+| `vertigo`: CTAS 3, circle count did not match, Korean | Overdue, open; reassessment overdue |
+| Self-harm, CTAS 3 | No task; app not offered |
+| Pregnancy over 20 weeks, CTAS 4, Hindi | Amber (flagged higher by staff), acknowledged; app not offered |
+| `desk`: CTAS 4, back pain, question for the desk, Punjabi | Overdue, triage nurse only, open |
+| `wrist`: CTAS 4, question for the desk, pager 305, Cantonese | Overdue, triage nurse only, acknowledged |
+| `tingling`: CTAS 4, tingling hands, says they are leaving, French | Leave risk, acknowledged |
+| `neck`: CTAS 4, neck strain, pager 422 | Silent, open; reassessment overdue |
+| `ankle`: CTAS 4, triaged 5 minutes ago, pager 131, Spanish | No task |
+| `stable`: CTAS 4, assessed stable earlier | No open task; reassessment overdue |
+| `rash`: CTAS 5, waiting nearly 5 hours | No task |
+| `sore`: CTAS 5, pager 507, Polish | No task; check-in a few minutes overdue (turns silent soon) |
+| `migraine`: CTAS 5, headache much worse, Urdu | Amber, acknowledged |
 
 Companion on the general visit, then reporting "Speech is different or hard to understand", is the "new speech change on an unrelated complaint" case.
 

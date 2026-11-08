@@ -14,6 +14,8 @@ import type {
   AttentionStep,
   BoardRow,
   ChargeNurseView,
+  CheckinReport,
+  ConcernCode,
   Disposition,
   FeelingChange,
   FeelingNow,
@@ -97,8 +99,8 @@ interface Session {
   role: Role
 }
 
-const KEY = 'recheck-mock-state-v3'
-const SESSION_KEY = 'recheck-mock-session-v3'
+const KEY = 'recheck-mock-state-v4'
+const SESSION_KEY = 'recheck-mock-session-v4'
 export const NURSE: StaffRef = { user_id: 'demo-nurse', role: 'triage_nurse' }
 
 /** Browser demo attribution only. Production identity belongs to the server session. */
@@ -261,36 +263,68 @@ function currentPrompt(r: Rec, now: number): Prompt {
 }
 
 // ---- Seeds ----------------------------------------------------------------
+//
+// A waiting room of 25 synthetic visits, all relative to "now". Every task is
+// one the rules could raise (api/src/recheck/rules.py, scheduler.py): the level
+// and reason code match what the report or timer would fire. Patient prompts
+// and staff reassessments follow the CTAS interval from the last check-in and
+// the last staff check, so the clocks agree with the history.
+
+/** A stable UUID per seeded case, so references (P-xxxx) never change between resets. */
+function stableId(ref: string): string {
+  let h = 0x811c9dc5
+  for (const c of ref) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193) >>> 0
+  let hex = ''
+  for (let i = 0; i < 4; i++) {
+    h = Math.imul(h ^ (h >>> 15) ^ (i + 1), 0x2c1b3c6d) >>> 0
+    h = Math.imul(h ^ (h >>> 12), 0x297a2d39) >>> 0
+    h = (h ^ (h >>> 15)) >>> 0
+    hex += h.toString(16).padStart(8, '0')
+  }
+  const variant = '89ab'[parseInt(hex[16]!, 16) % 4]!
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`
+}
+
+/** The seeded visit's id, by case name (the `<case>` in `demo-<case>-token`). For tests and demo scripts. */
+export const demoVisitId = (ref: string) => stableId(`recheck-demo-${ref}`)
 
 type Seed = {
+  ref: string
   ctas: number
   group: VisitSummary['complaint_group']
   cedis: string | null
   triagedMinAgo: number
-  ref: string
-  promptDueMin: number | null
-  reassessDueMin: number
+  language?: VisitSummary['language']
+  /** Pager number for pager visits; phone otherwise. */
+  pager?: string
   exclusion?: AppExclusion
+  /** Set for the original demo cases; computed from the history otherwise. */
+  promptDueMin?: number | null
+  reassessDueMin?: number
 }
 
+const PHYSICIAN: StaffRef = { user_id: 'demo-physician', role: 'physician' }
+
 function seed(now: number): State {
+  const at = (minAgo: number) => iso(now - minAgo * MIN)
   const mk = (s: Seed): Rec => ({
     visit: {
-      visit_id: uuid(),
+      visit_id: demoVisitId(s.ref),
       site_id: 'demo-site',
       ctas: s.ctas,
       complaint_group: s.group,
       cedis_code: s.cedis,
-      language: 'en',
+      language: s.language ?? 'en',
       app_exclusion: s.exclusion ?? null,
-      channel: s.exclusion ? null : 'phone',
-      pager_no: null,
+      channel: s.exclusion ? null : s.pager ? 'pager' : 'phone',
+      pager_no: s.exclusion ? null : (s.pager ?? null),
       status: 'waiting',
-      triaged_at: iso(now - s.triagedMinAgo * MIN),
+      triaged_at: at(s.triagedMinAgo),
       closed_at: null,
-      next_prompt_due_at: s.promptDueMin === null ? null : iso(now + s.promptDueMin * MIN),
-      staff_reassess_due_at: iso(now + s.reassessDueMin * MIN),
-      last_staff_check_at: iso(now - s.triagedMinAgo * MIN),
+      next_prompt_due_at:
+        s.exclusion || s.promptDueMin === null ? null : iso(now + (s.promptDueMin ?? intervalOf(s.ctas) - s.triagedMinAgo) * MIN),
+      staff_reassess_due_at: iso(now + (s.reassessDueMin ?? intervalOf(s.ctas) - s.triagedMinAgo) * MIN),
+      last_staff_check_at: at(s.triagedMinAgo),
       signed_in_as: null,
       signed_in_since: null,
     },
@@ -306,11 +340,16 @@ function seed(now: number): State {
     answers: {},
   })
 
-  const chest = mk({ ctas: 2, group: 'chest_back_pain', cedis: '003', triagedMinAgo: 42, ref: 'chest', promptDueMin: 12, reassessDueMin: 3 })
-  const calm = mk({ ctas: 3, group: 'general', cedis: null, triagedMinAgo: 55, ref: 'general', promptDueMin: 9, reassessDueMin: 20 })
-  const head = mk({ ctas: 3, group: 'head_injury', cedis: '407', triagedMinAgo: 70, ref: 'head', promptDueMin: -20, reassessDueMin: 5 })
-  const confused = mk({ ctas: 3, group: 'confused_drowsy', cedis: '402', triagedMinAgo: 35, ref: 'confused', promptDueMin: 14, reassessDueMin: 11 })
-  const child = mk({ ctas: 4, group: 'general', cedis: '609', triagedMinAgo: 25, ref: 'child', promptDueMin: null, reassessDueMin: 35, exclusion: 'child' })
+  const push = (r: Rec, minAgo: number, report: PatientReport) => {
+    r.reports.push({ type: 'report', report_id: report.submission_id, visit_id: r.visit.visit_id, received_at: at(minAgo), report })
+    return report.submission_id
+  }
+  const reportBase = (r: Rec, minAgo: number, reporter: Role) => ({
+    submission_id: uuid(),
+    reporter,
+    channel: r.visit.channel === 'pager' ? ('pager' as const) : ('phone' as const),
+    captured_at: at(minAgo),
+  })
 
   const addCheckin = (
     r: Rec,
@@ -321,26 +360,88 @@ function seed(now: number): State {
     findings: FindingCode[],
     items: Record<string, ItemAnswer> = {},
     reporter: Role = 'patient',
+    attention: CheckinReport['attention'] = { kind: 'missing', reason: 'not_asked' },
   ) => {
-    const id = uuid()
-    const report: PatientReport = {
+    const report: CheckinReport = {
       kind: 'checkin',
-      submission_id: id,
-      reporter,
-      channel: 'phone',
-      captured_at: iso(now - minAgo * MIN),
+      ...reportBase(r, minAgo, reporter),
       questionnaire_version: bankVersion,
       feeling_now: { kind: 'answered', value: feeling },
       feeling_change: { kind: 'answered', value: change },
       pain: pain === null || reporter === 'companion' ? { kind: 'missing', reason: reporter === 'companion' ? 'not_asked' : 'unsure' } : { kind: 'answered', value: pain },
       new_findings: { kind: 'answered', value: findings },
-      attention: { kind: 'missing', reason: 'not_asked' },
+      attention,
       items,
     }
-    r.reports.push({ type: 'report', report_id: id, visit_id: r.visit.visit_id, received_at: iso(now - minAgo * MIN), report })
     r.answers = { ...r.answers, ...rawAnswers(items) }
-    return id
+    return push(r, minAgo, report)
   }
+  const addConcern = (r: Rec, minAgo: number, concern: ConcernCode, reporter: Role = 'patient') =>
+    push(r, minAgo, { kind: 'concern', concern, ...reportBase(r, minAgo, reporter) })
+  const addFinding = (r: Rec, minAgo: number, findings: [FindingCode, ...FindingCode[]], reporter: Role = 'patient') => {
+    r.answers = { ...r.answers, new_findings: findings }
+    return push(r, minAgo, { kind: 'finding', findings, ...reportBase(r, minAgo, reporter) })
+  }
+  const addLeaving = (r: Rec, minAgo: number, reporter: Role = 'patient') => push(r, minAgo, { kind: 'leaving', ...reportBase(r, minAgo, reporter) })
+
+  /** A device signed in at `fromMinAgo`, still signed in unless `endedMinAgo` is given. */
+  const signIn = (r: Rec, role: Role, fromMinAgo: number, endedMinAgo?: number, reason: SessionEndReason = 'signed_out') => {
+    startSession(r, role, now - fromMinAgo * MIN, null)
+    if (endedMinAgo !== undefined) endSession(r, reason, now - endedMinAgo * MIN)
+  }
+
+  /** Triage nurse vitals: a staff check, so the reassessment clock restarts from here. */
+  const addVitals = (r: Rec, minAgo: number, v: Pick<VitalsRecord, 'sbp' | 'dbp' | 'hr' | 'rr' | 'spo2' | 'temp_c'>) => {
+    r.vitals.push({ type: 'vitals', vitals_id: uuid(), visit_id: r.visit.visit_id, measured_at: at(minAgo + 1), received_at: at(minAgo), entered_by: NURSE, supersedes: null, ...v })
+    r.visit = { ...r.visit, last_staff_check_at: at(minAgo) }
+  }
+
+  const ack = (r: Rec, minAgo: number, by: StaffRef) => {
+    const t = r.task!
+    r.task = { ...t, status: 'acknowledged', acknowledged_at: at(minAgo), acknowledged_by: by }
+    r.events.push({ type: 'task_event', task_id: t.task_id, event: 'acknowledged', at: at(minAgo), level: t.level, by })
+  }
+
+  /** An earlier task already assessed; the visit has no open task now. */
+  const complete = (r: Rec, ackMinAgo: number, assessMinAgo: number, disposition: Disposition) => {
+    ack(r, ackMinAgo, PHYSICIAN)
+    const t = r.task!
+    r.done.push({ ...t, status: 'completed', assessed_at: at(assessMinAgo), assessed_by: PHYSICIAN, disposition })
+    r.events.push({ type: 'task_event', task_id: t.task_id, event: 'assessed', at: at(assessMinAgo), level: t.level, by: PHYSICIAN })
+    r.task = null
+    r.visit = { ...r.visit, last_staff_check_at: at(assessMinAgo) }
+  }
+
+  const flag = (r: Rec, minAgo: number, note: string) => {
+    const f: FlagRecord = { type: 'flag', flag_id: uuid(), visit_id: r.visit.visit_id, received_at: at(minAgo), flagged_by: NURSE, note }
+    r.flags.push(f)
+    raise(r, 'amber', 'staff_flag', 'flag', f.flag_id, now - minAgo * MIN)
+  }
+
+  /** Clocks from the history: next prompt one interval after the last check-in, reassessment one after the last staff check. */
+  const schedule = (r: Rec) => {
+    const step = intervalOf(r.visit.ctas) * MIN
+    const checkins = r.reports.filter((x) => x.report.kind === 'checkin').map((x) => Date.parse(x.received_at))
+    const promptFrom = Math.max(Date.parse(r.visit.triaged_at), ...checkins)
+    r.visit = {
+      ...r.visit,
+      next_prompt_due_at: r.visit.app_exclusion ? null : iso(promptFrom + step),
+      staff_reassess_due_at: iso(Date.parse(r.visit.last_staff_check_at ?? r.visit.triaged_at) + step),
+    }
+  }
+  /** The scheduler's missed check-in: silent, five minutes after the prompt fell due. */
+  const missed = (r: Rec) => {
+    const last = r.reports[r.reports.length - 1]!
+    raise(r, 'silent', 'missed_checkin', 'report', last.report_id, Date.parse(r.visit.next_prompt_due_at!) + 5 * MIN)
+  }
+
+  // ---- The original demo cases (README, tests and the demo script rely on these) ----
+
+  const chest = mk({ ref: 'chest', ctas: 2, group: 'chest_back_pain', cedis: '003', triagedMinAgo: 42, promptDueMin: 12, reassessDueMin: 3 })
+  const calm = mk({ ref: 'general', ctas: 3, group: 'general', cedis: null, triagedMinAgo: 55, promptDueMin: 9, reassessDueMin: 20 })
+  const head = mk({ ref: 'head', ctas: 3, group: 'head_injury', cedis: '407', triagedMinAgo: 70, promptDueMin: -20, reassessDueMin: 5 })
+  const confused = mk({ ref: 'confused', ctas: 3, group: 'confused_drowsy', cedis: '402', triagedMinAgo: 35, promptDueMin: 14, reassessDueMin: 11 })
+  const child = mk({ ref: 'child', ctas: 4, group: 'general', cedis: '609', triagedMinAgo: 25, promptDueMin: null, reassessDueMin: 35, exclusion: 'child' })
 
   addCheckin(chest, 25, 'same', 'ok', 5, [])
   const worse = addCheckin(chest, 3, 'much_worse', 'poor', 8, ['chest_pain'], { pain_moved: { kind: 'yes_no', value: true } })
@@ -353,10 +454,208 @@ function seed(now: number): State {
   // on another device asks to take over.
   startSession(confused, 'companion', now - 30 * MIN, null)
 
+  // Unacknowledged past its 2-minute deadline, so the scheduler routes it to the charge nurse.
   raise(chest, 'red', 'finding_chest_pain', 'report', worse, now - 3 * MIN)
   raise(head, 'silent', 'missed_checkin', 'report', first, now - 5 * MIN)
 
-  return { visits: [chest, calm, head, confused, child], submissions: {} }
+  // ---- CTAS 2 ----
+
+  // Asthma, much worse with new trouble breathing; the physician acknowledged in time.
+  const breathing = mk({ ref: 'breathing', ctas: 2, group: 'general', cedis: null, triagedMinAgo: 16, language: 'tl' })
+  signIn(breathing, 'patient', 15)
+  addCheckin(breathing, 12, 'same', 'ok', 3, [])
+  const breathless = addCheckin(breathing, 3, 'much_worse', 'poor', 6, ['trouble_breathing'])
+  raise(breathing, 'red', 'finding_trouble_breathing', 'report', breathless, now - 3 * MIN)
+  ack(breathing, 2, PHYSICIAN)
+  schedule(breathing)
+
+  // Bad headache on a pager, settling. No task.
+  const headache = mk({ ref: 'headache', ctas: 2, group: 'neuro_change', cedis: '404', triagedMinAgo: 22, language: 'es', pager: '214' })
+  addCheckin(headache, 17, 'same', 'poor', 8, [])
+  addVitals(headache, 10, { sbp: 162, dbp: 94, hr: 88, rr: 18, spo2: 98, temp_c: 36.9 })
+  addCheckin(headache, 2, 'better', 'ok', 6, [])
+  schedule(headache)
+
+  // ---- CTAS 3 ----
+
+  // Arm weakness; the daughter reports a facial droop. Red, unacknowledged, so it reaches the backup.
+  const droop = mk({ ref: 'droop', ctas: 3, group: 'neuro_change', cedis: '409', triagedMinAgo: 48, language: 'pa' })
+  signIn(droop, 'companion', 44)
+  addCheckin(droop, 40, 'same', 'ok', null, [], {}, 'companion')
+  addCheckin(droop, 20, 'same', 'poor', null, [], {}, 'companion')
+  const droopFinding = addFinding(droop, 7, ['facial_droop'], 'companion')
+  raise(droop, 'red', 'finding_facial_droop', 'report', droopFinding, now - 7 * MIN)
+  schedule(droop)
+
+  // Back pain creeping up, then "I need help now": red, unacknowledged, so it has reached the backup too.
+  const backpain = mk({ ref: 'backpain', ctas: 3, group: 'chest_back_pain', cedis: '551', triagedMinAgo: 95, language: 'zh' })
+  signIn(backpain, 'patient', 92)
+  addCheckin(backpain, 85, 'same', 'ok', 5, [])
+  addCheckin(backpain, 55, 'same', 'ok', 6, [])
+  addVitals(backpain, 20, { sbp: 138, dbp: 84, hr: 96, rr: 18, spo2: 99, temp_c: 37.0 })
+  addCheckin(backpain, 25, 'worse', 'ok', 7, [])
+  const helpNow = addConcern(backpain, 4, 'help_now')
+  raise(backpain, 'red', 'concern_help_now', 'report', helpNow, now - 4 * MIN)
+  schedule(backpain)
+
+  // Flank pain easing, then the phone went quiet: silent, acknowledged by the triage nurse.
+  const flank = mk({ ref: 'flank', ctas: 3, group: 'chest_back_pain', cedis: '301', triagedMinAgo: 130, language: 'ar' })
+  signIn(flank, 'patient', 128, 60)
+  addCheckin(flank, 120, 'same', 'ok', 7, [])
+  addCheckin(flank, 90, 'better', 'good', 4, [])
+  addCheckin(flank, 62, 'better', 'good', 3, [])
+  addVitals(flank, 25, { sbp: 128, dbp: 78, hr: 82, rr: 16, spo2: 98, temp_c: 37.4 })
+  schedule(flank)
+  missed(flank)
+  ack(flank, 22, NURSE)
+
+  // Vomiting on a pager: amber, acknowledged. The next prompt is a few minutes overdue.
+  const vomiting = mk({ ref: 'vomiting', ctas: 3, group: 'general', cedis: null, triagedMinAgo: 75, language: 'vi', pager: '118' })
+  addCheckin(vomiting, 65, 'same', 'ok', 4, [])
+  const vomit = addCheckin(vomiting, 33, 'worse', 'poor', 5, ['vomiting'])
+  raise(vomiting, 'amber', 'finding_vomiting', 'report', vomit, now - 33 * MIN)
+  ack(vomiting, 28, PHYSICIAN)
+  addVitals(vomiting, 28, { sbp: 112, dbp: 70, hr: 104, rr: 18, spo2: 97, temp_c: 37.8 })
+  schedule(vomiting)
+
+  // Low blood sugar; the partner is worried. Amber, open.
+  const sugar = mk({ ref: 'sugar', ctas: 3, group: 'confused_drowsy', cedis: '854', triagedMinAgo: 40 })
+  signIn(sugar, 'companion', 38)
+  addVitals(sugar, 20, { sbp: 124, dbp: 76, hr: 92, rr: 16, spo2: 98, temp_c: 36.6 })
+  addCheckin(sugar, 28, 'same', 'ok', null, [], {}, 'companion')
+  const worried = addConcern(sugar, 6, 'worried', 'companion')
+  raise(sugar, 'amber', 'concern_worried', 'report', worried, now - 6 * MIN)
+  schedule(sugar)
+
+  // Facial cut after three hours: says they are leaving. Leave risk, open.
+  const cut = mk({ ref: 'cut', ctas: 3, group: 'head_injury', cedis: '102', triagedMinAgo: 185 })
+  signIn(cut, 'patient', 182)
+  addCheckin(cut, 150, 'same', 'ok', 4, [])
+  addCheckin(cut, 95, 'same', 'ok', 5, [])
+  addVitals(cut, 25, { sbp: 132, dbp: 82, hr: 78, rr: 16, spo2: 99, temp_c: 36.8 })
+  addCheckin(cut, 22, 'same', 'ok', 5, [])
+  const leaving = addLeaving(cut, 4)
+  raise(cut, 'leave_risk', 'leaving', 'report', leaving, now - 4 * MIN)
+  schedule(cut)
+
+  // Vertigo: the circle count did not match. Overdue (in-person check), open.
+  const vertigo = mk({ ref: 'vertigo', ctas: 3, group: 'neuro_change', cedis: '403', triagedMinAgo: 58, language: 'ko' })
+  signIn(vertigo, 'patient', 56)
+  addCheckin(vertigo, 50, 'same', 'ok', 2, [])
+  const miscount = addCheckin(vertigo, 20, 'same', 'ok', 2, [], {}, 'patient', { kind: 'answered', prompt_id: uuid(), count: 3 })
+  raise(vertigo, 'overdue', 'attention_incorrect', 'report', miscount, now - 20 * MIN)
+  schedule(vertigo)
+
+  // App not offered: self-harm. Staff watch directly; vitals restart the reassessment clock.
+  const selfHarm = mk({ ref: 'selfharm', ctas: 3, group: 'general', cedis: '351', triagedMinAgo: 64, exclusion: 'self_harm_or_violence' })
+  addVitals(selfHarm, 20, { sbp: 126, dbp: 80, hr: 90, rr: 16, spo2: 99, temp_c: 36.7 })
+  schedule(selfHarm)
+
+  // ---- CTAS 4 ----
+
+  // App not offered: pregnancy over 20 weeks. The triage nurse flagged it higher; the physician acknowledged.
+  const pregnancy = mk({ ref: 'pregnancy', ctas: 4, group: 'general', cedis: '458', triagedMinAgo: 50, language: 'hi', exclusion: 'pregnancy_over_20_weeks' })
+  addVitals(pregnancy, 45, { sbp: 142, dbp: 92, hr: 86, rr: 16, spo2: 99, temp_c: 36.8 })
+  flag(pregnancy, 12, 'Says the baby is moving less.')
+  ack(pregnancy, 8, PHYSICIAN)
+  schedule(pregnancy)
+
+  // Back pain, stable, with a question for the desk. Overdue, triage nurse only, open.
+  const desk = mk({ ref: 'desk', ctas: 4, group: 'chest_back_pain', cedis: '551', triagedMinAgo: 140, language: 'pa' })
+  signIn(desk, 'patient', 135)
+  addCheckin(desk, 128, 'same', 'ok', 6, [])
+  addVitals(desk, 75, { sbp: 130, dbp: 82, hr: 76, rr: 14, spo2: 99, temp_c: 36.6 })
+  addCheckin(desk, 70, 'same', 'ok', 6, [])
+  addCheckin(desk, 12, 'better', 'good', 4, [])
+  const question = addConcern(desk, 8, 'desk_question')
+  raise(desk, 'overdue', 'concern_desk_question', 'report', question, now - 8 * MIN, ['triage_nurse'])
+  schedule(desk)
+
+  // Pager visit with a desk question, acknowledged by the triage nurse.
+  const wrist = mk({ ref: 'wrist', ctas: 4, group: 'general', cedis: null, triagedMinAgo: 210, language: 'yue', pager: '305' })
+  addCheckin(wrist, 190, 'same', 'ok', 5, [])
+  addCheckin(wrist, 130, 'same', 'ok', 4, [])
+  addVitals(wrist, 50, { sbp: 118, dbp: 74, hr: 72, rr: 14, spo2: 99, temp_c: 36.5 })
+  addCheckin(wrist, 45, 'better', 'good', 3, [])
+  const wristQuestion = addConcern(wrist, 15, 'desk_question')
+  raise(wrist, 'overdue', 'concern_desk_question', 'report', wristQuestion, now - 15 * MIN, ['triage_nurse'])
+  ack(wrist, 10, NURSE)
+  schedule(wrist)
+
+  // Tingling hands, says they are leaving; the triage nurse acknowledged.
+  const tingling = mk({ ref: 'tingling', ctas: 4, group: 'neuro_change', cedis: '410', triagedMinAgo: 165, language: 'fr' })
+  signIn(tingling, 'patient', 162)
+  addCheckin(tingling, 150, 'same', 'ok', 3, [])
+  addCheckin(tingling, 95, 'same', 'ok', 4, [])
+  addVitals(tingling, 30, { sbp: 122, dbp: 78, hr: 74, rr: 14, spo2: 99, temp_c: 36.7 })
+  addCheckin(tingling, 38, 'same', 'ok', 4, [])
+  const goingHome = addLeaving(tingling, 10)
+  raise(tingling, 'leave_risk', 'leaving', 'report', goingHome, now - 10 * MIN)
+  ack(tingling, 6, NURSE)
+  schedule(tingling)
+
+  // Neck strain on a pager that stopped answering: silent, open.
+  const neck = mk({ ref: 'neck', ctas: 4, group: 'head_injury', cedis: '105', triagedMinAgo: 155, pager: '422' })
+  addCheckin(neck, 140, 'same', 'ok', 4, [])
+  addVitals(neck, 70, { sbp: 134, dbp: 86, hr: 80, rr: 16, spo2: 98, temp_c: 36.6 })
+  addCheckin(neck, 80, 'same', 'ok', 3, [])
+  schedule(neck)
+  missed(neck)
+
+  // Just triaged: no reports yet.
+  const ankle = mk({ ref: 'ankle', ctas: 4, group: 'general', cedis: null, triagedMinAgo: 5, language: 'es', pager: '131' })
+  schedule(ankle)
+
+  // Felt worse earlier, was assessed stable and stays in the waiting room. No open task; reassessment overdue.
+  const stable = mk({ ref: 'stable', ctas: 4, group: 'general', cedis: null, triagedMinAgo: 100 })
+  signIn(stable, 'patient', 98, 40)
+  const earlier = addCheckin(stable, 90, 'worse', 'poor', 6, [])
+  raise(stable, 'amber', 'feeling_worse', 'report', earlier, now - 90 * MIN)
+  complete(stable, 85, 70, 'assessed_stable')
+  addCheckin(stable, 45, 'better', 'good', 3, [])
+  schedule(stable)
+
+  // ---- CTAS 5 ----
+
+  // Nearly five hours, steady, nobody signed in now.
+  const rash = mk({ ref: 'rash', ctas: 5, group: 'general', cedis: null, triagedMinAgo: 290 })
+  signIn(rash, 'patient', 288, 35)
+  addCheckin(rash, 270, 'same', 'good', 2, [])
+  addCheckin(rash, 150, 'same', 'good', 2, [])
+  addVitals(rash, 110, { sbp: 120, dbp: 76, hr: 70, rr: 14, spo2: 99, temp_c: 36.6 })
+  addCheckin(rash, 40, 'same', 'ok', 3, [])
+  schedule(rash)
+
+  // Pager visit; the next prompt is two minutes overdue and nothing is open yet.
+  const sore = mk({ ref: 'sore', ctas: 5, group: 'general', cedis: null, triagedMinAgo: 230, language: 'pl', pager: '507' })
+  addCheckin(sore, 215, 'same', 'ok', 2, [])
+  addVitals(sore, 100, { sbp: 116, dbp: 72, hr: 68, rr: 14, spo2: 99, temp_c: 36.9 })
+  addCheckin(sore, 122, 'worse', 'ok', 3, [])
+  schedule(sore)
+
+  // Mild headache now much worse: amber, acknowledged.
+  const migraine = mk({ ref: 'migraine', ctas: 5, group: 'neuro_change', cedis: '404', triagedMinAgo: 180, language: 'ur' })
+  signIn(migraine, 'patient', 178)
+  addCheckin(migraine, 170, 'same', 'ok', 3, [])
+  addCheckin(migraine, 110, 'same', 'ok', 4, [])
+  const muchWorse = addCheckin(migraine, 55, 'much_worse', 'poor', 7, [])
+  raise(migraine, 'amber', 'feeling_worse', 'report', muchWorse, now - 55 * MIN)
+  ack(migraine, 48, PHYSICIAN)
+  addVitals(migraine, 47, { sbp: 136, dbp: 88, hr: 84, rr: 16, spo2: 99, temp_c: 36.8 })
+  schedule(migraine)
+
+  const visits = [
+    chest, calm, head, confused, child,
+    breathing, headache,
+    droop, backpain, flank, vomiting, sugar, cut, vertigo, selfHarm,
+    pregnancy, desk, wrist, tingling, neck, ankle, stable,
+    rash, sore, migraine,
+  ]
+  for (const r of visits) {
+    r.reports.sort((a, b) => Date.parse(a.received_at) - Date.parse(b.received_at))
+    r.vitals.sort((a, b) => Date.parse(a.received_at) - Date.parse(b.received_at))
+  }
+  return { visits, submissions: {} }
 }
 
 function load(): State {
