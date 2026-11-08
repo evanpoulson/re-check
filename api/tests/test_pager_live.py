@@ -161,3 +161,93 @@ def test_a_roomed_patient_is_called_to_the_desk(live_client):
     visit_id = enrol_pager_visit(live_client, pager)
     write(live_client, "UPDATE visit SET status = 'roomed', closed_at = now() WHERE id = %s", visit_id)
     assert live_client.get(f"/api/pager/{pager}", headers=HEADERS).json()["state"] == "called"
+
+
+# --- What the phone's home screen also gets: follow-ups and the circle prompt -------------------------
+
+
+def state(client, pager):
+    r = client.get(f"/api/pager/{pager}", headers=HEADERS)
+    assert r.status_code == 200, r.text
+    return r.json()
+
+
+def test_a_waiting_pager_lists_its_follow_up_questions_in_english(live_client):
+    pager = free_pager()
+    enrol_pager_visit(live_client, pager)                  # chest or back pain
+    items = state(live_client, pager)["items"]
+    assert [i["key"] for i in items] == ["pain_moved", "pain_sudden_worse"]
+    assert items[0] == {"key": "pain_moved", "input_type": "yes_no", "options": [], "allow_unsure": True,
+                        "text": "Has the pain moved or spread somewhere new?"}
+
+
+def test_an_open_checkin_has_one_circle_prompt_until_it_is_answered(live_client):
+    pager = free_pager()
+    enrol_pager_visit(live_client, pager)
+    first = state(live_client, pager)["attention_prompt"]
+    assert first is not None and first["steps"]
+    assert state(live_client, pager)["attention_prompt"]["prompt_id"] == first["prompt_id"]
+
+
+def test_no_circle_prompt_until_the_checkin_opens(live_client):
+    pager = free_pager()
+    enrol_pager_visit(live_client, pager, due=False)
+    body = state(live_client, pager)
+    assert body["checkin_open"] is False
+    assert body["attention_prompt"] is None
+    assert body["items"]                                   # questions are listed all the same
+
+
+def test_unassigned_and_called_pagers_get_no_questions(live_client):
+    pager = free_pager()
+    assert state(live_client, pager)["items"] == []
+    visit_id = enrol_pager_visit(live_client, pager)
+    write(live_client, "UPDATE visit SET status = 'roomed', closed_at = now() WHERE id = %s", visit_id)
+    body = state(live_client, pager)
+    assert (body["state"], body["items"], body["attention_prompt"]) == ("called", [], None)
+
+
+def test_a_pager_circle_count_is_scored_and_can_be_answered_once(live_client):
+    pager = free_pager()
+    enrol_pager_visit(live_client, pager)
+    prompt = state(live_client, pager)["attention_prompt"]
+    (expected,) = query(live_client, "SELECT expected_count FROM attention_prompt WHERE id = %s", prompt["prompt_id"])
+    attention = {"kind": "answered", "prompt_id": prompt["prompt_id"], "count": expected}
+    r = live_client.post(f"/api/pager/{pager}/reports", json=wellness("ok", "same", attention=attention),
+                         headers=HEADERS)
+    assert r.status_code == 200, r.text
+    (count,) = query(live_client, "SELECT attention_count FROM report WHERE attention_prompt_id = %s",
+                     prompt["prompt_id"])
+    assert count == expected
+    write(live_client, "UPDATE visit SET next_prompt_due_at = now() - interval '1 minute' WHERE pager_no = %s", pager)
+    again = live_client.post(f"/api/pager/{pager}/reports", json=wellness("ok", "same", attention=attention),
+                             headers=HEADERS)
+    assert again.status_code == 422
+    assert "already answered" in again.json()["detail"]
+
+
+def test_a_followup_is_taken_before_the_checkin_is_due_and_keeps_the_timer(live_client):
+    pager = free_pager()
+    visit_id = enrol_pager_visit(live_client, pager, due=False)
+    (before,) = query(live_client, "SELECT next_prompt_due_at FROM visit WHERE id = %s", visit_id)
+    body = {
+        "submission_id": sid(), "kind": "checkin", "purpose": "followup", "reporter": "patient", "channel": "pager",
+        "captured_at": now(), "questionnaire_version": default_bank().version,
+        "feeling_now": NOT_ASKED, "feeling_change": NOT_ASKED, "pain": NOT_ASKED, "new_findings": NOT_ASKED,
+        "attention": NOT_ASKED, "items": {"pain_moved": {"kind": "yes_no", "value": True}},
+    }
+    r = live_client.post(f"/api/pager/{pager}/reports", json=body, headers=HEADERS)
+    assert r.status_code == 200, r.text
+    (after,) = query(live_client, "SELECT next_prompt_due_at FROM visit WHERE id = %s", visit_id)
+    assert after == before
+
+
+def test_answers_open_their_follow_ups_in_the_receipt_and_the_next_state(live_client):
+    pager = free_pager()
+    enrol_pager_visit(live_client, pager)
+    items = {"pain_moved": {"kind": "yes_no", "value": True}, "pain_sudden_worse": {"kind": "yes_no", "value": False}}
+    r = live_client.post(f"/api/pager/{pager}/reports", json=wellness("ok", "same", items=items), headers=HEADERS)
+    assert r.status_code == 200, r.text
+    assert r.json()["follow_up_items"] == ["pain_new_location", "change_started"]
+    keys = [i["key"] for i in state(live_client, pager)["items"]]
+    assert {"pain_new_location", "change_started"} <= set(keys)

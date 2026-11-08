@@ -6,6 +6,11 @@ its own number in the path. Its visit is the site's waiting visit that the
 triage nurse gave that pager number at enrolment; `visit_pager_waiting_uq`
 allows at most one. Reports are stored, routed and audited exactly like phone
 reports (see `reports.store_report`), with channel `pager` and no session.
+
+While its patient waits, a pager's state also carries what the phone's home
+screen gets for its check-in (`/api/patient/home`): the visit's follow-up
+questions and, while a check-in is open, the circle prompt. The pager's
+screen is ASCII, so its questions are always in English.
 """
 
 import hmac
@@ -15,13 +20,18 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Path, status
 
+from pydantic import Field
+
 from ..auth import Pool
-from ..contract.codes import Channel, Reporter
+from ..contract.codes import Channel, ComplaintGroup, Reporter
 from ..contract.common import OutputModel, Timestamp, Version
+from ..contract.patient import AttentionPrompt, QuestionItem
 from ..contract.reports import PatientReport, ReportReceipt
+from ..db import write_tx
 from ..question_bank import default_bank
 from ..settings import pager_key, site_id
 from ..wait_times.estimate import waited_minutes
+from .patient import answers_so_far, attention_prompt, question_item
 from .reports import store_report
 
 router = APIRouter(prefix="/api/pager", tags=["pager"])
@@ -52,13 +62,20 @@ class PagerState(OutputModel):
     next_checkin_due_at: Timestamp | None
     waited_minutes: int | None
     questionnaire_version: Version
+    items: list[QuestionItem] = Field(
+        default_factory=list,
+        description="The visit's follow-up questions, as PatientHome.items, in English. Empty unless waiting.",
+    )
+    attention_prompt: AttentionPrompt | None = Field(
+        default=None, description="The circle check, as PatientHome.attention_prompt, while a check-in is open."
+    )
 
 
 STATE_SQL = """
     SELECT status::text, triaged_at, next_prompt_due_at,
            coalesce(next_prompt_due_at <= now(), false),
            coalesce(closed_at > now() - make_interval(mins => %s), false),
-           now()
+           now(), id, complaint_group::text, cedis_code
       FROM visit
      WHERE site_id = %s AND pager_no = %s AND app_exclusion IS NULL
      ORDER BY (status = 'waiting') DESC, triaged_at DESC
@@ -73,27 +90,35 @@ STATE_SQL = """
     responses={401: {"description": "Missing or wrong X-Pager-Key"}, 503: {"description": "Pagers are off"}},
 )
 async def pager_state(pager_no: PagerNo, pool: Pool) -> PagerState:
-    """Whether the pager's patient is waiting, has a check-in open, or has been called to the desk."""
-    async with pool.connection() as conn:
+    """Whether the pager's patient is waiting, has a check-in open, or has been called to the desk.
+
+    While waiting, also the visit's follow-up questions and, while a check-in is open,
+    its circle prompt (a new prompt is stored and audited, so this is a write transaction).
+    """
+    bank = default_bank()
+    async with write_tx(pool, f"patient|pager:{pager_no}") as conn:
         cur = await conn.execute(STATE_SQL, [CALLED_FOR_MINUTES, site_id(), pager_no])
         row = await cur.fetchone()
         if row is None:
             cur = await conn.execute("SELECT now()")
             (db_now,) = await cur.fetchone()
-    version = default_bank().version
-    if row is None:
-        return _idle(pager_no, db_now, version)
-    status_, triaged_at, next_due, checkin_open, recently_closed, db_now = row
-    if status_ == "waiting":
-        return PagerState(
-            pager_no=pager_no,
-            state="waiting",
-            server_time=db_now,
-            checkin_open=checkin_open,
-            next_checkin_due_at=next_due,
-            waited_minutes=waited_minutes(triaged_at, db_now),
-            questionnaire_version=version,
-        )
+            return _idle(pager_no, db_now, bank.version)
+        status_, triaged_at, next_due, checkin_open, recently_closed, db_now, visit_id, group, cedis = row
+        if status_ == "waiting":
+            now, later = bank.follow_ups(ComplaintGroup(group), cedis, await answers_so_far(conn, visit_id))
+            prompt = await attention_prompt(conn, bank, visit_id) if checkin_open else None
+            return PagerState(
+                pager_no=pager_no,
+                state="waiting",
+                server_time=db_now,
+                checkin_open=checkin_open,
+                next_checkin_due_at=next_due,
+                waited_minutes=waited_minutes(triaged_at, db_now),
+                questionnaire_version=bank.version,
+                items=[question_item(bank, key, Reporter.PATIENT, "en") for key in now + later],
+                attention_prompt=prompt,
+            )
+    version = bank.version
     if status_ == "roomed" and recently_closed:
         return PagerState(
             pager_no=pager_no,

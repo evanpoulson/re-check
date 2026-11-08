@@ -15,8 +15,8 @@ Status, 2026-11-08:
 
 | Stub behaviour | API today | Step |
 |---|---|---|
-| `items` in the pager state: the visit's follow-up questions | Not sent | 1 |
-| `attention_prompt` in the pager state while a check-in is open | Not sent, so no prompt is ever issued for a pager visit, and a pager report naming one gets "attention prompt not found" | 1 |
+| `items` in the pager state: the visit's follow-up questions | Sent (step 1) | 1 |
+| `attention_prompt` in the pager state while a check-in is open | Sent, stored and scored like the phone's (step 1) | 1 |
 | A `PagerState` shape the web contract knows | Model lives in `routes/pager.py` | 2 |
 | One ID for each physical pager | `visit.pager_no` only | 3 |
 | Everything else (errors, retries, timer, messages, follow-ups, scoring) | Same, through `store_report` | Already done |
