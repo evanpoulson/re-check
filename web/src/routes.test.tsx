@@ -169,7 +169,7 @@ describe('charge nurse', () => {
     expect(screen.getByText(/^Shift /)).toBeInTheDocument()
     const patients = screen.getByRole('list', { name: 'Waiting patients' })
     // The escalated red task is past its acknowledgement deadline, so its patient row says so.
-    expect(within(patients).getAllByRole('link')[0]).toHaveTextContent(/#1.*Acknowledgement \d+ min overdue/)
+    expect(within(patients).getAllByRole('link')[0]).toHaveTextContent(/#1.*Acknowledgement (due now|\d+ min overdue)/)
     expect(screen.getByRole('list', { name: 'Open tasks' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /Overdue staff reassessments/ })).toBeInTheDocument()
   })
@@ -224,12 +224,16 @@ describe('triage nurse: enrolment and QR', () => {
     const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
-    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(2) // visit details and QR card
-    await user.click(screen.getByRole('button', { name: 'Show visit QR' }))
+    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(1) // once, beside the sign-out action
+    const show = screen.getByRole('button', { name: 'Show QR' })
+    expect(show).toHaveAttribute('aria-expanded', 'false')
+    await user.click(show)
     expect(await screen.findByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
     expect(screen.getByText(/\/v\/demo-confused-token$/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show QR' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'Print' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Sign out the phone' }))
-    expect(await screen.findAllByText('No one signed in')).toHaveLength(2)
+    expect(await screen.findAllByText('No one signed in')).toHaveLength(1)
   })
 
   it('splits the visit into four pages and keeps the concern and both clocks on each', async () => {
@@ -273,9 +277,14 @@ describe('triage nurse: enrolment and QR', () => {
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
     const stop = await screen.findByRole('button', { name: 'Stop offering the app' })
     const confirm = screen.getByRole('checkbox', { name: 'I understand this cannot be undone.' })
-    expect(stop).toBeDisabled()
-    expect(confirm).toBeDisabled()
+    // The button stays enabled and says what is missing on press.
+    await user.click(stop)
+    expect(await screen.findByText('Choose a reason for stopping the app.')).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: 'Major trauma' }))
+    await user.click(stop)
+    expect(await screen.findByText('Confirm that you understand this cannot be undone.')).toBeInTheDocument()
+    expect(confirm).toHaveFocus()
+    expect((await getVisitDetail(visit.visit_id)).visit.app_exclusion).toBeNull()
     await user.click(confirm)
     await user.click(stop)
     expect(await screen.findAllByText('Not offered: Major trauma')).not.toHaveLength(0)
@@ -764,13 +773,14 @@ describe('physician review flow', () => {
     renderApp(`/staff/visits/${visit.visit_id}/assessment`)
     const save = await screen.findByRole('button', { name: 'Record assessment' })
     await user.click(screen.getByRole('radio', { name: 'Tests ordered' }))
-    expect(save).toBeDisabled() // not acknowledged yet
+    await user.click(save) // not acknowledged yet
+    expect(await screen.findByText('Acknowledge the task before you assess it.')).toBeInTheDocument()
+    expect((await getVisitDetail(visit.visit_id)).open_task?.status).toBe('open')
     await user.click(screen.getByRole('button', { name: 'Acknowledge' }))
     expect(await screen.findAllByText(/^Acknowledged \d/)).toHaveLength(2) // banner and card
     expect(screen.getByRole('radio', { name: 'Assessed, stable' })).toHaveFocus()
-    expect(save).toBeEnabled()
     await user.click(save)
-    expect(await screen.findByRole('heading', { name: 'Assessment recorded' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^Tests ordered · .+ · Physician$/ })).toBeInTheDocument()
     expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
 
   })

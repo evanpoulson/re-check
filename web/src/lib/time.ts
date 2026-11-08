@@ -20,6 +20,12 @@ export function formatMinutes(ms: number): string {
   return `${h} h ${m} min`
 }
 
+/** Within a minute either side of the deadline, staff screens say "Due now" instead of "0 min". */
+export const isDueNow = (ms: number) => Math.abs(ms) < 60_000
+
+/** Past the deadline by more than the "Due now" minute. */
+export const isOverdue = (ms: number | null) => ms !== null && ms <= -60_000
+
 /** Patient wording: "1 hour 10 minutes", "45 minutes". Units are spelled out. */
 export function durationWords(minutes: number, t: TFunction): string {
   const total = Math.max(0, Math.round(Math.abs(minutes)))

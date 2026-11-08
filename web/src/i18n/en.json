@@ -124,7 +124,8 @@
   "reporter": {
     "patient": "Patient",
     "companion": "Companion",
-    "staff": "Staff"
+    "staff": "Staff",
+    "system": "System"
   },
   "missing": {
     "unsure": "Not sure",
@@ -192,7 +193,8 @@
     "overdue": "{{value}} overdue",
     "ago": "{{value}} ago",
     "notApplicable": "Not applicable",
-    "readyNow": "Ready now"
+    "readyNow": "Ready now",
+    "dueNow": "Due now"
   },
   "flags": {
     "noResponse": "No response",
@@ -380,23 +382,40 @@
     "staffTools": "Visit tools",
     "saved": "Changes saved.",
     "vitalsSaved": "Vitals saved",
-    "flagSaved": "Flag recorded"
+    "flagSaved": "Flag recorded",
+    "vitalsSavedAt": "Vitals saved · measured {{time}}"
   },
   "vitals": {
-    "sbp": "Systolic BP",
-    "dbp": "Diastolic BP",
-    "hr": "HR · beats/min",
-    "rr": "RR · breaths/min",
-    "spo2": "SpO2 · %",
-    "temp_c": "Temp · °C",
+    "sbp": "Systolic (mmHg)",
+    "dbp": "Diastolic (mmHg)",
+    "hr": "Heart rate (beats/min)",
+    "rr": "Respiratory rate (breaths/min)",
+    "spo2": "Oxygen saturation, SpO₂ (%)",
+    "temp_c": "Temperature (°C)",
     "supersedes": "This corrects an earlier entry",
     "newEntry": "New entry",
     "errors": {
       "none": "Enter at least one measurement.",
-      "bpPair": "Enter systolic and diastolic together.",
-      "bpOrder": "Diastolic must be lower than systolic.",
-      "range": "A value is outside the allowed range. Check for a typo.",
-      "future": "The measurement time cannot be in the future."
+      "bpPair": "Enter {{field}} as well. Systolic and diastolic go together.",
+      "bpOrder": "{{field}} must be lower than systolic.",
+      "range": "{{field}} must be a whole number from {{lo}} to {{hi}}.",
+      "future": "The measurement time cannot be in the future.",
+      "rangeDecimal": "{{field}} must be from {{lo}} to {{hi}}."
+    },
+    "names": {
+      "sbp": "Systolic blood pressure",
+      "dbp": "Diastolic blood pressure",
+      "hr": "Heart rate",
+      "rr": "Respiratory rate",
+      "spo2": "SpO₂",
+      "temp_c": "Temperature"
+    },
+    "short": {
+      "bp": "BP {{sbp}}/{{dbp}} mmHg",
+      "hr": "HR {{value}} beats/min",
+      "rr": "RR {{value}} breaths/min",
+      "spo2": "SpO₂ {{value}}%",
+      "temp_c": "Temp {{value}} °C"
     }
   },
   "patient": {
@@ -600,7 +619,8 @@
       "all": "No active review tasks",
       "open": "No tasks need acknowledgement",
       "acknowledged": "No acknowledged tasks"
-    }
+    },
+    "dueNow": "due now"
   },
   "taskLevel": {
     "red": "Urgent review",
@@ -649,25 +669,37 @@
       "latestAnswers": "Latest check-in answers",
       "answersFrom": "{{who}} · {{time}}",
       "compare": "Compare reports in Timeline",
-      "clockSafeguard": "Patient answers do not reset the staff clock or clear this concern.",
       "review": "Review this concern",
-      "nextStep": "Next: record vitals and deliberately select an assessment disposition.",
-      "goAssessment": "Go to Assessment"
+      "goAssessment": "Go to Assessment",
+      "leadNoTask": "No open concern. Patient reports and the two clocks are below.",
+      "leadExcluded": "The app is not offered, so there are no patient reports. Staff check this patient in person.",
+      "lastKnown": "Last known report",
+      "silentSince": "No check-in since {{time}}",
+      "silentOverdue": "({{value}} overdue)",
+      "painRose": "Pain went up",
+      "nextAssess": "Next: choose an outcome and record the assessment.",
+      "nextVitalsAssess": "Next: record vitals if you measured them, then choose an outcome and record the assessment.",
+      "nextVitals": "Next: record vitals if you measured them. The assessment is recorded by the {{roles}}.",
+      "nextNone": "The assessment is recorded by the {{roles}}."
     },
     "assessment": {
-      "lead": "Record the staff check. Acknowledgement and assessment are separate steps.",
-      "vitalsLead": "Enter measured values; no values are prefilled.",
-      "bp": "Blood pressure · mmHg",
+      "lead": "Acknowledge, then record the outcome. Vitals are optional supporting input.",
+      "vitalsLead": "Enter the values you measured. Nothing is filled in for you.",
+      "bp": "Blood pressure (mmHg)",
       "measuredAt": "Measured at",
       "measuredAtHelp": "Leave empty to use the time you save.",
       "vitalsNotAssessment": "Saving vitals does not record the assessment.",
       "recordReminder": "Document clinical care in Connect Care.",
       "recordReminderLead": "Recheck supports waiting-room review, not the clinical record.",
       "disposition": "Assessment disposition",
-      "statusPending": "Assessment pending · No disposition selected",
-      "statusSelected": "Assessment pending · {{disposition}} selected",
-      "assessHelp": "Disabled until acknowledged and a disposition is deliberately selected.",
-      "firstAck": "First, acknowledge"
+      "statusPending": "No outcome chosen yet",
+      "statusSelected": "{{disposition}} chosen",
+      "assessHelp": "Acknowledge first, then choose an outcome and record it.",
+      "firstAck": "1. Acknowledge",
+      "chooseOutcome": "Choose an outcome of the assessment.",
+      "notYours": "Assessment pending. It is recorded by the {{roles}}.",
+      "lastAssessed": "No open review task. Last assessment: {{outcome}} at {{time}}.",
+      "recentVitals": "Recent vitals"
     },
     "timeline": {
       "lead": "Patient reports and task audit, with the evidence behind this concern.",
@@ -680,26 +712,40 @@
       "rule": "Rule",
       "version": "Version",
       "taskStatus": "Review task status",
-      "safeguard": "Patient responses never reset staff reassessment or clear an unresolved concern."
+      "emptyExcluded": "Nothing recorded yet. The app is not offered, so there are no patient reports; staff entries appear here."
     },
     "manage": {
-      "lead": "Visit details, app access and status. For clinical review or Flag higher, use Assessment.",
       "qr": "Visit QR",
       "qrAvailable": "Available while waiting",
       "qrHelp": "One reusable visit QR. After scanning, choose patient or companion; only one device can be signed in.",
       "qrReused": "The same QR is reused for this visit.",
-      "showQr": "Show visit QR",
+      "showQr": "Show QR",
       "qrUnavailable": "The visit QR is only available while the patient is waiting and the app is offered.",
       "currentStatus": "Current status: {{status}}",
       "statusHelp": "Updating visit status is separate from completing the review task. Record an assessment in Assessment.",
       "stopLead": "Irreversible app exclusion",
       "stopImpact": "Stops patient prompts and signs out the active device.",
       "stopContinues": "Staff reassessment continues.",
-      "stopCannotUndo": "This cannot be undone. The app is currently offered.",
+      "stopCannotUndo": "This cannot be undone.",
       "stepReason": "1. Select an exclusion reason",
       "stepConfirm": "2. Confirm the irreversible change",
-      "stopHelp": "Disabled until a reason is selected and the irreversible change is confirmed."
-    }
+      "stopHelp": "Choose a reason and confirm, then stop the app.",
+      "leadTriage": "Visit details, app access and status. To acknowledge, record vitals or flag higher, use the Assessment tab.",
+      "leadCharge": "Visit details, app access and status. To acknowledge or record vitals, use the Assessment tab.",
+      "chooseReason": "Choose a reason for stopping the app.",
+      "tickConfirm": "Confirm that you understand this cannot be undone.",
+      "dangerZone": "Danger zone",
+      "confirmTitle": "Mark this visit as {{status}}?",
+      "confirmEnds": "This ends the visit and signs out the patient's phone. The visit QR stops working.",
+      "confirmEndsNoPhone": "This ends the visit.",
+      "confirmChange": "The visit has already ended. This changes its recorded status.",
+      "confirmButton": "Yes, mark as {{status}}",
+      "cancel": "Cancel",
+      "statusDone": "Visit marked {{status}} at {{time}}. The patient's phone is signed out.",
+      "statusDoneNoPhone": "Visit marked {{status}} at {{time}}."
+    },
+    "appNotOffered": "App not offered: {{reason}}",
+    "safeguard": "Patient answers never reset the staff clock or clear an open concern."
   },
   "waitWords": {
     "short": "under 15 minutes",
@@ -786,7 +832,8 @@
       "silent": "Check-in missed",
       "prompt": "Check-in late",
       "leave": "May leave",
-      "none": "Nothing overdue"
+      "none": "Nothing overdue",
+      "ackDueNow": "Acknowledgement due now"
     }
   }
 }
