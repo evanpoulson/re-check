@@ -1,44 +1,50 @@
 @import 'tailwindcss';
 
 /*
-  Design tokens. Hospital wayfinding signage, not a SaaS kit: one legibility-first
-  type family, a cool "Chinook" sky canvas, signage navy for text and actions, and
-  status shown by text, icon and shape as well as colour. There is no green for
-  "fine": reassurance is never encoded as a colour.
+  Design tokens, after apple.com: the system font (SF Pro on Apple devices), a quiet
+  grey canvas with white cards, near-black text, one blue for actions and links, and
+  translucent "glass" bars. Status is still shown by text, icon and shape as well as
+  colour, and there is no green for "fine": reassurance is never encoded as a colour.
+  Every text and background pair here passes 4.5:1.
+
+  Shape encodes meaning: pills are things you tap, 18px cards hold content, and the
+  small radius is for data chips.
 */
 @theme {
-  --font-sans: 'Atkinson Hyperlegible Next Variable', 'Noto Sans Gurmukhi', system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', 'Noto Sans Gurmukhi', system-ui, sans-serif;
 
-  /* Signage navy: text and primary actions. */
-  --color-ink: #11263f;
-  /* Lane grey: secondary text (5.9:1 on the canvas). */
-  --color-muted: #4b5c6e;
-  /* Chinook mist: the page. Pure white is kept for the panels people read and answer on. */
-  --color-canvas: #e8eff4;
+  /* Near-black text (15:1 on the canvas). */
+  --color-ink: #1d1d1f;
+  /* Secondary text (4.7:1 on the canvas, 5.1:1 on white). */
+  --color-muted: #6e6e73;
+  /* The page. Pure white is kept for the cards people read and answer on. */
+  --color-canvas: #f5f5f7;
   --color-surface: #ffffff;
-  --color-line: #b9c8d4;
+  --color-line: #d2d2d7;
 
-  /* Signal blue: links, focus and the edge of a selected answer. */
-  --color-brand-50: #e3eef8;
-  --color-brand-100: #c9ddf0;
-  --color-brand-500: #2c78bd;
-  --color-brand-600: #1b64a8;
-  --color-brand-700: #14507f;
+  /* Apple blue: actions, links, focus and the edge of a selected answer. */
+  --color-brand-50: #e8f1fc;
+  --color-brand-100: #d0e4fa;
+  --color-brand-500: #0071e3;
+  --color-brand-600: #0066cc;
+  --color-brand-700: #0058b0;
 
-  --color-level-red: #a61b14;
-  --color-level-red-bg: #fde3e1;
-  --color-level-amber: #7a4f00;
-  --color-level-amber-bg: #ffe7b3;
-  --color-level-silent: #58249c;
-  --color-level-silent-bg: #eee5fb;
-  --color-level-leave: #9a3a06;
-  --color-level-leave-bg: #ffe5d2;
-  --color-level-overdue: #3d4c5c;
-  --color-level-overdue-bg: #dce5ec;
+  --color-level-red: #d70015;
+  --color-level-red-bg: #ffebee;
+  --color-level-amber: #8a5300;
+  --color-level-amber-bg: #fff4d6;
+  --color-level-silent: #6e3fc8;
+  --color-level-silent-bg: #f3edfc;
+  --color-level-leave: #b14300;
+  --color-level-leave-bg: #fff0e3;
+  --color-level-overdue: #48484a;
+  --color-level-overdue-bg: #ececf0;
 
-  /* Radius encodes meaning: small on data, large only on things you tap. */
-  --radius-data: 6px;
-  --radius-tap: 14px;
+  --radius-data: 8px;
+  --radius-card: 18px;
+  --radius-tap: 980px;
+
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 0.06);
 }
 
 @layer base {
@@ -47,17 +53,62 @@
     color: var(--color-ink);
     background: var(--color-canvas);
     font-feature-settings: 'tnum' 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
   }
   body {
     margin: 0;
     min-height: 100dvh;
   }
+  h1,
+  h2 {
+    letter-spacing: -0.02em;
+  }
   :focus-visible {
-    outline: 3px solid var(--color-brand-600);
+    outline: 3px solid rgb(0 113 227 / 0.6);
     outline-offset: 2px;
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Translucent bar, as in apple.com's navigation. */
+  .glass {
+    background: rgb(251 251 253 / 0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  /* A form field: white, hairline border, blue ring on focus. */
+  .field {
+    min-height: 2.75rem;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    padding-inline: 0.875rem;
+    font-size: 1rem;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
+  }
+  /* "Lead phrase. Grey continuation." headings. */
+  .headline-split > em {
+    font-style: normal;
+    color: var(--color-muted);
+  }
+  /* Small uppercase eyebrow above a title, as in "NEW" on apple.com. */
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-muted);
   }
 }
 

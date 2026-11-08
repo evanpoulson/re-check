@@ -29,12 +29,12 @@ export function Exchange() {
   return (
     <PatientLayout>
       {error ? (
-        <Card role="alert" className="space-y-2">
-          <h1 className="text-2xl font-bold">{t(`exchange.${error}.title`)}</h1>
-          <p>{t('exchange.askDesk')}</p>
+        <Card role="alert" className="space-y-2 text-center">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t(`exchange.${error}.title`)}</h1>
+          <p className="text-muted">{t('exchange.askDesk')}</p>
         </Card>
       ) : (
-        <h1 role="status" className="text-2xl font-bold">{t('pages.patientEntry')}</h1>
+        <h1 role="status" className="py-16 text-center text-[1.75rem] font-semibold leading-tight tracking-tight text-muted">{t('pages.patientEntry')}</h1>
       )}
     </PatientLayout>
   )

@@ -27,8 +27,8 @@ import { cn } from '@/lib/utils'
 import { useDashboardEvents } from './useDashboardEvents'
 
 const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'general']
-const SELECT = 'min-h-11 rounded-data border border-ink bg-surface px-3'
-const pill = 'inline-flex items-center rounded-data px-2 py-0.5 text-sm font-bold'
+const SELECT = 'min-h-11 rounded-tap border border-line bg-surface pl-4 pr-8 text-[0.9375rem]'
+const pill = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.8125rem] font-semibold whitespace-nowrap'
 
 /** The board data is TriageBoard joined with Worklist on visit id, sorted client side. */
 export function useBoard() {
@@ -56,33 +56,41 @@ export function Triage() {
   const counts = countByLevel(ordered)
 
   return (
-    <main className="mx-auto max-w-[88rem] space-y-4 p-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-extrabold tracking-tight">{t('pages.triage')}</h1>
-        <span className="inline-flex items-center gap-1.5 text-sm text-muted" role="status">
-          <span aria-hidden className={cn('size-2.5 rounded-full', live ? 'bg-brand-600' : 'bg-level-amber')} />
+    <main className="mx-auto max-w-[88rem] space-y-6 px-4 py-10 sm:px-6">
+      <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-2">
+        <div className="space-y-1">
+          <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.triage')}</h1>
+          <p className="text-lg text-muted">{t('triage.order')}</p>
+        </div>
+        <span className="inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-[0.8125rem] text-muted shadow-card" role="status">
+          <span aria-hidden className={cn('size-2 rounded-full', live ? 'bg-brand-500' : 'bg-level-amber')} />
           {live ? t('triage.live') : t('triage.reconnecting')}
         </span>
       </div>
 
-      <ul className="flex flex-wrap gap-3" aria-label={t('triage.counts')}>
+      <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label={t('triage.counts')}>
         {LEVEL_ORDER.map((level: TaskLevel) => (
           <li key={level}>
-            <Card className="flex items-center gap-3 px-4 py-3">
+            <Card className="flex h-full flex-col items-start gap-3 p-5">
               <LevelChip level={level} />
-              <span className="tabular text-2xl font-bold">{counts[level]}</span>
+              <span className="tabular text-4xl font-semibold tracking-tight">{counts[level]}</span>
             </Card>
           </li>
         ))}
       </ul>
 
       <div className="flex flex-wrap items-center gap-3">
-        <label className="flex min-h-11 items-center gap-2 rounded-data border border-ink bg-surface px-3 font-semibold">
-          <input type="checkbox" checked={filters.needsReview} onChange={(e) => setFilters({ ...filters, needsReview: e.target.checked })} className="size-4" />
+        <label
+          className={cn(
+            'flex min-h-11 cursor-pointer items-center gap-2 rounded-tap border px-4 text-[0.9375rem] font-medium transition-colors',
+            filters.needsReview ? 'border-ink bg-ink text-white' : 'border-line bg-surface hover:border-muted',
+          )}
+        >
+          <input type="checkbox" checked={filters.needsReview} onChange={(e) => setFilters({ ...filters, needsReview: e.target.checked })} className="size-4 accent-brand-500" />
           {t('triage.needsReview')}
         </label>
         <label className="flex items-center gap-2">
-          <span className="font-semibold">{t('triage.ctas')}</span>
+          <span className="text-[0.9375rem] text-muted">{t('triage.ctas')}</span>
           <select className={SELECT} value={filters.ctas ?? ''} onChange={(e) => setFilters({ ...filters, ctas: e.target.value ? Number(e.target.value) : null })}>
             <option value="">{t('triage.all')}</option>
             {[2, 3, 4, 5].map((n) => (
@@ -91,7 +99,7 @@ export function Triage() {
           </select>
         </label>
         <label className="flex items-center gap-2">
-          <span className="font-semibold">{t('triage.complaint')}</span>
+          <span className="text-[0.9375rem] text-muted">{t('triage.complaint')}</span>
           <select className={SELECT} value={filters.complaint ?? ''} onChange={(e) => setFilters({ ...filters, complaint: e.target.value || null })}>
             <option value="">{t('triage.all')}</option>
             {COMPLAINTS.map((c) => (
@@ -99,16 +107,15 @@ export function Triage() {
             ))}
           </select>
         </label>
-        <span className="ml-auto text-sm text-muted">{t('triage.order')}</span>
       </div>
 
       <Card className="overflow-x-auto p-0">
         <table className="w-full min-w-[72rem] border-collapse text-left text-sm">
           <caption className="sr-only">{t('triage.caption')}</caption>
-          <thead className="bg-canvas text-muted">
-            <tr>
+          <thead className="text-muted">
+            <tr className="border-b border-line">
               {['place', 'ref', 'ctas', 'complaint', 'waiting', 'condition', 'flags', 'lastCheckin', 'nextCheckin', 'reassess', 'pain'].map((c) => (
-                <th key={c} scope="col" className="px-3 py-3 font-semibold">{t(`triage.col.${c}`)}</th>
+                <th key={c} scope="col" className="eyebrow px-3 pb-3 pt-5 first:pl-6 last:pr-6">{t(`triage.col.${c}`)}</th>
               ))}
             </tr>
           </thead>
@@ -134,26 +141,26 @@ function Row({ item, place, now }: { item: BoardItem; place: number; now: number
   const flagged = board.level !== null
   const excluded = appNotOffered(work)
   return (
-    <tr className={cn('border-t border-line align-middle', flagged && 'bg-level-amber-bg/40')}>
+    <tr className={cn('border-t border-line/70 align-middle transition-colors first:border-t-0 hover:bg-canvas/60', flagged && 'bg-brand-50/50')}>
       {/* The place in line. It is queue order only and never changes when a flag arrives. */}
-      <th scope="row" className="tabular w-16 border-r-4 border-ink px-3 py-3 text-center text-3xl font-extrabold">
+      <th scope="row" className="tabular w-16 py-4 pl-6 pr-3 text-center text-3xl font-semibold tracking-tight text-muted">
         <span className="sr-only">{t('triage.col.place')} </span>
         {place}
       </th>
-      <td className="px-3 py-3 font-semibold">
-        <Link to={`/staff/visits/${board.visit_id}`} className="text-brand-700 underline">
+      <td className="px-3 py-4 font-semibold">
+        <Link to={`/staff/visits/${board.visit_id}`} className="text-brand-600 hover:underline underline-offset-4">
           {shortRef(work)}
         </Link>
       </td>
       <td className="tabular px-3 py-3">{board.ctas}</td>
-      <td className="px-3 py-3">{t(`complaint.${board.complaint_group}`)}</td>
+      <td className="px-3 py-4">{t(`complaint.${board.complaint_group}`)}</td>
       <td className="tabular px-3 py-3 whitespace-nowrap">{formatMinutes(now - Date.parse(board.triaged_at))}</td>
-      <td className="px-3 py-3"><StateChip condition={conditionOf(work)} /></td>
-      <td className="px-3 py-3">
+      <td className="px-3 py-4"><StateChip condition={conditionOf(work)} /></td>
+      <td className="px-3 py-4">
         <div className="flex flex-wrap gap-1.5">
           {board.level && <LevelChip level={board.level} />}
           {excluded && (
-            <span className={cn(pill, 'gap-1 border border-ink bg-surface text-ink')}>
+            <span className={cn(pill, 'gap-1 border border-line bg-surface text-ink')}>
               <UserRoundCheck aria-hidden className="size-4" />
               {t('flags.appNotOffered', { reason: t(`exclusion.${work.visit.app_exclusion}`) })}
             </span>
@@ -172,7 +179,7 @@ function Row({ item, place, now }: { item: BoardItem; place: number; now: number
           )}
         </div>
       </td>
-      <td className="px-3 py-3 whitespace-nowrap">
+      <td className="px-3 py-4 whitespace-nowrap">
         {work.last_report && since !== null ? (
           <>
             <span className="tabular">{t('time.ago', { value: formatMinutes(since) })}</span>
@@ -184,11 +191,11 @@ function Row({ item, place, now }: { item: BoardItem; place: number; now: number
           <span className="text-muted">{excluded ? t('triage.noApp') : t('triage.noCheckin')}</span>
         )}
       </td>
-      <td className="px-3 py-3">
+      <td className="px-3 py-4">
         {excluded ? <span className="text-muted">{t('time.notApplicable')}</span> : <CountdownChip due={work.visit.next_prompt_due_at} now={now} />}
       </td>
-      <td className="px-3 py-3"><CountdownChip due={board.staff_reassess_due_at} now={now} /></td>
-      <td className="px-3 py-3"><Sparkline trend={work.trend} /></td>
+      <td className="px-3 py-4"><CountdownChip due={board.staff_reassess_due_at} now={now} /></td>
+      <td className="py-4 pl-3 pr-6"><Sparkline trend={work.trend} /></td>
     </tr>
   )
 }

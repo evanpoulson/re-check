@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Check, Circle } from 'lucide-react'
+import { Check, ChevronLeft, Circle } from 'lucide-react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getVisitDetail } from '@/api/api'
@@ -25,21 +25,21 @@ export function VisitDetailPage() {
 
   const { visit, open_task: task } = data
   return (
-    <main className="mx-auto grid max-w-[88rem] gap-6 p-4 lg:grid-cols-[1fr_26rem]">
+    <main className="mx-auto grid max-w-[88rem] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_26rem]">
       <div className="space-y-5">
-        <Link to="/staff/triage" className="inline-flex min-h-11 items-center gap-1 font-semibold text-brand-700">
-          <ArrowLeft aria-hidden className="size-4" />
+        <Link to="/staff/triage" className="inline-flex min-h-11 items-center gap-1 text-[0.9375rem] text-brand-600 hover:underline underline-offset-4">
+          <ChevronLeft aria-hidden className="size-4" />
           {t('visit.back')}
         </Link>
 
-        <Card className="space-y-3">
+        <Card className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <h1 className="text-4xl font-semibold tracking-tight">
               {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : t('visit.title', { ref: visit.visit_id.slice(0, 4) })}
             </h1>
             {task && <LevelChip level={task.level} />}
           </div>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-3">
+          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
             <Field label={t('visit.ctas')} value={String(visit.ctas)} />
             <Field label={t('visit.complaint')} value={t(`complaint.${visit.complaint_group}`)} />
             <Field label={t('visit.cedis')} value={visit.cedis_code ?? t('common.none')} />
@@ -51,21 +51,21 @@ export function VisitDetailPage() {
           </dl>
         </Card>
 
-        <Card className="space-y-2">
-          <h2 className="text-xl font-extrabold">{t('visit.timers')}</h2>
+        <Card className="space-y-4">
+          <h2 className="text-2xl font-semibold tracking-tight">{t('visit.timers')}</h2>
           <p className="text-sm text-muted">{t('visit.timersHelp')}</p>
-          <dl className="grid gap-2 sm:grid-cols-3">
+          <dl className="grid gap-4 sm:grid-cols-3">
             <div>
-              <dt className="text-sm font-semibold text-muted">{t('visit.nextPrompt')}</dt>
-              <dd>{visit.app_exclusion ? t('time.notApplicable') : <CountdownChip due={visit.next_prompt_due_at} now={now} />}</dd>
+              <dt className="eyebrow">{t('visit.nextPrompt')}</dt>
+              <dd className="mt-0.5 text-[1.0625rem]">{visit.app_exclusion ? t('time.notApplicable') : <CountdownChip due={visit.next_prompt_due_at} now={now} />}</dd>
             </div>
             <div>
-              <dt className="text-sm font-semibold text-muted">{t('visit.nextReassess')}</dt>
-              <dd><CountdownChip due={visit.staff_reassess_due_at} now={now} /></dd>
+              <dt className="eyebrow">{t('visit.nextReassess')}</dt>
+              <dd className="mt-0.5 text-[1.0625rem]"><CountdownChip due={visit.staff_reassess_due_at} now={now} /></dd>
             </div>
             <div>
-              <dt className="text-sm font-semibold text-muted">{t('visit.lastStaffCheck')}</dt>
-              <dd>{visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')}</dd>
+              <dt className="eyebrow">{t('visit.lastStaffCheck')}</dt>
+              <dd className="mt-0.5 text-[1.0625rem]">{visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')}</dd>
             </div>
           </dl>
         </Card>
@@ -77,7 +77,7 @@ export function VisitDetailPage() {
         <LatestAnswers detail={data} />
 
         <Card className="space-y-3">
-          <h2 className="text-xl font-extrabold">{t('visit.timeline')}</h2>
+          <h2 className="text-2xl font-semibold tracking-tight">{t('visit.timeline')}</h2>
           <Timeline entries={data.timeline} />
         </Card>
       </div>
@@ -92,8 +92,8 @@ export function VisitDetailPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-sm font-semibold text-muted">{label}</dt>
-      <dd>{value}</dd>
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-0.5 text-[1.0625rem]">{value}</dd>
     </div>
   )
 }
@@ -109,10 +109,10 @@ function TaskCard({ task }: { task: Task }) {
   ]
   return (
     <Card className="space-y-4">
-      <h2 className="text-xl font-extrabold">{t('visit.whyFlagged')}</h2>
+      <h2 className="text-2xl font-semibold tracking-tight">{t('visit.whyFlagged')}</h2>
       <ul className="space-y-2">
         {task.reasons.map((r, i) => (
-          <li key={i} className="rounded-data bg-canvas p-3">
+          <li key={i} className="rounded-2xl bg-canvas p-4">
             <div className="flex items-center gap-2">
               <LevelChip level={r.level} />
               <span className="font-semibold">{t(`reason.${r.reason_code}`, { defaultValue: r.reason_code })}</span>
@@ -126,7 +126,7 @@ function TaskCard({ task }: { task: Task }) {
       <ol className="grid gap-2 sm:grid-cols-2" aria-label={t('visit.steps')}>
         {steps.map((s) => (
           <li key={s.key} className="flex items-center gap-2">
-            {s.at ? <Check aria-hidden className="size-5 text-brand-700" /> : <Circle aria-hidden className="size-5 text-line" />}
+            {s.at ? <Check aria-hidden className="size-5 text-brand-500" /> : <Circle aria-hidden className="size-5 text-line" />}
             <span className="font-semibold">{t(`taskStep.${s.key}`)}</span>
             <span className="tabular text-muted">
               {s.at ? clock(s.at) : t('visit.pending')}
@@ -159,15 +159,15 @@ function LatestAnswers({ detail }: { detail: VisitDetail }) {
     ...Object.entries(c.items ?? {}).map(([k, a]): [string, string] => [humanKey(k), itemAnswerText(a, t)]),
   ]
   return (
-    <Card className="space-y-2">
-      <h2 className="text-xl font-extrabold">{t('visit.latestAnswers')}</h2>
+    <Card className="space-y-4">
+      <h2 className="text-2xl font-semibold tracking-tight">{t('visit.latestAnswers')}</h2>
       <p className="text-sm text-muted">{t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}</p>
       {c.reporter === 'companion' && <p className="text-sm font-semibold">{t('answers.companionOnly')}</p>}
-      <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
+      <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
         {rows.map(([k, v]) => (
           <div key={k}>
-            <dt className="text-sm font-semibold capitalize text-muted">{k}</dt>
-            <dd>{v}</dd>
+            <dt className="eyebrow">{k}</dt>
+            <dd className="mt-0.5 text-[1.0625rem]">{v}</dd>
           </div>
         ))}
       </dl>

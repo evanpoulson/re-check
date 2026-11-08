@@ -54,7 +54,10 @@ export function useStaff(): StaffContext {
 }
 
 const link = ({ isActive }: { isActive: boolean }) =>
-  cn('rounded-data px-3 py-2 font-bold', isActive ? 'bg-white text-ink' : 'text-white/85 hover:bg-white/10')
+  cn(
+    'inline-flex min-h-11 items-center px-3 text-[0.8125rem] transition-colors',
+    isActive ? 'font-semibold text-ink' : 'text-ink/80 hover:text-ink',
+  )
 
 /** Chrome for every staff screen. Sends you to sign-in when no demo role is chosen. */
 export function StaffLayout() {
@@ -64,11 +67,10 @@ export function StaffLayout() {
   if (!role) return <Navigate to="/staff/sign-in" replace />
   return (
     <div className="min-h-dvh">
-      <header className="bg-ink text-white no-print">
-        <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-3 px-4 py-3">
-          <span className="text-xl font-extrabold tracking-tight">{t('app.name')}</span>
-          <DemoBadge />
-          <nav aria-label={t('nav.label')} className="flex gap-1">
+      <header className="glass sticky top-0 z-20 border-b border-line/70 no-print">
+        <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-x-4 gap-y-1 px-4 sm:px-6">
+          <span className="text-lg font-semibold tracking-tight">{t('app.name')}</span>
+          <nav aria-label={t('nav.label')} className="flex">
             <NavLink to="/staff/triage" className={link}>
               {t('nav.triage')}
             </NavLink>
@@ -76,17 +78,20 @@ export function StaffLayout() {
               {t('nav.enrol')}
             </NavLink>
           </nav>
-          <span className="ml-auto text-white/85">{t(`role.${role}`)}</span>
-          <Button
-            variant="ghost"
-            className="text-white hover:bg-white/10"
-            onClick={() => {
-              signOut()
-              navigate('/staff/sign-in')
-            }}
-          >
-            {t('nav.signOut')}
-          </Button>
+          <div className="ml-auto flex items-center gap-3">
+            <DemoBadge />
+            <span className="text-[0.8125rem] text-muted">{t(`role.${role}`)}</span>
+            <Button
+              variant="ghost"
+              className="min-h-11 px-2 text-[0.8125rem]"
+              onClick={() => {
+                signOut()
+                navigate('/staff/sign-in')
+              }}
+            >
+              {t('nav.signOut')}
+            </Button>
+          </div>
         </div>
       </header>
       <Outlet />

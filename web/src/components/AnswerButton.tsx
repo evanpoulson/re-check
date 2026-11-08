@@ -3,7 +3,7 @@ import type { ButtonHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * A full-width answer bar. Selection is shown by a thick left edge, a heavier
+ * A full-width answer row. Selection is shown by a blue outline, a heavier
  * weight and a check mark, so it never relies on colour alone.
  */
 export function AnswerButton({
@@ -17,14 +17,20 @@ export function AnswerButton({
       type="button"
       aria-pressed={selected}
       className={cn(
-        'flex min-h-14 w-full items-center justify-between gap-3 rounded-tap border border-l-[10px] px-4 py-2 text-left text-xl transition-colors',
-        selected ? 'border-brand-600 bg-brand-50 font-extrabold' : 'border-line border-l-line bg-surface font-medium hover:bg-brand-50',
+        'flex min-h-14 w-full items-center justify-between gap-3 rounded-card border bg-surface px-5 py-3 text-left text-xl transition-[border-color,box-shadow,background-color]',
+        selected
+          ? 'border-brand-500 font-semibold shadow-[0_0_0_1px_var(--color-brand-500)]'
+          : 'border-line font-normal hover:border-muted',
         className,
       )}
       {...props}
     >
       <span>{children}</span>
-      {selected ? <Check aria-hidden className="size-6 shrink-0 text-brand-700" /> : null}
+      {selected ? (
+        <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
+          <Check className="size-4" strokeWidth={3} />
+        </span>
+      ) : null}
     </button>
   )
 }

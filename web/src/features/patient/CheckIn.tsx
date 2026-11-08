@@ -1,4 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { CircleAlert, CircleCheckBig, Clock, OctagonAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome } from '@/api/api'
@@ -41,8 +42,8 @@ export function CheckIn() {
     const noSession = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-2">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{t(noSession ? 'exchange.noSession.title' : 'exchange.invalid.title')}</h1>
+        <Card role="alert" className="space-y-2 text-center">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t(noSession ? 'exchange.noSession.title' : 'exchange.invalid.title')}</h1>
           <p>{t('exchange.askDesk')}</p>
         </Card>
       </PatientLayout>
@@ -98,7 +99,8 @@ export function CheckIn() {
   return (
     <PatientLayout home={home} dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}>
       {failed && (
-        <p role="alert" className="rounded-data border-l-8 border-level-red bg-level-red-bg p-3 font-bold text-level-red">
+        <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
+          <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
           {t('patient.sendFailed')}
         </p>
       )}
@@ -140,7 +142,7 @@ export function CheckIn() {
 
       {view.name === 'confirmLeave' && (
         <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{t('leaving.title')}</h1>
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
           <p>{t('leaving.info')}</p>
           <Button
             size="lg"
@@ -162,10 +164,13 @@ export function CheckIn() {
       )}
 
       {view.name === 'urgent' && (
-        <Card role="alert" className="space-y-3 border-2 border-level-red bg-level-red-bg">
-          <h1 className="text-3xl font-extrabold leading-tight text-level-red">{t('urgent.title')}</h1>
+        <Card role="alert" className="space-y-4 text-center ring-2 ring-level-red">
+          <span aria-hidden className="mx-auto flex size-16 items-center justify-center rounded-full bg-level-red-bg text-level-red">
+            <OctagonAlert className="size-8" />
+          </span>
+          <h1 className="text-3xl font-semibold leading-tight tracking-tight text-level-red">{t('urgent.title')}</h1>
           <p className="text-xl">{t('urgent.body')}</p>
-          <p className="font-bold">{view.queued ? t('urgent.queued') : t('urgent.sent')}</p>
+          <p className="font-semibold">{view.queued ? t('urgent.queued') : t('urgent.sent')}</p>
           <Button
             size="lg"
             variant="danger"
@@ -179,7 +184,7 @@ export function CheckIn() {
 
       {view.name === 'desk' && (
         <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{view.queued ? t('sent.queuedTitle') : t('desk.title')}</h1>
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{view.queued ? t('sent.queuedTitle') : t('desk.title')}</h1>
           <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
           <p className="text-base text-muted">{t('desk.notClinical')}</p>
           <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
@@ -190,14 +195,20 @@ export function CheckIn() {
 
       {view.name === 'sent' && (
         <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
           <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
           {/* Never "all clear": staff still check on their own schedule. */}
           <p className="text-base text-muted">{t('sent.stillChecking')}</p>
           {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
-          <ol className="space-y-1 border-l-4 border-ink pl-4 text-base">
-            <li>{t('sent.reported')}</li>
-            <li className={view.queued ? 'text-muted' : ''}>{view.queued ? t('sent.waiting') : t('sent.received')}</li>
+          <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
+            <li className="flex items-center gap-2">
+              <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
+              {t('sent.reported')}
+            </li>
+            <li className={view.queued ? 'flex items-center gap-2 text-muted' : 'flex items-center gap-2'}>
+              {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />}
+              {view.queued ? t('sent.waiting') : t('sent.received')}
+            </li>
           </ol>
           <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
             {t('sent.back')}
@@ -212,11 +223,11 @@ function Home({ home, now, setView }: { home: PatientHome; now: number; setView:
   const { t } = useTranslation()
   return (
     <div className="space-y-5">
-      <h1 className="text-[1.75rem] font-extrabold leading-tight">{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
-      {home.message !== 'none' && <p className="rounded-data bg-brand-50 p-3">{t(`message.${home.message}`)}</p>}
+      <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
+      {home.message !== 'none' && <p className="rounded-card bg-brand-50 px-5 py-4">{t(`message.${home.message}`)}</p>}
       <Card className="space-y-1">
-        <div className="text-base font-semibold text-muted">{t('patient.nextCheckin')}</div>
-        <div className="text-xl">
+        <div className="eyebrow">{t('patient.nextCheckin')}</div>
+        <div className="text-3xl font-semibold tracking-tight">
           <CountdownChip due={home.next_checkin_due_at} now={now} />
         </div>
       </Card>
@@ -238,7 +249,7 @@ function ReportChange({ home, onSend, onCancel, sending }: { home: PatientHome; 
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
     <section aria-labelledby="change" className="space-y-4">
-      <h1 id="change" className="text-[1.75rem] font-extrabold leading-tight">
+      <h1 id="change" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
         {text('new_findings', home.role)}
       </h1>
       <div className="grid gap-3">

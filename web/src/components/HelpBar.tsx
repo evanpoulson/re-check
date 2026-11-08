@@ -22,7 +22,7 @@ export function HelpBar({ role, onConcern, onLeaving, disabled }: Props) {
   const press = (b: (typeof buttons)[number]) => (b.concern ? onConcern(b.concern as ConcernCode) : onLeaving())
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-10 border-t-2 border-ink bg-surface px-3 pb-3 pt-2">
+    <div className="glass fixed inset-x-0 bottom-0 z-10 border-t border-line/70 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
       <div className="mx-auto max-w-md space-y-2">
         {help && (
           <Button variant="danger" size="lg" className="w-full" disabled={disabled} onClick={() => press(help)}>
@@ -36,7 +36,7 @@ export function HelpBar({ role, onConcern, onLeaving, disabled }: Props) {
               variant="secondary"
               disabled={disabled}
               onClick={() => press(b)}
-              className="min-h-14 px-2 text-sm leading-tight"
+              className="min-h-14 rounded-card px-2 text-sm leading-tight"
             >
               {text(b.linkId, role)}
             </Button>

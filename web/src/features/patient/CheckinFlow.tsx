@@ -95,7 +95,12 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 
   return (
     <section aria-labelledby="q" className="space-y-5">
-      <p className="text-base text-muted">{t('flow.progress', { n: index + 1, total: steps.length })}</p>
+      <div className="space-y-2">
+        <div aria-hidden className="h-1 overflow-hidden rounded-full bg-line/60">
+          <div className="h-full rounded-full bg-brand-500 transition-[width] duration-300" style={{ width: `${((index + 1) / steps.length) * 100}%` }} />
+        </div>
+        <p className="text-[0.9375rem] text-muted">{t('flow.progress', { n: index + 1, total: steps.length })}</p>
+      </div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
         <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
@@ -132,7 +137,7 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 id="q" className="text-[1.75rem] font-extrabold leading-tight tracking-tight">
+    <h1 id="q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
       {children}
     </h1>
   )
@@ -144,7 +149,7 @@ function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined;
     <div>
       <div className="grid grid-cols-6 gap-2">
         {Array.from({ length: 11 }, (_, n) => (
-          <AnswerButton key={n} selected={value === n} className="justify-center px-0 border-l" onClick={() => onPick(n)}>
+          <AnswerButton key={n} selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
             {n}
           </AnswerButton>
         ))}

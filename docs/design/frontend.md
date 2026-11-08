@@ -19,7 +19,7 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 >>>>>>> 0801df9c086a436fd324ba53af2be489105b7a04
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
-- A distinct but calm identity that reads as hospital wayfinding signage: one legibility-first family (Atkinson Hyperlegible Next, self-hosted), a cool sky canvas, signage navy for text and actions, and no green for "fine". Radius encodes meaning: small on data, large only on things you tap.
+- A calm identity after apple.com's design language: the system font (SF Pro on Apple devices, Segoe UI on Windows), a light grey canvas with white cards, near-black text, one blue for actions and links, translucent "glass" bars, and no green for "fine". Shape encodes meaning: pills are things you tap, 18px cards hold content, and the small radius is for data chips.
 - Desktop-first staff UI, languages `en`, `pa`, `tl`. Question wording is English only until the bank's translations exist.
 - **The question bank is the source of every wording.** `question-bank/` is copied into `web/src/api/bank/` by `npm run gen:contract` and read by `bank.ts`, `cedis.ts` and `enableWhen.ts`. Nothing the bank owns is retyped in the UI.
 
@@ -47,8 +47,8 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 
 ## Design system
 
-- **Tokens** (CSS variables in the Tailwind theme): neutral slate surfaces and one calm teal-blue primary. Task-level colours map 1:1 to `TaskLevel`: `red`, `amber`, `silent` (violet with a clock icon), `leave_risk` (orange with a door icon) and `overdue` (blue-grey with an hourglass). There is no bright green for "fine"; baseline is muted grey.
-- **Type:** Inter or system. Patient body text 18px or larger and answer buttons 20px. The nurse table uses 14px with tabular numerals for timers.
+- **Tokens** (CSS variables in the Tailwind theme, `web/src/index.css`): canvas `#f5f5f7`, white surfaces, ink `#1d1d1f`, secondary text `#6e6e73` and Apple blue `#0071e3`. Every text and background pair passes 4.5:1. Light mode only for now. Task-level colours map 1:1 to `TaskLevel`: `red`, `amber`, `silent` (violet with a clock icon), `leave_risk` (orange with a door icon) and `overdue` (blue-grey with an hourglass). There is no bright green for "fine"; baseline is muted grey.
+- **Type:** the Apple system stack, with Noto Sans Gurmukhi for Punjabi. Headings are semibold with slight negative tracking. Patient body text 18px or larger and answer buttons 20px. The nurse table uses 14px with tabular numerals for timers.
 - **shadcn/ui and Radix:** Button, Card, Badge, Table, Sheet, Dialog, Tabs, Toast, Tooltip, Progress, RadioGroup, Select, Slider, Skeleton.
 <<<<<<< HEAD
 - **Custom components:** `AnswerButton`, `HelpBar`, `LevelChip`, `StateChip` (condition), `MissedChip` ("No response"), `CountdownChip`, `Sparkline`, `Timeline`, `QrCard`, `PrivacyPanel`.
@@ -239,6 +239,14 @@ Each link opens the exact screen on Mobbin. The screens are other companies' scr
 - Status timeline: [Alan](https://mobbin.com/screens/2380e885-e813-45b1-889e-c613332e8fc5), [Ro](https://mobbin.com/screens/4f1b2a26-79ae-4154-b286-741e351ff7d9), [Plum](https://mobbin.com/screens/2f132d15-b48c-442c-ad83-33e78e104a53)
 - Language picker sheet: [Meta AI](https://mobbin.com/screens/e4f488dd-943c-4dd3-a6a4-fb7a65559207), [Fabric](https://mobbin.com/screens/bfd07f6d-78b7-42c2-b698-605b8fbb36c0)
 - Offline and retry: [Qantas](https://mobbin.com/screens/18f77caf-19d5-4199-98b4-a36f34096d23), [GoPay](https://mobbin.com/screens/95483b32-a4d7-4025-b6e7-64220245eff5)
+
+**Visual language (apple.com)**
+
+- Grey canvas, white cards and the "Lead phrase. Grey continuation." heading: [Shop Mac](https://mobbin.com/screens/f8972264-00a5-4254-b9ec-f630000a7176)
+- Translucent sticky nav, display headline and blue pill button: [Certified Refurbished](https://mobbin.com/screens/f952e045-8cd3-44ba-9518-c89d4d6f0726)
+- Sheet with a round close button and hairline rows: [Product sheet](https://mobbin.com/screens/f6ea3ac8-7e10-44a8-a206-08cd675b19c0), [Save sheet](https://mobbin.com/screens/e5568ee4-bfaa-4650-b4d3-1c5b367ab8b3)
+- Airy list with hairline dividers: [Today at Apple](https://mobbin.com/screens/efb24f4c-8f64-43ce-a22e-f466b96ec847)
+- Form fields, full-width button and soft error panel: [Find your order](https://mobbin.com/screens/f56f3705-091d-49fd-bbda-b808aa6f23d4), [error state](https://mobbin.com/screens/d824ca3a-4bdc-4fc9-bb48-3761ff8d07ed)
 
 **Triage nurse**
 
