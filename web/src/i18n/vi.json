@@ -98,7 +98,6 @@
   },
   "circle": {
     "intro": "Quý vị sẽ thấy các hình hiện ra lần lượt từng hình một. Hãy đếm các hình tròn. Bỏ qua các hình vuông.",
-    "once": "Mỗi hình chỉ hiện một lần. Nếu không làm được, hãy bấm \"Tôi không làm được\" và nhân viên sẽ đến kiểm tra quý vị.",
     "start": "Bắt đầu",
     "watch": "Nhìn màn hình và đếm các hình tròn.",
     "cantDo": "Tôi không làm được",

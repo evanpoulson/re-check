@@ -15,7 +15,7 @@ const button = cva(
       },
       size: {
         md: 'min-h-11 px-5 text-[1.0625rem]',
-        lg: 'min-h-14 px-6 text-[1.1875rem]',
+        lg: 'min-h-14 px-6 text-[1.125rem]',
       },
     },
     defaultVariants: { variant: 'primary', size: 'md' },

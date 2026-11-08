@@ -227,7 +227,7 @@ async def post_report(
             await conn.execute(
                 "UPDATE visit SET next_prompt_due_at = now() + ctas_interval(ctas) WHERE id = %s", [session.visit_id]
             )
-        fires = rules.evaluate(report, attention)
+        fires = rules.evaluate(report, attention, _group(complaint_group))
         task_id = await tasks.raise_task(
             conn, session.visit_id, fires, [{"kind": "report", "id": str(report.submission_id)}]
         )
@@ -237,8 +237,12 @@ async def post_report(
     return _receipt(report, received_at, bank, visit, attention=attention, duplicate=False)
 
 
+def _group(value: str | None) -> ComplaintGroup | None:
+    return ComplaintGroup(value) if value else None
+
+
 def _receipt(report, received_at: datetime, bank, visit, *, attention, duplicate: bool) -> ReportReceipt:
-    fires = rules.evaluate(report, attention)
+    fires = rules.evaluate(report, attention, _group(visit["complaint_group"]))
     return ReportReceipt(
         submission_id=report.submission_id,
         received_at=received_at,

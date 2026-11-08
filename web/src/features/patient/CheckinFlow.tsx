@@ -8,6 +8,7 @@ import type { CheckinReport, FindingCode, ItemAnswer, PatientHome, QuestionItem,
 import { AnswerButton } from '@/components/AnswerButton'
 import { CircleCheck } from '@/components/CircleCheck'
 import { Button } from '@/components/ui/button'
+import { isUrgentFinding } from '@/lib/findings'
 import { buildCheckinReport, type AttentionDraft, type CheckinDraft } from '@/lib/checkin'
 
 type Step = { kind: 'base'; linkId: string } | { kind: 'item'; item: QuestionItem }
@@ -61,8 +62,9 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
   const step = steps[Math.min(index, steps.length - 1)]
   const stepKey = step?.kind === 'base' ? step.linkId : step?.item.key
   const last = index >= steps.length - 1
+  // Only a sign that is urgent on its own sends straight away; the rest finish the check-in.
   const hasNewFindings = step?.kind === 'base' && step.linkId === 'new_findings' &&
-    Array.isArray(draft.findings) && draft.findings.length > 0
+    Array.isArray(draft.findings) && draft.findings.some(isUrgentFinding)
 
   useEffect(() => {
     const heading = section.current?.querySelector('h1')
@@ -122,14 +124,17 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
   )
 
   return (
-    <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-5">
-      {index > 0 && (
-        <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
-          <ChevronLeft aria-hidden size={16} />
-          {t('flow.back')}
-        </button>
-      )}
-      <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} /></div>
+    <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-6">
+      <div className="flow-head">
+        {index > 0 ? (
+          <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
+            <ChevronLeft aria-hidden size={18} />
+            {t('flow.back')}
+          </button>
+        ) : <span />}
+        <span className="count">{t('flow.progress', { n: index + 1, total: steps.length })}</span>
+        <progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} />
+      </div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
         <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
@@ -142,11 +147,11 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
               {hasNewFindings ? t('flow.sendNow') : last ? t('flow.send') : t('flow.next')}
             </Button>
             {/* Below the button, so the button does not move under the help dock. */}
-            {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="font-semibold text-level-red">{t('flow.chooseAnswer')}</p>}
+            {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="text-base font-medium text-level-red">{t('flow.chooseAnswer')}</p>}
             <Button variant="ghost" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
               {anyAnswered ? t('flow.finishLater') : t('flow.stopEmpty')}
             </Button>
-            {anyAnswered && <p className="text-base text-muted">{t('flow.finishLaterHelp')}</p>}
+            {anyAnswered && <p className="text-center text-base text-muted">{t('flow.finishLaterHelp')}</p>}
           </div>
         </>
       )}
@@ -163,24 +168,25 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 tabIndex={-1} id="q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+    <h1 tabIndex={-1} id="q">
       {children}
     </h1>
   )
 }
 
+/** 0 to 10 as one segmented row. Each number is a radio in the parent radiogroup. */
 function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined; onPick: (n: number) => void }) {
   const { t } = useTranslation()
   return (
     <div>
-      <div className="grid grid-cols-6 gap-2">
+      <div className="scale">
         {Array.from({ length: 11 }, (_, n) => (
-          <AnswerButton key={n} kind="radio" selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
+          <button key={n} type="button" role="radio" aria-checked={value === n} onClick={() => onPick(n)}>
             {n}
-          </AnswerButton>
+          </button>
         ))}
       </div>
-      <div className="mt-2 flex justify-between text-base text-muted">
+      <div aria-hidden className="scale-ends">
         <span>{t('pain.low')}</span>
         <span>{t('pain.high')}</span>
       </div>

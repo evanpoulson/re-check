@@ -98,7 +98,6 @@
   },
   "circle": {
     "intro": "Des formes vont apparaître une à la fois. Comptez les cercles. Ne tenez pas compte des carrés.",
-    "once": "Vous ne les verrez qu'une seule fois. Si vous ne pouvez pas le faire, touchez « Je ne peux pas le faire » et le personnel viendra vous voir.",
     "start": "Commencer",
     "watch": "Regardez l'écran et comptez les cercles.",
     "cantDo": "Je ne peux pas le faire",

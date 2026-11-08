@@ -6,6 +6,7 @@
 // the real rules engine: thresholds and task levels here are demo assumptions.
 import { attentionParams, bankVersion, ext, item, options, allowUnsure } from '../bank'
 import { checkEnrolment } from '../cedis'
+import { isUrgentFinding } from '@/lib/findings'
 import { followUps, rawAnswers, type AnswerValue } from '../enableWhen'
 import type {
   AppExclusion,
@@ -137,6 +138,12 @@ export function clearStaffSession(): undefined {
     sessionStorage.removeItem(DEMO_ROLE_KEY)
   } catch { /* ignore */ }
   return undefined
+}
+
+/** Signs the triage complaint already covers (rules.KNOWN_AT_TRIAGE). */
+const KNOWN_AT_TRIAGE: Partial<Record<VisitSummary['complaint_group'], FindingCode[]>> = {
+  chest_back_pain: ['chest_pain'],
+  confused_drowsy: ['new_confusion', 'drowsiness'],
 }
 
 const LEVELS: TaskLevel[] = ['overdue', 'leave_risk', 'silent', 'amber', 'red']
@@ -334,7 +341,7 @@ function seed(now: number): State {
   }
 
   addCheckin(chest, 25, 'same', 'ok', 5, [])
-  const worse = addCheckin(chest, 3, 'worse', 'poor', 8, ['chest_pain'], { pain_moved: { kind: 'yes_no', value: true } })
+  const worse = addCheckin(chest, 3, 'much_worse', 'poor', 8, ['chest_pain'], { pain_moved: { kind: 'yes_no', value: true } })
   addCheckin(calm, 40, 'better', 'good', 3, [])
   addCheckin(calm, 20, 'same', 'good', 2, [])
   const first = addCheckin(head, 62, 'same', 'ok', 3, [])
@@ -377,7 +384,7 @@ function raise(
 ): Task {
   const reason = {
     rule_id: `demo_${reasonCode}_v1`,
-    rule_version: '2026-11-07.demo',
+    rule_version: '2026-11-08.demo',
     level,
     reason_code: reasonCode,
     evidence: [{ kind, id: evidenceId }],
@@ -902,13 +909,24 @@ export function submitReport(body: PatientReport): ReportReceipt {
       reasonCode = `concern_${body.concern}`
     }
   }
+  // Same weighting as api/src/recheck/rules.py: urgent signs are red on their own;
+  // broad or already-known signs ask for review unless something corroborates them.
+  const change = body.kind === 'checkin' && body.feeling_change.kind === 'answered' ? body.feeling_change.value : null
+  const feelingNow = body.kind === 'checkin' && body.feeling_now.kind === 'answered' ? body.feeling_now.value : null
   if (findings.length > 0) {
-    level = 'red'
-    reasonCode = `finding_${findings[0]}`
+    const known = KNOWN_AT_TRIAGE[r.visit.complaint_group] ?? []
+    const urgent = findings.filter((f) => isUrgentFinding(f) && !known.includes(f))
+    const review = findings.filter((f) => !urgent.includes(f))
+    const corroborated = review.length >= 2 || (review.length === 1 && change === 'much_worse')
+    level = urgent.length > 0 || corroborated ? 'red' : 'amber'
+    reasonCode = `finding_${(urgent[0] ?? review[0])!}`
     routedTo = ['physician']
-  } else if (body.kind === 'checkin' && body.feeling_change.kind === 'answered' && ['worse', 'much_worse'].includes(body.feeling_change.value)) {
-    // A reassuring answer ("same", "better") never cancels a check, so only worsening raises a level.
-    level = body.feeling_change.value === 'much_worse' ? 'red' : 'amber'
+  } else if (change === 'much_worse') {
+    level = feelingNow === 'very_poor' ? 'red' : 'amber'
+    reasonCode = 'feeling_worse'
+  } else if (change === 'worse' && !(feelingNow && ['ok', 'good', 'very_good'].includes(feelingNow))) {
+    // A reassuring answer never cancels a check, so only worsening raises a level.
+    level = 'amber'
     reasonCode = 'feeling_worse'
   }
   if (body.kind === 'leaving') {

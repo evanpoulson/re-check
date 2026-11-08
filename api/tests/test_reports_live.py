@@ -42,7 +42,12 @@ def sign_in(client, *, role="patient", **visit):
     return enrolled.json()["visit_id"]
 
 
-def checkin(*, change=None, findings=None, pain=None, attention=None, items=None, reporter="patient", **extra):
+# A coherent "right now" answer for each change: "much worse" with "very poor" is red,
+# "worse" with "poor" is amber (see recheck/rules.py).
+NOW_FOR = {"much_worse": "very_poor", "worse": "poor"}
+
+
+def checkin(*, change=None, findings=None, pain=None, attention=None, items=None, reporter="patient", now_feeling=None, **extra):
     return {
         "submission_id": sid(),
         "kind": "checkin",
@@ -50,7 +55,7 @@ def checkin(*, change=None, findings=None, pain=None, attention=None, items=None
         "channel": "phone",
         "captured_at": now(),
         "questionnaire_version": default_bank().version,
-        "feeling_now": {"kind": "answered", "value": "ok"},
+        "feeling_now": {"kind": "answered", "value": now_feeling or NOW_FOR.get(change, "ok")},
         "feeling_change": {"kind": "answered", "value": change} if change else {"kind": "answered", "value": "same"},
         "pain": {"kind": "answered", "value": pain} if pain is not None else MISSING,
         "new_findings": {"kind": "answered", "value": findings or []},
@@ -109,7 +114,8 @@ def test_reassuring_checkin_raises_nothing_and_moves_only_the_patient_timer(live
 
 
 def test_finding_opens_a_red_task_with_evidence(live_client):
-    visit = sign_in(live_client)
+    # Chest pain is new for a general visit, so it is urgent on its own.
+    visit = sign_in(live_client, complaint_group="general")
     body = checkin(change="worse", findings=["chest_pain"])
     r = post(live_client, body)
     assert r.status_code == 200, r.text
@@ -125,7 +131,7 @@ def test_finding_opens_a_red_task_with_evidence(live_client):
         visit,
     )
     assert evidence == [{"kind": "report", "id": body["submission_id"]}]
-    assert version == "2026-11-07.demo"
+    assert version == "2026-11-08.demo"
 
 
 def test_later_reports_add_reasons_but_never_lower_the_task(live_client):

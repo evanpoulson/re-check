@@ -98,7 +98,6 @@
   },
   "circle": {
     "intro": "Es erscheinen nacheinander Formen. Zählen Sie die Kreise. Achten Sie nicht auf die Quadrate.",
-    "once": "Sie sehen sie nur einmal. Wenn Sie das nicht können, tippen Sie auf „Ich kann das nicht“, dann sieht das Personal nach Ihnen.",
     "start": "Start",
     "watch": "Schauen Sie auf den Bildschirm und zählen Sie die Kreise.",
     "cantDo": "Ich kann das nicht",

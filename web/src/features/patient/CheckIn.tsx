@@ -73,8 +73,8 @@ export function CheckIn() {
     const signedOut = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-2 text-center">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+        <Card role="alert" className="space-y-3 p-5">
+          <h1>
             {t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}
           </h1>
           <p className="text-muted">{t(signedOut ? 'exchange.signedOut.help' : 'exchange.askDesk')}</p>
@@ -139,10 +139,11 @@ export function CheckIn() {
     <PatientLayout
       home={home}
       dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
+      context={view.name === 'home'}
     >
-      <div ref={content} className="space-y-5">
+      <div ref={content} className="space-y-6">
         {failed && (
-          <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
+          <p role="alert" className="flex items-start gap-3 rounded-card bg-level-red-bg px-5 py-4 text-base font-medium text-level-red">
             <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
             {t('patient.sendFailed')}
           </p>
@@ -186,54 +187,58 @@ export function CheckIn() {
         )}
 
         {view.name === 'confirmLeave' && (
-          <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
-            <p>{t('leaving.info')}</p>
-            <Button
-              size="lg"
-              className="w-full"
-              disabled={sending}
-              onClick={() =>
-                void deliver({ kind: 'leaving', ...common() }, (r) =>
-                  r
-                    ? { name: 'sent', queued: false, message: r.patient_message }
-                    : { name: 'sent', queued: true, message: 'leaving_info' },
-                )
-              }
-            >
-              {t('leaving.confirm')}
-            </Button>
-            <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
-              {t('leaving.cancel')}
-            </Button>
-          </Card>
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h1>{t('leaving.title')}</h1>
+              <p>{t('leaving.info')}</p>
+            </div>
+            <div className="grid gap-3">
+              <Button
+                size="lg"
+                className="w-full"
+                disabled={sending}
+                onClick={() =>
+                  void deliver({ kind: 'leaving', ...common() }, (r) =>
+                    r
+                      ? { name: 'sent', queued: false, message: r.patient_message }
+                      : { name: 'sent', queued: true, message: 'leaving_info' },
+                  )
+                }
+              >
+                {t('leaving.confirm')}
+              </Button>
+              <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
+                {t('leaving.cancel')}
+              </Button>
+            </div>
+          </section>
         )}
 
         {view.name === 'desk' && (
-          <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
-              {view.queued ? t('sent.queuedTitle') : t('desk.title')}
-            </h1>
-            <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
-            <p className="text-base text-muted">{t('desk.notClinical')}</p>
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h1>{view.queued ? t('sent.queuedTitle') : t('desk.title')}</h1>
+              <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
+              <p className="text-base text-muted">{t('desk.notClinical')}</p>
+            </div>
             <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
               {t('sent.back')}
             </Button>
-          </Card>
+          </section>
         )}
 
         {view.name === 'sent' && (
-          <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
-              {view.queued ? t('sent.queuedTitle') : t('sent.title')}
-            </h1>
-            <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+          <section className="space-y-6">
+            <div className="space-y-2">
+              <h1>{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
+              <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
             {/* Leaving: after-leaving advice even when the report has not sent yet. */}
             {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after')}</p>}
             {/* Never "all clear": staff still check on their own schedule. */}
-            <p className="text-base text-muted">{t('sent.stillChecking')}</p>
+              <p className="text-base text-muted">{t('sent.stillChecking')}</p>
+            </div>
             {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
-            <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
+            <ol className="p-card space-y-3 text-base">
               <li className="flex items-center gap-2">
                 <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
                 {t('sent.reported')}
@@ -243,15 +248,17 @@ export function CheckIn() {
                 {view.queued ? t('sent.waiting') : t('sent.received')}
               </li>
             </ol>
-            <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-              {t('sent.back')}
-            </Button>
-            {view.followUps && view.followUps.length > 0 && (
-              <Button size="lg" variant="ghost" className="w-full" onClick={() => setView({ name: 'followup', keys: view.followUps! })}>
-                {t('sent.followup', { count: view.followUps.length })}
+            <div className="grid gap-3">
+              <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
+                {t('sent.back')}
               </Button>
-            )}
-          </Card>
+              {view.followUps && view.followUps.length > 0 && (
+                <Button size="lg" variant="ghost" className="w-full" onClick={() => setView({ name: 'followup', keys: view.followUps! })}>
+                  {t('sent.followup', { count: view.followUps.length })}
+                </Button>
+              )}
+            </div>
+          </section>
         )}
       </div>
     </PatientLayout>
@@ -261,11 +268,13 @@ export function CheckIn() {
 function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: number; setView: (v: View) => void; onSignOut: (submissionId: string) => Promise<void> }) {
   const { t } = useTranslation()
   return (
-    <div>
-      <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
-      {home.role === 'companion' && <p className="mt-2 text-base text-muted">{t('patient.companionHint')}</p>}
-      {home.message !== 'none' && <p className="mt-3 rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
-      <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
+    <div className="space-y-6">
+      <div>
+        <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
+        {home.role === 'companion' && <p className="p-lede">{t('patient.companionHint')}</p>}
+      </div>
+      {home.message !== 'none' && <p className="rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
+      <section className="p-card" aria-label={t('patient.nextCheckin')}>
         <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
           {t('patient.startCheckin')}
           <ArrowRight size={20} aria-hidden />
@@ -275,10 +284,12 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
           <CountdownChip due={home.next_checkin_due_at} now={now} patient />
         </div>
       </section>
-      <Button size="lg" variant="ghost" className="mt-2 w-full" onClick={() => setView({ name: 'change' })}>
-        {t('patient.reportChange')}
-      </Button>
-      <SignOutButton onSignOut={onSignOut} />
+      <div className="grid gap-2">
+        <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'change' })}>
+          {t('patient.reportChange')}
+        </Button>
+        <SignOutButton onSignOut={onSignOut} />
+      </div>
     </div>
   )
 }
@@ -303,13 +314,13 @@ function SignOutButton({ onSignOut }: { onSignOut: (submissionId: string) => Pro
   }
   if (!confirm) {
     return (
-      <Button variant="ghost" className="text-muted" onClick={() => setConfirm(true)}>
+      <Button variant="ghost" className="w-full text-base text-muted" onClick={() => setConfirm(true)}>
         {t('patient.signOut')}
       </Button>
     )
   }
   return (
-    <Card className="space-y-3">
+    <Card className="space-y-4 p-5">
       <p>{t('patient.signOutHelp')}</p>
       {failed && <p role="alert">{t('patient.signOutFailed')}</p>}
       <div className="grid grid-cols-2 gap-3">
@@ -337,8 +348,8 @@ function ReportChange({
   const { t } = useTranslation()
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
-    <section aria-labelledby="change" className="space-y-4">
-      <h1 id="change" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+    <section aria-labelledby="change" className="space-y-6">
+      <h1 id="change">
         {text('new_findings', home.role)}
       </h1>
       <div role="group" aria-labelledby="change" className="grid gap-3">
@@ -356,12 +367,14 @@ function ReportChange({
           )
         })}
       </div>
-      <Button size="lg" className="w-full" disabled={picked.length === 0 || sending} onClick={() => onSend(picked)}>
-        {t('change.send')}
-      </Button>
-      <Button size="lg" variant="secondary" className="w-full" onClick={onCancel}>
-        {t('flow.back')}
-      </Button>
+      <div className="grid gap-3">
+        <Button size="lg" className="w-full" disabled={picked.length === 0 || sending} onClick={() => onSend(picked)}>
+          {t('change.send')}
+        </Button>
+        <Button size="lg" variant="ghost" className="w-full" onClick={onCancel}>
+          {t('flow.back')}
+        </Button>
+      </div>
     </section>
   )
 }

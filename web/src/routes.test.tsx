@@ -472,6 +472,20 @@ describe('patient and companion check-in', () => {
     expect(await screen.findByRole('heading', { name: 'When were they last speaking and moving as usual?' })).toBeInTheDocument()
   })
 
+  it('a broad sign finishes the check-in; only an urgent sign sends straight away', async () => {
+    const user = userEvent.setup()
+    await scanAs('general', 'companion')
+    await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
+    await user.click(await screen.findByRole('radio', { name: 'Good' }))
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await user.click(await screen.findByRole('radio', { name: 'About the same' }))
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await user.click(await screen.findByRole('checkbox', { name: 'Vomiting' }))
+    expect(screen.queryByRole('button', { name: 'Send to staff now' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('checkbox', { name: 'Face looks droopy on one side' }))
+    expect(screen.getByRole('button', { name: 'Send to staff now' })).toBeInTheDocument()
+  })
+
   it('shows an English-only notice for other languages until translations exist', async () => {
     const user = userEvent.setup()
     await scanAs('chest', 'patient')
@@ -518,7 +532,8 @@ describe('the loop and the backend rules', () => {
     expect(home.attention_prompt).not.toBeNull()
 
     const report = checkin(
-      { reporter: 'patient', feeling_change: { kind: 'answered', value: 'worse' }, new_findings: { kind: 'answered', value: ['chest_pain'] }, items: { pain_moved: { kind: 'yes_no', value: true } } },
+      // Chest pain is this visit's triage complaint, so "much worse" corroborates it.
+      { reporter: 'patient', feeling_change: { kind: 'answered', value: 'much_worse' }, new_findings: { kind: 'answered', value: ['chest_pain'] }, items: { pain_moved: { kind: 'yes_no', value: true } } },
       home.questionnaire_version,
     )
     const receipt = await postReport(report)
@@ -539,14 +554,22 @@ describe('the loop and the backend rules', () => {
     expect((await getVisitDetail(enrolled.visit_id)).open_task).toBeNull()
   })
 
-  it('a "same" answer never cancels or raises a task, and "much worse" raises red', async () => {
+  it('a "better" answer raises nothing, "worse" while feeling OK raises nothing, and answers are weighed', async () => {
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     const home = await getPatientHome()
+    const v = home.questionnaire_version
     const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
-    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, home.questionnaire_version))
-    expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
-    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'much_worse' } }, home.questionnaire_version))
-    expect((await getVisitDetail(visit.visit_id)).open_task?.level).toBe('red')
+    const level = async () => (await getVisitDetail(visit.visit_id)).open_task?.level ?? null
+    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, v))
+    expect(await level()).toBeNull()
+    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'worse' } }, v))
+    expect(await level()).toBeNull()
+    // One broad sign asks for a review.
+    await postReport(checkin({ reporter: 'patient', new_findings: { kind: 'answered', value: ['vomiting'] } }, v))
+    expect(await level()).toBe('amber')
+    // "Much worse" and "very poor" agree at the extreme: urgent.
+    await postReport(checkin({ reporter: 'patient', feeling_now: { kind: 'answered', value: 'very_poor' }, feeling_change: { kind: 'answered', value: 'much_worse' } }, v))
+    expect(await level()).toBe('red')
   })
 
   describe('the circle check', () => {
