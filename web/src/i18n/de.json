@@ -46,13 +46,6 @@
     "confirm": "Ja, ich gehe",
     "cancel": "Nein, ich bleibe"
   },
-  "urgent": {
-    "title": "Sagen Sie jetzt dem Personal Bescheid",
-    "body": "Wenden Sie sich sofort an das nächste Klinikpersonal oder rufen Sie laut um Hilfe.",
-    "telling": "Ich sage es dem Personal",
-    "sending": "Ihre Meldung wird gesendet…",
-    "retry": "Erneut senden"
-  },
   "sent": {
     "title": "Danke, Ihre Antworten sind angekommen",
     "reported": "Gemeldet",

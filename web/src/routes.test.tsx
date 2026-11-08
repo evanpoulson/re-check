@@ -384,11 +384,12 @@ describe('patient and companion check-in', () => {
     expect(screen.queryByRole('heading', { name: /Tell a staff member now/ })).not.toBeInTheDocument()
   })
 
-  it('"I need help now" shows the tell-a-staff-member screen and never any task level', async () => {
+  it('"I need help now" confirms the report was sent and never shows any task level', async () => {
     const user = userEvent.setup()
     await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'I need help now' }))
-    expect(await screen.findByRole('heading', { name: /Tell a staff member now/ })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Thank you, we have your answers' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: /Tell a staff member now/ })).not.toBeInTheDocument()
     expect(screen.queryByText(/^Red$/)).not.toBeInTheDocument()
   })
 
@@ -445,9 +446,9 @@ describe('patient and companion check-in', () => {
     await user.click(await screen.findByRole('checkbox', { name: 'Speech is different or hard to understand' }))
     await user.click(screen.getByRole('button', { name: 'Send to staff now' }))
 
-    expect(await screen.findByRole('heading', { name: /Tell a staff member now/ })).toBeInTheDocument()
-    await user.click(await screen.findByRole('button', { name: /answer 1 more question/ }))
-    // The follow-up is asked only after the urgent screen, in the companion wording.
+    expect(await screen.findByRole('heading', { name: 'Thank you, we have your answers' })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Answer 1 more question' }))
+    // The follow-up is optional and asked only after the report is sent, in the companion wording.
     expect(await screen.findByRole('heading', { name: 'When were they last speaking and moving as usual?' })).toBeInTheDocument()
   })
 

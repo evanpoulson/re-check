@@ -46,13 +46,6 @@
     "confirm": "Oo, aalis na ako",
     "cancel": "Hindi, dito lang ako"
   },
-  "urgent": {
-    "title": "Sabihan agad ang isang staff",
-    "body": "Pumunta sa pinakamalapit na staff o tumawag nang malakas para humingi ng tulong.",
-    "telling": "Sinasabihan ko na ang staff",
-    "sending": "Ipinapadala ang inyong ulat…",
-    "retry": "Subukang ipadala muli"
-  },
   "sent": {
     "title": "Salamat po, natanggap namin ang inyong mga sagot",
     "reported": "Iniulat",

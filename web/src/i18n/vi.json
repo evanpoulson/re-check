@@ -46,13 +46,6 @@
     "confirm": "Vâng, tôi sẽ rời đi",
     "cancel": "Không, tôi ở lại"
   },
-  "urgent": {
-    "title": "Báo cho nhân viên ngay",
-    "body": "Hãy đến chỗ nhân viên gần nhất hoặc gọi to để xin giúp đỡ.",
-    "telling": "Tôi đang báo nhân viên",
-    "sending": "Đang gửi thông báo…",
-    "retry": "Thử gửi lại"
-  },
   "sent": {
     "title": "Cảm ơn, chúng tôi đã nhận được câu trả lời",
     "reported": "Đã báo",

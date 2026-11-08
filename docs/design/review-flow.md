@@ -2,7 +2,7 @@
 
 The demo starts with synthetic waiting-room visits. Scan a visit QR, report a change, then open the physician worklist and record the response. Nurse enrolment stays in the triage view.
 
-- **Check-in:** Keep the current question and its answers together. The help dock stays within reach. An urgent report shows the instruction to contact nearby staff independently of the network result.
+- **Check-in:** Keep the current question and its answers together. The help dock stays within reach. An urgent report goes to the sent screen; a failed send says so.
 - **Worklist:** Rank visits by the supplied review rank and show physician-routed tasks. Lead with the reason for review, then the visit reference and deadlines. Keep the last known rows visible if a refresh fails.
 - **Visit:** Show the current concern and its next action together. Acknowledge and record assessment as separate steps. Keep earlier reports and administrative actions secondary.
 - **Shared design:** Use one clear action per state, quiet surfaces, compact metadata, readable labels, and status text alongside colour. Keep navigation and keyboard order aligned.
