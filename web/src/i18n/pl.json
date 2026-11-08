@@ -10,24 +10,43 @@
     "none": "Brak",
     "yes": "Tak",
     "no": "Nie",
-    "sending": "Wysyłanie…"
+    "sending": "Wysyłanie…",
+    "retry": "Spróbuj ponownie"
+  },
+  "pages": {
+    "patientEntry": "Otwieranie ankiety"
+  },
+  "time": {
+    "in": "za {{value}}",
+    "overdue": "{{value}} po terminie",
+    "readyNow": "Już czas"
   },
   "patient": {
     "language": "Język",
-    "waitUnavailable": "Brak szacowanego czasu.",
-    "titleCompanion": "Tryb osoby towarzyszącej",
+    "waitUnavailable": "Teraz niedostępne.",
+    "placeInLine": "Osoby w najcięższym stanie są przyjmowane najpierw. O kolejności decyduje personel, a nie ta aplikacja.",
+    "homeTitle": "Ankiety w poczekalni",
+    "titleCompanion": "Tryb osoby towarzyszącej: odpowiedzi w imieniu pacjenta",
     "nextCheckin": "Następna ankieta",
     "startCheckin": "Rozpocznij ankietę",
-    "reportChange": "Zgłoś zmianę",
+    "reportChange": "Zgłoś nowy objaw",
+    "reportChange_companion": "Zgłoś nową zauważoną zmianę",
     "leaving": "Wychodzę",
     "sendFailed": "Nie udało się wysłać. Proszę spróbować ponownie lub powiedzieć o tym komuś z personelu.",
     "languageNotice": "To tłumaczenie jest wersją roboczą. Nie zostało jeszcze sprawdzone przez tłumacza medycznego. W razie niejasności proszę zapytać personel.",
+    "languageMissing": "Na razie pytania są po angielsku. Proszę poprosić kogoś z personelu o tłumacza.",
     "signOut": "Wyloguj ten telefon",
-    "signOutHelp": "Ten telefon przestanie wysyłać ankiety. Miejsce w kolejce zostaje zachowane, a każdy może zalogować się ponownie, skanując kod QR.",
+    "signOutHelp": "Ten telefon przestanie wysyłać ankiety. Miejsce w kolejce zostaje zachowane. Aby zalogować się ponownie, proszę zeskanować kod.",
     "signOutConfirm": "Wyloguj",
     "signOutFailed": "Nie udało się wylogować tego telefonu. Proszę spróbować ponownie.",
     "waitContext": "Informacje o poczekalni",
-    "contactStaff": "Kontakt z personelem"
+    "contactStaff": "Kontakt z personelem",
+    "moreOptions": "Więcej opcji",
+    "companionHint": "Proszę opisać, co widać lub słychać. Tylko ta osoba może powiedzieć, jak się czuje w środku.",
+    "waitedLabel": "Czas oczekiwania od triażu",
+    "estimateLabel": "Szacunek AHS",
+    "estimateValue": "{{estimate}} od triażu do wizyty u lekarza, dla mniej pilnych przypadków",
+    "estimateNote": "To nie jest indywidualny czas oczekiwania. Aktualizacja: {{time}}."
   },
   "pain": {
     "low": "Brak bólu",
@@ -37,43 +56,54 @@
     "unsure": "Nie wiem"
   },
   "change": {
-    "send": "Wyślij do personelu"
+    "send": "Wyślij do personelu",
+    "chooseOne": "Proszę wybrać co najmniej jedną zmianę albo wrócić."
   },
   "leaving": {
     "title": "Potwierdzenie wyjścia",
     "info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia proszę natychmiast wrócić do punktu triażu.",
     "confirm": "Tak, wychodzę",
-    "cancel": "Nie, zostaję"
+    "cancel": "Nie, zostaję",
+    "after": "W razie pogorszenia po wyjściu proszę zadzwonić pod 911 lub udać się na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811."
   },
   "sent": {
     "title": "Dziękujemy, odpowiedzi zostały odebrane",
+    "queuedTitle": "Jeszcze nie wysłano",
+    "queuedBody": "Jeszcze nie wysłano. Będziemy próbować dalej. W razie pogorszenia proszę powiedzieć komuś z personelu.",
     "reported": "Zgłoszono",
     "received": "Odebrane przez zespół medyczny",
     "waiting": "Czeka na wysłanie",
-    "stillChecking": "Personel i tak będzie sprawdzać stan pacjenta według własnego harmonogramu."
+    "stillChecking": "Personel będzie dalej sprawdzać stan pacjenta. W razie pogorszenia proszę nacisnąć „Potrzebuję pomocy teraz” albo podejść do punktu triażu.",
+    "followup_one": "Odpowiedz na jeszcze {{count}} pytanie",
+    "followup_few": "Odpowiedz na jeszcze {{count}} pytania",
+    "followup_many": "Odpowiedz na jeszcze {{count}} pytań",
+    "followup_other": "Odpowiedz na jeszcze {{count}} pytania",
+    "backHome": "Wróć do strony głównej"
   },
   "message": {
     "none": "Personel zobaczy odpowiedzi.",
-    "clinician_will_check": "Lekarz przyjdzie sprawdzić stan zdrowia.",
-    "clinician_told": "Lekarz został powiadomiony.",
-    "leaving_info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia proszę natychmiast wrócić do punktu triażu."
+    "clinician_will_check": "Lekarz lub pielęgniarka przyjdzie sprawdzić stan zdrowia.",
+    "clinician_told": "Poinformowaliśmy lekarza lub pielęgniarkę.",
+    "leaving_info": "Przed wyjściem proszę powiedzieć o tym personelowi. W razie pogorszenia po wyjściu proszę zadzwonić pod 911 lub udać się na najbliższy szpitalny oddział ratunkowy. Porady zdrowotne o każdej porze: 811."
   },
-  "outbox": {},
+  "outbox": {
+    "saved": "Jeszcze nie wysłano. Będziemy próbować dalej. W razie pogorszenia proszę od razu powiedzieć komuś z personelu."
+  },
   "exchange": {
     "invalid": {
       "title": "Ten kod nie zadziałał"
     },
-    "askDesk": "Proszę poprosić o nowy kod w punkcie triażu.",
+    "askDesk": "Proszę poprosić kogoś z personelu o nowy kod.",
     "who": "Kto korzysta z tego telefonu?",
     "role": {
       "patient": "Jestem pacjentem / pacjentką",
       "companion": "Jestem osobą towarzyszącą"
     },
-    "failed": "Nie udało się. Proszę spróbować ponownie lub zgłosić się do punktu triażu.",
+    "failed": "Nie udało się. Proszę spróbować ponownie lub zapytać kogoś z personelu.",
     "takeover": {
-      "title": "Drugie urządzenie zostanie wylogowane",
-      "who": "{{who}}: zalogowano na innym telefonie od {{time}}. Zalogowany może być tylko jeden telefon.",
-      "confirm": "Wyloguj drugi telefon i kontynuuj",
+      "title": "Inny telefon jest już zalogowany",
+      "who": "{{who}}: zalogowano na innym telefonie o {{time}}. Można używać tylko jednego telefonu. Po przejściu dalej tamten telefon zostanie wylogowany.",
+      "confirm": "Używaj tego telefonu",
       "cancel": "Anuluj"
     },
     "signedInAs": {
@@ -81,18 +111,32 @@
       "companion": "Osoba towarzysząca"
     },
     "signedOut": {
-      "title": "Nastąpiło wylogowanie."
+      "title": "Nastąpiło wylogowanie",
+      "helpNow": "Jeśli pomoc jest potrzebna teraz, proszę powiedzieć komuś z personelu.",
+      "scanAgain": "Aby zalogować się ponownie, proszę zeskanować kod QR wizyty aparatem tego telefonu."
+    },
+    "intro": "Ta strona służy do informowania personelu SOR o zmianach w czasie oczekiwania. Nie zastępuje rozmowy z personelem.",
+    "help": "Stan znacznie się pogorszył? Proszę od razu powiedzieć komuś z personelu.",
+    "companionHint": "Rodzina lub znajomi odpowiadający w imieniu tej osoby",
+    "expired": {
+      "title": "Ten kod już nie działa",
+      "help": "Proszę poprosić kogoś z personelu o nowy kod."
     }
   },
   "privacy": {
     "title": "Co przechowujemy",
     "stored1": "Odpowiedzi i czas ich udzielenia.",
-    "stored2": "Poziom triażu i grupę dolegliwości.",
+    "stored2": "Pilność wizyty według oceny pielęgniarki i główny powód zgłoszenia się.",
     "stored3": "Działania personelu podjęte w odpowiedzi.",
     "notStored": "Nigdy nie przechowujemy imienia i nazwiska ani numeru ubezpieczenia zdrowotnego.",
-    "synthetic": "To demo korzysta wyłącznie z danych syntetycznych."
+    "synthetic": "To demo korzysta wyłącznie z danych syntetycznych.",
+    "seen": "Personel SOR widzi odpowiedzi. To nie jest dokumentacja medyczna.",
+    "shared": "Każdy, kto trzyma ten telefon, widzi tę stronę. Przed pożyczeniem telefonu proszę się wylogować.",
+    "code": "Proszę nie pokazywać kodu innym."
   },
   "circle": {
+    "title": "Policz kółka",
+    "chooseCount": "Proszę nacisnąć − lub +, aby wybrać liczbę.",
     "intro": "Na ekranie będą pojawiać się kolejno kształty. Proszę liczyć kółka, a kwadraty pomijać.",
     "once": "Każdy kształt pojawi się tylko raz. Jeśli nie da się tego zrobić, proszę dotknąć „Nie mogę tego zrobić”, a personel przyjdzie sprawdzić stan zdrowia.",
     "start": "Start",
@@ -101,23 +145,46 @@
     "countLabel": "Liczba kółek",
     "fewer": "O jedno mniej",
     "more": "O jedno więcej",
-    "confirm": "To mój wynik"
+    "confirm": "Gotowe",
+    "notTest": "To nie jest badanie medyczne. Jeśli to trudne, ktoś z personelu po prostu przyjdzie sprawdzić stan."
   },
   "desk": {
-    "title": "Pytanie trafiło do pielęgniarki triażowej"
+    "title": "Pytanie trafiło do pielęgniarki triażowej",
+    "body": "Pielęgniarka triażowa dostanie pytanie i przyjdzie, gdy będzie mogła.",
+    "notClinical": "W razie pogorszenia proszę nacisnąć „Martwię się, że mój stan się pogarsza”. Jeśli pomoc jest potrzebna od razu, proszę nacisnąć „Potrzebuję pomocy teraz” albo podejść do punktu triażu.",
+    "confirmTitle": "Wysłać pytanie do pielęgniarki triażowej?",
+    "confirmBody": "To miejsce na pytania o czas oczekiwania lub leczenie. Pielęgniarka triażowa przyjdzie, gdy będzie mogła. W razie pogorszenia proszę zamiast tego nacisnąć „Martwię się, że mój stan się pogarsza”.",
+    "confirmBody_companion": "To miejsce na pytania o czas oczekiwania lub leczenie tej osoby. Pielęgniarka triażowa przyjdzie, gdy będzie mogła. Jeśli stan tej osoby wydaje się gorszy, proszę zamiast tego nacisnąć „Martwię się, że stan tej osoby się pogarsza”.",
+    "confirm": "Tak, wyślij pytanie",
+    "cancel": "Anuluj"
   },
   "flow": {
     "progress": "Pytanie {{n}} z {{total}}",
     "next": "Dalej",
-    "send": "Wyślij",
+    "send": "Wyślij do personelu",
     "back": "Wstecz",
-    "finishLater": "Dokończ później",
+    "finishLater": "Zakończ i wyślij odpowiedzi",
     "finishLaterHelp": "Po przerwaniu wyślemy dotychczasowe odpowiedzi.",
-    "sendNow": "Wyślij teraz objawy alarmowe",
-    "progressLabel": "Postęp ankiety"
+    "sendNow": "Wyślij do personelu teraz",
+    "progressLabel": "Postęp ankiety",
+    "stopEmpty": "Na razie przerwij",
+    "chooseAnswer": "Proszę wybrać odpowiedź albo „Nie wiem”."
   },
-  "pages": {
-    "patientEntry": "Otwieranie ankiety"
+  "waitWords": {
+    "short": "poniżej 15 minut",
+    "minutes": "około {{n}} minut",
+    "hours": "od około {{lo}} do {{hi}} godzin"
+  },
+  "duration": {
+    "hours_one": "{{count}} godzina",
+    "hours_few": "{{count}} godziny",
+    "hours_many": "{{count}} godzin",
+    "hours_other": "{{count}} godziny",
+    "minutes_one": "{{count}} minuta",
+    "minutes_few": "{{count}} minuty",
+    "minutes_many": "{{count}} minut",
+    "minutes_other": "{{count}} minuty",
+    "inTime": "pozostało: {{value}}"
   },
   "triageInfo": {
     "title": "Jak działa triaż",
@@ -127,10 +194,6 @@
     "worse": "W razie pogorszenia proszę od razu powiedzieć personelowi.",
     "leaving": "Przed wyjściem proszę powiedzieć o tym personelowi.",
     "level": {
-      "heading": "Poziom triażu",
-      "heading_companion": "Poziom triażu tej osoby",
-      "label": "Poziom {{level}}: {{name}}",
-      "setAtTriage": "Ten poziom ustaliła pielęgniarka triażowa przy przyjęciu.",
       "2": {
         "name": "Bardzo pilne",
         "body": "Pielęgniarka zauważyła objawy, które wymagają pomocy bardzo szybko. Personel będzie często sprawdzać stan."
@@ -146,7 +209,11 @@
       "5": {
         "name": "Niepilne",
         "body": "To może bezpiecznie poczekać. Czekanie może być długie. To właściwe miejsce."
-      }
+      },
+      "heading": "Poziom triażu",
+      "heading_companion": "Poziom triażu tej osoby",
+      "label": "Poziom {{level}}: {{name}}",
+      "setAtTriage": "Ten poziom ustaliła pielęgniarka triażowa przy przyjęciu."
     }
   }
 }
