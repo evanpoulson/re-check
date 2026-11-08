@@ -97,6 +97,8 @@ export function CheckIn() {
     )
   }
 
+  // Companion wording ("Is the patient leaving?") falls back to the patient's where there is none.
+  const companion = home.role === 'companion' ? 'companion' : undefined
   const common = (reporter = home.role) => ({
     submission_id: newSubmissionId(),
     reporter,
@@ -203,8 +205,8 @@ export function CheckIn() {
 
         {view.name === 'confirmLeave' && (
           <Card className="space-y-3">
-            <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
-            <p>{t('leaving.info')}</p>
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('leaving.title', { context: companion })}</h1>
+            <p>{t('leaving.info', { context: companion })}</p>
             <Button
               size="lg"
               className="w-full"
@@ -217,10 +219,10 @@ export function CheckIn() {
                 )
               }
             >
-              {t('leaving.confirm')}
+              {t('leaving.confirm', { context: companion })}
             </Button>
             <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
-              {t('leaving.cancel')}
+              {t('leaving.cancel', { context: companion })}
             </Button>
           </Card>
         )}
@@ -228,7 +230,7 @@ export function CheckIn() {
         {view.name === 'confirmDesk' && (
           <Card className="space-y-3">
             <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('desk.confirmTitle')}</h1>
-            <p>{t('desk.confirmBody', { context: home.role === 'companion' ? 'companion' : undefined })}</p>
+            <p>{t('desk.confirmBody', { context: companion })}</p>
             <Button size="lg" className="w-full" disabled={sending} onClick={sendDeskQuestion}>
               {t('desk.confirm')}
             </Button>
@@ -269,10 +271,10 @@ export function CheckIn() {
               ) : (
                 <CircleCheckBig aria-hidden className="mt-0.5 size-6 shrink-0" />
               )}
-              {view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}
+              {view.queued ? t('sent.queuedBody') : t(`message.${view.message}`, { context: companion })}
             </p>
             {/* Leaving: after-leaving advice even when the report has not sent yet. */}
-            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after')}</p>}
+            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after', { context: companion })}</p>}
             {/* Never "all clear": staff still check on their own schedule. */}
             <p className="text-base text-muted">{t('sent.stillChecking')}</p>
             {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}

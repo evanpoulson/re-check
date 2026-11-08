@@ -65,7 +65,12 @@
     "info": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen. Wenn es Ihnen schlechter geht, kommen Sie sofort zur Ersteinschätzung (Triage) zurück.",
     "confirm": "Ja, ich gehe",
     "cancel": "Nein, ich bleibe",
-    "after": "Wenn es Ihnen nach dem Gehen schlechter geht, rufen Sie 911 an oder gehen Sie in die nächste Notaufnahme. Für Gesundheitsrat rund um die Uhr rufen Sie 811 an."
+    "after": "Wenn es Ihnen nach dem Gehen schlechter geht, rufen Sie 911 an oder gehen Sie in die nächste Notaufnahme. Für Gesundheitsrat rund um die Uhr rufen Sie 811 an.",
+    "title_companion": "Verlässt die Person die Notaufnahme?",
+    "info_companion": "Bitte sagen Sie dem Personal Bescheid, bevor die Person geht. Wenn es ihr schlechter zu gehen scheint, bringen Sie sie sofort zur Ersteinschätzung (Triage) zurück.",
+    "confirm_companion": "Ja, die Person geht",
+    "cancel_companion": "Nein, die Person bleibt",
+    "after_companion": "Wenn es der Person nach dem Gehen schlechter geht, rufen Sie 911 an oder bringen Sie sie in die nächste Notaufnahme. Für Gesundheitsrat rund um die Uhr rufen Sie 811 an."
   },
   "sent": {
     "title": "Danke, Ihre Antworten sind angekommen",
@@ -83,7 +88,8 @@
     "none": "Das Personal sieht Ihre Antworten.",
     "clinician_will_check": "Ärztliches oder pflegerisches Personal sieht nach Ihnen.",
     "clinician_told": "Wir haben ärztliches oder pflegerisches Personal informiert.",
-    "leaving_info": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen. Wenn es Ihnen nach dem Gehen schlechter geht, rufen Sie 911 an oder gehen Sie in die nächste Notaufnahme. Für Gesundheitsrat rund um die Uhr rufen Sie 811 an."
+    "leaving_info": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen. Wenn es Ihnen nach dem Gehen schlechter geht, rufen Sie 911 an oder gehen Sie in die nächste Notaufnahme. Für Gesundheitsrat rund um die Uhr rufen Sie 811 an.",
+    "leaving_info_companion": "Bitte sagen Sie dem Personal Bescheid, bevor die Person geht. Wenn es ihr nach dem Gehen schlechter geht, rufen Sie 911 an oder bringen Sie sie in die nächste Notaufnahme. Für Gesundheitsrat rund um die Uhr rufen Sie 811 an."
   },
   "outbox": {
     "saved": "Noch nicht gesendet. Wir versuchen es weiter. Wenn es Ihnen schlechter geht, sagen Sie es jetzt dem Personal."

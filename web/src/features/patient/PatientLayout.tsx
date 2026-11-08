@@ -7,7 +7,7 @@ import { Brand } from '@/components/Brand'
 import { HelpBar } from '@/components/HelpBar'
 import { TriageCard } from '@/components/TriageCard'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
-import { LANGUAGES } from '@/i18n'
+import { chooseLanguage, LANGUAGES } from '@/i18n'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
 import { clock, durationWords, isolate, waitWords } from '@/lib/time'
 
@@ -78,7 +78,7 @@ export function PatientLayout({ home, dock, about = false, children }: Props) {
           <select
             className="min-h-11 rounded-tap border border-answer bg-surface px-3 font-medium text-brand-600"
             value={lang}
-            onChange={(e) => void i18n.changeLanguage(e.target.value)}
+            onChange={(e) => void chooseLanguage(e.target.value)}
           >
             {LANGUAGES.map((l) => (
               <option key={l} value={l}>

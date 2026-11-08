@@ -26,6 +26,8 @@ import { endpoints } from './api/endpoints'
 import { server } from './api/mocks/server'
 import type { CheckinReport, PatientReport } from './api/types'
 import './i18n'
+import esUi from './i18n/es.json'
+import frUi from './i18n/fr.json'
 import zhUi from './i18n/zh.json'
 import { joinBoard, sortQueue } from './lib/board'
 import { createTestRouter } from './routes'
@@ -420,6 +422,32 @@ describe('patient and companion check-in', () => {
     expect(screen.getByRole('button', { name: 'They need help now' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'The patient is leaving' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Tell us about something new you notice' })).toBeInTheDocument()
+  })
+
+  it('asks a companion whether the patient is leaving, and keeps the safety advice', async () => {
+    const user = await scanAs('general', 'companion')
+    await user.click(await screen.findByRole('button', { name: 'The patient is leaving' }))
+    expect(await screen.findByRole('heading', { name: 'Is the patient leaving?' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: "No, they're staying" })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: "Yes, they're leaving" }))
+    expect(await screen.findByText(/Please tell staff before the patient leaves\..*call 911.*call 811/)).toBeInTheDocument()
+  })
+
+  it('keeps a language picked before signing in instead of the visit\'s', async () => {
+    const user = userEvent.setup()
+    renderApp('/v/demo-chest-token')
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Language' }), 'fr')
+    await user.click(await screen.findByRole('button', { name: frUi.exchange.role.patient }))
+    expect(await screen.findByRole('heading', { name: frUi.patient.homeTitle })).toBeInTheDocument()
+  })
+
+  it('uses the visit\'s language when nobody picked one on this phone', async () => {
+    signInAsNurse()
+    const enrolled = await enrolVisit({ submission_id: newSubmissionId(), ctas: 3, complaint_group: 'chest_back_pain', cedis_code: '003', language: 'es', channel: 'phone' })
+    const user = userEvent.setup()
+    renderApp(`/v/${enrolled.link!.split('/v/')[1]!}`)
+    await user.click(await screen.findByRole('button', { name: "I'm the patient" }))
+    expect(await screen.findByRole('heading', { name: esUi.patient.homeTitle })).toBeInTheDocument()
   })
 
   it('a bad code says so and never shows a visit', async () => {

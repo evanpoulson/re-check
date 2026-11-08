@@ -65,7 +65,12 @@
     "info": "Vui lòng báo cho nhân viên trước khi đi. Nếu thấy mệt hơn, hãy quay lại quầy phân loại bệnh nhân ngay.",
     "confirm": "Vâng, tôi sẽ rời đi",
     "cancel": "Không, tôi ở lại",
-    "after": "Nếu thấy nặng hơn sau khi rời đi, hãy gọi 911 hoặc đến khoa cấp cứu gần nhất. Để được tư vấn sức khỏe bất cứ lúc nào, hãy gọi 811."
+    "after": "Nếu thấy nặng hơn sau khi rời đi, hãy gọi 911 hoặc đến khoa cấp cứu gần nhất. Để được tư vấn sức khỏe bất cứ lúc nào, hãy gọi 811.",
+    "title_companion": "Người bệnh sắp rời đi?",
+    "info_companion": "Vui lòng báo cho nhân viên trước khi người bệnh đi. Nếu người bệnh có vẻ nặng hơn, hãy đưa họ quay lại quầy phân loại bệnh nhân ngay.",
+    "confirm_companion": "Vâng, người bệnh sẽ rời đi",
+    "cancel_companion": "Không, người bệnh ở lại",
+    "after_companion": "Nếu người bệnh nặng hơn sau khi rời đi, hãy gọi 911 hoặc đưa họ đến khoa cấp cứu gần nhất. Để được tư vấn sức khỏe bất cứ lúc nào, hãy gọi 811."
   },
   "sent": {
     "title": "Cảm ơn, chúng tôi đã nhận được câu trả lời",
@@ -82,7 +87,8 @@
     "none": "Nhân viên sẽ xem câu trả lời của quý vị.",
     "clinician_will_check": "Bác sĩ hoặc y tá sẽ đến xem tình trạng của quý vị.",
     "clinician_told": "Chúng tôi đã báo cho bác sĩ hoặc y tá.",
-    "leaving_info": "Vui lòng báo cho nhân viên trước khi đi. Nếu thấy nặng hơn sau khi rời đi, hãy gọi 911 hoặc đến khoa cấp cứu gần nhất. Để được tư vấn sức khỏe bất cứ lúc nào, hãy gọi 811."
+    "leaving_info": "Vui lòng báo cho nhân viên trước khi đi. Nếu thấy nặng hơn sau khi rời đi, hãy gọi 911 hoặc đến khoa cấp cứu gần nhất. Để được tư vấn sức khỏe bất cứ lúc nào, hãy gọi 811.",
+    "leaving_info_companion": "Vui lòng báo cho nhân viên trước khi người bệnh rời đi. Nếu người bệnh nặng hơn sau khi rời đi, hãy gọi 911 hoặc đưa họ đến khoa cấp cứu gần nhất. Để được tư vấn sức khỏe bất cứ lúc nào, hãy gọi 811."
   },
   "outbox": {
     "saved": "Chưa gửi được. Chúng tôi sẽ tiếp tục thử. Nếu thấy mệt hơn, hãy báo cho nhân viên ngay."
