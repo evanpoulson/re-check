@@ -86,6 +86,10 @@ def evaluate(report: Report, attention: AttentionResult | None = None) -> list[F
     return fires
 
 
+STAFF_FLAG = Fire(TaskLevel.AMBER, "staff_flag")
+"""Triage nurse's one-tap "flag higher" (FR17): opens or raises an amber task for the physician."""
+
+
 def patient_message(report: Report, fires: list[Fire]) -> PatientMessage:
     """What the patient screen says after this report.
 
