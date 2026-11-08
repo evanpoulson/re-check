@@ -71,6 +71,8 @@ jobs:
           # This box is the demo machine, so its API runs the missed check-in and escalation timers.
           # Their writes to the shared database can't be undone; set the variable to 0 to turn them off.
           RECHECK_SCHEDULER_SECONDS: ${{ vars.RECHECK_SCHEDULER_SECONDS || '15' }}
+          # Demo check-ins: a new visit's first check-in opens at enrolment, and desk staff can open one now.
+          RECHECK_DEMO_CHECKINS: ${{ vars.RECHECK_DEMO_CHECKINS || 'true' }}
           # Check-in reminders by Web Push; unset turns them off. The timers send them.
           RECHECK_VAPID_PRIVATE_KEY: ${{ secrets.RECHECK_VAPID_PRIVATE_KEY }}
           RECHECK_VAPID_SUBJECT: ${{ vars.RECHECK_VAPID_SUBJECT }}
@@ -91,6 +93,7 @@ jobs:
             printf 'AUTH0_CLIENT_SECRET=%s\n' "$AUTH0_CLIENT_SECRET"
             printf 'RECHECK_DEMO_STAFF=%s\n' "$RECHECK_DEMO_STAFF"
             printf 'RECHECK_SCHEDULER_SECONDS=%s\n' "$RECHECK_SCHEDULER_SECONDS"
+            printf 'RECHECK_DEMO_CHECKINS=%s\n' "$RECHECK_DEMO_CHECKINS"
             printf 'RECHECK_VAPID_PRIVATE_KEY=%s\n' "$RECHECK_VAPID_PRIVATE_KEY"
             printf 'RECHECK_VAPID_SUBJECT=%s\n' "$RECHECK_VAPID_SUBJECT"
           } | ssh box 'umask 077 && cat > ~/re-check/.env'

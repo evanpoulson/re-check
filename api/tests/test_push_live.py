@@ -68,7 +68,7 @@ def slots(client, visit_id):
 
 
 def test_saving_the_same_subscription_twice_changes_nothing(live_client):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     keys = browser_keys()
     assert subscribe(live_client, keys=keys).status_code == 204
     assert subscribe(live_client, keys=keys).status_code == 204
@@ -76,7 +76,7 @@ def test_saving_the_same_subscription_twice_changes_nothing(live_client):
 
 
 def test_a_new_subscription_replaces_the_old_and_turning_off_ends_it(live_client):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     subscribe(live_client, "a")
     subscribe(live_client, "b")
     assert subscriptions(live_client, visit) == [(FCM + "a", "replaced"), (FCM + "b", None)]
@@ -86,7 +86,7 @@ def test_a_new_subscription_replaces_the_old_and_turning_off_ends_it(live_client
 
 
 def test_endpoints_and_keys_stay_out_of_the_audit_log(live_client):
-    sign_in(live_client)
+    sign_in(live_client, due=False)
     subscribe(live_client)
     leaked = query(
         live_client,
@@ -99,7 +99,7 @@ def test_endpoints_and_keys_stay_out_of_the_audit_log(live_client):
 
 
 def test_reminders_go_at_the_due_time_and_every_five_minutes_once_each(live_client):
-    visit = sign_in(live_client)  # CTAS 3: 30-minute interval
+    visit = sign_in(live_client, due=False)  # CTAS 3: 30-minute interval
     subscribe(live_client)
     assert claim(live_client) == [], "not due yet"
 
@@ -116,7 +116,7 @@ def test_reminders_go_at_the_due_time_and_every_five_minutes_once_each(live_clie
 
 
 def test_reminders_stop_one_interval_after_the_due_time(live_client):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     subscribe(live_client)
     due_in_past(live_client, visit, 30)
     assert claim(live_client) == []
@@ -125,7 +125,7 @@ def test_reminders_stop_one_interval_after_the_due_time(live_client):
 
 
 def test_checking_in_moves_the_due_time_so_reminders_stop(live_client):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     subscribe(live_client)
     due_in_past(live_client, visit, 6)
     assert len(claim(live_client)) == 1
@@ -134,13 +134,13 @@ def test_checking_in_moves_the_due_time_so_reminders_stop(live_client):
 
 
 def test_no_reminders_after_sign_out_or_turning_them_off(live_client):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     subscribe(live_client)
     live_client.delete("/api/patient/push/subscription")
     due_in_past(live_client, visit, 1)
     assert claim(live_client) == []
 
-    other = sign_in(live_client)
+    other = sign_in(live_client, due=False)
     subscribe(live_client)
     live_client.post("/api/session/sign-out", json={"submission_id": "00000000-0000-4000-8000-000000000001"})
     due_in_past(live_client, other, 1)
@@ -152,7 +152,7 @@ def test_no_reminders_after_sign_out_or_turning_them_off(live_client):
 
 
 def test_a_round_records_outcomes_and_ends_subscriptions_the_service_dropped(live_client, monkeypatch):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     subscribe(live_client)
     due_in_past(live_client, visit, 1)
     sent = []

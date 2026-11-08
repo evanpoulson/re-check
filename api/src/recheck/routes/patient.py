@@ -3,7 +3,8 @@
 Matches the web app's mock server (web/src/api/mocks/store.ts, patientHome):
 - `items` are the follow-up questions enabled by the visit's complaint and
   everything answered so far (the screen renders the base check-in itself).
-- A patient gets a circle-counting prompt; an unexpired, unanswered one is
+- `checkin_open` says whether the next scheduled check-in is due yet.
+- A patient gets a circle-counting prompt while a check-in is open; an unexpired, unanswered one is
   reused, otherwise a new one is issued and stored so the answer can be scored.
   A companion never gets one.
 - Nothing staff-only (task level, reasons) is ever returned.
@@ -133,11 +134,13 @@ async def patient_home(
     # A write transaction because a new circle prompt may be stored (and audited).
     async with write_tx(pool, session.actor) as conn:
         cur = await conn.execute(
-            "SELECT site_id, language, triaged_at, next_prompt_due_at, complaint_group, cedis_code, ctas"
+            "SELECT site_id, language, triaged_at, next_prompt_due_at, complaint_group, cedis_code, ctas,"
+            " coalesce(next_prompt_due_at <= now(), false)"
             " FROM visit WHERE id = %s",
             [session.visit_id],
         )
-        site_id, language, triaged_at, next_due, complaint_group, cedis_code, ctas = await cur.fetchone()
+        (site_id, language, triaged_at, next_due, complaint_group, cedis_code, ctas,
+         checkin_open) = await cur.fetchone()
         # The level leaves the server only when the site has turned it on.
         show_level = (await site_settings(conn, site_id)).show_triage_level
 
@@ -145,7 +148,12 @@ async def patient_home(
             ComplaintGroup(complaint_group), cedis_code, await answers_so_far(conn, session.visit_id)
         )
         items = [question_item(bank, key, session.role, language) for key in now + later]
-        prompt = await attention_prompt(conn, bank, session.visit_id) if session.role is Reporter.PATIENT else None
+        # The circle check belongs to a scheduled check-in, so it is only issued once one is open.
+        prompt = (
+            await attention_prompt(conn, bank, session.visit_id)
+            if session.role is Reporter.PATIENT and checkin_open
+            else None
+        )
         latest, last_ok = await load_snapshots(conn, site_id)
 
     at = datetime.now(UTC)
@@ -155,6 +163,7 @@ async def patient_home(
         wait_estimate=current_estimate(latest, last_ok, at),
         waited_minutes=waited_minutes(triaged_at, at),
         next_checkin_due_at=next_due,
+        checkin_open=checkin_open,
         questionnaire_version=bank.version,
         items=items,
         attention_prompt=prompt,

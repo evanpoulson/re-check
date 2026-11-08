@@ -24,15 +24,13 @@
   },
   "patient": {
     "language": "Sprache",
-    "waitUnavailable": "Derzeit nicht verfügbar.",
+    "waitUnavailable": "Die AHS-Wartezeitschätzung ist derzeit nicht verfügbar.",
     "placeInLine": "Die am schwersten Erkrankten kommen zuerst dran. Das Personal entscheidet über die Reihenfolge der Behandlung, nicht diese App.",
-    "homeTitle": "Abfragen im Wartebereich",
     "titleCompanion": "Sie antworten für eine Person, die Sie begleiten",
     "nextCheckin": "Nächste Abfrage",
     "startCheckin": "Abfrage starten",
+    "checkinNotOpen": "Noch nicht geöffnet. Wenn sich vorher etwas ändert, nutzen Sie die Schaltflächen unten.",
     "reportChange": "Ein neues Symptom melden",
-    "reportChange_companion": "Etwas Neues melden, das Ihnen auffällt",
-    "leaving": "Ich gehe jetzt",
     "sendFailed": "Das wurde nicht gesendet. Bitte versuchen Sie es erneut oder sagen Sie es dem Personal.",
     "languageNotice": "Diese Übersetzung ist ein Entwurf. Ein medizinischer Fachübersetzer hat sie noch nicht geprüft. Wenn etwas unklar ist, fragen Sie das Personal.",
     "languageMissing": "Die Fragen sind vorerst auf Englisch. Bitten Sie das Personal um eine Dolmetschung.",
@@ -42,12 +40,11 @@
     "signOutFailed": "Dieses Handy konnte nicht abgemeldet werden. Versuchen Sie es erneut.",
     "waitContext": "Infos zum Wartebereich",
     "contactStaff": "Personal kontaktieren",
-    "moreOptions": "Weitere Optionen",
     "companionHint": "Sagen Sie uns, was Sie sehen oder hören. Nur die Person selbst kann sagen, wie sie sich innerlich fühlt.",
-    "waitedLabel": "Ihre Wartezeit seit der Triage",
-    "estimateLabel": "AHS-Schätzung",
-    "estimateValue": "{{estimate}} von der Triage bis zum ärztlichen Gespräch, für weniger dringende Fälle",
-    "estimateNote": "Nicht Ihre persönliche Wartezeit. Stand: {{time}}."
+    "departmentWait": "Aktuelle AHS-Schätzung: {{estimate}} von der Triage bis zum ärztlichen Gespräch, für weniger dringende Fälle. Das ist nicht Ihre persönliche Wartezeit.",
+    "title": "Sie sind angemeldet",
+    "updated": "Stand: {{time}}.",
+    "waited": "Sie warten seit der Triage schon {{waited}}."
   },
   "pain": {
     "low": "Keine Schmerzen",
@@ -57,8 +54,7 @@
     "unsure": "Ich bin mir nicht sicher"
   },
   "change": {
-    "send": "An das Personal senden",
-    "chooseOne": "Wählen Sie mindestens eine Veränderung aus oder gehen Sie zurück."
+    "send": "An das Personal senden"
   },
   "leaving": {
     "title": "Verlassen Sie die Notaufnahme?",
@@ -82,7 +78,7 @@
     "stillChecking": "Das Personal sieht weiterhin nach Ihnen. Wenn es Ihnen schlechter geht, tippen Sie auf „Ich brauche jetzt Hilfe“ oder gehen Sie zum Triage-Schalter.",
     "followup_one": "Noch {{count}} Frage beantworten",
     "followup_other": "Noch {{count}} Fragen beantworten",
-    "backHome": "Zur Startseite"
+    "back": "Zurück"
   },
   "message": {
     "none": "Das Personal sieht Ihre Antworten.",
@@ -116,17 +112,13 @@
       "companion": "Eine Begleitperson"
     },
     "signedOut": {
-      "title": "Sie wurden abgemeldet",
-      "helpNow": "Wenn Sie jetzt Hilfe brauchen, sagen Sie es dem Personal.",
-      "scanAgain": "Um sich wieder anzumelden, scannen Sie den QR-Code des Besuchs mit der Kamera dieses Handys."
+      "title": "Sie wurden abgemeldet.",
+      "help": "Wenn Sie jetzt Hilfe brauchen, sagen Sie es dem Personal. Um sich wieder anzumelden, scannen Sie den QR-Code des Besuchs."
     },
     "intro": "Auf dieser Seite können Sie dem Personal der Notaufnahme sagen, wenn sich während der Wartezeit etwas verändert. Sie ersetzt nicht das Gespräch mit dem Personal.",
     "help": "Geht es Ihnen viel schlechter? Sagen Sie es jetzt dem Personal.",
     "companionHint": "Angehörige oder Bekannte, die für die Person antworten",
-    "expired": {
-      "title": "Dieser Code funktioniert nicht mehr",
-      "help": "Bitte fragen Sie das Personal nach einem neuen Code."
-    }
+    "inactive": "Dieser Code funktioniert nicht mehr. Bitte fragen Sie das Personal nach einem neuen Code."
   },
   "privacy": {
     "title": "Was wir speichern",
@@ -140,10 +132,7 @@
     "code": "Halten Sie Ihren Code geheim."
   },
   "circle": {
-    "title": "Zählen Sie die Kreise",
-    "chooseCount": "Tippen Sie auf − oder +, um eine Zahl zu wählen.",
-    "intro": "Es erscheinen nacheinander Formen. Zählen Sie die Kreise. Achten Sie nicht auf die Quadrate.",
-    "once": "Sie sehen sie nur einmal. Wenn Sie das nicht können, tippen Sie auf „Ich kann das nicht“, dann sieht das Personal nach Ihnen.",
+    "intro": "Es erscheinen nacheinander Formen. Sie sehen jede nur einmal.",
     "start": "Start",
     "watch": "Schauen Sie auf den Bildschirm und zählen Sie die Kreise.",
     "cantDo": "Ich kann das nicht",
@@ -151,17 +140,12 @@
     "fewer": "Einer weniger",
     "more": "Einer mehr",
     "confirm": "Fertig",
-    "notTest": "Das ist kein medizinischer Test. Wenn es schwerfällt, kommt einfach jemand vom Personal zu Ihnen."
+    "notTest": "Das ist kein medizinischer Test. Wenn es schwerfällt, tippen Sie auf „Ich kann das nicht“, dann sieht das Personal nach Ihnen."
   },
   "desk": {
     "title": "Ihre Frage ging an die Triage-Pflegekraft",
-    "body": "Die Triage-Pflegekraft bekommt Ihre Frage und kommt, sobald es geht.",
-    "notClinical": "Wenn es Ihnen schlechter geht, tippen Sie auf „Ich habe Sorge, dass es mir schlechter geht“. Wenn Sie sofort Hilfe brauchen, tippen Sie auf „Ich brauche jetzt Hilfe“ oder gehen Sie zum Triage-Schalter.",
-    "confirmTitle": "Eine Frage an die Triage-Pflegekraft senden?",
-    "confirmBody": "Das ist für Fragen zu Ihrer Wartezeit oder Behandlung. Die Triage-Pflegekraft kommt, sobald es geht. Wenn es Ihnen schlechter geht, tippen Sie stattdessen auf „Ich habe Sorge, dass es mir schlechter geht“.",
-    "confirmBody_companion": "Das ist für Fragen zur Wartezeit oder Behandlung der Person. Die Triage-Pflegekraft kommt, sobald es geht. Wenn es der Person schlechter zu gehen scheint, tippen Sie stattdessen auf „Ich habe Sorge, dass es der Person schlechter geht“.",
-    "confirm": "Ja, Frage senden",
-    "cancel": "Abbrechen"
+    "body": "Die Triage-Pflegekraft bekommt Ihre Frage und kommt, sobald es geht. Wenn es Ihnen schlechter geht, gehen Sie zum Triage-Schalter.",
+    "notClinical": "Wenn es Ihnen schlechter geht, tippen Sie auf „Ich habe Sorge, dass es mir schlechter geht“. Wenn Sie sofort Hilfe brauchen, tippen Sie auf „Ich brauche jetzt Hilfe“ oder gehen Sie zum Triage-Schalter."
   },
   "flow": {
     "progress": "Frage {{n}} von {{total}}",

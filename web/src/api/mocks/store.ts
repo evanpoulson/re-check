@@ -127,7 +127,8 @@ export function staffSession() {
   } catch { /* no storage: signed out */ }
   const known = STAFF_ROLES.find((r) => r === role)
   if (!known) throw new MockError(401, 'staff sign-in required')
-  return { user_id: `demo|${known}`, name: null, role: known, site_id: 'foothills-demo' }
+  // The mocks are a demo, so they behave as if RECHECK_DEMO_CHECKINS were on.
+  return { user_id: `demo|${known}`, name: null, role: known, site_id: 'foothills-demo', demo_checkins: true }
 }
 
 export function demoStaffSignIn(role: StaffRef['role']) {
@@ -798,7 +799,8 @@ export function enrol(body: VisitCreate): VisitEnrolled {
       status: 'waiting',
       triaged_at: iso(now),
       closed_at: null,
-      next_prompt_due_at: exclusion ? null : iso(now + interval * MIN),
+      // Demo check-ins (as with RECHECK_DEMO_CHECKINS): the first check-in opens at enrolment.
+      next_prompt_due_at: exclusion ? null : iso(now),
       staff_reassess_due_at: iso(now + interval * MIN),
       last_staff_check_at: null,
       signed_in_as: null,
@@ -844,6 +846,30 @@ export function staffSignOut(visitId: string) {
   endSession(r, 'staff_signed_out', Date.now())
   save(s)
   notify(visitId, 'visit.changed')
+}
+
+/** Open the visit's next check-in now, as if its due time had come. For tests and demo scripts. */
+export function makeCheckinDue(visitId: string) {
+  const s = load()
+  const r = findRec(s, visitId)
+  if (r.visit.app_exclusion) throw new MockError(409, 'this visit has no patient prompts')
+  r.visit = { ...r.visit, next_prompt_due_at: iso(Date.now() - 60_000) }
+  save(s)
+  notify(visitId, 'visit.changed')
+}
+
+/** Demo: desk staff open the patient's next check-in now. The due time only moves earlier; the staff timer stays. */
+export function openCheckinNow(visitId: string): undefined {
+  const s = load()
+  const r = findRec(s, visitId)
+  if (r.visit.status !== 'waiting' || r.visit.app_exclusion || !r.visit.next_prompt_due_at) {
+    throw new MockError(409, 'only a waiting visit that offers the app has check-ins')
+  }
+  const now = Date.now()
+  if (Date.parse(r.visit.next_prompt_due_at) > now) r.visit = { ...r.visit, next_prompt_due_at: iso(now) }
+  save(s)
+  notify(visitId, 'visit.changed')
+  return undefined
 }
 
 /** Staff stop offering the app. Irreversible: prompts stop, devices are signed out, the staff timer keeps running. */
@@ -1201,16 +1227,19 @@ export function patientHome(): PatientHome {
   const [now, later] = enabledFollowUps(r, r.answers)
   const keys = [...now, ...later]
   const now_ = Date.now()
+  const due = r.visit.next_prompt_due_at
+  const checkinOpen = due !== null && Date.parse(due) <= now_
   const home: PatientHome = {
     role,
     language: r.visit.language,
     wait_estimate: { minutes: 287, source: 'ahs_feed', as_of: iso(now_ - 2 * 60_000) },
     waited_minutes: Math.max(0, Math.floor((now_ - Date.parse(r.visit.triaged_at)) / 60_000)),
     next_checkin_due_at: r.visit.next_prompt_due_at,
+    checkin_open: checkinOpen,
     questionnaire_version: bankVersion,
     items: keys.map((k) => questionItem(k, role)),
-    // Patient only, never for a companion.
-    attention_prompt: role === 'patient' ? currentPrompt(r, now_).prompt : null,
+    // Patient only, never for a companion, and only while a check-in is open.
+    attention_prompt: role === 'patient' && checkinOpen ? currentPrompt(r, now_).prompt : null,
     message: 'none',
     // The level leaves the server only when the site shows it.
     triage_level: s.settings?.show_triage_level ? r.visit.ctas : null,
@@ -1232,6 +1261,12 @@ export function submitReport(body: PatientReport): ReportReceipt {
 
   let attentionReason: 'attention_incorrect' | 'attention_unanswered' | null = null
   if (body.reporter !== role) throw new MockError(422, 'reporter must match the role chosen at sign-in')
+  // A scheduled check-in opens at its due time; everything else is accepted at any time (api/src/recheck/routes/reports.py).
+  const scheduled = body.kind === 'checkin' && (body.purpose ?? 'scheduled') === 'scheduled'
+  if (scheduled) {
+    const due = r.visit.next_prompt_due_at
+    if (due === null || Date.parse(due) > now) throw new MockError(409, "the next check-in isn't open yet")
+  }
   if (body.kind === 'checkin') {
     if (body.reporter === 'companion') {
       if (body.pain.kind !== 'missing') throw new MockError(422, 'pain is self-reported; a companion must send it as missing')
@@ -1315,8 +1350,8 @@ export function submitReport(body: PatientReport): ReportReceipt {
     raise(r, 'overdue', attentionReason, 'report', body.submission_id, now)
     notify(r.visit.visit_id, 'task.changed')
   }
-  if (body.kind === 'checkin' && !r.visit.app_exclusion) {
-    // The patient timer restarts. The staff reassessment timer never moves.
+  if (scheduled && !r.visit.app_exclusion) {
+    // The patient timer restarts. Follow-ups never move it, and the staff reassessment timer never moves.
     r.visit = { ...r.visit, next_prompt_due_at: iso(now + intervalOf(r.visit.ctas) * MIN) }
   }
 

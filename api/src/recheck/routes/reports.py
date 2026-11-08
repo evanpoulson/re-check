@@ -25,6 +25,7 @@ from ..question_bank import QuestionBank, default_bank, option_codes, ext_value,
 router = APIRouter(prefix="/api/patient", tags=["patient reports"])
 
 ENDPOINT = "patient.report"
+CHECKIN_NOT_DUE = "the next check-in isn't open yet"
 
 
 def _unprocessable(message: str) -> HTTPException:
@@ -179,7 +180,7 @@ async def score_attention(conn, visit_id: UUID, report: CheckinReport) -> Attent
     response_model=ReportReceipt,
     responses={
         401: {"description": "Not signed in, or this device was signed out"},
-        409: {"description": "submission_id reused for a different report"},
+        409: {"description": "submission_id reused for a different report, or the check-in isn't due yet"},
         422: {"description": "Reporter, channel, question bank or attention prompt doesn't match"},
     },
 )
@@ -215,6 +216,16 @@ async def post_report(
             (received_at,) = await cur.fetchone()
             return _receipt(report, received_at, bank, visit, attention=None, duplicate=True)
 
+        scheduled = isinstance(report, CheckinReport) and report.purpose == "scheduled"
+        if scheduled:
+            # A scheduled check-in opens when the patient prompt is due. Help, worry, new signs,
+            # leaving and follow-up answers are accepted at any time.
+            cur = await conn.execute(
+                "SELECT coalesce(next_prompt_due_at <= now(), false) FROM visit WHERE id = %s", [session.visit_id]
+            )
+            if not (await cur.fetchone())[0]:
+                raise HTTPException(status.HTTP_409_CONFLICT, CHECKIN_NOT_DUE)
+
         attention = await score_attention(conn, session.visit_id, report) if isinstance(report, CheckinReport) else None
 
         cur = await conn.execute(INSERT_REPORT, report_row(report, session))
@@ -222,8 +233,9 @@ async def post_report(
         await submissions.record(
             conn, report.submission_id, actor=session.actor, endpoint=ENDPOINT, fp=fp, visit_id=session.visit_id
         )
-        if isinstance(report, CheckinReport) and app_exclusion is None:
-            # The patient prompt timer restarts. The staff reassessment timer never moves for a report.
+        if scheduled and app_exclusion is None:
+            # The patient prompt timer restarts. Follow-ups never move it, and the staff
+            # reassessment timer never moves for a report.
             await conn.execute(
                 "UPDATE visit SET next_prompt_due_at = now() + ctas_interval(ctas) WHERE id = %s", [session.visit_id]
             )

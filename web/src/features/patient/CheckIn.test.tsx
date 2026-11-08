@@ -5,11 +5,13 @@ import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { exchangeToken } from '@/api/api'
 import { server } from '@/api/mocks/server'
+import { demoVisitId, makeCheckinDue } from '@/api/mocks/store'
 import type { PatientReport } from '@/api/types'
 import '@/i18n'
 import { CheckIn } from './CheckIn'
 
-async function openCheckIn(role: 'patient' | 'companion' = 'patient') {
+async function openCheckIn(role: 'patient' | 'companion' = 'patient', { due = true } = {}) {
+  if (due) makeCheckinDue(demoVisitId('general'))
   await exchangeToken({ token: 'demo-general-token', role })
   const user = userEvent.setup()
   render(
@@ -77,4 +79,28 @@ describe('urgent patient reporting', () => {
     })
   })
 
+})
+
+describe('when a check-in is open', () => {
+  it('shows no start button before the due time, but help and reporting a change stay available', async () => {
+    const bodies: PatientReport[] = []
+    server.use(http.post('*/api/patient/reports', async ({ request }) => {
+      const body = await request.json() as PatientReport
+      bodies.push(body)
+      return HttpResponse.json({ submission_id: body.submission_id, received_at: new Date().toISOString(), duplicate: false, patient_message: 'clinician_will_check' })
+    }))
+    const user = await openCheckIn('patient', { due: false })
+    expect(await screen.findByText(/^Not open yet\./)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Start check-in' })).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Tell us about a new symptom' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'I need help now' }))
+    expect(await screen.findByRole('heading', { name: 'Thank you, we have your answers' })).toBeInTheDocument()
+    expect(bodies).toEqual([expect.objectContaining({ kind: 'concern', concern: 'help_now' })])
+  })
+
+  it('opens the check-in once it is due', async () => {
+    await openCheckIn('patient')
+    expect(await screen.findByRole('button', { name: 'Start check-in' })).toBeInTheDocument()
+    expect(screen.queryByText(/^Not open yet\./)).not.toBeInTheDocument()
+  })
 })

@@ -103,6 +103,15 @@ class VisitExclusionUpdate(InputModel):
     app_exclusion: AppExclusion
 
 
+class OpenCheckin(InputModel):
+    """Demo only: open the visit's next patient check-in now (RECHECK_DEMO_CHECKINS).
+
+    Moves the patient prompt due time to now, never later. The staff timer doesn't move.
+    """
+
+    submission_id: SubmissionId
+
+
 class TokenExchange(InputModel):
     """A device scans the visit's QR, says who is using it, and gets a session cookie.
 

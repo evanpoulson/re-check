@@ -25,6 +25,7 @@ from .staff import (
 from .tasks import Task
 from .views import ChargeNurseView, Handover, QualitySummary, TriageBoard, VisitDetail, Worklist
 from .visits import (
+    OpenCheckin,
     SessionInfo,
     SignInConflict,
     SignOut,
@@ -42,6 +43,7 @@ REQUEST_MODELS = (
     TokenExchange,
     VisitStatusUpdate,
     VisitExclusionUpdate,
+    OpenCheckin,
     SignOut,
     StaffSignOut,
     VitalsCreate,
@@ -111,6 +113,7 @@ __all__ = [
     "VisitDetail",
     "VisitEnrolled",
     "VisitExclusionUpdate",
+    "OpenCheckin",
     "VisitLink",
     "VisitStatusUpdate",
     "VitalsCreate",

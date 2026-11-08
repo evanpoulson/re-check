@@ -54,6 +54,32 @@ def checkin(**overrides):
 # --- reports ---------------------------------------------------------------
 
 
+NOT_ASKED = {"kind": "missing", "reason": "not_asked"}
+FOLLOWUP_FIXED = {k: NOT_ASKED for k in ("feeling_now", "feeling_change", "pain", "new_findings", "attention")}
+
+
+def test_checkin_is_scheduled_unless_it_says_followup():
+    assert patient_report_adapter.validate_python(checkin()).purpose == "scheduled"
+    followup = patient_report_adapter.validate_python(
+        checkin(purpose="followup", **FOLLOWUP_FIXED, items={"pain_moved": {"kind": "yes_no", "value": True}})
+    )
+    assert followup.purpose == "followup"
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("feeling_change", {"kind": "answered", "value": "same"}),
+        ("pain", {"kind": "missing", "reason": "unsure"}),
+        ("new_findings", {"kind": "answered", "value": []}),
+        ("attention", {"kind": "missing", "reason": "not_asked", "prompt_id": str(uuid4())}),
+    ],
+)
+def test_followup_carries_only_items(field, value):
+    with pytest.raises(ValidationError):
+        patient_report_adapter.validate_python(checkin(purpose="followup", **{**FOLLOWUP_FIXED, field: value}))
+
+
 def test_checkin_parses_from_json():
     report = patient_report_adapter.validate_json(json.dumps(checkin()))
     assert isinstance(report, CheckinReport)

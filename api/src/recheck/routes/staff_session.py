@@ -32,7 +32,7 @@ from ..auth import (
 )
 from ..contract.codes import StaffRole
 from ..security import SIGN_IN_FLOW_KEY
-from ..settings import auth0, cookie_secure, demo_staff_enabled, public_url, site_id
+from ..settings import auth0, cookie_secure, demo_checkins_enabled, demo_staff_enabled, public_url, site_id
 
 log = logging.getLogger(__name__)
 
@@ -55,6 +55,8 @@ class StaffSessionInfo(BaseModel):
     name: str | None
     role: StaffRole
     site_id: str
+    # Shows "Open check-in now" on the visit page (RECHECK_DEMO_CHECKINS).
+    demo_checkins: bool
 
 
 class SignInOptions(BaseModel):
@@ -64,7 +66,10 @@ class SignInOptions(BaseModel):
 
 
 def _info(staff: Staff) -> StaffSessionInfo:
-    return StaffSessionInfo(user_id=staff.user_id, name=staff.name, role=staff.role, site_id=staff.site_id)
+    return StaffSessionInfo(
+        user_id=staff.user_id, name=staff.name, role=staff.role, site_id=staff.site_id,
+        demo_checkins=demo_checkins_enabled(),
+    )
 
 
 def _safe_return_to(value: str | None) -> str:

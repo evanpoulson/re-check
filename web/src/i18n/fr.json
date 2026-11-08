@@ -24,15 +24,13 @@
   },
   "patient": {
     "language": "Langue",
-    "waitUnavailable": "Non disponible pour le moment.",
+    "waitUnavailable": "L'estimation d'attente d'AHS n'est pas disponible pour le moment.",
     "placeInLine": "Les personnes les plus malades passent en premier. C'est le personnel qui décide de l'ordre des soins, pas cette application.",
-    "homeTitle": "Questionnaires en salle d'attente",
     "titleCompanion": "Vous répondez pour une personne que vous accompagnez",
     "nextCheckin": "Prochain questionnaire",
     "startCheckin": "Commencer le questionnaire",
+    "checkinNotOpen": "Pas encore ouvert. Si quelque chose change d’ici là, utilisez les boutons ci-dessous.",
     "reportChange": "Signaler un nouveau symptôme",
-    "reportChange_companion": "Signaler quelque chose de nouveau que vous remarquez",
-    "leaving": "Je pars",
     "sendFailed": "L'envoi n'a pas fonctionné. Veuillez réessayer ou avertir un membre du personnel.",
     "languageNotice": "Cette traduction est une ébauche. Elle n'a pas encore été vérifiée par un traducteur médical. Si quelque chose n'est pas clair, demandez à un membre du personnel.",
     "languageMissing": "Les questions sont en anglais pour le moment. Demandez un interprète à un membre du personnel.",
@@ -42,12 +40,11 @@
     "signOutFailed": "Impossible de déconnecter ce téléphone. Réessayez.",
     "waitContext": "Renseignements sur la salle d'attente",
     "contactStaff": "Contacter le personnel",
-    "moreOptions": "Plus d'options",
     "companionHint": "Dites-nous ce que vous voyez ou entendez. Seule la personne peut dire comment elle se sent à l'intérieur.",
-    "waitedLabel": "Temps d'attente depuis le triage",
-    "estimateLabel": "Estimation d'AHS",
-    "estimateValue": "{{estimate}} entre le triage et la consultation avec un médecin, pour les cas moins urgents",
-    "estimateNote": "Ce n'est pas votre attente personnelle. Mise à jour à {{time}}."
+    "departmentWait": "Selon l'estimation actuelle d'AHS, il faut {{estimate}} entre le triage et la consultation avec un médecin, pour les cas moins urgents. Ce n'est pas votre attente personnelle.",
+    "title": "Votre session est ouverte",
+    "updated": "Mise à jour à {{time}}.",
+    "waited": "Depuis le triage, vous avez attendu {{waited}}."
   },
   "pain": {
     "low": "Aucune douleur",
@@ -57,8 +54,7 @@
     "unsure": "Je ne sais pas"
   },
   "change": {
-    "send": "Envoyer au personnel",
-    "chooseOne": "Choisissez au moins un changement, ou revenez en arrière."
+    "send": "Envoyer au personnel"
   },
   "leaving": {
     "title": "Vous partez?",
@@ -83,7 +79,7 @@
     "followup_one": "Répondre à {{count}} autre question",
     "followup_many": "Répondre à {{count}} autres questions",
     "followup_other": "Répondre à {{count}} autres questions",
-    "backHome": "Retour à l'accueil"
+    "back": "Retour"
   },
   "message": {
     "none": "Le personnel verra vos réponses.",
@@ -117,17 +113,13 @@
       "companion": "Quelqu'un qui accompagne la personne"
     },
     "signedOut": {
-      "title": "Votre session est fermée",
-      "helpNow": "Si vous avez besoin d'aide maintenant, avertissez un membre du personnel.",
-      "scanAgain": "Pour vous reconnecter, scannez le code QR de la visite avec l'appareil photo de ce téléphone."
+      "title": "Votre session est fermée.",
+      "help": "Si vous avez besoin d'aide maintenant, avertissez un membre du personnel. Pour vous reconnecter, scannez le code QR de la visite."
     },
     "intro": "Cette page sert à avertir le personnel des urgences si quelque chose change pendant l'attente. Elle ne remplace pas une conversation avec le personnel.",
     "help": "Vous vous sentez beaucoup plus mal? Avertissez un membre du personnel maintenant.",
     "companionHint": "Membre de la famille ou proche qui répond pour la personne",
-    "expired": {
-      "title": "Ce code ne fonctionne plus",
-      "help": "Veuillez demander un nouveau code à un membre du personnel."
-    }
+    "inactive": "Ce code ne fonctionne plus. Veuillez demander un nouveau code à un membre du personnel."
   },
   "privacy": {
     "title": "Ce que nous conservons",
@@ -141,10 +133,7 @@
     "code": "Gardez votre code privé."
   },
   "circle": {
-    "title": "Comptez les cercles",
-    "chooseCount": "Touchez − ou + pour choisir un nombre.",
-    "intro": "Des formes vont apparaître une à la fois. Comptez les cercles. Ne tenez pas compte des carrés.",
-    "once": "Vous ne les verrez qu'une seule fois. Si vous ne pouvez pas le faire, touchez « Je ne peux pas le faire » et le personnel viendra vous voir.",
+    "intro": "Des formes vont apparaître une à la fois. Vous ne verrez chacune qu'une seule fois.",
     "start": "Commencer",
     "watch": "Regardez l'écran et comptez les cercles.",
     "cantDo": "Je ne peux pas le faire",
@@ -152,17 +141,12 @@
     "fewer": "Un de moins",
     "more": "Un de plus",
     "confirm": "Terminé",
-    "notTest": "Ce n'est pas un test médical. Si c'est difficile, le personnel viendra simplement vous voir."
+    "notTest": "Ce n'est pas un test médical. Si c'est difficile, touchez « Je ne peux pas le faire » et le personnel viendra vous voir."
   },
   "desk": {
     "title": "Votre question a été transmise au personnel infirmier du triage",
-    "body": "Le personnel infirmier du triage recevra votre question et viendra dès que possible.",
-    "notClinical": "Si vous vous sentez plus mal, touchez « J'ai peur que mon état s'aggrave ». Si vous avez besoin d'aide tout de suite, touchez « J'ai besoin d'aide maintenant » ou allez au bureau de triage.",
-    "confirmTitle": "Envoyer une question au personnel infirmier du triage?",
-    "confirmBody": "Ceci sert aux questions sur votre attente ou vos soins. Le personnel infirmier du triage viendra dès que possible. Si vous vous sentez plus mal, touchez plutôt « J'ai peur que mon état s'aggrave ».",
-    "confirmBody_companion": "Ceci sert aux questions sur l'attente ou les soins de la personne. Le personnel infirmier du triage viendra dès que possible. Si son état semble s'aggraver, touchez plutôt « J'ai peur que l'état de la personne s'aggrave ».",
-    "confirm": "Oui, envoyer ma question",
-    "cancel": "Annuler"
+    "body": "Le personnel infirmier du triage recevra votre question et viendra dès que possible. Si vous vous sentez plus mal, présentez-vous au triage.",
+    "notClinical": "Si vous vous sentez plus mal, touchez « J'ai peur que mon état s'aggrave ». Si vous avez besoin d'aide tout de suite, touchez « J'ai besoin d'aide maintenant » ou allez au bureau de triage."
   },
   "flow": {
     "progress": "Question {{n}} sur {{total}}",

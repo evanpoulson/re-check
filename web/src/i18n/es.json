@@ -24,15 +24,13 @@
   },
   "patient": {
     "language": "Idioma",
-    "waitUnavailable": "No disponible por ahora.",
+    "waitUnavailable": "La estimación de espera de AHS no está disponible por ahora.",
     "placeInLine": "Se atiende primero a las personas más graves. El personal decide el orden de atención, no esta aplicación.",
-    "homeTitle": "Cuestionarios en la sala de espera",
     "titleCompanion": "Está respondiendo por una persona a la que acompaña",
     "nextCheckin": "Próximo cuestionario",
     "startCheckin": "Comenzar el cuestionario",
+    "checkinNotOpen": "Todavía no está abierto. Si algo cambia antes, use los botones de abajo.",
     "reportChange": "Informar un síntoma nuevo",
-    "reportChange_companion": "Cuéntenos algo nuevo que note",
-    "leaving": "Me voy",
     "sendFailed": "No se pudo enviar. Por favor, intente de nuevo o avise a un miembro del personal.",
     "languageNotice": "Esta traducción es un borrador. Un traductor médico todavía no la ha revisado. Si algo no está claro, pregunte a un miembro del personal.",
     "languageMissing": "Por ahora las preguntas están en inglés. Pida un intérprete a cualquier miembro del personal.",
@@ -42,12 +40,11 @@
     "signOutFailed": "No se pudo cerrar la sesión en este teléfono. Intente de nuevo.",
     "waitContext": "Información de la sala de espera",
     "contactStaff": "Contactar al personal",
-    "moreOptions": "Más opciones",
     "companionHint": "Cuéntenos lo que ve u oye. Solo la persona puede decirnos cómo se siente por dentro.",
-    "waitedLabel": "Tiempo de espera desde el triaje",
-    "estimateLabel": "Estimación de AHS",
-    "estimateValue": "{{estimate}} desde el triaje hasta ver a un médico, para los casos menos urgentes",
-    "estimateNote": "No es su espera personal. Actualizado a las {{time}}."
+    "departmentWait": "Estimación actual de AHS: {{estimate}} desde el triaje hasta ver a un médico, para los casos menos urgentes. No es su espera personal.",
+    "title": "Sesión iniciada",
+    "updated": "Actualizado a las {{time}}.",
+    "waited": "Ha esperado {{waited}} desde el triaje."
   },
   "pain": {
     "low": "Sin dolor",
@@ -57,8 +54,7 @@
     "unsure": "No lo sé"
   },
   "change": {
-    "send": "Enviar al personal",
-    "chooseOne": "Elija al menos un cambio, o vuelva atrás."
+    "send": "Enviar al personal"
   },
   "leaving": {
     "title": "¿Se va?",
@@ -83,7 +79,7 @@
     "followup_one": "Responder {{count}} pregunta más",
     "followup_many": "Responder {{count}} preguntas más",
     "followup_other": "Responder {{count}} preguntas más",
-    "backHome": "Volver al inicio"
+    "back": "Atrás"
   },
   "message": {
     "none": "El personal verá sus respuestas.",
@@ -117,17 +113,13 @@
       "companion": "Alguien que acompaña a la persona"
     },
     "signedOut": {
-      "title": "Se cerró su sesión",
-      "helpNow": "Si necesita ayuda ahora, avise a un miembro del personal.",
-      "scanAgain": "Para volver a iniciar sesión, escanee el código QR de la visita con la cámara de este teléfono."
+      "title": "Se cerró su sesión.",
+      "help": "Si necesita ayuda ahora, avise a un miembro del personal. Para volver a iniciar sesión, escanee el código QR de la visita."
     },
     "intro": "Use esta página para avisar al personal de urgencias si algo cambia mientras espera. No reemplaza hablar con el personal.",
     "help": "¿Se siente mucho peor? Avise a un miembro del personal ahora.",
     "companionHint": "Familiar o amistad que responde por la persona",
-    "expired": {
-      "title": "Este código ya no funciona",
-      "help": "Pida un código nuevo a un miembro del personal."
-    }
+    "inactive": "Este código ya no funciona. Pida un código nuevo a un miembro del personal."
   },
   "privacy": {
     "title": "Qué información guardamos",
@@ -141,10 +133,7 @@
     "code": "No comparta su código."
   },
   "circle": {
-    "title": "Cuente los círculos",
-    "chooseCount": "Toque − o + para elegir un número.",
-    "intro": "Verá aparecer figuras una por una. Cuente los círculos. No tome en cuenta los cuadrados.",
-    "once": "Solo las verá una vez. Si no puede hacerlo, toque \"No puedo hacerlo\" y el personal irá a ver cómo está.",
+    "intro": "Aparecerán figuras una por una. Verá cada una solo una vez.",
     "start": "Comenzar",
     "watch": "Mire la pantalla y cuente los círculos.",
     "cantDo": "No puedo hacerlo",
@@ -152,17 +141,12 @@
     "fewer": "Uno menos",
     "more": "Uno más",
     "confirm": "Listo",
-    "notTest": "Esto no es una prueba médica. Si le resulta difícil, el personal simplemente vendrá a verle."
+    "notTest": "Esto no es una prueba médica. Si le resulta difícil, toque \"No puedo hacerlo\" y el personal irá a ver cómo está."
   },
   "desk": {
     "title": "Su pregunta se envió al personal de enfermería de triaje",
-    "body": "El personal de enfermería de triaje recibirá su pregunta y vendrá cuando pueda.",
-    "notClinical": "Si se siente peor, toque “Me preocupa estar empeorando”. Si necesita ayuda de inmediato, toque “Necesito ayuda ahora” o vaya al mostrador de triaje.",
-    "confirmTitle": "¿Enviar una pregunta al personal de enfermería de triaje?",
-    "confirmBody": "Esto es para preguntas sobre su espera o su atención. El personal de enfermería de triaje vendrá cuando pueda. Si se siente peor, mejor toque “Me preocupa estar empeorando”.",
-    "confirmBody_companion": "Esto es para preguntas sobre la espera o la atención de la persona. El personal de enfermería de triaje vendrá cuando pueda. Si la persona parece estar peor, mejor toque “Me preocupa que la persona esté empeorando”.",
-    "confirm": "Sí, enviar mi pregunta",
-    "cancel": "Cancelar"
+    "body": "El personal de enfermería de triaje recibirá su pregunta y vendrá cuando pueda. Si se siente peor, vaya al mostrador de triaje.",
+    "notClinical": "Si se siente peor, toque “Me preocupa estar empeorando”. Si necesita ayuda de inmediato, toque “Necesito ayuda ahora” o vaya al mostrador de triaje."
   },
   "flow": {
     "progress": "Pregunta {{n}} de {{total}}",
