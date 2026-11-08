@@ -1,6 +1,7 @@
 {
   "app": { "name": "Recheck" },
   "demo": { "badge": "Synthetic data, demo thresholds" },
+  "common": { "loading": "Loading…", "none": "None", "yes": "Yes", "no": "No", "sending": "Sending…" },
   "pages": {
     "signIn": "Choose a demo role",
     "enrol": "New visit",
@@ -9,5 +10,313 @@
     "patientEntry": "Opening your check-in",
     "checkIn": "Check-in",
     "notFound": "Page not found"
+  },
+  "nav": { "label": "Staff", "triage": "Triage board", "enrol": "New visit", "signOut": "Sign out" },
+  "signIn": {
+    "explain": "This is a synthetic demo. Pick a role to continue; there is no real sign-in yet.",
+    "continue": "Continue",
+    "notInBuild": "Not part of this build"
+  },
+  "role": {
+    "triage_nurse": "Triage nurse",
+    "physician": "Physician",
+    "charge_nurse": "Charge nurse",
+    "quality": "Quality"
+  },
+  "language": { "en": "English", "pa": "ਪੰਜਾਬੀ", "tl": "Tagalog" },
+  "channel": { "phone": "Phone", "pager": "Pager", "desk": "Desk" },
+  "complaint": {
+    "chest_back_pain": "Chest or back pain",
+    "neuro_change": "New neurological change",
+    "head_injury": "Head injury",
+    "general": "Other complaint"
+  },
+  "level": {
+    "red": "Red",
+    "amber": "Amber",
+    "silent": "Silent",
+    "leave_risk": "Leave risk",
+    "overdue": "Overdue"
+  },
+  "condition": { "better": "Better", "same": "Same", "worse": "Worse", "unknown": "Unknown" },
+  "overall": { "better": "Better", "same": "About the same", "worse": "Worse" },
+  "reporter": { "patient": "Patient", "companion": "Companion", "staff": "Staff" },
+  "missing": {
+    "unsure": "Not sure",
+    "unable_to_respond": "Unable to respond",
+    "not_asked": "Not asked",
+    "not_reached": "Not reached"
+  },
+  "finding": {
+    "chest_pain": "Chest pain",
+    "trouble_breathing": "Trouble breathing",
+    "new_confusion": "New confusion",
+    "fainting": "Fainting",
+    "new_weakness_numbness": "New weakness or numbness",
+    "heavy_bleeding": "Heavy bleeding",
+    "vomiting": "Vomiting",
+    "worst_headache": "Worst headache of my life",
+    "speech_change": "Speech is suddenly different",
+    "facial_droop": "Face is drooping",
+    "drowsiness": "Unusually drowsy",
+    "vision_change": "Vision change",
+    "balance_change": "Balance change"
+  },
+  "concern": { "worried": "I'm worried", "help_now": "I need help now" },
+  "disposition": {
+    "assessed_stable": "Assessed, stable",
+    "tests_ordered": "Tests ordered",
+    "re_triaged": "Re-triaged",
+    "roomed": "Roomed",
+    "treated_and_released": "Treated and released",
+    "left_before_assessment": "Left before assessment",
+    "not_located": "Not located"
+  },
+  "visitStatus": { "waiting": "Waiting", "roomed": "Roomed", "left": "Left", "discharged": "Discharged" },
+  "taskEvent": {
+    "created": "Task created",
+    "reason_added": "Reason added",
+    "level_raised": "Level raised",
+    "escalated": "Escalated",
+    "delivered": "Shown on dashboard",
+    "acknowledged": "Acknowledged",
+    "assessed": "Assessed"
+  },
+  "taskStep": {
+    "created": "Created",
+    "delivered": "Delivered",
+    "acknowledged": "Acknowledged",
+    "assessed": "Assessed"
+  },
+  "reason": {
+    "finding_chest_pain": "New chest pain reported",
+    "finding_trouble_breathing": "Trouble breathing reported",
+    "finding_new_confusion": "New confusion reported",
+    "finding_fainting": "Fainting reported",
+    "finding_new_weakness_numbness": "New weakness or numbness reported",
+    "finding_heavy_bleeding": "Heavy bleeding reported",
+    "finding_vomiting": "Vomiting reported",
+    "finding_worst_headache": "Worst headache reported",
+    "finding_speech_change": "Sudden speech change reported",
+    "finding_facial_droop": "Facial droop reported",
+    "finding_drowsiness": "Unusual drowsiness reported",
+    "finding_vision_change": "Vision change reported",
+    "finding_balance_change": "Balance change reported",
+    "concern_help_now": "Asked for help now",
+    "concern_worried": "Said they are worried",
+    "overall_worse": "Reported feeling worse",
+    "leaving": "Said they are leaving",
+    "missed_checkin": "Check-in not answered",
+    "staff_flag": "Flagged higher by staff"
+  },
+  "time": { "in": "in {{value}}", "overdue": "{{value}} overdue", "ago": "{{value}} ago" },
+  "flags": { "noResponse": "No response", "reassessOverdue": "Reassessment overdue" },
+  "sparkline": { "label": "Pain over time: {{values}}", "none": "No pain answers yet" },
+  "qr": { "label": "QR code for {{title}}" },
+  "timeline": {
+    "empty": "Nothing recorded yet.",
+    "noFindings": "No new warning signs",
+    "checkin": "{{who}} check-in: {{overall}}, pain {{pain}}, new signs: {{found}}",
+    "concern": "{{who}}: {{concern}}",
+    "finding": "{{who}} reported: {{findings}}",
+    "leaving": "{{who}} said they are leaving",
+    "vitals": "Vitals recorded by {{role}}: {{values}}",
+    "flag": "Staff flagged higher",
+    "flagNote": "Staff flagged higher: {{note}}",
+    "task": "{{event}} ({{level}})"
+  },
+  "triage": {
+    "live": "Live, refreshes every 5 seconds",
+    "reconnecting": "Offline, will reconnect",
+    "counts": "Flags by level",
+    "needsReview": "Needs review",
+    "ctas": "CTAS",
+    "complaint": "Complaint",
+    "all": "All",
+    "order": "Order: queue (CTAS, then arrival). Flags never move a row.",
+    "caption": "Waiting patients in queue order",
+    "empty": "No waiting patients match.",
+    "failed": "The board could not be loaded.",
+    "noCheckin": "No check-in yet",
+    "col": {
+      "ref": "Patient",
+      "ctas": "CTAS",
+      "complaint": "Complaint",
+      "waiting": "Waiting",
+      "condition": "Condition",
+      "flags": "Flags",
+      "lastCheckin": "Last check-in",
+      "nextCheckin": "Next check-in",
+      "reassess": "Staff reassessment",
+      "pain": "Pain trend"
+    }
+  },
+  "enrol": {
+    "ctas": "CTAS level",
+    "ctas1": "CTAS 1 is never in the waiting room.",
+    "complaint": "Presenting complaint",
+    "cedis": "CEDIS code (optional, 3 digits)",
+    "language": "Patient language",
+    "channel": "How will they check in?",
+    "pagerNo": "Pager number",
+    "submit": "Create visit and QR codes",
+    "failed": "The visit could not be created. Try again.",
+    "errors": {
+      "ctas": "Choose a CTAS level from 2 to 5.",
+      "cedis": "A CEDIS code is exactly 3 digits.",
+      "pagerRequired": "Enter a pager number of 1 to 6 digits."
+    },
+    "doneTitle": "Visit created",
+    "shownOnce": "These links are shown once. Print them or hand them over now.",
+    "patientQr": "Patient",
+    "patientHint": "Scan to check in",
+    "companionQr": "Companion",
+    "companionHint": "Scan if you are helping the patient",
+    "expires": "Links expire at {{time}}.",
+    "pagerFallback": "Pager {{pager}} is bound to this visit; the patient QR is the phone fallback.",
+    "print": "Print",
+    "another": "Enrol another patient"
+  },
+  "visit": {
+    "back": "Back to triage board",
+    "title": "Patient P-{{ref}}",
+    "pager": "Pager {{pager}}",
+    "ctas": "CTAS",
+    "complaint": "Complaint",
+    "cedis": "CEDIS code",
+    "language": "Language",
+    "channel": "Channel",
+    "status": "Status",
+    "triaged": "Triaged at",
+    "timers": "Timers",
+    "timersHelp": "The patient check-in timer and the staff reassessment timer are separate. A patient answer never resets the staff timer.",
+    "nextPrompt": "Next patient check-in",
+    "nextReassess": "Staff reassessment due",
+    "lastStaffCheck": "Last staff check",
+    "noTask": "No open review task.",
+    "whyFlagged": "Why this is flagged",
+    "ruleLine": "Rule {{rule}} ({{version}}), {{count}} piece(s) of evidence",
+    "steps": "Task steps",
+    "pending": "pending",
+    "latestAnswers": "Latest check-in",
+    "timeline": "Timeline",
+    "failed": "This visit could not be loaded."
+  },
+  "answers": {
+    "overall": "Overall",
+    "pain": "Pain",
+    "findings": "New warning signs",
+    "from": "From the {{who}} at {{time}}"
+  },
+  "actions": {
+    "title": "Actions",
+    "task": "Review task",
+    "noTask": "There is no open task to acknowledge or assess.",
+    "acknowledge": "Acknowledge",
+    "ackHelp": "\"I've seen this.\" Acknowledging is not an assessment.",
+    "ackFirst": "Acknowledge the task before you assess it.",
+    "disposition": "Outcome of the assessment",
+    "assess": "Record assessment",
+    "vitals": "Record vitals",
+    "recordVitals": "Save vitals",
+    "flagHigher": "Flag higher",
+    "flagHelp": "Raises a review task for the physician without changing the queue.",
+    "flagNote": "Note (optional, up to 280 characters)",
+    "visitStatus": "Visit status"
+  },
+  "vitals": {
+    "sbp": "Systolic BP",
+    "dbp": "Diastolic BP",
+    "hr": "Heart rate",
+    "rr": "Resp. rate",
+    "spo2": "SpO2 %",
+    "temp_c": "Temp °C",
+    "supersedes": "This corrects an earlier entry",
+    "newEntry": "New entry",
+    "errors": {
+      "none": "Enter at least one measurement.",
+      "bpPair": "Enter systolic and diastolic together.",
+      "bpOrder": "Diastolic must be lower than systolic.",
+      "range": "A value is outside the allowed range. Check for a typo."
+    }
+  },
+  "patient": {
+    "language": "Language",
+    "wait": "Estimated wait: {{low}} to {{high}} minutes.",
+    "placeInLine": "Your answers never change your place in line.",
+    "title": "You are checked in",
+    "titleCompanion": "You are helping with a check-in",
+    "nextCheckin": "Next check-in",
+    "startCheckin": "Start check-in",
+    "reportChange": "Report a change",
+    "leaving": "I'm leaving",
+    "sendFailed": "That did not send. Please try again, or tell a staff member."
+  },
+  "help": { "worried": "I'm worried", "now": "I need help now" },
+  "flow": {
+    "progress": "Question {{n}} of {{total}}",
+    "next": "Next",
+    "send": "Send",
+    "back": "Back",
+    "finishLater": "Finish later",
+    "finishLaterHelp": "If you stop, we send the answers you gave so far."
+  },
+  "q": {
+    "overall": {
+      "patient": "Since staff last checked on you, how do you feel?",
+      "companion": "Since staff last checked, how are they?"
+    },
+    "pain": "How bad is your pain right now?",
+    "findings": {
+      "patient": "Have you noticed any of these since staff last checked?",
+      "companion": "Have you noticed any of these in them since staff last checked?"
+    },
+    "findingsHelp": "Choose all that apply."
+  },
+  "pain": { "low": "No pain", "high": "Worst pain" },
+  "answer": { "unsure": "I'm not sure", "noneOfThese": "None of these" },
+  "change": { "title": "What has changed?", "send": "Send to staff" },
+  "leaving": {
+    "title": "Are you leaving?",
+    "info": "Please tell a staff member before you go. If you feel worse, return to triage right away.",
+    "confirm": "Yes, I'm leaving",
+    "cancel": "No, I'm staying"
+  },
+  "urgent": {
+    "title": "Tell a staff member now",
+    "body": "Go to the nearest staff member or call out for help.",
+    "sent": "We have already alerted staff.",
+    "queued": "Your report is saved and will send when you are connected. Do not wait: tell a staff member now.",
+    "telling": "I'm telling staff"
+  },
+  "sent": {
+    "title": "Thank you, we have your answers",
+    "queuedTitle": "Saved on this phone",
+    "queuedBody": "It will send as soon as you are connected.",
+    "reported": "Reported",
+    "received": "Received by the care team",
+    "waiting": "Waiting to send",
+    "back": "Back"
+  },
+  "message": {
+    "none": "Staff will see your answers.",
+    "clinician_will_check": "A clinician will check on you.",
+    "clinician_told": "A clinician has been told.",
+    "leaving_info": "Please tell staff before you leave. Return to triage right away if you feel worse."
+  },
+  "outbox": { "saved": "Saved, will send when connected ({{count}} waiting)." },
+  "exchange": {
+    "expired": { "title": "This code has expired" },
+    "invalid": { "title": "This code did not work" },
+    "noSession": { "title": "Please scan your code again" },
+    "askDesk": "Ask the triage desk for a new code."
+  },
+  "privacy": {
+    "title": "What we store",
+    "stored1": "Your answers and when you gave them.",
+    "stored2": "Your triage level and complaint group.",
+    "stored3": "What staff did in response.",
+    "notStored": "We never store your name or health number.",
+    "synthetic": "This demo uses synthetic data only."
   }
 }
