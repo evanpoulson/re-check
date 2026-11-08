@@ -13,7 +13,7 @@ The user requested one-shot execution, so scope and visual decisions are made he
 - [x] Restructure visit around concern and next action; preserve all metadata and actions in disclosures.
 - [x] Refine patient home, question and feedback states; preserve question wording and always-visible help.
 - [x] Run frontend checks, browser loop and responsive/state review; document limits and reusable guidelines.
-- [ ] Review branch, commit and open PR for user approval; never merge.
+- [x] Review branch, commit and open PR for user approval; never merge. Draft PR: https://github.com/evanpoulson/re-check/pull/15
 
 Review focus: no clinical queue reordering; no completed assessment implied by acknowledgement; no stale dashboard after actions; no invented person identity or live service claims; no patient controls obscured by fixed help.
 
