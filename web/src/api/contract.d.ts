@@ -192,6 +192,7 @@ LeavingReport?: LeavingReport
 Missing?: Missing
 MissingReason?: MissingReason
 MultiChoiceAnswered?: MultiChoiceAnswered
+OpenCheckin?: OpenCheckin
 PainAnswered?: PainAnswered
 PatientHome?: PatientHome
 PatientMessage?: PatientMessage
@@ -417,8 +418,9 @@ id: string
 kind: ("report" | "vitals" | "flag")
 }
 /**
- * A scheduled check-in (FR5, FR6). May be partial: unreached questions are `not_reached`.
+ * A scheduled check-in (FR5, FR6), or follow-up answers after an urgent report.
  * 
+ * A scheduled check-in may be partial: unreached questions are `not_reached`.
  * Urgent findings are routed as soon as this is received, even if partial.
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
@@ -449,6 +451,10 @@ items?: {
 kind: "checkin"
 new_findings: (FindingsAnswered | Missing)
 pain: (PainAnswered | Missing)
+/**
+ * `scheduled` is accepted only once the patient prompt is due and restarts the prompt timer. `followup` answers only question bank items (every fixed question `not_asked`), is accepted at any time and never moves a timer.
+ */
+purpose?: ("scheduled" | "followup")
 questionnaire_version: string
 /**
  * For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.
@@ -763,6 +769,20 @@ reporter: ("patient" | "companion")
 submission_id: string
 }
 /**
+ * Demo only: open the visit's next patient check-in now (RECHECK_DEMO_CHECKINS).
+ * 
+ * Moves the patient prompt due time to now, never later. The staff timer doesn't move.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "OpenCheckin".
+ */
+export interface OpenCheckin {
+/**
+ * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
+ */
+submission_id: string
+}
+/**
  * Every screen shows the wait estimate, the time waited and "Your answers never change your place in line." (FR8).
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
@@ -770,9 +790,13 @@ submission_id: string
  */
 export interface PatientHome {
 /**
- * Present for the patient role on a due check-in; never for a companion.
+ * Present for the patient role while a check-in is open; never for a companion.
  */
 attention_prompt?: (AttentionPrompt | null)
+/**
+ * True once the next check-in is due, by the server's clock. Until then the screen shows when it opens instead of a start button; the always-visible buttons and reporting a change stay available.
+ */
+checkin_open: boolean
 items: QuestionItem[]
 language: Language
 message: PatientMessage

@@ -22,6 +22,7 @@ import type {
   VisitDetail,
   VisitEnrolled,
   VisitExclusionUpdate,
+  OpenCheckin,
   VisitLink,
   VisitStatusUpdate,
   VitalsCreate,
@@ -38,6 +39,8 @@ export interface StaffSessionInfo {
   name: string | null
   role: StaffRole
   site_id: string
+  /** Demo setting (RECHECK_DEMO_CHECKINS): desk staff can open a patient's check-in now. */
+  demo_checkins: boolean
 }
 export interface SignInOptions {
   auth0: boolean
@@ -71,6 +74,9 @@ export const updateVisitStatus = (visitId: string, body: VisitStatusUpdate) =>
 
 export const updateVisitExclusion = (visitId: string, body: VisitExclusionUpdate) =>
   request<undefined>('POST', endpoints.visitExclusion(visitId), body)
+/** Demo only: open the patient's next check-in now. */
+export const openCheckinNow = (visitId: string, body: OpenCheckin) =>
+  request<undefined>('POST', endpoints.openCheckin(visitId), body)
 export const getVisitLink = (visitId: string) => request<VisitLink>('GET', endpoints.visitLink(visitId))
 export const staffSignOut = (visitId: string, body: StaffSignOut) =>
   request<undefined>('POST', endpoints.staffSignOut(visitId), body)

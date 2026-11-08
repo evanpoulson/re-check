@@ -99,7 +99,7 @@ def test_full_sign_in_sets_staff_cookie_and_real_actor(monkeypatch):
         assert "httponly" in r.headers["set-cookie"].lower()
         me = c.get("/api/staff/session").json()
         assert me == {"user_id": "google-oauth2|1234567890", "name": "Dr. Test", "role": "physician",
-                      "site_id": "foothills-demo"}
+                      "site_id": "foothills-demo", "demo_checkins": False}
         # The role from Auth0 is enforced: a physician can't enrol.
         assert c.post("/api/visits", json=ENROL).status_code == 403
 

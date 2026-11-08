@@ -29,6 +29,7 @@
     "titleCompanion": "Tryb osoby towarzyszącej: odpowiedzi w imieniu pacjenta",
     "nextCheckin": "Następna ankieta",
     "startCheckin": "Rozpocznij ankietę",
+    "checkinNotOpen": "Jeszcze nie otwarte. Jeśli coś się zmieni wcześniej, użyj przycisków poniżej.",
     "reportChange": "Zgłoś nowy objaw",
     "sendFailed": "Nie udało się wysłać. Proszę spróbować ponownie lub powiedzieć o tym komuś z personelu.",
     "languageNotice": "To tłumaczenie jest wersją roboczą. Nie zostało jeszcze sprawdzone przez tłumacza medycznego. W razie niejasności proszę zapytać personel.",

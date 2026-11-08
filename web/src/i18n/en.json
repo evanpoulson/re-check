@@ -481,6 +481,7 @@
     "titleCompanion": "You're answering for someone you're with",
     "nextCheckin": "Next check-in",
     "startCheckin": "Start check-in",
+    "checkinNotOpen": "Not open yet. If anything changes before then, use the buttons below.",
     "reportChange": "Tell us about a new symptom",
     "sendFailed": "That did not send. Please try again, or tell a staff member.",
     "languageNotice": "This translation is a draft. A medical translator has not checked it yet. If anything is unclear, ask a staff member.",
@@ -789,7 +790,12 @@
       "confirmButton": "Yes, mark as {{status}}",
       "cancel": "Cancel",
       "statusDone": "Visit marked {{status}} at {{time}}. The patient's phone is signed out.",
-      "statusDoneNoPhone": "Visit marked {{status}} at {{time}}."
+      "statusDoneNoPhone": "Visit marked {{status}} at {{time}}.",
+      "openCheckin": "Demo: open check-in now",
+      "openCheckinLead": "Opens the patient's next check-in on their phone straight away. The staff reassessment timer doesn't change.",
+      "openCheckinButton": "Open check-in now",
+      "openCheckinAlready": "The patient's check-in is open.",
+      "openCheckinDone": "Check-in opened at {{time}}."
     },
     "appNotOffered": "App not offered: {{reason}}",
     "safeguard": "Patient answers never reset the staff clock or clear an open concern.",

@@ -72,10 +72,16 @@ class PatientHome(OutputModel):
     )
     waited_minutes: int = Field(ge=0, description="Whole minutes since triage, computed by the server on each fetch.")
     next_checkin_due_at: Timestamp | None
+    checkin_open: bool = Field(
+        description=(
+            "True once the next check-in is due, by the server's clock. Until then the screen shows when it "
+            "opens instead of a start button; the always-visible buttons and reporting a change stay available."
+        )
+    )
     questionnaire_version: Version
     items: list[QuestionItem]
     attention_prompt: AttentionPrompt | None = Field(
-        default=None, description="Present for the patient role on a due check-in; never for a companion."
+        default=None, description="Present for the patient role while a check-in is open; never for a companion."
     )
     message: PatientMessage
     triage_level: Ctas | None = Field(

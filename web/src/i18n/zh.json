@@ -29,6 +29,7 @@
     "titleCompanion": "您正在替陪同的人回答",
     "nextCheckin": "下次状况回报",
     "startCheckin": "开始状况回报",
+    "checkinNotOpen": "尚未开放。如果在此之前有任何变化，请使用下方的按钮。",
     "reportChange": "告诉我们新的症状",
     "sendFailed": "发送失败。请重试，或告诉工作人员。",
     "languageNotice": "此翻译为草稿，尚未经医学翻译人员审核。如有任何不清楚的地方，请询问工作人员。",

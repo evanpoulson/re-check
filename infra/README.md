@@ -50,6 +50,7 @@ Open http://localhost:8080. Localhost counts as a secure origin, so no HTTPS is 
    | Secret | `AUTH0_CLIENT_SECRET` | Staff sign-in |
    | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. Defaults to `15`: this box runs the missed check-in and escalation timers. `0` turns them off. Keep them off on every other machine that uses the same database. |
    | Variable | `RECHECK_DEMO_STAFF` | `true` keeps the demo role picker working. The front end needs it until it supports Auth0 sign-in. |
+   | Variable | `RECHECK_DEMO_CHECKINS` | Optional. Defaults to `true` on this box: a new visit's first check-in opens at enrolment instead of one CTAS interval later, and desk staff see "Open check-in now" on Visit management. `false` turns both off. |
 
    In the Auth0 application, allow `https://<SITE_ADDRESS>/api/staff/callback` as a callback URL and `https://<SITE_ADDRESS>/staff/sign-in` as a logout URL.
 

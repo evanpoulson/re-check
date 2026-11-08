@@ -93,6 +93,8 @@ export function buildCheckinReport(args: Args): CheckinReport {
 
   return {
     kind: 'checkin',
+    // A follow-up is accepted before the next check-in is due and never moves the patient timer.
+    purpose: mode === 'followup' ? 'followup' : 'scheduled',
     submission_id: submissionId,
     reporter,
     channel: 'phone',

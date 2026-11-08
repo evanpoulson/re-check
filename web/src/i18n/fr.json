@@ -29,6 +29,7 @@
     "titleCompanion": "Vous répondez pour une personne que vous accompagnez",
     "nextCheckin": "Prochain questionnaire",
     "startCheckin": "Commencer le questionnaire",
+    "checkinNotOpen": "Pas encore ouvert. Si quelque chose change d’ici là, utilisez les boutons ci-dessous.",
     "reportChange": "Signaler un nouveau symptôme",
     "sendFailed": "L'envoi n'a pas fonctionné. Veuillez réessayer ou avertir un membre du personnel.",
     "languageNotice": "Cette traduction est une ébauche. Elle n'a pas encore été vérifiée par un traducteur médical. Si quelque chose n'est pas clair, demandez à un membre du personnel.",

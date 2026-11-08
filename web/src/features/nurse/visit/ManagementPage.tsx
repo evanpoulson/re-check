@@ -1,7 +1,8 @@
 import { Navigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { clock } from '@/lib/time'
-import { StopAppCard, VisitQrCard, VisitStatusCard } from '../VisitActions'
+import { useStaff } from '../staff'
+import { OpenCheckinCard, StopAppCard, VisitQrCard, VisitStatusCard } from '../VisitActions'
 import { Divider, Fact, Facts, PageHeading, SectionCard } from './parts'
 import { useVisit } from './model'
 
@@ -9,6 +10,7 @@ import { useVisit } from './model'
 export function ManagementPage() {
   const { t } = useTranslation()
   const { detail, stale, isDesk, canFlag } = useVisit()
+  const { staff } = useStaff()
   if (!isDesk) return <Navigate to=".." relative="path" replace />
   const { visit } = detail
 
@@ -35,8 +37,11 @@ export function ManagementPage() {
           </SectionCard>
           <VisitStatusCard visit={visit} stale={stale} />
         </div>
-        <div className="min-w-0">
+        <div className="min-w-0 space-y-5">
           <VisitQrCard visit={visit} stale={stale} />
+          {staff?.demo_checkins && visit.status === 'waiting' && !visit.app_exclusion && (
+            <OpenCheckinCard visit={visit} stale={stale} />
+          )}
         </div>
       </div>
       <section aria-labelledby="danger-zone" className="space-y-3 border-t border-line pt-6">

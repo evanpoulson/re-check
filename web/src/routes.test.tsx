@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { RouterProvider } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   acknowledgeTask,
   assessTask,
@@ -24,7 +24,7 @@ import { translations } from './api/bank'
 import { ApiError, newSubmissionId } from './api/client'
 import { endpoints } from './api/endpoints'
 import { server } from './api/mocks/server'
-import { demoVisitId } from './api/mocks/store'
+import { demoVisitId, makeCheckinDue } from './api/mocks/store'
 import type { CheckinReport, PatientReport } from './api/types'
 import './i18n'
 import esUi from './i18n/es.json'
@@ -42,7 +42,9 @@ function renderApp(path: string) {
   )
 }
 /** Open the visit's QR and say who is using the phone, as a person would. */
-async function scanAs(ref: string, role: 'patient' | 'companion') {
+/** Scan a seeded visit's QR. Its check-in is opened first unless `due: false`. */
+async function scanAs(ref: string, role: 'patient' | 'companion', { due = true } = {}) {
+  if (due) makeCheckinDue(demoVisitId(ref))
   const user = userEvent.setup()
   renderApp(`/v/demo-${ref}-token`)
   await user.click(await screen.findByRole('button', { name: role === 'patient' ? "I'm the patient" : "I'm with the patient" }))
@@ -283,6 +285,19 @@ describe('triage nurse: enrolment and QR', () => {
     expect(await screen.findAllByText(/^Acknowledged \d/)).toHaveLength(2) // banner and card
     const task = (await getVisitDetail(visit.visit_id)).open_task!
     expect(task).toMatchObject({ status: 'acknowledged', acknowledged_by: { role: 'triage_nurse' } })
+  })
+
+  it('demo: desk staff can open a patient check-in now without moving the staff timer', async () => {
+    signInAsNurse()
+    const visit = await demoVisit('general')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}/manage`)
+    await user.click(await screen.findByRole('button', { name: 'Open check-in now' }))
+    expect(await screen.findByText(/^Check-in opened at /)).toBeInTheDocument()
+    const after = await demoVisit('general')
+    expect(Date.parse(after.next_prompt_due_at!)).toBeLessThanOrEqual(Date.now())
+    expect(after.staff_reassess_due_at).toBe(visit.staff_reassess_due_at)
+    expect(await screen.findByRole('button', { name: 'Open check-in now' })).toBeDisabled()
   })
 
   it('will not stop the app until a reason is chosen and the change is confirmed', async () => {
@@ -772,6 +787,9 @@ describe('patient and companion check-in', () => {
 })
 
 describe('the loop and the backend rules', () => {
+  // These post scheduled check-ins, which the server only takes once one is due.
+  beforeEach(() => makeCheckinDue(demoVisitId('general')))
+
   it('runs enrol, scan, report, flag, acknowledge, assess against the contract', async () => {
     const before = await queue()
     const enrolled = await enrolVisit({ submission_id: newSubmissionId(), ctas: 3, complaint_group: 'chest_back_pain', cedis_code: '003', language: 'en', channel: 'phone' })
@@ -779,7 +797,9 @@ describe('the loop and the backend rules', () => {
     // The desk can show the same code again.
     expect((await getVisitLink(enrolled.visit_id)).link).toBe(enrolled.link)
     await exchangeToken({ token: enrolled.link!.split('/v/')[1]!, role: 'patient' })
+    // The mocks run as a demo (RECHECK_DEMO_CHECKINS), so the first check-in opens at enrolment.
     const home = await getPatientHome()
+    expect(home.checkin_open).toBe(true)
     expect(home.role).toBe('patient')
     expect(home.items.map((i) => i.key)).toEqual(['pain_moved', 'pain_sudden_worse'])
     expect(home.attention_prompt).not.toBeNull()
@@ -812,6 +832,7 @@ describe('the loop and the backend rules', () => {
     const visit = await demoVisit('general')
     await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, home.questionnaire_version))
     expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
+    makeCheckinDue(visit.visit_id)
     // Same weighting as rules.py (#50): "much worse" alone is amber; with "very poor" it is red.
     await postReport(checkin({ reporter: 'patient', feeling_now: { kind: 'answered', value: 'very_poor' }, feeling_change: { kind: 'answered', value: 'much_worse' } }, home.questionnaire_version))
     expect((await getVisitDetail(visit.visit_id)).open_task?.level).toBe('red')
@@ -842,7 +863,8 @@ describe('the loop and the backend rules', () => {
       expect(task.reasons.map((r) => r.reason_code)).toContain('attention_incorrect')
       expect(task.level).toBe('overdue') // non-urgent
 
-      // The prompt cannot be used twice.
+      // The prompt cannot be used twice, even once the next check-in opens.
+      makeCheckinDue(visit.visit_id)
       await expect(
         postReport(checkin({ reporter: 'patient', attention: { kind: 'answered', prompt_id: prompt.prompt_id, count: circles }, pain: { kind: 'answered', value: 1 } }, home.questionnaire_version)),
       ).rejects.toMatchObject({ status: 409 })
@@ -867,6 +889,23 @@ describe('the loop and the backend rules', () => {
       await expect(
         postReport(checkin({ reporter: 'companion', attention: { kind: 'missing', reason: 'not_asked', prompt_id: prompt.prompt_id } }, v)),
       ).rejects.toMatchObject({ status: 422 })
+    })
+
+    it('only a scheduled check-in restarts the patient timer, only once it is due, and help is always taken', async () => {
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
+      const v = (await getPatientHome()).questionnaire_version
+      await postReport(checkin({ reporter: 'patient' }, v))
+      const due = (await demoVisit('general')).next_prompt_due_at
+      expect((await getPatientHome()).checkin_open).toBe(false)
+      expect((await getPatientHome()).attention_prompt).toBeNull()
+      await expect(postReport(checkin({ reporter: 'patient' }, v))).rejects.toMatchObject({ status: 409 })
+      expect((await postReport({ kind: 'concern', concern: 'help_now', ...common() })).patient_message).not.toBe('none')
+      const notAsked = { kind: 'missing', reason: 'not_asked' } as const
+      await postReport({
+        kind: 'checkin', purpose: 'followup', ...common(), questionnaire_version: v,
+        feeling_now: notAsked, feeling_change: notAsked, pain: notAsked, new_findings: notAsked, attention: notAsked, items: {},
+      })
+      expect((await demoVisit('general')).next_prompt_due_at).toBe(due)
     })
 
     it('a patient response never moves the staff timer', async () => {
