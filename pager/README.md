@@ -109,8 +109,8 @@ The check-in uses the phone's data (`PatientHome`), as extra fields on the pager
 - **`items`**: the visit's follow-up questions, as `QuestionItem`s.
 - **`attention_prompt`**: the circle check, while a check-in is open.
 
-The pager API doesn't send these yet. Against it, the pager asks the four fixed questions and sends the circle
-check as not asked. The stub sends both, so every screen works now.
+`GET /api/pager/{n}` sends both, in English, the same as the stub. Without them (an older server), the pager asks the
+four fixed questions and sends the circle check as not asked.
 
 ### The stub (not connected)
 
