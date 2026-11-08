@@ -85,14 +85,12 @@ export function Triage() {
 
       <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5" aria-label={t('triage.counts')}>
         {LEVEL_ORDER.map((level: TaskLevel) => (
-          // On a phone the odd last card spans both columns instead of sitting alone.
-          <li key={level} className="max-sm:odd:last:col-span-2">
-            {/* One compact row: level and its info, then the count on the right so counts line up across cards.
-                relative: the tooltip hangs below the card, so it never covers the count. */}
-            <Card className="relative flex h-full items-center gap-2 px-4 py-3">
-              <div className="flex items-center gap-0.5">
+          <li key={level}>
+            {/* relative: the tooltip hangs below the card, so it never covers the count. */}
+            <Card className="relative flex h-full flex-col items-start gap-3 p-5">
+              <div className="flex w-full items-center justify-between gap-2">
                 <LevelChip level={level} />
-                <InfoTip label={t('triage.levelInfo', { level: t(`level.${level}`) })} className="-my-1.5">
+                <InfoTip label={t('triage.levelInfo', { level: t(`level.${level}`) })} className="-my-1.5 -mr-2">
                   <span className="block leading-tight font-semibold">{t(`triage.levelHelp.${level}.title`)}</span>
                   <span className="mt-1 block space-y-0.5">
                     {(['what', 'then'] as const).map((part) => (
@@ -105,7 +103,7 @@ export function Triage() {
                   <span className="mt-1.5 block border-t border-white/15 pt-1.5 text-white/65">{t('triage.levelCount')}</span>
                 </InfoTip>
               </div>
-              <span className="tabular ml-auto text-[1.75rem] leading-none font-semibold tracking-tight xl:text-3xl">{counts[level]}</span>
+              <span className="tabular text-4xl font-semibold tracking-tight">{counts[level]}</span>
             </Card>
           </li>
         ))}
