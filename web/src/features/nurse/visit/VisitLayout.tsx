@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CircleAlert } from 'lucide-react'
 import { useEffect, useRef } from 'react'
-import { Link, NavLink, Outlet, useParams } from 'react-router'
+import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getVisitDetail } from '@/api/api'
 import type { Task } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
 import { PageState } from '@/components/PageState'
+import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
 import { clock, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
@@ -28,6 +29,7 @@ export function VisitLayout() {
   })
   const isNurse = role === 'triage_nurse'
   const task = data?.open_task ?? null
+  const { pathname } = useLocation()
   const completedTitle = useRef<HTMLHeadingElement>(null)
   const focusCompletion = useRef(false)
 
@@ -37,6 +39,13 @@ export function VisitLayout() {
       focusCompletion.current = false
     }
   }, [task])
+
+  const visitName = data
+    ? data.visit.pager_no ? t('visit.pager', { pager: data.visit.pager_no }) : t('visit.title', { ref: data.visit.visit_id.slice(0, 4) })
+    : null
+  const page = pathname.replace(/\/$/, '').split('/')[4]
+  const tabName = t(page === 'assessment' || page === 'timeline' || page === 'manage' ? `visitTabs.${page}` : 'visitTabs.overview')
+  usePageTitle(visitName ? `${visitName} · ${tabName}` : t('pages.visit'))
 
   const toTriage = role !== 'physician'
   const back = (
@@ -84,7 +93,7 @@ export function VisitLayout() {
           {back}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
             <h1 id="visit-title" className="text-[1.875rem] leading-tight font-semibold">
-              {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : t('visit.title', { ref: visit.visit_id.slice(0, 4) })}
+              {visitName}
             </h1>
             <span className="rounded-data bg-canvas px-2.5 py-1 font-semibold">
               {t('visitPage.initialCtas', { ctas: visit.ctas })}
@@ -103,7 +112,8 @@ export function VisitLayout() {
           <p role="status" className="mt-4 rounded-data border border-line bg-surface p-3">{t('visit.stale')}</p>
         )}
 
-        <div className="grid gap-4 py-4 md:grid-cols-[minmax(0,1fr)_16.5rem_15.5rem]">
+        {/* iPad widths: the concern spans the row and the two clocks sit side by side below it. */}
+        <div className="grid gap-4 py-4 md:grid-cols-2 md:[&>:first-child]:col-span-2 lg:grid-cols-[minmax(0,1fr)_16.5rem_15.5rem] lg:[&>:first-child]:col-span-1">
           {task ? (
             <ConcernBanner task={task} />
           ) : (
