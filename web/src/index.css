@@ -280,6 +280,8 @@
   .table-scroll {
     /* Positioned, so screen-reader-only text inside can't widen the page. */
     position: relative;
+    /* Keeps the sticky header cells' z-index inside the table, so tooltips above it are not covered. */
+    isolation: isolate;
     max-height: 75dvh;
     overflow: auto;
     overscroll-behavior-x: contain;
