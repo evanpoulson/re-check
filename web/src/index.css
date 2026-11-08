@@ -71,6 +71,9 @@
   --text-wordmark: 1.5625rem;
   --text-display: 2.5rem;
   --text-display--line-height: 1.1;
+  /* The circle check's count, read at arm's length. */
+  --text-counter: 4.5rem;
+  --text-counter--line-height: 1;
 
   /* Every staff page shares one container and left edge with the header (S-4). */
   --staff-max: 1280px;
@@ -563,71 +566,101 @@
     cursor: not-allowed;
     color: var(--color-muted);
   }
+  /*
+    Patient type scale, one size per role:
+    title --text-heading/600, body --text-lead, secondary --text-base muted, small --text-small muted.
+    Spacing: 24px between blocks, 12px inside a group, 20px card padding.
+  */
   .patient-shell {
     min-height: 100dvh;
     padding-bottom: 40px;
     font-size: var(--text-lead);
+    line-height: 1.5;
   }
   /* --dock-h is the help dock's measured height, so nothing hides behind it at large text. */
   .patient-shell.has-dock {
-    padding-bottom: calc(var(--dock-h, 142px) + 16px);
+    padding-bottom: calc(var(--dock-h, 142px) + 24px);
   }
-  .patient-context {
-    color: var(--color-muted);
-    font-size: var(--text-base);
-    line-height: 1.5;
-    margin: 16px 0;
-    padding-top: 12px;
-    border-top: 1px solid var(--color-line);
-  }
-  /* The wait on Home: two labelled lines, not one run of sentences. */
-  .patient-wait {
-    display: grid;
-    gap: 10px;
-    margin-top: 12px;
-  }
-  .patient-wait dt {
-    font-weight: 600;
-    color: var(--color-ink);
-  }
-  .patient-wait dd {
-    margin: 0;
-  }
-  .patient-wait-note {
-    display: block;
-    font-size: var(--text-small);
-  }
-  .patient-shell main {
-    margin-bottom: 16px;
-  }
-  /* rem, so it grows with the person's text size; long words wrap rather than overflow at 200%. */
   .patient-shell h1 {
-    overflow-wrap: break-word;
-    hyphens: auto;
     font-size: var(--text-heading);
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.02em;
+    text-wrap: pretty;
   }
-  .patient-checkin-card {
-    margin-top: 20px;
-    padding: 20px;
-    background: var(--color-surface);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-  }
-  .patient-checkin-card h2 {
-    font-size: var(--text-title);
+  .patient-shell h2 {
+    font-size: var(--text-lead);
     font-weight: 600;
+    line-height: 1.3;
   }
-  .patient-checkin-card p {
+  .p-lede {
+    margin-top: 8px;
     font-size: var(--text-base);
     color: var(--color-muted);
-    margin: 8px 0 20px;
+  }
+  .p-card {
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    padding: 20px;
+  }
+  /* Grouped rows in one card, divided by hairlines, as in iOS settings. */
+  .p-list {
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    padding: 0 20px;
+  }
+  .p-list > * + * {
+    border-top: 1px solid var(--color-line);
+  }
+  .p-disclosure > summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    cursor: pointer;
+    list-style: none;
+    font-size: var(--text-base);
+    font-weight: 500;
+  }
+  .p-disclosure > summary::-webkit-details-marker {
+    display: none;
+  }
+  .p-disclosure > summary > svg:first-child {
+    color: var(--color-muted);
+  }
+  .p-disclosure > summary > .chev {
+    margin-inline-start: auto;
+    color: var(--color-muted);
+    transition: transform 150ms;
+  }
+  .p-disclosure[open] > summary > .chev {
+    transform: rotate(180deg);
+  }
+  .p-disclosure > ul {
+    padding: 0 0 16px;
+    padding-inline-start: 20px;
+    list-style: disc;
+    font-size: var(--text-base);
+    color: var(--color-muted);
+  }
+  .p-disclosure > ul > li + li {
+    margin-top: 6px;
+  }
+  .patient-context {
+    display: grid;
+    gap: 8px;
+    font-size: var(--text-base);
+    color: var(--color-muted);
+  }
+  .patient-context .lead {
+    font-size: var(--text-lead);
+    font-weight: 500;
+    color: var(--color-ink);
   }
   .patient-next {
     display: flex;
-    flex-wrap: wrap;
     justify-content: space-between;
     gap: 12px;
     padding-top: 16px;
@@ -636,159 +669,190 @@
     font-size: var(--text-base);
     color: var(--color-muted);
   }
+
+  /*
+    Answer rows. A radio or checkbox mark on the left shows the choice by shape
+    as well as colour; the label never changes weight, so nothing reflows.
+  */
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    min-height: 56px;
+    padding: 12px 16px;
+    border: 1px solid var(--color-answer);
+    border-radius: 14px;
+    background: var(--color-surface);
+    text-align: start;
+    font-size: var(--text-lead);
+    line-height: 1.35;
+    transition: border-color 120ms, box-shadow 120ms, background-color 120ms;
+  }
+  .choice:hover {
+    border-color: var(--color-ink);
+  }
+  .choice.is-selected {
+    border-color: var(--color-brand-500);
+    box-shadow: inset 0 0 0 1px var(--color-brand-500);
+    background: var(--color-brand-50);
+  }
+  .choice:disabled {
+    cursor: default;
+  }
+  .choice-mark {
+    display: grid;
+    place-items: center;
+    flex: none;
+    width: 22px;
+    height: 22px;
+    border: 2px solid var(--color-answer);
+    background: var(--color-surface);
+    color: white;
+  }
+  .choice-mark.radio {
+    border-radius: 999px;
+  }
+  .choice-mark.checkbox {
+    border-radius: 6px;
+  }
+  .is-selected .choice-mark {
+    border-color: var(--color-brand-500);
+  }
+  .is-selected .choice-mark.radio::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: var(--color-brand-500);
+  }
+  .is-selected .choice-mark.checkbox {
+    background: var(--color-brand-500);
+  }
+  .choice-body {
+    flex: 1;
+    min-width: 0;
+  }
+  .choice-hint {
+    display: block;
+    margin-top: 2px;
+    font-size: var(--text-base);
+    color: var(--color-muted);
+  }
+  .choice > .chev {
+    flex: none;
+    color: var(--color-muted);
+  }
+
+  /* 0 to 10 as one segmented row: equal cells, the picked number filled. */
+  .scale {
+    display: grid;
+    grid-template-columns: repeat(11, minmax(0, 1fr));
+    overflow: hidden;
+    border: 1px solid var(--color-answer);
+    border-radius: 14px;
+    background: var(--color-surface);
+  }
+  .scale button {
+    min-height: 56px;
+    font-size: var(--text-button);
+    font-variant-numeric: tabular-nums;
+    transition: background-color 120ms, color 120ms;
+  }
+  .scale button + button {
+    border-inline-start: 1px solid var(--color-line);
+  }
+  .scale button:hover {
+    background: var(--color-brand-50);
+  }
+  .scale button[aria-checked='true'] {
+    background: var(--color-brand-500);
+    color: white;
+    font-weight: 600;
+  }
+  .scale button:focus-visible {
+    outline-offset: -3px;
+    outline-color: var(--color-ink);
+  }
+  .scale-ends {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: var(--text-small);
+    color: var(--color-muted);
+  }
+
+  /* Back on the left, the count on the right, a thin bar under both. */
+  .flow-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    row-gap: 4px;
+    font-size: var(--text-small);
+    color: var(--color-muted);
+  }
+  .flow-head .back-link {
+    margin: 0;
+    justify-self: start;
+  }
+  .flow-head .count {
+    grid-column: 2;
+  }
+  .flow-head progress {
+    grid-column: 1 / -1;
+    width: 100%;
+    height: 4px;
+  }
   /* Compact version of the redesign's glass help bar. */
   .patient-dock {
     position: fixed;
     inset: auto 0 0;
     z-index: 10;
-    background: rgb(251 251 253 / 0.92);
-    -webkit-backdrop-filter: blur(20px);
-    backdrop-filter: blur(20px);
+    background: rgb(251 251 253 / 0.85);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
     border-top: 1px solid rgb(210 210 215 / 0.7);
-    padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+    padding: 10px 16px max(10px, env(safe-area-inset-bottom));
   }
   .patient-dock-inner {
-    max-width: 28rem;
+    max-width: 448px;
     margin: auto;
     display: grid;
-    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
   }
-  /* "I need help now" is full width; the three quieter buttons share one row. */
-  .patient-dock-more {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-  .patient-dock.is-compact .patient-dock-more {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  /* A 12px radius, not a pill, so labels that wrap stay inside the button. */
   .patient-dock button {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
-    min-height: 44px;
-    padding: 6px;
-    border-radius: 12px;
-    font-size: var(--text-base);
+    min-height: 48px;
+    padding: 6px 12px;
+    border-radius: var(--radius-tap);
+    font-size: var(--text-small);
     font-weight: 500;
     line-height: 1.2;
     text-align: center;
-    overflow-wrap: break-word;
   }
-  .patient-dock .patient-help {
-    min-height: 48px;
+  .patient-help {
     color: white;
     background: var(--color-level-red);
     font-weight: 600;
   }
-  /* Hover only where there is a pointer: on touch a tapped button would stay tinted. */
-  @media (hover: hover) {
-    .patient-help:hover {
-      background: color-mix(in srgb, var(--color-level-red), black 15%);
-    }
-    .patient-help-secondary:hover {
-      background: var(--color-brand-50);
-    }
+  .patient-help:hover {
+    background: color-mix(in srgb, var(--color-level-red), black 15%);
   }
-  .patient-dock .patient-help-secondary {
-    padding-inline: 4px;
-    font-size: var(--text-small);
+  .patient-help-secondary {
     color: var(--color-brand-600);
     background: var(--color-surface);
     border: 1px solid var(--color-brand-500);
   }
-  .patient-help-more {
-    color: var(--color-brand-600);
+  .patient-help-secondary:hover {
+    background: var(--color-brand-50);
   }
   .patient-dock button:disabled {
     opacity: 0.4;
     cursor: not-allowed;
-  }
-  .question-progress {
-    display: grid;
-    gap: 4px;
-    font-size: var(--text-base);
-    color: var(--color-muted);
-  }
-  /* Back and "Question n of m" share a row that keeps its height when Back is hidden. */
-  .question-progress-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    min-height: 44px;
-  }
-  .question-progress .back-link {
-    margin-bottom: 0;
-    font-size: var(--text-base);
-  }
-  .question-progress progress {
-    width: 100%;
-    height: 6px;
-    accent-color: var(--color-ink);
-  }
-  /* Answer lists: 8px gaps so more answers and the Next button fit above the dock. */
-  .answer-list {
-    display: grid;
-    gap: 8px;
-  }
-  /* Pain 0 to 10: rows of 6 and 5, the second centred. A 4px gap keeps each
-     button at least 44px wide on a 320px phone. */
-  .pain-scale,
-  .pain-scale-labels {
-    --pain-gap: 0.25rem;
-  }
-  .pain-scale {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: var(--pain-gap);
-  }
-  /* Never below a 44px target: at large text the rows hold fewer numbers instead. */
-  .pain-scale > * {
-    flex: 0 0 max(44px, calc((100% - 5 * var(--pain-gap)) / 6));
-  }
-  .pain-scale-labels {
-    display: flex;
-    justify-content: space-between;
-    gap: 12px;
-    margin-top: 8px;
-    font-size: var(--text-base);
-    color: var(--color-muted);
-  }
-  /* "Worst pain" sits under 10, which is inset by half a cell: (cell + gap) / 2. */
-  .pain-scale-labels > :last-child {
-    padding-inline-end: calc((100% + var(--pain-gap)) / 12);
-    text-align: end;
-  }
-  /* The patient header: the language control never shrinks or overflows; the
-     wordmark gets smaller on narrow phones, and at large text the control wraps
-     onto its own row instead of running off the screen. */
-  .patient-header {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    column-gap: 12px;
-  }
-  .patient-header .brand {
-    flex-shrink: 0;
-  }
-  .patient-header label {
-    flex-shrink: 0;
-    max-width: 100%;
-    margin-inline-start: auto;
-  }
-  .patient-header select {
-    min-width: 0;
-    max-width: 100%;
-  }
-  @media (max-width: 359px) {
-    .patient-header .brand {
-      font-size: var(--text-lead);
-    }
   }
 }
 /* Staff header: one row down to 761 px. Narrower, two rows (brand and sign-out, then nav) and not sticky. */
@@ -953,42 +1017,22 @@
     scroll-behavior: auto !important;
   }
 }
-/* Headings get focus from code on each new step so screen readers announce them.
-   That is not keyboard focus, so it shows no ring; real focus elsewhere still does. */
-.patient-shell h1[tabindex="-1"]:focus {
-  outline: none;
-}
 /* Keep focused headings clear of the sticky top bar (WCAG 2.4.11). */
 html:has(.patient-shell) {
-  /* The header is about 3.3rem tall, so this grows with the text size (72px at 100%). */
-  scroll-padding-top: calc(3.5rem + 16px);
+  scroll-padding-top: 72px;
 }
 html:has(.patient-shell.has-dock) {
-  scroll-padding-bottom: calc(var(--dock-h, 142px) + 16px);
+  scroll-padding-bottom: calc(var(--dock-h, 142px) + 24px);
 }
-/* The question's Next button stays in view above the dock (PT-5). A grey strip behind it
-   hides answers scrolling underneath; focus scrolls clear of both. */
-.patient-shell.has-dock .flow-next {
-  position: sticky;
-  bottom: var(--dock-h, 142px);
-  z-index: 5;
-  margin-inline: -0.25rem;
-  padding: 0.5rem 0.25rem;
-  background: var(--color-canvas);
-}
-html:has(.patient-shell.has-dock .flow-next) {
-  scroll-padding-bottom: calc(var(--dock-h, 142px) + 5rem);
-}
-/* Progress is status, not an action, so it is ink rather than blue. */
-.question-progress progress::-webkit-progress-bar {
+.flow-head progress::-webkit-progress-bar {
   background: var(--color-line);
   border-radius: 4px;
 }
-.question-progress progress::-webkit-progress-value {
-  background: var(--color-ink);
+.flow-head progress::-webkit-progress-value {
+  background: var(--color-brand-500);
   border-radius: 4px;
 }
-.question-progress progress {
+.flow-head progress {
   appearance: none;
   border: 0;
   border-radius: 4px;
