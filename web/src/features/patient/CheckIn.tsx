@@ -49,6 +49,8 @@ export function CheckIn() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
+  // While the circle check plays, the dock shows only "I need help now".
+  const [circlePlaying, setCirclePlaying] = useState(false)
   // The help buttons stay enabled while sending, so a second tap must not send twice.
   const inFlight = useRef(false)
   const content = useRef<HTMLDivElement>(null)
@@ -138,7 +140,7 @@ export function CheckIn() {
   return (
     <PatientLayout
       home={home}
-      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
+      dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending, helpOnly: circlePlaying }}
     >
       <div ref={content} className="space-y-5">
         {failed && (
@@ -158,6 +160,7 @@ export function CheckIn() {
             onSubmit={submitCheckin}
             onCancel={() => setView({ name: 'home' })}
             onPromptExpired={refreshPrompt}
+            onPlayingChange={setCirclePlaying}
           />
         )}
 

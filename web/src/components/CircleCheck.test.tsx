@@ -73,22 +73,56 @@ describe('CircleCheck', () => {
     expect(screen.queryByRole('button', { name: /start|again|replay/i })).not.toBeInTheDocument()
   })
 
-  it('reports the count entered, including zero', () => {
+  it('starts with no count, so Done cannot send 0 by mistake', () => {
+    const { onDone } = setup()
+    click('Start')
+    tick(600 + 3 * 1500)
+    expect(screen.getByRole('heading', { name: /How many circles did you see\?/ })).toBeInTheDocument()
+    expect(screen.getByText('\u2013')).toBeInTheDocument()
+    click('Done')
+    expect(onDone).not.toHaveBeenCalled()
+    expect(screen.getByRole('alert')).toHaveTextContent('Tap \u2212 or + to choose a number.')
+  })
+
+  it('reports the count entered', () => {
     const { onDone } = setup()
     click('Start')
     tick(600 + 3 * 1500)
     fireEvent.click(screen.getByRole('button', { name: 'One more' }))
     fireEvent.click(screen.getByRole('button', { name: 'One more' }))
-    expect(screen.getByRole('status', { hidden: true }) ?? screen.getByText('2')).toBeTruthy()
+    expect(screen.getByText('2')).toBeInTheDocument()
     click('Done')
     expect(onDone).toHaveBeenCalledWith({ shown: true, count: 2 })
+  })
+
+  it('reports zero once the patient chooses it', () => {
+    const { onDone } = setup()
+    click('Start')
+    tick(600 + 3 * 1500)
+    fireEvent.click(screen.getByRole('button', { name: 'One fewer' }))
+    click('Done')
+    expect(onDone).toHaveBeenCalledWith({ shown: true, count: 0 })
   })
 
   it('cannot count below zero or above twenty', () => {
     setup()
     click('Start')
     tick(600 + 3 * 1500)
+    fireEvent.click(screen.getByRole('button', { name: 'One fewer' }))
     expect(screen.getByRole('button', { name: 'One fewer' })).toBeDisabled()
+    for (let i = 0; i < 20; i++) fireEvent.click(screen.getByRole('button', { name: 'One more' }))
+    expect(screen.getByText('20')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'One more' })).toBeDisabled()
+  })
+
+  it('tells the page while the shapes play, so it can hide everything but "I need help now"', () => {
+    const onPlayingChange = vi.fn()
+    render(<CircleCheck prompt={prompt()} role="patient" onDone={vi.fn()} onExpired={vi.fn()} onPlayingChange={onPlayingChange} />)
+    expect(onPlayingChange).toHaveBeenLastCalledWith(false)
+    click('Start')
+    expect(onPlayingChange).toHaveBeenLastCalledWith(true)
+    tick(600 + 3 * 1500)
+    expect(onPlayingChange).toHaveBeenLastCalledWith(false)
   })
 
   it('"I\'m not sure" is shown-not-answered with reason unsure', () => {
