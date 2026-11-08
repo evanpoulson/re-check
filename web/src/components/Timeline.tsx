@@ -6,7 +6,8 @@ import { attentionText, choiceText, concernText, findingsText, painText } from '
 import { clock } from '@/lib/time'
 
 function stamp(e: TimelineEntry): string {
-  return 'received_at' in e ? e.received_at : e.at
+  if ('received_at' in e) return e.received_at
+  return 'started_at' in e ? e.started_at : e.at
 }
 
 /** Oldest first. Each entry shows what happened and when; corrections are new entries. */
@@ -59,6 +60,12 @@ function describe(e: TimelineEntry, t: TFunction): string {
     case 'flag': {
       const f = e as Extract<TimelineEntry, { flag_id: string }>
       return f.note ? t('timeline.flagNote', { note: f.note }) : t('timeline.flag')
+    }
+    case 'session': {
+      const s = e as Extract<TimelineEntry, { session_id: string; started_at: string }>
+      const signedIn = t(s.replaces ? 'timeline.signedInTakeover' : 'timeline.signedIn', { who: t(`reporter.${s.role}`) })
+      if (!s.ended_at || !s.end_reason) return signedIn
+      return `${signedIn}. ${t('timeline.signedOut', { time: clock(s.ended_at), reason: t(`sessionEnd.${s.end_reason}`) })}`
     }
     default: {
       const ev = e as Extract<TimelineEntry, { event: string }>

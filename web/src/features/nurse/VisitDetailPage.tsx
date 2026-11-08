@@ -1,21 +1,24 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Check, Circle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
-import { PageState } from '@/components/PageState'
-import { Sparkline } from '@/components/Sparkline'
-import { taskLabel } from '@/lib/taskLabels'
-import { useStaff } from './staff'
 import { getVisitDetail } from '@/api/api'
-import type { CheckinReport, Task, VisitDetail } from '@/api/types'
+import { bankItems, text } from '@/api/bank'
+import type { CheckinReport, Task, TimelineEntry } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
-import { LevelChip } from '@/components/LevelChip'
+import { PageState } from '@/components/PageState'
 import { Timeline } from '@/components/Timeline'
-import { Card } from '@/components/ui/card'
-import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
-import { clock, useNow } from '@/lib/time'
+import { itemAnswerText } from '@/lib/answers'
+import { signedInText } from '@/lib/session'
+import { getPrimaryTaskReason } from '@/lib/taskLabels'
+import { useNow } from '@/lib/time'
+import { useStaff } from './staff'
 import { useDashboardEvents } from './useDashboardEvents'
-import { VisitActions } from './VisitActions'
+import { VisitActions, VisitTaskAction } from './VisitActions'
+
+const stamp = (value: string) =>
+  new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 export function VisitDetailPage() {
   const { t } = useTranslation()
@@ -28,142 +31,108 @@ export function VisitDetailPage() {
     queryFn: () => getVisitDetail(id),
     retry: false,
   })
-  const back = role === 'triage_nurse' ? '/staff/triage' : '/staff/physician'
-  if (isPending || isError)
-    return (
-      <main id="main-content" className="staff-page">
-        <Link className="back-link" to={back}>
-          <ArrowLeft size={16} aria-hidden />
-          Back to worklist
-        </Link>
-        <PageState
-          loading={isPending}
-          title={isPending ? 'Loading visit' : 'Visit could not be loaded'}
-          retry={isError ? () => void refetch() : undefined}
-        />
-      </main>
-    )
-  const { visit, open_task: task } = data
-  const trend = data.timeline
-    .filter((e) => 'report_id' in e && e.report.kind === 'checkin')
-    .flatMap((e) => {
-      if (!('report_id' in e) || e.report.kind !== 'checkin') return []
-      const r = e.report
-      return [
-        {
-          at: e.received_at,
-          pain: r.pain.kind === 'answered' ? r.pain.value : null,
-          feeling_now: r.feeling_now.kind === 'answered' ? r.feeling_now.value : null,
-          feeling_change: r.feeling_change.kind === 'answered' ? r.feeling_change.value : null,
-        },
-      ]
-    })
+  const isNurse = role === 'triage_nurse'
+  const back = isNurse ? '/staff/triage' : '/staff/physician'
+  const task = data?.open_task
+  const completedTitle = useRef<HTMLHeadingElement>(null)
+  const focusCompletion = useRef(false)
+
+  useEffect(() => {
+    if (!task && focusCompletion.current && completedTitle.current) {
+      completedTitle.current.focus()
+      focusCompletion.current = false
+    }
+  }, [task])
+
   return (
-    <main id="main-content" className="staff-page">
+    <main id="main-content" className="staff-page max-w-3xl">
       <Link to={back} className="back-link">
         <ArrowLeft aria-hidden size={16} />
-        {role === 'triage_nurse' ? 'Back to triage board' : 'Back to review worklist'}
+        {isNurse ? t('visit.back') : t('visit.backToReview')}
       </Link>
-      <header className="visit-heading">
-        <div>
-          <h1>
-            {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : `Visit P-${visit.visit_id.slice(0, 4)}`}
-          </h1>
-          <p>
-            {t(`complaint.${visit.complaint_group}`)} · Initial CTAS {visit.ctas} · Triaged {clock(visit.triaged_at)}
-          </p>
-        </div>
-        <span className="text-sm text-muted">{t(`visitStatus.${visit.status}`)}</span>
-      </header>
-      <div className="visit-layout">
-        {task ? (
-          <TaskCard task={task} />
-        ) : (
-          <section className="concern-panel">
-            <h2>
-              {data.timeline.some((e) => 'event' in e && e.event === 'assessed')
-                ? 'Assessment recorded'
-                : 'No active review task'}
-            </h2>
-            <p className="text-muted">Staff reassessments continue independently of patient check-ins.</p>
-          </section>
-        )}
-        <aside className="visit-actions">
-          <VisitActions key={`${id}:${task?.task_id ?? 'none'}`} detail={data} />
-        </aside>
-        <div className="visit-main">
-          <section>
-            <h2 className="section-title">Two separate check-in schedules</h2>
-            <dl className="timers">
+      {!data ? (
+        <PageState
+          loading={isPending}
+          title={isPending ? t('common.loading') : t('visit.failed')}
+          retry={isError ? () => void refetch() : undefined}
+        />
+      ) : (
+        <>
+          <header className="visit-heading">
+            <div>
+              <h1>
+                {data.visit.pager_no
+                  ? t('visit.pager', { pager: data.visit.pager_no })
+                  : t('visit.title', { ref: data.visit.visit_id.slice(0, 4) })}
+              </h1>
+              <p>
+                {t(`complaint.${data.visit.complaint_group}`)} · {t('visit.ctas')} {data.visit.ctas}
+              </p>
+            </div>
+            <span className="text-sm text-muted">{t(`visitStatus.${data.visit.status}`)}</span>
+          </header>
+
+          <div className="space-y-6">
+            {isError && (
+              <p role="status" className="rounded-data border border-line bg-surface p-3">
+                {t('visit.stale')}
+              </p>
+            )}
+            {task ? (
+              <Concern
+                task={task}
+                entries={data.timeline}
+                canAct={!!role && task.routed_to.includes(role)}
+                stale={isError}
+                onComplete={() => { focusCompletion.current = true }}
+              />
+            ) : (
+              <section aria-live="polite" className="border-b border-line pb-4">
+                <h2 ref={completedTitle} tabIndex={-1} className="text-lg font-semibold">
+                  {data.timeline.some((entry) => 'event' in entry && entry.event === 'assessed')
+                    ? t('visit.assessmentRecorded')
+                    : t('visit.noTask')}
+                </h2>
+              </section>
+            )}
+
+            <dl className="flex flex-wrap gap-x-8 gap-y-3 border-b border-line pb-4">
               <div>
-                <dt>Patient check-in</dt>
-                <dd>
-                  {visit.app_exclusion ? (
-                    t('time.notApplicable')
-                  ) : (
-                    <CountdownChip due={visit.next_prompt_due_at} now={now} />
-                  )}
-                </dd>
+                <dt className="text-sm text-muted">{t('visit.nextReassess')}</dt>
+                <dd className="font-semibold"><CountdownChip due={data.visit.staff_reassess_due_at} now={now} /></dd>
               </div>
               <div>
-                <dt>Staff reassessment</dt>
+                <dt className="text-sm text-muted">{t('visit.nextPrompt')}</dt>
                 <dd>
-                  <CountdownChip due={visit.staff_reassess_due_at} now={now} />
+                  {data.visit.app_exclusion
+                    ? t('time.notApplicable')
+                    : <CountdownChip due={data.visit.next_prompt_due_at} now={now} />}
                 </dd>
               </div>
             </dl>
-            <p className="mt-4 text-sm text-muted">Patient answers do not reset the staff reassessment timer.</p>
-          </section>
-          {trend.length > 0 && (
-            <section className="border-t border-line pt-5">
-              <h2 className="section-title">Patient-reported pain</h2>
-              <div className="flex flex-wrap items-center gap-6">
-                <Sparkline trend={trend} width={180} height={48} />
-                <ol className="flex flex-wrap gap-6">
-                  {trend.map((point, i) => (
-                    <li key={i}>
-                      <strong className="text-xl font-semibold">
-                        {point.pain === null ? 'No answer' : `${point.pain}/10`}
-                      </strong>
-                      <p className="text-sm text-muted">{clock(point.at)}</p>
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            </section>
-          )}
-          <LatestAnswers detail={data} />
-          <section className="border-t border-line pt-5">
-            <h2 className="section-title">{t('visit.timeline')}</h2>
-            <Timeline entries={data.timeline} />
-          </section>
-          <details className="disclosure">
-            <summary>Visit details</summary>
-            <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <Field label={t('visit.ctas')} value={String(visit.ctas)} />
-              <Field label={t('visit.complaint')} value={t(`complaint.${visit.complaint_group}`)} />
-              <Field label={t('visit.cedis')} value={visit.cedis_code ?? t('common.none')} />
-              <Field label={t('visit.language')} value={t(`language.${visit.language}`)} />
-              <Field
-                label={t('visit.channel')}
-                value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')}
-              />
-              <Field
-                label={t('visit.app')}
-                value={
-                  visit.app_exclusion
-                    ? t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) })
+
+            <VisitHistory entries={data.timeline} />
+            {isNurse && <VisitActions key={id} detail={data} stale={isError} />}
+
+            <details className="disclosure">
+              <summary>{t('visit.details')}</summary>
+              <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <Field label={t('visit.triaged')} value={stamp(data.visit.triaged_at)} />
+                <Field label={t('visit.cedis')} value={data.visit.cedis_code ?? t('common.none')} />
+                <Field label={t('visit.language')} value={t(`language.${data.visit.language}`)} />
+                <Field label={t('visit.channel')} value={data.visit.channel ? t(`channel.${data.visit.channel}`) : t('common.none')} />
+                <Field label={t('visit.app')} value={
+                  data.visit.app_exclusion
+                    ? t('enrol.notOffered', { reason: t(`exclusion.${data.visit.app_exclusion}`) })
                     : t('enrol.appOffered')
-                }
-              />
-              <Field
-                label={t('visit.lastStaffCheck')}
-                value={visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')}
-              />
-            </dl>
-          </details>
-        </div>
-      </div>
+                } />
+                {!data.visit.app_exclusion && <Field label={t('visit.device')} value={signedInText(data.visit, t)} />}
+                <Field label={t('visit.lastStaffCheck')} value={data.visit.last_staff_check_at ? stamp(data.visit.last_staff_check_at) : t('common.none')} />
+              </dl>
+            </details>
+          </div>
+        </>
+      )}
     </main>
   )
 }
@@ -171,58 +140,71 @@ export function VisitDetailPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-sm font-semibold text-muted">{label}</dt>
+      <dt className="text-sm text-muted">{label}</dt>
       <dd>{value}</dd>
     </div>
   )
 }
 
-/** Why it was flagged, and where the task is: created, delivered, acknowledged, assessed. */
-function TaskCard({ task }: { task: Task }) {
+function Concern({ task, entries, canAct, stale, onComplete }: {
+  task: Task
+  entries: TimelineEntry[]
+  canAct: boolean
+  stale: boolean
+  onComplete: () => void
+}) {
   const { t } = useTranslation()
-  const reason = task.reasons.find((r) => r.level === task.level) ?? task.reasons[0]
+  const reason = getPrimaryTaskReason(task)
+  const source = entries.find(
+    (entry): entry is Extract<TimelineEntry, { report_id: string }> =>
+      'report_id' in entry && !!reason?.evidence.some((ref) => ref.kind === 'report' && ref.id === entry.report_id),
+  )
   const steps = [
-    { key: 'created', at: task.created_at, by: null },
-    { key: 'delivered', at: task.delivered_at, by: null },
-    { key: 'acknowledged', at: task.acknowledged_at, by: task.acknowledged_by?.role },
-    { key: 'assessed', at: task.assessed_at, by: task.assessed_by?.role },
+    { key: 'created', at: task.created_at, role: null },
+    { key: 'delivered', at: task.delivered_at, role: null },
+    { key: 'acknowledged', at: task.acknowledged_at, role: task.acknowledged_by?.role },
+    { key: 'assessed', at: task.assessed_at, role: task.assessed_by?.role },
   ]
+  const roles = task.routed_to.map((role) => t(`role.${role}`)).join(', ')
+
   return (
-    <section className="concern-panel">
-      <span className={`task-label task-${task.level}`}>{taskLabel[task.level]}</span>
-      <h2>{t(`reason.${reason.reason_code}`, { defaultValue: reason.reason_code.replaceAll('_', ' ') })}</h2>
-      <p className="routing">
-        Routed to {task.routed_to.map((role) => t(`role.${role}`)).join(', ')}
-        {task.escalated ? ' · Backup notified' : ''}
-      </p>
-      <ol className="task-progress" aria-label={t('visit.steps')}>
-        {steps.map((step) => (
-          <li key={step.key}>
-            <span>
-              {step.at ? <Check size={15} aria-hidden /> : <Circle size={15} aria-hidden className="text-muted" />}
-              {t(`taskStep.${step.key}`)}
-            </span>
-            <p>{step.at ? clock(step.at) : t('visit.pending')}</p>
-            {step.by && <p>{t(`role.${step.by}`)}</p>}
-          </li>
-        ))}
-      </ol>
-      <details className="disclosure mt-5">
-        <summary>Review reasons &amp; evidence ({task.reasons.length})</summary>
-        <ul className="space-y-4">
-          {task.reasons.map((r, i) => (
+    <section className="concern-panel" aria-labelledby="active-concern">
+      <span className={`task-label task-${task.level}`}>{t(`taskLevel.${task.level}`)}</span>
+      <h2 id="active-concern">
+        {reason
+          ? t(`reason.${reason.reason_code}`, { defaultValue: reason.reason_code.replaceAll('_', ' ') })
+          : t('actions.task')}
+      </h2>
+      <div className="mb-4 space-y-1 text-sm text-muted">
+        {source ? (
+          <p>{t('answers.from', { who: t(`reporter.${source.report.reporter}`), time: stamp(source.received_at) })}</p>
+        ) : reason && (
+          <p>{t('visit.flaggedAt', { time: stamp(reason.fired_at) })}</p>
+        )}
+        <p>
+          {t('visit.routedTo', { roles })}
+          {task.escalated && <> · {t('visit.routedToBackup')}</>}
+        </p>
+      </div>
+      {canAct && <VisitTaskAction key={task.task_id} task={task} stale={stale} onComplete={onComplete} />}
+      <details className="disclosure mt-4">
+        <summary>{t('visit.reviewEvidence')}</summary>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {steps.map(({ key, at, role }) => (
+            <Field key={key} label={t(`taskStep.${key}`)} value={
+              [at ? stamp(at) : t('visit.pending'), role ? t(`role.${role}`) : null].filter(Boolean).join(' · ')
+            } />
+          ))}
+        </dl>
+        <ul className="mt-4 space-y-3">
+          {task.reasons.map((entry, i) => (
             <li key={i}>
-              <div className="flex flex-wrap items-center gap-2">
-                <LevelChip level={r.level} />
-                <span>{t(`reason.${r.reason_code}`, { defaultValue: r.reason_code.replaceAll('_', ' ') })}</span>
-              </div>
-              <p className="mt-1 text-sm text-muted">
-                {clock(r.fired_at)} · Rule {r.rule_id} · v{r.rule_version}
+              <p>{t(`reason.${entry.reason_code}`, { defaultValue: entry.reason_code.replaceAll('_', ' ') })}</p>
+              <p className="text-sm text-muted">
+                {stamp(entry.fired_at)} · {t('visit.ruleLine', { rule: entry.rule_id, version: entry.rule_version, count: entry.evidence.length })}
               </p>
-              {r.evidence.map((e) => (
-                <p className="mt-1 break-all text-sm text-muted" key={`${e.kind}-${e.id}`}>
-                  {e.kind}: {e.id}
-                </p>
+              {entry.evidence.map((e) => (
+                <p className="break-all text-sm text-muted" key={`${e.kind}-${e.id}`}>{e.kind}: {e.id}</p>
               ))}
             </li>
           ))}
@@ -232,39 +214,60 @@ function TaskCard({ task }: { task: Task }) {
   )
 }
 
-const humanKey = (k: string) => k.replace(/_/g, ' ')
-
-/** The latest check-in, with every missing reason kept distinct from "no". */
-function LatestAnswers({ detail }: { detail: VisitDetail }) {
+function VisitHistory({ entries }: { entries: TimelineEntry[] }) {
   const { t } = useTranslation()
-  const last = [...detail.timeline]
-    .reverse()
-    .find((e): e is Extract<typeof e, { report_id: string }> => 'report_id' in e && e.report.kind === 'checkin')
-  if (!last) return null
-  const c = last.report as CheckinReport
-  const rows: [string, string][] = [
-    [t('answers.feelingChange'), choiceText(c.feeling_change, 'feeling_change', t)],
-    [t('answers.feelingNow'), choiceText(c.feeling_now, 'feeling_now', t)],
-    [t('answers.pain'), painText(c.pain, t)],
-    [t('answers.findings'), findingsText(c.new_findings, t)],
-    [t('answers.attention'), attentionText(c.attention, t)],
-    ...Object.entries(c.items ?? {}).map(([k, a]): [string, string] => [humanKey(k), itemAnswerText(a, t)]),
-  ]
+  const days = new Map<string, TimelineEntry[]>()
+  for (const entry of entries) {
+    const at = 'received_at' in entry ? entry.received_at : 'started_at' in entry ? entry.started_at : entry.at
+    const day = new Date(at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
+    const list = days.get(day) ?? []
+    list.push(entry)
+    days.set(day, list)
+  }
+  const branchReports = entries.flatMap((entry) =>
+    'report_id' in entry && entry.report.kind === 'checkin' && Object.keys(entry.report.items ?? {}).length > 0
+      ? [{ report: entry.report, at: entry.received_at, id: entry.report_id }]
+      : [],
+  )
+
   return (
-    <Card className="space-y-3">
-      <h2 className="text-lg font-semibold">{t('visit.latestAnswers')}</h2>
-      <p className="text-sm text-muted">
-        {t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}
-      </p>
-      {c.reporter === 'companion' && <p className="text-sm font-semibold">{t('answers.companionOnly')}</p>}
-      <dl className="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-        {rows.map(([k, v]) => (
-          <div key={k}>
-            <dt className="text-sm font-semibold capitalize text-muted">{k}</dt>
-            <dd>{v}</dd>
-          </div>
+    <section aria-labelledby="visit-history">
+      <h2 id="visit-history" className="section-title">{t('visit.timeline')}</h2>
+      {days.size === 0 && <Timeline entries={[]} />}
+      {[...days].map(([day, records]) => (
+        <div className="mt-4" key={day}>
+          <h3 className="mb-2 text-sm font-semibold text-muted">{day}</h3>
+          <Timeline entries={records} />
+        </div>
+      ))}
+      {branchReports.length > 0 && (
+        <details className="disclosure mt-4">
+          <summary>{t('visit.historyDetail')}</summary>
+          <ul className="space-y-4">
+            {branchReports.map(({ report, at, id }) => (
+              <li key={id}><BranchAnswers report={report} at={at} /></li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  )
+}
+
+function BranchAnswers({ report, at }: { report: CheckinReport; at: string }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <p className="mb-2 text-sm text-muted">{t('answers.from', { who: t(`reporter.${report.reporter}`), time: stamp(at) })}</p>
+      <dl className="grid gap-3 sm:grid-cols-2">
+        {Object.entries(report.items ?? {}).map(([key, value]) => (
+          <Field
+            key={key}
+            label={bankItems.has(key) ? text(key, report.reporter) : key.replaceAll('_', ' ')}
+            value={itemAnswerText(value, t)}
+          />
         ))}
       </dl>
-    </Card>
+    </>
   )
 }

@@ -444,6 +444,7 @@
           "type": "string"
         },
         "reporter": {
+          "description": "For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.",
           "enum": [
             "patient",
             "companion"
@@ -544,6 +545,7 @@
           "type": "string"
         },
         "reporter": {
+          "description": "For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.",
           "enum": [
             "patient",
             "companion"
@@ -797,6 +799,7 @@
           "type": "string"
         },
         "reporter": {
+          "description": "For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.",
           "enum": [
             "patient",
             "companion"
@@ -1093,6 +1096,7 @@
           "type": "string"
         },
         "reporter": {
+          "description": "For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.",
           "enum": [
             "patient",
             "companion"
@@ -1197,7 +1201,7 @@
       "type": "object"
     },
     "PatientHome": {
-      "description": "Every screen shows the wait range and \"Your answers never change your place in line.\" (FR8).",
+      "description": "Every screen shows the wait estimate, the time waited and \"Your answers never change your place in line.\" (FR8).",
       "properties": {
         "attention_prompt": {
           "anyOf": [
@@ -1249,21 +1253,29 @@
           "title": "Role",
           "type": "string"
         },
-        "wait_range": {
+        "wait_estimate": {
           "anyOf": [
             {
-              "$ref": "#/$defs/WaitRange"
+              "$ref": "#/$defs/WaitEstimate"
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "description": "Null when no fresh estimate exists; the screen shows \"Estimate unavailable\"."
+        },
+        "waited_minutes": {
+          "description": "Whole minutes since triage, computed by the server on each fetch.",
+          "minimum": 0,
+          "title": "Waited Minutes",
+          "type": "integer"
         }
       },
       "required": [
         "role",
         "language",
-        "wait_range",
+        "wait_estimate",
+        "waited_minutes",
         "next_checkin_due_at",
         "questionnaire_version",
         "items",
@@ -1567,16 +1579,28 @@
       "title": "ScaleAnswered",
       "type": "object"
     },
+    "SessionEndReason": {
+      "description": "Why a signed-in device was signed out. Sessions have no timer.",
+      "enum": [
+        "takeover",
+        "signed_out",
+        "staff_signed_out",
+        "visit_closed",
+        "app_excluded"
+      ],
+      "title": "SessionEndReason",
+      "type": "string"
+    },
     "SessionInfo": {
       "description": "Body returned with the session cookie. The session itself is an HttpOnly cookie.",
       "properties": {
-        "expires_at": {
-          "format": "date-time",
-          "title": "Expires At",
-          "type": "string"
-        },
         "language": {
           "$ref": "#/$defs/Language"
+        },
+        "replaced_other_device": {
+          "description": "True if signing in signed another device out.",
+          "title": "Replaced Other Device",
+          "type": "boolean"
         },
         "role": {
           "enum": [
@@ -1590,9 +1614,89 @@
       "required": [
         "role",
         "language",
-        "expires_at"
+        "replaced_other_device"
       ],
       "title": "SessionInfo",
+      "type": "object"
+    },
+    "SessionRecord": {
+      "description": "Someone signed in on the visit's device, and when and why that ended.",
+      "properties": {
+        "end_reason": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SessionEndReason"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "ended_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ended At"
+        },
+        "replaces": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "The session this one took over from.",
+          "title": "Replaces"
+        },
+        "role": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "session_id": {
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        },
+        "type": {
+          "const": "session",
+          "default": "session",
+          "title": "Type",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "visit_id",
+        "role",
+        "started_at",
+        "ended_at",
+        "end_reason",
+        "replaces"
+      ],
+      "title": "SessionRecord",
       "type": "object"
     },
     "ShiftCount": {
@@ -1613,6 +1717,54 @@
         "unacknowledged"
       ],
       "title": "ShiftCount",
+      "type": "object"
+    },
+    "SignInConflict": {
+      "description": "409 body: someone is already signed in for this visit. Ask before taking over.",
+      "properties": {
+        "session_id": {
+          "description": "Send back as `takeover_session_id` to confirm.",
+          "format": "uuid",
+          "title": "Session Id",
+          "type": "string"
+        },
+        "signed_in_as": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Signed In As",
+          "type": "string"
+        },
+        "signed_in_since": {
+          "format": "date-time",
+          "title": "Signed In Since",
+          "type": "string"
+        }
+      },
+      "required": [
+        "session_id",
+        "signed_in_as",
+        "signed_in_since"
+      ],
+      "title": "SignInConflict",
+      "type": "object"
+    },
+    "SignOut": {
+      "additionalProperties": false,
+      "description": "The person signs this device out. The visit's QR still works for the next sign-in.",
+      "properties": {
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id"
+      ],
+      "title": "SignOut",
       "type": "object"
     },
     "StaffRef": {
@@ -1641,6 +1793,23 @@
       ],
       "title": "StaffRole",
       "type": "string"
+    },
+    "StaffSignOut": {
+      "additionalProperties": false,
+      "description": "Staff sign out whichever device is signed in to a visit (for example a lost phone).\n\nThe visit comes from the path and the staff member from the staff session.",
+      "properties": {
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id"
+      ],
+      "title": "StaffSignOut",
+      "type": "object"
     },
     "Task": {
       "properties": {
@@ -1912,8 +2081,31 @@
     },
     "TokenExchange": {
       "additionalProperties": false,
-      "description": "A device opens a QR link and trades the one-time token for a session cookie.",
+      "description": "A device scans the visit's QR, says who is using it, and gets a session cookie.\n\nOnly one device is signed in per visit. If one already is, the server answers\n409 with `SignInConflict`. After the person confirms \"This will sign out the\nother device\", the client resends with `takeover_session_id` from that 409.\nThe server signs out exactly that session; if it is no longer the open one\n(someone else took over meanwhile), or two sign-ins race, it answers 409\nagain with the current state.",
       "properties": {
+        "role": {
+          "description": "\"I'm the patient\" or \"I'm with the patient\".",
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "takeover_session_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The session named in the 409, sent only after the person confirms signing it out.",
+          "title": "Takeover Session Id"
+        },
         "token": {
           "description": "URL-safe random token, at least 128 bits.",
           "maxLength": 128,
@@ -1924,7 +2116,8 @@
         }
       },
       "required": [
-        "token"
+        "token",
+        "role"
       ],
       "title": "TokenExchange",
       "type": "object"
@@ -2108,6 +2301,7 @@
               "mapping": {
                 "flag": "#/$defs/FlagRecord",
                 "report": "#/$defs/ReportRecord",
+                "session": "#/$defs/SessionRecord",
                 "task_event": "#/$defs/TaskEvent",
                 "vitals": "#/$defs/VitalsRecord"
               },
@@ -2125,6 +2319,9 @@
               },
               {
                 "$ref": "#/$defs/TaskEvent"
+              },
+              {
+                "$ref": "#/$defs/SessionRecord"
               }
             ]
           },
@@ -2144,7 +2341,7 @@
       "type": "object"
     },
     "VisitEnrolled": {
-      "description": "Returned once at enrolment. The links carry the raw tokens and are never shown again.\n\nWhen the app is not offered, there are no links.",
+      "description": "Returned at enrolment. One QR per visit; whoever scans it chooses patient or companion.\n\nWhen the app is not offered, there is no link.",
       "properties": {
         "app_exclusion": {
           "anyOf": [
@@ -2157,7 +2354,7 @@
           ],
           "default": null
         },
-        "companion_link": {
+        "link": {
           "anyOf": [
             {
               "type": "string"
@@ -2166,20 +2363,8 @@
               "type": "null"
             }
           ],
-          "description": "URL for the companion QR card (FR11). Single-use.",
-          "title": "Companion Link"
-        },
-        "links_expire_at": {
-          "anyOf": [
-            {
-              "format": "date-time",
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Links Expire At"
+          "description": "URL for the visit's QR. Works while the visit is waiting; one device signed in at a time.",
+          "title": "Link"
         },
         "pager_no": {
           "anyOf": [
@@ -2194,18 +2379,6 @@
           "default": null,
           "title": "Pager No"
         },
-        "patient_link": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "description": "URL for the patient QR card. Single-use, binds the first device.",
-          "title": "Patient Link"
-        },
         "visit_id": {
           "format": "uuid",
           "title": "Visit Id",
@@ -2214,9 +2387,7 @@
       },
       "required": [
         "visit_id",
-        "patient_link",
-        "companion_link",
-        "links_expire_at"
+        "link"
       ],
       "title": "VisitEnrolled",
       "type": "object"
@@ -2240,6 +2411,26 @@
         "app_exclusion"
       ],
       "title": "VisitExclusionUpdate",
+      "type": "object"
+    },
+    "VisitLink": {
+      "description": "The visit's QR again, for the desk to show from the staff app (for example to switch who is signed in).\n\nThe server decrypts the stored token to rebuild the same link, and records the\nre-show with `log_qr_shown` in the same transaction. Refused for a visit that is\nclosed or doesn't offer the app.",
+      "properties": {
+        "link": {
+          "title": "Link",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "visit_id",
+        "link"
+      ],
+      "title": "VisitLink",
       "type": "object"
     },
     "VisitStatus": {
@@ -2379,6 +2570,34 @@
           ],
           "title": "Pager No"
         },
+        "signed_in_as": {
+          "anyOf": [
+            {
+              "enum": [
+                "patient",
+                "companion"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Who is signed in on the visit's device, if anyone.",
+          "title": "Signed In As"
+        },
+        "signed_in_since": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Signed In Since"
+        },
         "site_id": {
           "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
           "title": "Site Id",
@@ -2426,7 +2645,9 @@
         "closed_at",
         "next_prompt_due_at",
         "staff_reassess_due_at",
-        "last_staff_check_at"
+        "last_staff_check_at",
+        "signed_in_as",
+        "signed_in_since"
       ],
       "title": "VisitSummary",
       "type": "object"
@@ -2685,21 +2906,18 @@
       "title": "VitalsRecord",
       "type": "object"
     },
-    "WaitRange": {
+    "WaitEstimate": {
+      "description": "The department's current wait estimate for new arrivals, as the source publishes it.\n\nFor AHS this is one facility-wide figure: triage to first physician for a\nmid-acuity patient arriving now. It is not this patient's remaining wait.",
       "properties": {
         "as_of": {
+          "description": "When Recheck fetched the value. The AHS feed carries no timestamp.",
           "format": "date-time",
           "title": "As Of",
           "type": "string"
         },
-        "high_minutes": {
+        "minutes": {
           "minimum": 0,
-          "title": "High Minutes",
-          "type": "integer"
-        },
-        "low_minutes": {
-          "minimum": 0,
-          "title": "Low Minutes",
+          "title": "Minutes",
           "type": "integer"
         },
         "source": {
@@ -2707,12 +2925,11 @@
         }
       },
       "required": [
-        "low_minutes",
-        "high_minutes",
+        "minutes",
         "source",
         "as_of"
       ],
-      "title": "WaitRange",
+      "title": "WaitEstimate",
       "type": "object"
     },
     "WaitSource": {
@@ -2985,17 +3202,32 @@
     "ScaleAnswered": {
       "$ref": "#/$defs/ScaleAnswered"
     },
+    "SessionEndReason": {
+      "$ref": "#/$defs/SessionEndReason"
+    },
     "SessionInfo": {
       "$ref": "#/$defs/SessionInfo"
     },
+    "SessionRecord": {
+      "$ref": "#/$defs/SessionRecord"
+    },
     "ShiftCount": {
       "$ref": "#/$defs/ShiftCount"
+    },
+    "SignInConflict": {
+      "$ref": "#/$defs/SignInConflict"
+    },
+    "SignOut": {
+      "$ref": "#/$defs/SignOut"
     },
     "StaffRef": {
       "$ref": "#/$defs/StaffRef"
     },
     "StaffRole": {
       "$ref": "#/$defs/StaffRole"
+    },
+    "StaffSignOut": {
+      "$ref": "#/$defs/StaffSignOut"
     },
     "Task": {
       "$ref": "#/$defs/Task"
@@ -3036,6 +3268,9 @@
     "VisitExclusionUpdate": {
       "$ref": "#/$defs/VisitExclusionUpdate"
     },
+    "VisitLink": {
+      "$ref": "#/$defs/VisitLink"
+    },
     "VisitStatus": {
       "$ref": "#/$defs/VisitStatus"
     },
@@ -3051,8 +3286,8 @@
     "VitalsRecord": {
       "$ref": "#/$defs/VitalsRecord"
     },
-    "WaitRange": {
-      "$ref": "#/$defs/WaitRange"
+    "WaitEstimate": {
+      "$ref": "#/$defs/WaitEstimate"
     },
     "WaitSource": {
       "$ref": "#/$defs/WaitSource"

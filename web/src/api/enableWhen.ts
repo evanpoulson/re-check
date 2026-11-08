@@ -26,9 +26,12 @@ export function isEnabled(linkId: string, answers: Record<string, AnswerValue>):
   return i.enableBehavior === 'any' ? results.some(Boolean) : results.every(Boolean)
 }
 
-/** Base check-in questions for whoever is answering. Pain and the circle check are patient only. */
-export const baseItems = (reporter: Role): string[] =>
-  section('base').filter((k) => isEnabled(k, { answerer: reporter }))
+/**
+ * Base check-in questions for whoever signed in. Pain and the circle check are
+ * patient only. The role comes from the bank's hidden `session_role` item,
+ * filled from the sign-in rather than asked.
+ */
+export const baseItems = (role: Role): string[] => section('base').filter((k) => isEnabled(k, { session_role: role }))
 
 /**
  * Follow-ups enabled by the visit and the answers so far. Returns [ask now, ask

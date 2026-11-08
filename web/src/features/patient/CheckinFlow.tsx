@@ -26,19 +26,19 @@ interface Props {
 
 /**
  * One question per screen, in the order the question bank's base section sets:
- * who is answering, two wellness questions, pain (patient), new warning signs,
- * the circle check (patient), then the visit's follow-up questions. Leaving
- * early sends what was answered as a partial check-in.
+ * two wellness questions, pain (patient), new warning signs, the circle check
+ * (patient), then the visit's follow-up questions. Who is answering comes from
+ * the sign-in, so it is never asked. Leaving early sends what was answered as a
+ * partial check-in.
  */
 export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending }: Props) {
   const { t } = useTranslation()
   const [index, setIndex] = useState(0)
-  useEffect(() => { document.getElementById('q')?.focus() }, [index])
-  // The QR already says who is answering, so preselect it. The answer becomes the report's reporter.
-  const [reporter, setReporter] = useState<Role>(home.role)
+  const section = useRef<HTMLElement>(null)
+  // The signed-in role is the reporter for this device.
+  const reporter: Role = home.role
   const [draft, setDraft] = useState<CheckinDraft>({ items: {} })
-  // Created once and reused, so a retry of the same check-in is a duplicate, not a new report.
-  const submissionId = useRef(newSubmissionId())
+  const pendingReport = useRef<{ draft: CheckinDraft; body: CheckinReport } | null>(null)
 
   const items = useMemo(
     () => (mode === 'followup' ? home.items.filter((i) => itemKeys?.includes(i.key)) : home.items),
@@ -55,13 +55,23 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
     return [...base, ...items.map((item): Step => ({ kind: 'item', item }))]
   }, [mode, reporter, items, prompt])
 
-  const step = steps[Math.min(index, steps.length - 1)]!
+  const step = steps[Math.min(index, steps.length - 1)]
+  const stepKey = step?.kind === 'base' ? step.linkId : step?.item.key
   const last = index >= steps.length - 1
+  const hasNewFindings = step?.kind === 'base' && step.linkId === 'new_findings' &&
+    Array.isArray(draft.findings) && draft.findings.length > 0
+
+  useEffect(() => {
+    const heading = section.current?.querySelector('h1')
+    if (heading && !heading.closest('[hidden]')) {
+      heading.tabIndex = -1
+      heading.focus()
+    }
+  }, [stepKey])
 
   const answered = (s: Step, d: CheckinDraft): boolean => {
     if (s.kind === 'item') return d.items[s.item.key] !== undefined
     switch (s.linkId) {
-      case 'answerer': return true
       case 'feeling_now': return d.feelingNow !== undefined
       case 'feeling_change': return d.feelingChange !== undefined
       case 'pain': return d.pain !== undefined
@@ -70,23 +80,27 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
       default: return false
     }
   }
-  const anyAnswered = steps.some((s) => s.kind !== 'base' || s.linkId !== 'answerer' ? answered(s, draft) : false)
+  const anyAnswered = steps.some((s) => answered(s, draft))
 
   function send(d: CheckinDraft) {
-    onSubmit(
-      buildCheckinReport({
+    if (pendingReport.current?.draft !== d) {
+      pendingReport.current = {
         draft: d,
-        reporter,
-        version: home.questionnaire_version,
-        submissionId: submissionId.current,
-        capturedAt: new Date().toISOString(),
-        itemKeys: items.map((i) => i.key),
-        prompt,
-        mode,
-      }),
-    )
+        body: buildCheckinReport({
+          draft: d,
+          reporter,
+          version: home.questionnaire_version,
+          submissionId: newSubmissionId(),
+          capturedAt: new Date().toISOString(),
+          itemKeys: items.map((i) => i.key),
+          prompt,
+          mode,
+        }),
+      }
+    }
+    onSubmit(pendingReport.current.body)
   }
-  const next = (d: CheckinDraft) => (last ? send(d) : setIndex(index + 1))
+  const next = (d: CheckinDraft) => (last || hasNewFindings ? send(d) : setIndex(index + 1))
 
   const onCircleDone = (a: AttentionDraft) => {
     const d = { ...draft, attention: a }
@@ -94,28 +108,35 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
     next(d)
   }
 
+  if (!step) return (
+    <section className="space-y-4">
+      <p role="status">{t('common.loading')}</p>
+      <Button variant="ghost" onClick={onCancel}>{t('flow.back')}</Button>
+    </section>
+  )
+
   return (
-    <section aria-labelledby="q" className="space-y-5">
-      <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label="Check-in progress" value={index + 1} max={steps.length} /></div>
+    <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-5">
+      <div className="question-progress"><span>{t('flow.progress', { n: index + 1, total: steps.length })}</span><progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} /></div>
 
       {step.kind === 'base' && step.linkId === 'circle_count' && prompt ? (
         <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
       ) : (
         <>
-          <StepView step={step} reporter={reporter} setReporter={setReporter} draft={draft} setDraft={setDraft} />
+          <StepView step={step} reporter={reporter} draft={draft} setDraft={setDraft} />
           <div className="grid gap-3">
             <Button size="lg" disabled={!answered(step, draft) || sending} onClick={() => next(draft)}>
-              {last ? t('flow.send') : t('flow.next')}
+              {hasNewFindings ? t('flow.sendNow') : last ? t('flow.send') : t('flow.next')}
             </Button>
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="secondary" size="lg" disabled={index === 0 || sending} onClick={() => setIndex(index - 1)}>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              {index > 0 && <Button variant="ghost" disabled={sending} onClick={() => setIndex(index - 1)}>
                 {t('flow.back')}
-              </Button>
-              <Button variant="secondary" size="lg" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
+              </Button>}
+              <Button variant="ghost" className="ml-auto" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
                 {t('flow.finishLater')}
               </Button>
             </div>
-            <p className="text-base text-muted">{t('flow.finishLaterHelp')}</p>
+            {anyAnswered && <p className="text-sm text-muted">{t('flow.finishLaterHelp')}</p>}
           </div>
         </>
       )}
@@ -126,7 +147,6 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 interface ViewProps {
   step: Step
   reporter: Role
-  setReporter: (r: Role) => void
   draft: CheckinDraft
   setDraft: (d: CheckinDraft) => void
 }
@@ -167,24 +187,9 @@ function NotSure({ selected, onClick }: { selected: boolean; onClick: () => void
   )
 }
 
-function StepView({ step, reporter, setReporter, draft, setDraft }: ViewProps) {
+function StepView({ step, reporter, draft, setDraft }: ViewProps) {
   if (step.kind === 'item') return <ItemStep item={step.item} draft={draft} setDraft={setDraft} />
   const { linkId } = step
-
-  if (linkId === 'answerer') {
-    return (
-      <>
-        <Question>{text('answerer', reporter)}</Question>
-        <div className="grid gap-3">
-          {options('answerer').map((o) => (
-            <AnswerButton key={o.code} selected={reporter === o.code} onClick={() => setReporter(o.code as Role)}>
-              {o.text}
-            </AnswerButton>
-          ))}
-        </div>
-      </>
-    )
-  }
 
   if (linkId === 'feeling_now' || linkId === 'feeling_change') {
     const key = linkId === 'feeling_now' ? 'feelingNow' : 'feelingChange'

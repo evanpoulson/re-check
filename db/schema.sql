@@ -4,16 +4,16 @@
 -- AGENTS.md and docs/research/recheck-waiting-room.md, section 5.
 --
 -- Tables: visit, visit_session, submission, attention_prompt, report, vitals,
--- task, task_reason, audit_log.
+-- task, task_reason, audit_log, wait_site, wait_snapshot.
 --
--- Time-series tables (report, vitals, audit_log) are hypertables partitioned on
+-- Time-series tables (report, vitals, audit_log, wait_snapshot) are hypertables partitioned on
 -- the server's received time. Hypertable primary keys must include the time
 -- column, so their PKs are (id, received_at) or (id, at). Duplicate retries are
 -- caught by the submission table, which is a regular table keyed on the
 -- client-generated ID.
 --
--- Append-only: attention_prompt, report, vitals, task_reason, submission and
--- audit_log reject UPDATE, DELETE and TRUNCATE. visit and task can be updated
+-- Append-only: attention_prompt, report, vitals, task_reason, submission,
+-- wait_snapshot and audit_log reject UPDATE, DELETE and TRUNCATE. visit and task can be updated
 -- but not deleted.
 -- Corrections are new rows that point at the row they replace.
 --
@@ -609,6 +609,44 @@ CREATE TABLE task_reason (
 CREATE INDEX task_reason_task_idx ON task_reason (task_id, fired_at);
 
 -- ---------------------------------------------------------------------------
+-- Department wait estimates from the AHS public feed (demo only)
+-- wait_site maps a Recheck site to one AHS department. The poller
+-- (api/src/recheck/wait_times/poller.py) stores one wait_snapshot per mapped
+-- site every five minutes, including failed attempts, so gaps in the trend
+-- are explained. The AHS figure is facility-wide (triage to physician for a
+-- new mid-acuity arrival), not a patient's remaining wait.
+-- ---------------------------------------------------------------------------
+
+-- ok: AHS gave a value. unavailable: AHS marked the site unavailable, the
+-- text was unreadable or the site was missing. fetch_failed: the feed could
+-- not be fetched or parsed.
+CREATE TYPE wait_fetch_status AS ENUM ('ok', 'unavailable', 'fetch_failed');
+
+CREATE TABLE wait_site (
+    site_id         text         PRIMARY KEY CHECK (site_id ~ '^[a-z0-9][a-z0-9_-]{0,31}$'),
+    -- Matched against the feed: city key, facility Name and, for a facility
+    -- with separate departments, its SplitFacility label (e.g. 'Adult emergency').
+    ahs_city        text         NOT NULL CHECK (ahs_city <> ''),
+    ahs_name        text         NOT NULL CHECK (ahs_name <> ''),
+    ahs_department  text         CHECK (ahs_department <> ''),
+    created_at      timestamptz  NOT NULL DEFAULT now()
+);
+
+CREATE TABLE wait_snapshot (
+    site_id     text               NOT NULL REFERENCES wait_site (site_id),
+    fetched_at  timestamptz        NOT NULL DEFAULT now(),
+    status      wait_fetch_status  NOT NULL,
+    minutes     integer            CHECK (minutes BETWEEN 0 AND 2880),
+    -- The WaitTime text as AHS sent it, kept to debug parsing.
+    raw_text    text               CHECK (length(raw_text) <= 200),
+    detail      text               CHECK (length(detail) <= 500),
+    PRIMARY KEY (site_id, fetched_at),
+    CONSTRAINT wait_snapshot_minutes_iff_ok CHECK ((status = 'ok') = (minutes IS NOT NULL))
+);
+
+SELECT create_hypertable('wait_snapshot', by_range('fetched_at', interval '7 days'));
+
+-- ---------------------------------------------------------------------------
 -- audit_log: append-only record of every write (hypertable)
 -- ---------------------------------------------------------------------------
 
@@ -657,6 +695,9 @@ CREATE TRIGGER report_audit        AFTER INSERT ON report                  FOR E
 CREATE TRIGGER vitals_audit        AFTER INSERT ON vitals                  FOR EACH ROW EXECUTE FUNCTION audit_write('vitals');
 CREATE TRIGGER task_audit          AFTER INSERT OR UPDATE ON task          FOR EACH ROW EXECUTE FUNCTION audit_write('task');
 CREATE TRIGGER task_reason_audit   AFTER INSERT ON task_reason             FOR EACH ROW EXECUTE FUNCTION audit_write('task_reason');
+-- Site mapping changes are audited. wait_snapshot is not: it is already an
+-- append-only log of each fetch, and auditing it would double every poll.
+CREATE TRIGGER wait_site_audit     AFTER INSERT OR UPDATE ON wait_site     FOR EACH ROW EXECUTE FUNCTION audit_write('wait_site');
 
 -- Append-only tables: no UPDATE, DELETE or TRUNCATE for anyone.
 -- Row triggers don't fire on TRUNCATE, so it gets a statement trigger.
@@ -666,6 +707,8 @@ CREATE TRIGGER vitals_append_only      BEFORE UPDATE OR DELETE ON vitals      FO
 CREATE TRIGGER task_reason_append_only BEFORE UPDATE OR DELETE ON task_reason FOR EACH ROW EXECUTE FUNCTION block_change('task_reason');
 CREATE TRIGGER submission_append_only  BEFORE UPDATE OR DELETE ON submission  FOR EACH ROW EXECUTE FUNCTION block_change('submission');
 CREATE TRIGGER audit_log_append_only   BEFORE UPDATE OR DELETE ON audit_log   FOR EACH ROW EXECUTE FUNCTION block_change('audit_log');
+CREATE TRIGGER wait_snapshot_append_only BEFORE UPDATE OR DELETE ON wait_snapshot FOR EACH ROW EXECUTE FUNCTION block_change('wait_snapshot');
+CREATE TRIGGER wait_site_no_delete     BEFORE DELETE ON wait_site     FOR EACH ROW EXECUTE FUNCTION block_change('wait_site');
 
 -- Records that change state are kept, never deleted.
 CREATE TRIGGER visit_no_delete         BEFORE DELETE ON visit         FOR EACH ROW EXECUTE FUNCTION block_change('visit');
@@ -681,6 +724,8 @@ CREATE TRIGGER vitals_no_truncate        BEFORE TRUNCATE ON vitals        FOR EA
 CREATE TRIGGER task_no_truncate          BEFORE TRUNCATE ON task          FOR EACH STATEMENT EXECUTE FUNCTION block_change('task');
 CREATE TRIGGER task_reason_no_truncate   BEFORE TRUNCATE ON task_reason   FOR EACH STATEMENT EXECUTE FUNCTION block_change('task_reason');
 CREATE TRIGGER audit_log_no_truncate     BEFORE TRUNCATE ON audit_log     FOR EACH STATEMENT EXECUTE FUNCTION block_change('audit_log');
+CREATE TRIGGER wait_site_no_truncate     BEFORE TRUNCATE ON wait_site     FOR EACH STATEMENT EXECUTE FUNCTION block_change('wait_site');
+CREATE TRIGGER wait_snapshot_no_truncate BEFORE TRUNCATE ON wait_snapshot FOR EACH STATEMENT EXECUTE FUNCTION block_change('wait_snapshot');
 
 -- ---------------------------------------------------------------------------
 -- App role: read and insert everywhere, update only where state changes,
@@ -701,5 +746,24 @@ REVOKE ALL ON visit, visit_session, submission, attention_prompt, report, vitals
 GRANT SELECT, INSERT ON visit, visit_session, submission, attention_prompt, report, vitals, task, task_reason, audit_log TO recheck_app;
 GRANT UPDATE ON visit, visit_session, task TO recheck_app;
 GRANT USAGE ON SEQUENCE audit_log_id_seq TO recheck_app;
+
+-- The API reads wait estimates; site mappings are changed by an admin.
+REVOKE ALL ON wait_site, wait_snapshot FROM PUBLIC, recheck_app;
+GRANT SELECT ON wait_site, wait_snapshot TO recheck_app;
+
+-- Poller role: reads the site map and inserts snapshots, nothing else. It is
+-- created without a password; give it one by hand, outside Git:
+--   ALTER ROLE recheck_poller WITH LOGIN PASSWORD '...';
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'recheck_poller') THEN
+        CREATE ROLE recheck_poller NOLOGIN;
+    END IF;
+END
+$$;
+
+REVOKE ALL ON wait_site, wait_snapshot FROM recheck_poller;
+GRANT SELECT ON wait_site TO recheck_poller;
+GRANT SELECT, INSERT ON wait_snapshot TO recheck_poller;
 
 COMMIT;

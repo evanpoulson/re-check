@@ -7,6 +7,7 @@ import { HelpBar } from '@/components/HelpBar'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
 import { LANGUAGES } from '@/i18n'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
+import { formatMinutes } from '@/lib/time'
 
 /** "Saved, will send when connected". Retries on reconnect and on a timer. */
 function OutboxBanner() {
@@ -44,11 +45,13 @@ interface Props {
 
 /**
  * Every patient and companion screen: the language switch, the place-in-line
- * promise, the wait range, "What we store", and the docked always-visible buttons.
+ * promise, the department wait estimate and time waited, "What we store", and the
+ * docked always-visible buttons. The estimate is the department's figure for new
+ * arrivals, never this patient's remaining wait, so it is worded that way.
  */
 export function PatientLayout({ home, dock, children }: Props) {
   const { t, i18n } = useTranslation()
-  const wait = home?.wait_range
+  const estimate = home?.wait_estimate
   const lang = LANGUAGES.includes(i18n.language as never) ? i18n.language : 'en'
   return (
     <div className={`patient-shell ${dock ? 'has-dock' : ''}`}>
@@ -78,12 +81,19 @@ export function PatientLayout({ home, dock, children }: Props) {
         </p>
       )}
 
-      <section aria-label="While you wait" className="patient-context">
-        {t('patient.placeInLine')}
-        {wait && <span>{t('patient.wait', { low: wait.low_minutes, high: wait.high_minutes })}</span>}
-      </section>
       <OutboxBanner />
       <main className="space-y-5">{children}</main>
+      <section aria-label={t('patient.waitContext')} className="patient-context">
+        <p>{t('patient.placeInLine')}</p>
+        {home && (
+          <p>
+            {estimate
+              ? t('patient.departmentWait', { estimate: formatMinutes(estimate.minutes * 60_000) })
+              : t('patient.waitUnavailable')}{' '}
+            {t('patient.waited', { waited: formatMinutes(home.waited_minutes * 60_000) })}
+          </p>
+        )}
+      </section>
       <PrivacyPanel />
       {dock && home ? <HelpBar role={home.role} {...dock} /> : null}
     </div>

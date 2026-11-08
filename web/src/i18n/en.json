@@ -25,12 +25,20 @@
     "label": "Staff",
     "triage": "Triage board",
     "enrol": "New visit",
-    "signOut": "Sign out"
+    "signOut": "Sign out",
+    "skip": "Skip to content",
+    "home": "Recheck staff home",
+    "synthetic": "Synthetic data",
+    "changeRole": "Change role"
   },
   "signIn": {
-    "explain": "This is a synthetic demo. Pick a role to continue; there is no real sign-in yet.",
+    "explain": "Choose a staff view. All visits are synthetic.",
     "continue": "Continue",
-    "notInBuild": "Not part of this build"
+    "notInBuild": "Not part of this build",
+    "open": {
+      "triage_nurse": "Open triage board",
+      "physician": "Open physician worklist"
+    }
   },
   "role": {
     "triage_nurse": "Triage nurse",
@@ -159,7 +167,10 @@
     "vitals": "Vitals recorded by {{role}}: {{values}}",
     "flag": "Staff flagged higher",
     "flagNote": "Staff flagged higher: {{note}}",
-    "task": "{{event}} ({{level}})"
+    "task": "{{event}} ({{level}})",
+    "signedIn": "{{who}} signed in",
+    "signedInTakeover": "{{who}} signed in, signing out the other phone",
+    "signedOut": "Signed out at {{time}}: {{reason}}"
   },
   "triage": {
     "live": "Live, refreshes every 5 seconds",
@@ -197,7 +208,7 @@
     "language": "Patient language",
     "channel": "How will they check in?",
     "pagerNo": "Pager number",
-    "submit": "Create visit and QR codes",
+    "submit": "Create visit and QR code",
     "failed": "The visit could not be created. Try again.",
     "errors": {
       "ctas": "Choose a CTAS level from 2 to 5.",
@@ -205,13 +216,7 @@
       "pagerRequired": "Enter a pager number of 1 to 6 digits."
     },
     "doneTitle": "Visit created",
-    "shownOnce": "These links are shown once. Print them or hand them over now.",
-    "patientQr": "Patient",
-    "patientHint": "Scan to check in",
-    "companionQr": "Companion",
-    "companionHint": "Scan if you are helping the patient",
-    "expires": "Links expire at {{time}}.",
-    "pagerFallback": "Pager {{pager}} is bound to this visit; the patient QR is the phone fallback.",
+    "pagerFallback": "Pager {{pager}} is bound to this visit; this QR is the phone fallback.",
     "print": "Print",
     "another": "Enrol another patient",
     "cedisHelp": "Optional. Type a code or pick one from the list.",
@@ -222,7 +227,10 @@
     "exclusionHelp": "No QR or prompts. The patient stays on this board and the staff reassessment timer keeps running.",
     "submitNoQr": "Create visit (no QR)",
     "noQr": "No QR issued: {{reason}}",
-    "excludedHelp": "Staff watch this patient directly. The staff reassessment timer is running and no patient prompts are sent."
+    "excludedHelp": "Staff watch this patient directly. The staff reassessment timer is running and no patient prompts are sent.",
+    "qrTitle": "Check-in code",
+    "qrHint": "The patient or a companion scans this and says who they are. One phone at a time.",
+    "showAgain": "The code works while the patient is waiting. You can show it again from the visit."
   },
   "visit": {
     "back": "Back to triage board",
@@ -248,7 +256,19 @@
     "latestAnswers": "Latest check-in",
     "timeline": "Timeline",
     "failed": "This visit could not be loaded.",
-    "app": "Patient app"
+    "app": "Patient app",
+    "device": "Signed in",
+    "backToReview": "Back to review worklist",
+    "assessmentRecorded": "Assessment recorded",
+    "details": "Visit details",
+    "routedTo": "Routed to {{roles}}",
+    "routedToBackup": "Routed to backup",
+    "reviewEvidence": "Routing and evidence",
+    "loadPending": "Loading visit",
+    "stale": "Could not refresh this visit. Showing the last available information.",
+    "historyDetail": "Additional check-in answers",
+    "timelineDate": "{{date}}",
+    "flaggedAt": "Flagged {{time}}"
   },
   "answers": {
     "feelingChange": "Compared with the last check",
@@ -275,10 +295,22 @@
     "flagNote": "Note (optional, up to 280 characters)",
     "visitStatus": "Visit status",
     "stopApp": "Stop offering the app",
-    "stopAppHelp": "Prompts stop and this patient's phone and companion devices are signed out. The staff reassessment timer keeps running. This cannot be undone.",
+    "stopAppHelp": "Prompts stop and the signed-in phone is signed out. The staff reassessment timer keeps running. This cannot be undone.",
     "stopAppReason": "Reason",
     "stopAppConfirm": "I understand this cannot be undone.",
-    "stopAppButton": "Stop offering the app"
+    "stopAppButton": "Stop offering the app",
+    "device": "Patient's phone",
+    "deviceHelp": "One phone is signed in at a time. To switch people or phones, show the QR again.",
+    "showQr": "Show QR",
+    "hideQr": "Hide QR",
+    "showQrFailed": "The QR could not be shown.",
+    "signOutDevice": "Sign out the phone",
+    "dispositionPlaceholder": "Choose an outcome",
+    "saving": "Saving…",
+    "staffTools": "Visit tools",
+    "saved": "Changes saved.",
+    "vitalsSaved": "Vitals saved",
+    "flagSaved": "Flag recorded"
   },
   "vitals": {
     "sbp": "Systolic BP",
@@ -298,7 +330,9 @@
   },
   "patient": {
     "language": "Language",
-    "wait": "Estimated wait: {{low}} to {{high}} minutes.",
+    "departmentWait": "The department's current estimate for new arrivals is about {{estimate}}.",
+    "waitUnavailable": "Estimate unavailable.",
+    "waited": "You've been waiting {{waited}}.",
     "placeInLine": "Your answers never change your place in line.",
     "title": "You are checked in",
     "titleCompanion": "You are helping with a check-in",
@@ -307,7 +341,13 @@
     "reportChange": "Report a change",
     "leaving": "I'm leaving",
     "sendFailed": "That did not send. Please try again, or tell a staff member.",
-    "languageNotice": "Questions are shown in English for now. Ask a staff member if you need help in another language."
+    "languageNotice": "Questions are shown in English for now. Ask a staff member if you need help in another language.",
+    "signOut": "Sign out of this phone",
+    "signOutHelp": "This phone will stop sending check-ins. The patient keeps their place in line, and anyone can sign in again by scanning the QR code.",
+    "signOutConfirm": "Sign out",
+    "signOutFailed": "This phone could not sign out. Try again.",
+    "waitContext": "Waiting-room information",
+    "contactStaff": "Contact staff"
   },
   "pain": {
     "low": "No pain",
@@ -328,9 +368,13 @@
   "urgent": {
     "title": "Tell a staff member now",
     "body": "Go to the nearest staff member or call out for help.",
-    "sent": "We have already alerted staff.",
-    "queued": "Your report is saved and will send when you are connected. Do not wait: tell a staff member now.",
-    "telling": "I'm telling staff"
+    "sent": "Your report was received.",
+    "queued": "Saved on this phone. It will send when you reconnect.",
+    "telling": "I'm telling staff",
+    "sending": "Sending your report…",
+    "failed": "Your report was not sent.",
+    "retry": "Try sending again",
+    "followup": "Answer a follow-up"
   },
   "sent": {
     "title": "Thank you, we have your answers",
@@ -352,16 +396,31 @@
     "saved": "Saved, will send when connected ({{count}} waiting)."
   },
   "exchange": {
-    "expired": {
-      "title": "This code has expired"
-    },
     "invalid": {
       "title": "This code did not work"
     },
-    "noSession": {
-      "title": "Please scan your code again"
+    "askDesk": "Ask the triage desk for a new code.",
+    "who": "Who is using this phone?",
+    "role": {
+      "patient": "I'm the patient",
+      "companion": "I'm with the patient"
     },
-    "askDesk": "Ask the triage desk for a new code."
+    "inactive": "This code is no longer active. Please speak to the triage desk.",
+    "failed": "That did not work. Please try again, or speak to the triage desk.",
+    "takeover": {
+      "title": "This will sign out the other device",
+      "who": "{{who}} has been signed in on another phone since {{time}}. Only one phone can be signed in.",
+      "confirm": "Sign out the other phone and continue",
+      "cancel": "Cancel"
+    },
+    "signedInAs": {
+      "patient": "The patient",
+      "companion": "Someone with the patient"
+    },
+    "signedOut": {
+      "title": "You've been signed out.",
+      "help": "If you need help now, tell a staff member. To sign in again, scan the visit's QR code."
+    }
   },
   "privacy": {
     "title": "What we store",
@@ -404,6 +463,60 @@
     "send": "Send",
     "back": "Back",
     "finishLater": "Finish later",
-    "finishLaterHelp": "If you stop, we send the answers you gave so far."
+    "finishLaterHelp": "If you stop, we send the answers you gave so far.",
+    "sendNow": "Send warning signs now",
+    "progressLabel": "Check-in progress"
+  },
+  "signedIn": {
+    "patient": "Patient signed in since {{time}}",
+    "companion": "Companion signed in since {{time}}",
+    "none": "No one signed in",
+    "short": {
+      "patient": "Patient signed in",
+      "companion": "Companion signed in",
+      "none": "No one signed in"
+    }
+  },
+  "sessionEnd": {
+    "takeover": "another phone took over",
+    "signed_out": "signed out on the phone",
+    "staff_signed_out": "signed out by staff",
+    "visit_closed": "the visit closed",
+    "app_excluded": "the app is no longer offered"
+  },
+  "review": {
+    "title": "Review worklist",
+    "refresh": "Refresh",
+    "updated": "Updated {{time}}",
+    "stale": "Update failed. Showing the list from {{time}}.",
+    "offline": "Offline. Showing the list from {{time}}.",
+    "filter": "Filter by task status",
+    "search": "Find a visit or concern",
+    "loading": "Loading review tasks",
+    "failed": "Worklist unavailable",
+    "noMatch": "No matching visits",
+    "tasks": "Review tasks",
+    "urgent": "Urgent review",
+    "backup": "Routed to backup",
+    "dueIn": "due in {{time}}",
+    "overdueBy": "{{time}} overdue",
+    "staffDue": "Staff reassessment {{timing}}",
+    "filters": {
+      "all": "All tasks",
+      "open": "Needs acknowledgement",
+      "acknowledged": "Needs assessment"
+    },
+    "empty": {
+      "all": "No active review tasks",
+      "open": "No tasks need acknowledgement",
+      "acknowledged": "No acknowledged tasks"
+    }
+  },
+  "taskLevel": {
+    "red": "Urgent review",
+    "amber": "Review needed",
+    "silent": "Missed check-in",
+    "leave_risk": "May leave",
+    "overdue": "Reassessment due"
   }
 }

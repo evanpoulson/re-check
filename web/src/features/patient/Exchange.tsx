@@ -1,41 +1,107 @@
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { exchangeToken } from '@/api/api'
 import { ApiError } from '@/api/client'
+import type { Role, SignInConflict } from '@/api/types'
+import { AnswerButton } from '@/components/AnswerButton'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { clock } from '@/lib/time'
 import { PatientLayout } from './PatientLayout'
 
-/** /v/:token. Trades the single-use token for a session, then opens the check-in. */
+type State =
+  | { name: 'choose' }
+  | { name: 'sending'; role: Role }
+  | { name: 'conflict'; role: Role; conflict: SignInConflict }
+  | { name: 'inactive' }
+  | { name: 'failed'; role: Role }
+
+/**
+ * /v/:token. The visit's one QR: whoever scans it says who they are, then gets
+ * a session. Only one device is signed in per visit, so if another is, ask
+ * before signing it out, and only take over after the person confirms.
+ */
 export function Exchange() {
   const { t, i18n } = useTranslation()
   const { token = '' } = useParams()
   const navigate = useNavigate()
-  const [error, setError] = useState<'expired' | 'invalid' | null>(null)
-  // A token is single use, so exchange it exactly once even if the effect re-runs.
-  const started = useRef(false)
+  const [state, setState] = useState<State>({ name: 'choose' })
 
-  useEffect(() => {
-    if (started.current) return
-    started.current = true
-    exchangeToken({ token })
-      .then((session) => {
-        void i18n.changeLanguage(session.language)
-        navigate('/check-in', { replace: true })
-      })
-      .catch((e) => setError(e instanceof ApiError && e.status === 410 ? 'expired' : 'invalid'))
-  }, [token, navigate, i18n])
+  async function signIn(role: Role, takeover?: string) {
+    setState({ name: 'sending', role })
+    try {
+      const session = await exchangeToken({ token, role, ...(takeover ? { takeover_session_id: takeover } : {}) })
+      void i18n.changeLanguage(session.language)
+      navigate('/check-in', { replace: true })
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 409) {
+        // Someone is signed in (or took over meanwhile): ask again with the current state.
+        setState({ name: 'conflict', role, conflict: e.body as SignInConflict })
+      } else if (e instanceof ApiError && (e.status === 404 || e.status === 410 || e.status === 422)) {
+        setState({ name: 'inactive' })
+      } else {
+        setState({ name: 'failed', role })
+      }
+    }
+  }
 
+  if (state.name === 'inactive') {
+    return (
+      <PatientLayout>
+        <Card role="alert" className="space-y-2">
+          <h1 className="text-2xl font-bold">{t('exchange.inactive')}</h1>
+        </Card>
+      </PatientLayout>
+    )
+  }
+
+  if (state.name === 'conflict') {
+    const { conflict, role } = state
+    return (
+      <PatientLayout>
+        <Card role="alert" className="space-y-4">
+          <h1 className="text-2xl font-bold">{t('exchange.takeover.title')}</h1>
+          <p>
+            {t('exchange.takeover.who', {
+              who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
+              time: clock(conflict.signed_in_since),
+            })}
+          </p>
+          <div className="grid gap-3">
+            <Button size="lg" onClick={() => void signIn(role, conflict.session_id)}>
+              {t('exchange.takeover.confirm')}
+            </Button>
+            <Button size="lg" variant="secondary" onClick={() => setState({ name: 'choose' })}>
+              {t('exchange.takeover.cancel')}
+            </Button>
+          </div>
+        </Card>
+      </PatientLayout>
+    )
+  }
+
+  const sending = state.name === 'sending'
   return (
     <PatientLayout>
-      {error ? (
-        <Card role="alert" className="space-y-2">
-          <h1 className="text-2xl font-bold">{t(`exchange.${error}.title`)}</h1>
-          <p>{t('exchange.askDesk')}</p>
-        </Card>
-      ) : (
-        <h1 role="status" className="text-2xl font-bold">{t('pages.patientEntry')}</h1>
-      )}
+      <section aria-labelledby="who" className="space-y-4">
+        <h1 id="who" className="text-[1.75rem] font-extrabold leading-tight tracking-tight">
+          {t('exchange.who')}
+        </h1>
+        <div className="grid gap-3">
+          {(['patient', 'companion'] as const).map((role) => (
+            <AnswerButton key={role} selected={sending && state.role === role} disabled={sending} onClick={() => void signIn(role)}>
+              {t(`exchange.role.${role}`)}
+            </AnswerButton>
+          ))}
+        </div>
+        {sending && <p role="status">{t('pages.patientEntry')}</p>}
+        {state.name === 'failed' && (
+          <p role="alert" className="font-semibold text-level-red">
+            {t('exchange.failed')}
+          </p>
+        )}
+      </section>
     </PatientLayout>
   )
 }

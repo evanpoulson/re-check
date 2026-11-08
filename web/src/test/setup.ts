@@ -13,6 +13,7 @@ beforeAll(() => server.listen({ onUnhandledFrame: 'error' }))
 beforeEach(() => {
   resetMockState()
   localStorage.clear()
+  sessionStorage.clear()
 })
 afterEach(() => {
   cleanup()

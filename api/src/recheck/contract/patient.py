@@ -12,11 +12,16 @@ from .codes import ItemInputType, Language, PatientMessage, Reporter, WaitSource
 from .common import Code, OutputModel, Timestamp, Version
 
 
-class WaitRange(OutputModel):
-    low_minutes: int = Field(ge=0)
-    high_minutes: int = Field(ge=0)
+class WaitEstimate(OutputModel):
+    """The department's current wait estimate for new arrivals, as the source publishes it.
+
+    For AHS this is one facility-wide figure: triage to first physician for a
+    mid-acuity patient arriving now. It is not this patient's remaining wait.
+    """
+
+    minutes: int = Field(ge=0)
     source: WaitSource
-    as_of: Timestamp
+    as_of: Timestamp = Field(description="When Recheck fetched the value. The AHS feed carries no timestamp.")
 
 
 class QuestionOption(OutputModel):
@@ -58,11 +63,14 @@ class AttentionPrompt(OutputModel):
 
 
 class PatientHome(OutputModel):
-    """Every screen shows the wait range and "Your answers never change your place in line." (FR8)."""
+    """Every screen shows the wait estimate, the time waited and "Your answers never change your place in line." (FR8)."""
 
     role: Literal[Reporter.PATIENT, Reporter.COMPANION]
     language: Language
-    wait_range: WaitRange | None
+    wait_estimate: WaitEstimate | None = Field(
+        description='Null when no fresh estimate exists; the screen shows "Estimate unavailable".'
+    )
+    waited_minutes: int = Field(ge=0, description="Whole minutes since triage, computed by the server on each fetch.")
     next_checkin_due_at: Timestamp | None
     questionnaire_version: Version
     items: list[QuestionItem]

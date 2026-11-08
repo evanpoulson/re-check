@@ -84,11 +84,11 @@
     color: var(--color-brand-600);
   }
   .staff-header {
-    min-height: 80px;
+    min-height: 62px;
     display: flex;
-    gap: 44px;
+    gap: 22px;
     align-items: center;
-    padding: 16px 40px;
+    padding: 8px 32px;
     border-bottom: 1px solid var(--color-line);
     background: white;
   }
@@ -122,23 +122,9 @@
     font-size: 14px;
     color: var(--color-muted);
   }
-  .demo-strip {
-    display: flex;
-    gap: 16px;
-    padding: 10px 40px;
-    font-size: 13px;
-    color: var(--color-muted);
-    border-bottom: 1px solid var(--color-line);
-  }
-  .demo-strip span:first-child {
-    font-weight: 650;
-  }
-  .demo-strip span:last-child {
-    margin-left: auto;
-  }
   .staff-page {
     max-width: 1280px;
-    padding: 40px;
+    padding: 28px 32px;
     margin: auto;
   }
   .page-heading {
@@ -146,7 +132,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 24px;
-    margin-bottom: 32px;
+    margin-bottom: 18px;
   }
   .page-heading h1 {
     font-size: 34px;
@@ -156,51 +142,6 @@
   }
   .page-heading p {
     margin-top: 8px;
-    color: var(--color-muted);
-  }
-  .worklist-summary {
-    display: flex;
-    align-items: center;
-    gap: 32px;
-    margin-bottom: 28px;
-  }
-  .summary-primary {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-  .summary-primary strong {
-    font-size: 40px;
-    line-height: 1;
-    letter-spacing: -1px;
-    font-weight: 550;
-  }
-  .summary-primary span {
-    max-width: 100px;
-    font-size: 15px;
-    line-height: 1.25;
-    color: var(--color-muted);
-  }
-  .summary-secondary {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 15px;
-  }
-  .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: var(--color-level-red);
-  }
-  .summary-divider {
-    height: 20px;
-    border-left: 1px solid var(--color-line);
-    margin: 0 10px;
-  }
-  .update-note {
-    margin-left: auto;
-    font-size: 13px;
     color: var(--color-muted);
   }
   .review-surface {
@@ -224,7 +165,7 @@
     border-radius: 7px;
   }
   .filter-group button {
-    min-height: 38px;
+    min-height: 44px;
     padding: 6px 12px;
     font-size: 14px;
     border-radius: 5px;
@@ -251,25 +192,17 @@
     min-width: 0;
     background: transparent;
   }
-  .worklist-columns,
   .review-row {
     display: grid;
-    grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 0.85fr) 20px;
-    gap: 24px;
-    padding: 24px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 235px) 18px;
     align-items: center;
-  }
-  .worklist-columns {
-    padding-block: 12px;
-    font-size: 12px;
-    color: var(--color-muted);
-    background: #fafbf9;
+    gap: 16px;
+    padding: 14px 20px;
   }
   .review-list li + li {
     border-top: 1px solid var(--color-line);
   }
   .review-row {
-    min-height: 170px;
     transition: background 0.15s;
   }
   .review-row:hover {
@@ -304,16 +237,13 @@
     color: var(--color-muted);
   }
   .concern-cell h2 {
-    font-size: 22px;
+    font-size: 19px;
     line-height: 1.25;
     font-weight: 600;
     letter-spacing: -0.3px;
-    margin: 8px 0;
+    margin: 4px 0;
   }
   .concern-cell p {
-    display: flex;
-    gap: 7px;
-    flex-wrap: wrap;
     font-size: 14px;
     color: var(--color-muted);
   }
@@ -321,41 +251,16 @@
     color: var(--color-ink);
     font-weight: 550;
   }
-  .concern-cell .report-meta {
-    margin-top: 7px;
-    font-size: 13px;
-  }
-  .review-status,
-  .review-timer {
+  .review-status {
     font-size: 14px;
   }
-  .review-status p,
-  .review-timer p {
+  .review-status p {
     color: var(--color-muted);
-    margin-top: 7px;
     font-size: 13px;
-  }
-  .review-timer > span {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+    margin-top: 2px;
   }
   .row-arrow {
     color: var(--color-muted);
-  }
-  .worklist-footer {
-    display: flex;
-    justify-content: space-between;
-    gap: 24px;
-    margin-top: 20px;
-    font-size: 14px;
-    color: var(--color-muted);
-  }
-  .worklist-footer a {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--color-brand-700);
   }
   .page-state {
     display: flex;
@@ -411,21 +316,6 @@
     color: var(--color-muted);
     margin-top: 8px;
   }
-  .visit-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 32px;
-    align-items: start;
-  }
-  .visit-main {
-    display: grid;
-    gap: 24px;
-    grid-column: 1;
-  }
-  .visit-actions {
-    grid-column: 2;
-    grid-row: 1 / span 2;
-  }
   .concern-panel {
     padding: 28px;
     background: white;
@@ -444,44 +334,10 @@
     color: var(--color-muted);
     margin-top: 12px;
   }
-  .task-progress {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    margin-top: 28px;
-    padding-top: 20px;
-    border-top: 1px solid var(--color-line);
-  }
-  .task-progress li {
-    font-size: 13px;
-  }
-  .task-progress li > span {
-    display: flex;
-    gap: 6px;
-    align-items: center;
-    font-weight: 550;
-    margin-bottom: 8px;
-  }
-  .task-progress p {
-    color: var(--color-muted);
-  }
   .section-title {
     font-size: 19px;
     font-weight: 600;
     margin-bottom: 16px;
-  }
-  .timers {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 24px;
-  }
-  .timers dt {
-    font-size: 14px;
-    color: var(--color-muted);
-    margin-bottom: 8px;
-  }
-  .timers dd {
-    font-size: 18px;
   }
   .disclosure {
     border-top: 1px solid var(--color-line);
@@ -496,29 +352,6 @@
   .disclosure[open] > summary {
     margin-bottom: 16px;
   }
-  .action-panel {
-    background: white;
-    border: 1px solid var(--color-line);
-    border-radius: 8px;
-    padding: 24px;
-  }
-  .action-panel h3 {
-    font-size: 21px;
-    font-weight: 600;
-  }
-  .action-panel button {
-    width: 100%;
-  }
-  .visit-actions .secondary-actions {
-    margin-top: 24px;
-  }
-  .visit-actions .secondary-actions > summary {
-    font-weight: 600;
-  }
-  .visit-actions input,
-  .visit-actions select {
-    border-color: var(--color-line);
-  }
   .patient-shell {
     max-width: 496px;
     min-height: 100dvh;
@@ -527,7 +360,7 @@
     font-size: 18px;
   }
   .patient-shell.has-dock {
-    padding-bottom: 260px;
+    padding-bottom: calc(142px + env(safe-area-inset-bottom));
   }
   .patient-header {
     display: flex;
@@ -546,16 +379,16 @@
     color: var(--color-muted);
     font-size: 15px;
     line-height: 1.5;
-    margin-bottom: 28px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--color-line);
+    margin: 16px 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-line);
   }
   .patient-context span {
     display: block;
     margin-top: 6px;
   }
   .patient-shell main {
-    margin-bottom: 32px;
+    margin-bottom: 16px;
   }
   .patient-shell h1 {
     font-size: 30px;
@@ -563,16 +396,8 @@
     line-height: 1.2;
     letter-spacing: -0.6px;
   }
-  .patient-home-intro {
-    color: var(--color-muted);
-    margin-top: 12px;
-    line-height: 1.55;
-  }
   .patient-checkin-card {
-    background: white;
-    border: 1px solid var(--color-line);
-    border-radius: 10px;
-    padding: 24px;
+    margin-top: 16px;
     margin-top: 28px;
   }
   .patient-checkin-card h2 {
@@ -600,41 +425,40 @@
     z-index: 10;
     background: var(--color-canvas);
     border-top: 1px solid var(--color-line);
-    padding: 14px 20px max(14px, env(safe-area-inset-bottom));
+    padding: 6px 16px max(6px, env(safe-area-inset-bottom));
   }
   .patient-dock-inner {
     max-width: 448px;
     margin: auto;
     display: grid;
-    gap: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 3px 8px;
+  }
+  .patient-dock button {
+    min-height: 44px;
+    padding: 5px 6px;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.2;
   }
   .patient-help {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
     color: var(--color-level-red);
-    border: 1px solid #dcb7b2;
-    background: var(--color-level-red-bg);
+    border: 1px solid var(--color-level-red);
+    font-weight: 650;
   }
   .patient-help:hover {
-    background: #f6e1de;
+    background: var(--color-level-red-bg);
   }
-  .patient-other-help {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-  }
-  .patient-other-help button {
-    border: 0;
-    background: transparent;
-    font-weight: 500;
-    font-size: 15px;
-    line-height: 1.25;
-    min-height: 44px;
-    padding: 8px;
-  }
-  .patient-other-help button:first-child {
-    grid-column: 1/-1;
-  }
-  .patient-other-help button:hover {
+  .patient-help-secondary:hover {
     background: var(--color-brand-50);
+  }
+  .patient-dock button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
   .question-progress {
     display: flex;
@@ -659,26 +483,10 @@
   .staff-identity {
     font-size: 13px;
   }
-  .demo-strip {
-    padding: 10px 24px;
-  }
   .staff-page {
     padding: 32px 24px;
   }
-  .visit-layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
-    gap: 24px;
-  }
-  .worklist-columns,
-  .review-row {
-    gap: 16px;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) 150px 16px;
-    padding-inline: 20px;
-  }
   .list-toolbar {
-    flex-wrap: wrap;
-  }
-  .summary-secondary {
     flex-wrap: wrap;
   }
 }
@@ -688,8 +496,6 @@
     padding: 16px 20px;
   }
   .staff-header nav {
-    order: 3;
-    width: 100%;
     gap: 4px;
   }
   .staff-nav-link {
@@ -697,16 +503,6 @@
     padding: 8px;
   }
   .staff-nav-link svg {
-    display: none;
-  }
-  .staff-identity {
-    margin-left: auto;
-  }
-  .demo-strip {
-    padding: 8px 20px;
-    font-size: 12px;
-  }
-  .demo-strip span:last-child {
     display: none;
   }
   .staff-page {
@@ -732,18 +528,6 @@
     width: 18px;
     height: 18px;
   }
-  .worklist-summary {
-    flex-wrap: wrap;
-    gap: 16px 24px;
-  }
-  .summary-secondary {
-    font-size: 14px;
-  }
-  .update-note {
-    margin-left: 0;
-    font-size: 14px;
-    width: 100%;
-  }
   .filter-group {
     width: 100%;
   }
@@ -765,57 +549,17 @@
     font-size: 16px;
     width: 100%;
   }
-  .worklist-columns {
-    display: none;
-  }
   .review-row {
-    display: grid;
-    grid-template-columns: 1fr 20px;
-    gap: 16px;
-    padding: 24px 20px;
+    grid-template-columns: minmax(0, 1fr) 18px;
+    gap: 6px 12px;
+    padding: 12px 14px;
   }
-  .concern-cell,
-  .review-status,
-  .review-timer {
+  .review-status {
     grid-column: 1;
-  }
-  .review-status,
-  .review-timer {
-    font-size: 15px;
-  }
-  .review-status p,
-  .review-timer p,
-  .concern-cell p,
-  .concern-cell .report-meta {
-    font-size: 15px;
-  }
-  .task-label {
-    font-size: 14px;
   }
   .row-arrow {
     grid-column: 2;
-    grid-row: 1;
-  }
-  .review-timer {
-    border-top: 1px solid var(--color-line);
-    padding-top: 12px;
-  }
-  .review-timer p {
-    margin-top: 4px;
-  }
-  .worklist-footer {
-    flex-direction: column;
-    gap: 12px;
-    font-size: 15px;
-  }
-  .visit-layout {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-  }
-  .visit-main,
-  .visit-actions {
-    width: 100%;
+    grid-row: 1 / span 2;
   }
 
   .visit-heading h1 {
@@ -826,19 +570,6 @@
   }
   .concern-panel {
     padding: 20px;
-  }
-  .task-progress {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
-  .task-progress li {
-    font-size: 15px;
-  }
-  .timers {
-    gap: 16px;
-  }
-  .timers dt {
-    font-size: 15px;
   }
   .patient-shell {
     padding-inline: 20px;
@@ -862,41 +593,8 @@
     width: 100%;
   }
 }
-.patient-help {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 52px;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.patient-other-help button {
-  border-radius: 6px;
-  cursor: pointer;
-}
-.patient-dock button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.patient-header {
-  margin-bottom: 20px;
-}
-.patient-context {
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-}
-.patient-checkin-card {
-  margin-top: 24px;
-  padding: 20px;
-}
-.patient-checkin-card p {
-  margin-bottom: 16px;
-}
-html:has(.patient-shell) {
-  scroll-padding-bottom: 240px;
+html:has(.patient-shell.has-dock) {
+  scroll-padding-bottom: calc(142px + env(safe-area-inset-bottom));
 }
 .question-progress progress::-webkit-progress-bar {
   background: var(--color-line);
@@ -912,10 +610,6 @@ html:has(.patient-shell) {
   border-radius: 4px;
 }
 @media (min-width: 761px) and (max-width: 1100px) {
-  .task-progress {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 20px;
-  }
 }
 .staff-header > a {
   display: inline-flex;
@@ -935,4 +629,14 @@ html:has(.patient-shell) {
   .worklist-footer {
     align-items: flex-start;
   }
+}
+
+@media (max-width: 450px) {
+  .staff-header { gap: 4px 8px; padding: 6px 12px; }
+  .staff-header nav { flex-wrap: wrap; }
+  .staff-identity { gap: 2px; }
+  .staff-page { padding: 16px 12px; }
+  .page-heading { margin-bottom: 12px; }
+  .filter-group { flex-wrap: wrap; }
+  .filter-group button { white-space: normal; }
 }

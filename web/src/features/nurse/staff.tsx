@@ -20,7 +20,8 @@ const Ctx = createContext<StaffContext | null>(null)
 
 const readRole = (): StaffRole | null => {
   try {
-    return localStorage.getItem(KEY) as StaffRole | null
+    const role = sessionStorage.getItem(KEY)
+    return role === 'physician' || role === 'triage_nurse' ? role : null
   } catch {
     return null
   }
@@ -30,7 +31,7 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<StaffRole | null>(readRole)
   const signIn = useCallback((r: StaffRole) => {
     try {
-      localStorage.setItem(KEY, r)
+      sessionStorage.setItem(KEY, r)
     } catch {
       /* in memory only */
     }
@@ -38,7 +39,7 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   }, [])
   const signOut = useCallback(() => {
     try {
-      localStorage.removeItem(KEY)
+      sessionStorage.removeItem(KEY)
     } catch {
       /* ignore */
     }
@@ -55,8 +56,15 @@ export function useStaff(): StaffContext {
 }
 
 const link = ({ isActive }: { isActive: boolean }) => cn('staff-nav-link', isActive && 'is-active')
+export const staffHome = (role: StaffRole) => role === 'physician' ? '/staff/physician' : '/staff/triage'
 
-/** Demo navigation only; the backend must authorize every staff action. */
+export function RequireStaffRole({ role: allowed }: { role: StaffRole }) {
+  const { role } = useStaff()
+  if (!role) return <Navigate to="/staff/sign-in" replace />
+  return role === allowed ? <Outlet /> : <Navigate to={staffHome(role)} replace />
+}
+
+/** This controls demo navigation. The service must authorize staff requests. */
 export function StaffLayout() {
   const { t } = useTranslation()
   const { role, signOut } = useStaff()
@@ -64,52 +72,28 @@ export function StaffLayout() {
   if (!role) return <Navigate to="/staff/sign-in" replace />
   return (
     <div className="staff-shell">
-      <a href="#main-content" className="skip-link">
-        Skip to content
-      </a>
+      <a href="#main-content" className="skip-link">{t('nav.skip')}</a>
       <header className="staff-header no-print">
-        <LinkBrand />
+        <NavLink to={staffHome(role)} aria-label={t('nav.home')}><Brand /></NavLink>
         <nav aria-label={t('nav.label')}>
-          <NavLink to="/staff/physician" className={link}>
-            <ClipboardList size={18} aria-hidden />
-            Review worklist
-          </NavLink>
-          <NavLink to="/staff/triage" className={link}>
-            <LayoutList size={18} aria-hidden />
-            {t('nav.triage')}
-          </NavLink>
-          <NavLink to="/staff/visits/new" className={link}>
-            <Plus size={18} aria-hidden />
-            {t('nav.enrol')}
-          </NavLink>
+          {role === 'physician' ? (
+            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
+          ) : (
+            <>
+              <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>
+              <NavLink to="/staff/visits/new" className={link}><Plus size={18} aria-hidden />{t('nav.enrol')}</NavLink>
+            </>
+          )}
         </nav>
         <div className="staff-identity">
-          <span>{t(`role.${role}`)}</span>
-          <Button
-            variant="ghost"
-            aria-label="Change demo role"
-            onClick={() => {
-              signOut()
-              navigate('/staff/sign-in')
-            }}
-          >
-            <LogOut size={18} aria-hidden />
-          </Button>
+          <span>{t('nav.synthetic')}</span>
+          <Button variant="ghost" aria-label={t('nav.changeRole')} onClick={() => {
+            signOut()
+            navigate('/staff/sign-in')
+          }}><LogOut size={18} aria-hidden /></Button>
         </div>
       </header>
-      <section aria-label="Demo context" className="demo-strip">
-        <span>Synthetic demo</span>
-        <span>Emergency department · Waiting-room follow-up</span>
-        <span>Demo role · not staff authentication</span>
-      </section>
       <Outlet />
     </div>
-  )
-}
-function LinkBrand() {
-  return (
-    <NavLink to="/staff/physician" aria-label="Recheck review worklist">
-      <Brand />
-    </NavLink>
   )
 }

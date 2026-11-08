@@ -1,4 +1,5 @@
 import { CircleAlert } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { alwaysVisible, text } from '@/api/bank'
 import type { ConcernCode, Role } from '@/api/types'
 
@@ -15,27 +16,26 @@ interface Props {
  * wait or care" is non-clinical and goes to the triage nurse, not a physician.
  */
 export function HelpBar({ role, onConcern, onLeaving, disabled }: Props) {
+  const { t } = useTranslation()
   const buttons = alwaysVisible()
-  const help = buttons.find((b) => b.concern === 'help_now')
-  const rest = buttons.filter((b) => b.concern !== 'help_now')
-  const press = (b: (typeof buttons)[number]) => (b.concern ? onConcern(b.concern as ConcernCode) : onLeaving())
-
   return (
-    <section aria-label="Contact staff" className="patient-dock">
+    <section aria-label={t('patient.contactStaff')} className="patient-dock">
       <div className="patient-dock-inner">
-        {help && (
-          <button type="button" className="patient-help" disabled={disabled} onClick={() => press(help)}>
-            <CircleAlert size={20} aria-hidden />
-            {text(help.linkId, role)}
-          </button>
-        )}
-        <div className="patient-other-help">
-          {rest.map((b) => (
-            <button type="button" key={b.linkId} disabled={disabled} onClick={() => press(b)}>
-              {text(b.linkId, role)}
+        {buttons.map((button) => {
+          const urgent = button.concern === 'help_now' || button.concern === 'worried'
+          return (
+            <button
+              type="button"
+              key={button.linkId}
+              className={button.concern === 'help_now' ? 'patient-help' : 'patient-help-secondary'}
+              disabled={!urgent && disabled}
+              onClick={() => button.concern ? onConcern(button.concern as ConcernCode) : onLeaving()}
+            >
+              {button.concern === 'help_now' && <CircleAlert size={18} aria-hidden />}
+              {text(button.linkId, role)}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
     </section>
   )

@@ -1,0 +1,19 @@
+{
+  "Calgary": {
+    "Emergency": [
+      {"Name": "Foothills Medical Centre", "Category": "Emergency", "WaitTime": "4 hr 47 min",
+       "TimesUnavailable": "False", "SiteId": "c81e728d9d4c2f636f067f89cc14862c", "SplitFacility": null},
+      {"Name": "Peter Lougheed Centre", "Category": "Emergency", "WaitTime": "",
+       "TimesUnavailable": "True", "SiteId": "eccbc87e4b5ce2fe28308fd9f2a7baf3", "SplitFacility": null},
+      {"Name": "South Health Campus Children[;]South Health Campus", "Category": "Emergency Departments[;]Emergency",
+       "WaitTime": "3 hr 38 min[;]5 hr 4 min", "TimesUnavailable": "False[;]False", "SiteId": null,
+       "SplitFacility": "Children's emergency[;]Adult emergency"},
+      "not a record"
+    ],
+    "Urgent": [
+      {"Name": "Airdrie Community Health Centre", "Category": "Urgent Care", "WaitTime": "45 min",
+       "TimesUnavailable": "False", "SiteId": "8e296a067a37563370ded05f5a3bf3ec", "SplitFacility": null}
+    ]
+  },
+  "Edmonton": {"Emergency": [], "Urgent": []}
+}

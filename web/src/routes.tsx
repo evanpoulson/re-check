@@ -2,7 +2,7 @@ import { createBrowserRouter, createMemoryRouter, Navigate, Outlet, type RouteOb
 import { Physician } from '@/features/nurse/Physician'
 import { Enrol } from '@/features/nurse/Enrol'
 import { SignIn } from '@/features/nurse/SignIn'
-import { StaffLayout, StaffProvider } from '@/features/nurse/staff'
+import { RequireStaffRole, StaffLayout, StaffProvider } from '@/features/nurse/staff'
 import { Triage } from '@/features/nurse/Triage'
 import { VisitDetailPage } from '@/features/nurse/VisitDetailPage'
 import { CheckIn } from '@/features/patient/CheckIn'
@@ -23,9 +23,13 @@ export const routes: RouteObject[] = [
       {
         element: <StaffLayout />,
         children: [
-          { path: '/staff/physician', element: <Physician /> },
-          { path: '/staff/triage', element: <Triage /> },
-          { path: '/staff/visits/new', element: <Enrol /> },
+          { element: <RequireStaffRole role="physician" />, children: [
+            { path: '/staff/physician', element: <Physician /> },
+          ] },
+          { element: <RequireStaffRole role="triage_nurse" />, children: [
+            { path: '/staff/triage', element: <Triage /> },
+            { path: '/staff/visits/new', element: <Enrol /> },
+          ] },
           { path: '/staff/visits/:id', element: <VisitDetailPage /> },
         ],
       },
