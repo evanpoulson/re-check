@@ -204,7 +204,9 @@
     "none": "No pain answers yet"
   },
   "qr": {
-    "label": "QR code for {{title}}"
+    "label": "QR code for {{title}}",
+    "copy": "Copy link",
+    "copied": "Copied"
   },
   "timeline": {
     "empty": "Nothing recorded yet.",
@@ -224,7 +226,14 @@
   "triage": {
     "live": "Live, refreshes every 5 seconds",
     "reconnecting": "Offline, will reconnect",
-    "counts": "Flags by level",
+    "counts": "Filter by flag level",
+    "filters": "Filters",
+    "tableHeading": "Waiting patients",
+    "showing": "Showing {{shown}} of {{total}} patients",
+    "total_one": "{{count}} patient",
+    "total_other": "{{count}} patients",
+    "sortedBy": "Sorted by {{column}}. Place still shows queue order.",
+    "sortReset": "Back to queue order",
     "needsReview": "Needs review",
     "ctas": "CTAS",
     "complaint": "Complaint",
@@ -243,9 +252,9 @@
       "flags": "Flags",
       "lastCheckin": "Last check-in",
       "nextCheckin": "Next check-in",
-      "reassess": "Staff reassessment",
-      "pain": "Pain trend",
-      "place": "Place in line"
+      "reassess": "Reassess",
+      "pain": "Pain",
+      "place": "Place"
     },
     "noApp": "No app"
   },
@@ -253,7 +262,9 @@
     "ctas": "CTAS level",
     "ctas1": "CTAS 1 is never in the waiting room.",
     "complaint": "Presenting complaint",
-    "cedis": "CEDIS code (optional, 3 digits)",
+    "cedis": "CEDIS code (optional)",
+    "cedisList": "CEDIS suggestions",
+    "cedisNoMatch": "No CEDIS code matches. Type a 3-digit code or try another word.",
     "language": "Patient language",
     "channel": "How will they check in?",
     "pagerNo": "Pager number",
@@ -265,10 +276,19 @@
       "pagerRequired": "Enter a pager number of 1 to 6 digits."
     },
     "doneTitle": "Visit created",
+    "doneRef": "Patient {{ref}}",
+    "dueAt": "{{time}} ({{rel}})",
+    "firstPrompt": "First check-in prompt",
+    "staffReassess": "Staff reassessment due",
+    "openVisit": "Open visit",
+    "save": "Save QR",
+    "errorSummary": "There is a problem",
+    "errorTitle": "Error: {{title}}",
+    "errorPrefix": "Error:",
     "pagerFallback": "Pager {{pager}} is bound to this visit; this QR is the phone fallback.",
     "print": "Print",
     "another": "Enrol another patient",
-    "cedisHelp": "Optional. Type a code or pick one from the list.",
+    "cedisHelp": "Type a 3-digit code or part of the complaint name, then choose from the list.",
     "groupLocked": "Set by the CEDIS code.",
     "exclusion": "Patient app",
     "appOffered": "App is offered",
@@ -724,6 +744,7 @@
     }
   },
   "siteSettings": {
+    "disclosure": "Site settings",
     "title": "Patient screens",
     "showLevel": "Show patients their triage level",
     "showLevelHelp": "Applies to every patient at this site. When off, patients see only How triage works. Target times are never shown.",
