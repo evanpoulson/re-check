@@ -14,15 +14,33 @@ from typing import Literal
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from psycopg import errors
 from psycopg_pool import AsyncConnectionPool
 
 from .contract.common import OutputModel
 from .db import make_pool
+from .routes import ROUTERS
 from .settings import database_url
 
 log = logging.getLogger(__name__)
 
 HEALTH_TIMEOUT_SECONDS = 3.0
+
+
+# Database constraints that a normal request can hit, as messages for the client.
+CONSTRAINT_MESSAGES = {
+    "visit_pager_waiting_uq": "that pager is already given to another waiting patient",
+    "submission_pkey": "this submission is already being processed; retry with the same submission_id",
+}
+
+
+async def integrity_error(request: Request, exc: errors.IntegrityError) -> JSONResponse:
+    """409 for a known constraint; anything else is a bug, so log it and keep details off the wire."""
+    constraint = exc.diag.constraint_name
+    if constraint in CONSTRAINT_MESSAGES:
+        return JSONResponse(status_code=409, content={"detail": CONSTRAINT_MESSAGES[constraint]})
+    log.error("unexpected integrity error on %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(status_code=409, content={"detail": "the request conflicts with the visit's current state"})
 
 
 class Health(OutputModel):
@@ -44,6 +62,9 @@ def create_app(pool: AsyncConnectionPool | None = None) -> FastAPI:
             await app.state.pool.close()
 
     app = FastAPI(title="Recheck API", version="0.1.0", lifespan=lifespan)
+    app.add_exception_handler(errors.IntegrityError, integrity_error)
+    for router in ROUTERS:
+        app.include_router(router)
 
     @app.get(
         "/api/health",

@@ -80,15 +80,21 @@ uv run python -m recheck.wait_times.poller          # every 5 minutes; run as it
 
 The project pins Python 3.12 in `.python-version`; `uv` downloads it if needed.
 
-Put the database URL in the repository's root `.env` (git-ignored). Connect as `recheck_api`, never `tsdbadmin`:
+Put settings in the repository's root `.env` (git-ignored). Connect as `recheck_api`, never `tsdbadmin`:
 
 ```sh
 RECHECK_DATABASE_URL=postgres://recheck_api:PASSWORD@HOST:PORT/tsdb?sslmode=require
+RECHECK_SECRET_KEY=...                     # 32+ chars: encrypts QR tokens, signs the staff cookie. One value per database.
+RECHECK_PUBLIC_URL=http://localhost:5173   # optional: web app base for QR links ({url}/v/{token})
+RECHECK_SITE_ID=foothills-demo             # optional: the demo site staff act for
+RECHECK_COOKIE_SECURE=false                # optional: true when served over HTTPS
 ```
+
+Generate a secret with `uv run python -c "import secrets; print(secrets.token_urlsafe(32))"`.
 
 ```sh
 uv sync
-uv run pytest                 # all tests; live database tests skip without RECHECK_DATABASE_URL
+uv run pytest                 # all tests; live tests skip without RECHECK_DATABASE_URL and always roll back
 uv run pytest -m "not live"   # never touch the database
 uv run uvicorn recheck.main:app --reload --loop asyncio:SelectorEventLoop
 ```
@@ -98,3 +104,20 @@ Then open `http://127.0.0.1:8000/api/health` and `http://127.0.0.1:8000/docs`. `
 ## Database access
 
 `recheck/db.py` holds one async pool, opened when the app starts. Every write uses `write_tx(pool, actor)`, which opens a transaction and sets `app.actor` for it; the schema rejects writes without it.
+
+Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside one transaction that is rolled back, because the demo data is append-only and can't be cleaned up.
+
+## Routes
+
+| Method and path | Who | Body → response |
+| --- | --- | --- |
+| `GET /api/health` | anyone | `Health` (503 when the database is down) |
+| `POST /api/staff/session` | demo role picker | `{role}` → signed HttpOnly `recheck_staff` cookie |
+| `GET` / `DELETE /api/staff/session` | staff | current role and site / sign out |
+| `POST /api/visits` | triage or charge nurse | `VisitCreate` → `VisitEnrolled` (201; 200 on retry) |
+| `GET /api/visits/{id}/link` | triage or charge nurse | `VisitLink`; logs `visit.qr_shown` |
+| `POST /api/visits/{id}/sign-out` | triage or charge nurse | `StaffSignOut` → 204 |
+| `POST /api/session` | QR holder | `TokenExchange` → `SessionInfo` + HttpOnly `recheck_session` cookie; 409 `SignInConflict`, 404 unknown QR, 410 closed visit |
+| `POST /api/session/sign-out` | signed-in device | `SignOut` → 204, clears the cookie |
+
+Staff sign-in is a demo stand-in (`recheck/auth.py`): the role is the identity and the audit actor is `demo|<role>`. Real sign-in replaces `current_staff` without changing routes. Seeded visits store a placeholder ciphertext, so their QR can't be re-shown (409).
