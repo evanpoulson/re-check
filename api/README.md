@@ -119,6 +119,7 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/sign-out` | triage or charge nurse | `StaffSignOut` → 204 |
 | `POST /api/session` | QR holder | `TokenExchange` → `SessionInfo` + HttpOnly `recheck_session` cookie; 409 `SignInConflict`, 404 unknown QR, 410 closed visit |
 | `POST /api/session/sign-out` | signed-in device | `SignOut` → 204, clears the cookie |
+| `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only; reused until answered), wait estimate or null, minutes waited |
 | `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
 
 ## Rules and tasks
