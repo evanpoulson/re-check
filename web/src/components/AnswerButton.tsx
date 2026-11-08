@@ -41,7 +41,7 @@ export function AnswerButton({
       )}
       {...props}
     >
-      <span>{children}</span>
+      <span className="min-w-0 [overflow-wrap:anywhere]">{children}</span>
       {mark ? (
         selected ? (
           <span aria-hidden className={cn('flex size-7 shrink-0 items-center justify-center bg-brand-500 text-white', shape)}>

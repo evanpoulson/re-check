@@ -713,8 +713,9 @@
     justify-content: center;
     gap: var(--pain-gap);
   }
+  /* Never below a 44px target: at large text the rows hold fewer numbers instead. */
   .pain-scale > * {
-    flex: 0 0 calc((100% - 5 * var(--pain-gap)) / 6);
+    flex: 0 0 max(44px, calc((100% - 5 * var(--pain-gap)) / 6));
   }
   .pain-scale-labels {
     display: flex;
@@ -858,8 +859,9 @@
   .filter-group {
     width: 100%;
   }
+  /* Each filter takes the room its label needs, so "To acknowledge 2" stays on one line. */
   .filter-group button {
-    flex: 1;
+    flex: 1 1 auto;
     font-size: var(--text-note);
     padding: 6px 7px;
   }
@@ -899,7 +901,6 @@
   .staff-page { padding-block: 16px; }
   .page-heading { margin-bottom: 12px; }
   .filter-group { flex-wrap: wrap; }
-  .filter-group button { white-space: normal; }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -922,6 +923,19 @@ html:has(.patient-shell) {
 }
 html:has(.patient-shell.has-dock) {
   scroll-padding-bottom: calc(var(--dock-h, 142px) + 16px);
+}
+/* The question's Next button stays in view above the dock (PT-5). A grey strip behind it
+   hides answers scrolling underneath; focus scrolls clear of both. */
+.patient-shell.has-dock .flow-next {
+  position: sticky;
+  bottom: var(--dock-h, 142px);
+  z-index: 5;
+  margin-inline: -0.25rem;
+  padding: 0.5rem 0.25rem;
+  background: var(--color-canvas);
+}
+html:has(.patient-shell.has-dock .flow-next) {
+  scroll-padding-bottom: calc(var(--dock-h, 142px) + 5rem);
 }
 /* Progress is status, not an action, so it is ink rather than blue. */
 .question-progress progress::-webkit-progress-bar {
