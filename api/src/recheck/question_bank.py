@@ -114,9 +114,9 @@ class QuestionBank:
             return results[0]
         return any(results) if item["enableBehavior"] == "any" else all(results)
 
-    def base_items(self, reporter: Reporter) -> list[str]:
-        """Base check-in questions for whoever is answering. Pain and the circle check are patient only."""
-        return [k for k in self.section("base") if self.is_enabled(k, {"answerer": reporter.value})]
+    def base_items(self, role: Reporter) -> list[str]:
+        """Base check-in questions for whoever signed in. Pain and the circle check are patient only."""
+        return [k for k in self.section("base") if self.is_enabled(k, {"session_role": role.value})]
 
     def follow_ups(
         self,
