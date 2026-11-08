@@ -26,7 +26,6 @@
   "nav": {
     "label": "Staff",
     "triage": "Triage board",
-    "enrol": "New visit",
     "signOut": "Sign out",
     "skip": "Skip to content",
     "home": "Recheck staff home",
@@ -228,7 +227,6 @@
     "signedOut": "Signed out at {{time}}: {{reason}}"
   },
   "triage": {
-    "live": "Live, refreshes every 5 seconds",
     "reconnecting": "Offline, will reconnect",
     "counts": "Filter by flag level",
     "filters": "Filters",
@@ -238,10 +236,6 @@
     "total_other": "{{count}} patients",
     "sortedBy": "Sorted by {{column}}. Place still shows queue order.",
     "sortReset": "Back to queue order",
-    "needsReview": "Needs review",
-    "ctas": "CTAS",
-    "complaint": "Complaint",
-    "all": "All",
     "order": "Place in line is queue order (CTAS, then arrival). Flags never move a patient.",
     "caption": "Waiting patients in queue order",
     "empty": "No waiting patients match.",
@@ -260,7 +254,66 @@
       "pain": "Pain",
       "place": "Place"
     },
-    "noApp": "No app"
+    "noApp": "No app",
+    "levelInfo": "About {{level}}",
+    "levelCount": "Patients with an open task at this level.",
+    "levelHelp": {
+      "red": {
+        "title": "Urgent review",
+        "what": "A new warning sign, “I need help now”, or feeling much worse.",
+        "then": "Acknowledge within 2 minutes, or it also goes to the charge nurse."
+      },
+      "amber": {
+        "title": "Review needed",
+        "what": "Feeling worse, “I’m worried”, or flagged by staff.",
+        "then": "Acknowledge within 10 minutes."
+      },
+      "silent": {
+        "title": "Missed check-in",
+        "what": "No answer to a check-in for 5 minutes.",
+        "then": "Acknowledge within 10 minutes."
+      },
+      "leave_risk": {
+        "title": "May leave",
+        "what": "The patient or a companion said they’re leaving.",
+        "then": "Acknowledge within 10 minutes."
+      },
+      "overdue": {
+        "title": "Non-urgent check",
+        "what": "A question for the desk, or a circle check missed or wrong.",
+        "then": "Acknowledge within 10 minutes."
+      }
+    },
+    "levelFilter": "Show only {{level}}",
+    "newVisit": "New visit",
+    "filter": {
+      "menu": "Filter by {{column}}",
+      "describe": "Opens filter choices.",
+      "describeActive_one": "Filtered: {{count}} choice.",
+      "describeActive_other": "Filtered: {{count}} choices.",
+      "active": "Active filters",
+      "chip": "{{column}}: {{value}}",
+      "remove": "Remove filter {{label}}",
+      "clear": "Clear filters",
+      "showAll": "Show all",
+      "level": "Level",
+      "ctasValue": "CTAS {{n}}"
+    },
+    "option": {
+      "ref": {
+        "patient": "Patient signed in",
+        "companion": "Companion signed in",
+        "none": "No one signed in",
+        "no_app": "App not offered"
+      },
+      "lastCheckin": {
+        "patient": "From the patient",
+        "companion": "From a companion",
+        "staff": "From staff",
+        "none": "No check-in yet"
+      },
+      "flagsNone": "No flags"
+    }
   },
   "enrol": {
     "ctas": "CTAS level",
@@ -303,7 +356,8 @@
     "excludedHelp": "Staff watch this patient directly. The staff reassessment timer is running and no patient prompts are sent.",
     "qrTitle": "Check-in code",
     "qrHint": "The patient or a companion scans this and says who they are. One phone at a time.",
-    "showAgain": "The code works while the patient is waiting. You can show it again from the visit."
+    "showAgain": "The code works while the patient is waiting. You can show it again from the visit.",
+    "close": "Close"
   },
   "visit": {
     "back": "Back to triage board",
