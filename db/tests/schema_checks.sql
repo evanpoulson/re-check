@@ -439,9 +439,27 @@ SELECT pg_temp.expect_error(
     'permission denied');
 SELECT pg_temp.expect_error($q$UPDATE wait_site SET ahs_name = 'X'$q$, 'permission denied');
 
+-- Site settings. The triage nurse turns the patient's triage level on and
+-- off through the API; each change is audited, and the row is never deleted.
+INSERT INTO site_setting (site_id, show_triage_level) VALUES ('setting-check', true);
+UPDATE site_setting SET show_triage_level = false, updated_at = now() WHERE site_id = 'setting-check';
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM audit_log WHERE event LIKE 'site_setting.%' AND payload ->> 'site_id' = 'setting-check') <> 2 THEN
+        RAISE EXCEPTION 'site_setting changes were not audited';
+    END IF;
+    IF (SELECT show_triage_level FROM site_setting WHERE site_id = 'setting-check') THEN
+        RAISE EXCEPTION 'site_setting update did not apply';
+    END IF;
+END
+$$;
+SELECT pg_temp.expect_error($q$DELETE FROM site_setting$q$, 'permission denied');
+
 RESET ROLE;
 
 -- Append-only triggers hold even for the table owner.
+SELECT pg_temp.expect_error($q$DELETE FROM site_setting$q$, 'append-only');
+SELECT pg_temp.expect_error($q$TRUNCATE site_setting$q$, 'append-only');
 SELECT pg_temp.expect_error($q$UPDATE wait_snapshot SET minutes = 1$q$, 'append-only');
 SELECT pg_temp.expect_error($q$DELETE FROM wait_site$q$, 'append-only');
 SELECT pg_temp.expect_error($q$TRUNCATE wait_snapshot$q$, 'append-only');

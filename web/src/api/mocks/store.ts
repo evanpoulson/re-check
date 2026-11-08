@@ -28,6 +28,8 @@ import type {
   SessionInfo,
   SessionRecord,
   SignInConflict,
+  SiteSettings,
+  SiteSettingsUpdate,
   StaffRef,
   Task,
   TaskEvent,
@@ -82,6 +84,8 @@ interface Rec {
 interface State {
   visits: Rec[]
   submissions: Record<string, { fingerprint: string; receipt: ReportReceipt }>
+  /** Absent until a nurse saves settings, like a site with no site_setting row. */
+  settings?: SiteSettings
 }
 /** This device's sign-in, standing in for the HttpOnly session cookie. */
 interface Session {
@@ -554,6 +558,17 @@ export function worklist(): Worklist {
   return { generated_at: iso(now), rows }
 }
 
+export function siteSettings(): SiteSettings {
+  return load().settings ?? { show_triage_level: false, updated_at: null }
+}
+
+export function updateSiteSettings(body: SiteSettingsUpdate): SiteSettings {
+  const s = load()
+  s.settings = { show_triage_level: body.show_triage_level, updated_at: iso(Date.now()) }
+  save(s)
+  return s.settings
+}
+
 export function triageBoard(): TriageBoard {
   const s = load()
   const now = Date.now()
@@ -788,6 +803,8 @@ export function patientHome(): PatientHome {
     // Patient only, never for a companion.
     attention_prompt: role === 'patient' ? currentPrompt(r, now_).prompt : null,
     message: 'none',
+    // The level leaves the server only when the site shows it.
+    triage_level: s.settings?.show_triage_level ? r.visit.ctas : null,
   }
   // currentPrompt stores a new prompt on the visit, so keep it for scoring.
   save(s)

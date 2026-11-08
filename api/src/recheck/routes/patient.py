@@ -22,6 +22,7 @@ from ..contract.codes import ComplaintGroup, ItemInputType, PatientMessage, Repo
 from ..contract.patient import AttentionPrompt, AttentionStep, PatientHome, QuestionItem, QuestionOption
 from ..db import write_tx
 from ..question_bank import QuestionBank, default_bank, ext_value
+from .settings import site_settings
 from ..wait_times.estimate import Snapshot, current_estimate, waited_minutes
 
 router = APIRouter(prefix="/api/patient", tags=["patient home"])
@@ -132,11 +133,13 @@ async def patient_home(
     # A write transaction because a new circle prompt may be stored (and audited).
     async with write_tx(pool, session.actor) as conn:
         cur = await conn.execute(
-            "SELECT site_id, language, triaged_at, next_prompt_due_at, complaint_group, cedis_code"
+            "SELECT site_id, language, triaged_at, next_prompt_due_at, complaint_group, cedis_code, ctas"
             " FROM visit WHERE id = %s",
             [session.visit_id],
         )
-        site_id, language, triaged_at, next_due, complaint_group, cedis_code = await cur.fetchone()
+        site_id, language, triaged_at, next_due, complaint_group, cedis_code, ctas = await cur.fetchone()
+        # The level leaves the server only when the site has turned it on.
+        show_level = (await site_settings(conn, site_id)).show_triage_level
 
         now, later = bank.follow_ups(
             ComplaintGroup(complaint_group), cedis_code, await answers_so_far(conn, session.visit_id)
@@ -156,4 +159,5 @@ async def patient_home(
         items=items,
         attention_prompt=prompt,
         message=PatientMessage.NONE,
+        triage_level=ctas if show_level else None,
     )

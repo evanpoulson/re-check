@@ -39,10 +39,18 @@ describe('translations', () => {
       'signedIn.short': ['patient', 'companion', 'none'],
       'exchange.role': ['patient', 'companion'],
       'exchange.signedInAs': ['patient', 'companion'],
+      'triageInfo.level': ['2', '3', '4', '5'].flatMap((n) => [`${n}.name`, `${n}.body`]),
     }
     const missing = Object.entries(groups).flatMap(([g, codes]) =>
       codes.filter((c) => !has(`${g}.${c}`)).map((c) => `${g}.${c}`),
     )
     expect(missing).toEqual([])
+  })
+
+  it('the triage explainer never gives a target time', () => {
+    const strings = (o: unknown): string[] =>
+      typeof o === 'string' ? [o] : Object.values(o as Record<string, unknown>).flatMap(strings)
+    const timed = strings(en.triageInfo).filter((s) => /\d+\s*(min|minute|hour|h)\b|within|minutes|hours/i.test(s))
+    expect(timed).toEqual([])
   })
 })

@@ -209,6 +209,8 @@ SessionRecord?: SessionRecord
 ShiftCount?: ShiftCount
 SignInConflict?: SignInConflict
 SignOut?: SignOut
+SiteSettings?: SiteSettings
+SiteSettingsUpdate?: SiteSettingsUpdate
 StaffRef?: StaffRef
 StaffRole?: StaffRole
 StaffSignOut?: StaffSignOut
@@ -778,6 +780,10 @@ next_checkin_due_at: (string | null)
 questionnaire_version: string
 role: ("patient" | "companion")
 /**
+ * The level set at triage, sent only when the site shows it (SiteSettings.show_triage_level). The screen explains it in plain words and never shows a target time.
+ */
+triage_level?: (number | null)
+/**
  * Null when no fresh estimate exists; the screen shows "Estimate unavailable".
  */
 wait_estimate: (WaitEstimate | null)
@@ -944,6 +950,33 @@ export interface SignOut {
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
  */
 submission_id: string
+}
+/**
+ * Switches for the whole site, changed by the triage or charge nurse.
+ * 
+ * A site that has never saved settings gets the defaults.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "SiteSettings".
+ */
+export interface SiteSettings {
+/**
+ * When true, patients and companions see the level set at triage, in plain words. Off by default: no public AHS policy says whether staff share it (research brief §4a). Target times are never shown.
+ */
+show_triage_level: boolean
+/**
+ * Last change, or null while the site uses the defaults.
+ */
+updated_at: (string | null)
+}
+/**
+ * Replace the site's settings. Sending the same body again changes nothing, so retries are safe.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "SiteSettingsUpdate".
+ */
+export interface SiteSettingsUpdate {
+show_triage_level: boolean
 }
 /**
  * Staff sign out whichever device is signed in to a visit (for example a lost phone).
