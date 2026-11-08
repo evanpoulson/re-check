@@ -36,7 +36,7 @@
     "continue": "Continue",
     "notInBuild": "Not part of this build",
     "auth0": "Sign in",
-    "auth0Hint": "Use Google or a Recheck demo account.",
+    "auth0Hint": "Use Google, GitHub or a Recheck demo account.",
     "demoHeading": "Or open a demo role without an account",
     "open": {
       "triage_nurse": "Open triage board",
