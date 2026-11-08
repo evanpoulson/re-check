@@ -151,7 +151,11 @@ describe('triage nurse: enrolment and QR', () => {
     renderApp('/staff/visits/new')
 
     await user.click(await screen.findByRole('button', { name: 'Create visit and QR code' }))
-    expect(await screen.findByText('Choose a CTAS level from 2 to 5.')).toBeInTheDocument()
+    // GOV.UK error summary at the top, linked to the field, plus the inline error.
+    expect(await screen.findByRole('heading', { name: 'There is a problem' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Choose a CTAS level from 2 to 5.' })).toHaveAttribute('href', '#ctas-2')
+    expect(screen.getAllByText('Choose a CTAS level from 2 to 5.')).toHaveLength(2)
+    expect(document.title).toBe('Error: New visit – Recheck')
 
     await user.click(screen.getByRole('radio', { name: '3' }))
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
@@ -243,6 +247,22 @@ describe('triage nurse: enrolment and QR', () => {
     expect(screen.getByLabelText('Presenting complaint')).toHaveValue('confused_drowsy')
     expect(screen.getByLabelText('Presenting complaint')).toBeDisabled()
     expect(screen.getByText('Set by the CEDIS code.')).toBeInTheDocument()
+  })
+
+  it('the CEDIS combobox searches by name and picks with the keyboard', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/visits/new')
+    const box = await screen.findByRole('combobox', { name: /CEDIS code/ })
+    await user.type(box, 'chest pain (card')
+    expect(box).toHaveAttribute('aria-expanded', 'true')
+    await user.keyboard('{ArrowDown}')
+    expect(screen.getByRole('option', { name: /Chest pain \(cardiac features\)/ })).toHaveAttribute('aria-selected', 'true')
+    await user.keyboard('{Enter}')
+    expect(box).toHaveValue('003')
+    expect(box).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByLabelText('Presenting complaint')).toHaveValue('chest_back_pain')
+    expect(screen.queryByRole('heading', { name: 'Visit created' })).not.toBeInTheDocument()
   })
 
   it('an excluded complaint pre-selects the exclusion, hides the channel and issues no QR', async () => {

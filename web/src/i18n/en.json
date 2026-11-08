@@ -202,7 +202,9 @@
     "none": "No pain answers yet"
   },
   "qr": {
-    "label": "QR code for {{title}}"
+    "label": "QR code for {{title}}",
+    "copy": "Copy link",
+    "copied": "Copied"
   },
   "timeline": {
     "empty": "Nothing recorded yet.",
@@ -258,7 +260,9 @@
     "ctas": "CTAS level",
     "ctas1": "CTAS 1 is never in the waiting room.",
     "complaint": "Presenting complaint",
-    "cedis": "CEDIS code (optional, 3 digits)",
+    "cedis": "CEDIS code (optional)",
+    "cedisList": "CEDIS suggestions",
+    "cedisNoMatch": "No CEDIS code matches. Type a 3-digit code or try another word.",
     "language": "Patient language",
     "channel": "How will they check in?",
     "pagerNo": "Pager number",
@@ -270,10 +274,19 @@
       "pagerRequired": "Enter a pager number of 1 to 6 digits."
     },
     "doneTitle": "Visit created",
+    "doneRef": "Patient {{ref}}",
+    "dueAt": "{{time}} ({{rel}})",
+    "firstPrompt": "First check-in prompt",
+    "staffReassess": "Staff reassessment due",
+    "openVisit": "Open visit",
+    "save": "Save QR",
+    "errorSummary": "There is a problem",
+    "errorTitle": "Error: {{title}}",
+    "errorPrefix": "Error:",
     "pagerFallback": "Pager {{pager}} is bound to this visit; this QR is the phone fallback.",
     "print": "Print",
     "another": "Enrol another patient",
-    "cedisHelp": "Optional. Type a code or pick one from the list.",
+    "cedisHelp": "Type a 3-digit code or part of the complaint name, then choose from the list.",
     "groupLocked": "Set by the CEDIS code.",
     "exclusion": "Patient app",
     "appOffered": "App is offered",
