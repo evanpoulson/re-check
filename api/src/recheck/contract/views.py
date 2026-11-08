@@ -7,7 +7,7 @@ from uuid import UUID
 
 from pydantic import Field
 
-from .codes import ComplaintGroup, Overall, Reporter, Channel, TaskLevel
+from .codes import ComplaintGroup, FeelingChange, FeelingNow, Reporter, Channel, TaskLevel
 from .common import Ctas, OutputModel, Timestamp
 from .reports import PatientReport
 from .staff import FlagRecord, VitalsRecord
@@ -31,7 +31,8 @@ class TrendPoint(OutputModel):
 
     at: Timestamp
     pain: int | None
-    overall: Overall | None
+    feeling_now: FeelingNow | None
+    feeling_change: FeelingChange | None
 
 
 class LastReport(OutputModel):

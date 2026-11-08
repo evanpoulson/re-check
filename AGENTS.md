@@ -18,7 +18,7 @@ Choose staff sign-in and live dashboard delivery separately from the database. K
 ## Build scope
 
 1. Enrol a synthetic visit and issue a visit-specific QR link. Exchange its single-use token for a visit session. The patient's browser is the entry point, with no install or account.
-2. Start with a short check-in and branch into chest or back pain, new neurological changes, or head injury. Select follow-ups from the presenting complaint and new findings. Let patients and companions report a concern at any time.
+2. Start with a short check-in based on the Martha's Rule wellness question, and branch into chest or back pain, new neurological changes, head injury, or confused and drowsy presentations. Select follow-ups from the CEDIS presenting complaint and new findings, using the fixed question bank in `question-bank/`. Let patients and companions report a concern at any time. Don't offer the app to children, pregnancy over 20 weeks, self-harm or violence presentations, or major trauma; keep them on the staff list.
 3. Show changes and missed checks on the staff worklist. Route urgent concerns to the on-duty triage liaison physician or configured backup. Give the triage nurse a quiet overview and the charge nurse an escalation and handover view.
 4. Demo the full loop first: QR report → staff alert → acknowledgement → assessment or backup escalation. Use synthetic cases for worsening chest pain, a companion reporting sudden speech changes, and an unanswered head-injury check. Aim for under five seconds from online report to dashboard. Add pager, voice, and live wait estimates after the core loop works.
 
