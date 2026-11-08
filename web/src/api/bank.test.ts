@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alwaysVisible, allowUnsure, attentionParams, bankVersion, noneOption, optionLabel, options, section, text } from './bank'
+import { alwaysVisible, allowUnsure, attentionParams, bankVersion, itemWording, noneOption, optionLabel, options, section, text, translations } from './bank'
 import { baseItems, followUps, isEnabled, rawAnswers } from './enableWhen'
 import type { ComplaintGroup } from './types'
 
@@ -12,6 +12,32 @@ const FINDINGS = [
   'chest_pain', 'trouble_breathing', 'new_confusion', 'fainting', 'new_weakness_numbness', 'heavy_bleeding', 'vomiting',
   'worst_headache', 'speech_change', 'facial_droop', 'drowsiness', 'vision_change', 'balance_change',
 ]
+
+describe('translations', () => {
+  it('loads a current translation for every language but English', () => {
+    expect(Object.keys(translations).sort()).toEqual(['ar', 'de', 'es', 'fr', 'hi', 'ko', 'pa', 'pl', 'ru', 'tl', 'ur', 'vi', 'yue', 'zh'])
+    for (const t of Object.values(translations)) expect(t.bankVersion).toBe(bankVersion)
+  })
+
+  it('words questions, options and "none of these" in the chosen language', () => {
+    const zh = translations.zh!.items
+    expect(text('feeling_now', 'patient', 'zh')).toBe(zh.feeling_now!.text)
+    expect(text('feeling_now', 'companion', 'zh')).toBe(zh.feeling_now!.companion)
+    expect(options('feeling_now', 'zh').map((o) => o.text)).toEqual(FEELING_NOW.map((c) => zh.feeling_now!.options![c]))
+    expect(noneOption('new_findings', 'zh')).toBe(zh.new_findings!.none)
+    expect(text('feeling_now', 'patient', 'xx')).toBe('How are you feeling right now?')
+  })
+
+  it('keeps staff labels in English whatever the UI language', () => {
+    expect(optionLabel('feeling_change', 'worse')).toBe('Worse')
+  })
+
+  it('re-words a server follow-up from the bank and keeps unknown items as sent', () => {
+    const sent = { key: 'seizure', input_type: 'yes_no' as const, text: 'server text', options: [], allow_unsure: true }
+    expect(itemWording(sent, 'patient').text).toBe(text('seizure', 'patient'))
+    expect(itemWording({ ...sent, key: 'not_in_bank' }, 'patient').text).toBe('server text')
+  })
+})
 
 describe('question bank copy', () => {
   it('has a version the frontend can pin', () => {

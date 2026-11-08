@@ -18,9 +18,11 @@ import {
   updateVisitExclusion,
   updateVisitStatus,
 } from './api/api'
+import { translations } from './api/bank'
 import { ApiError, newSubmissionId } from './api/client'
 import type { CheckinReport, PatientReport } from './api/types'
 import './i18n'
+import zhUi from './i18n/zh.json'
 import { joinBoard, sortQueue } from './lib/board'
 import { createTestRouter } from './routes'
 
@@ -408,8 +410,18 @@ describe('patient and companion check-in', () => {
     await scanAs('chest', 'patient')
     await screen.findByRole('heading', { name: 'You are checked in' })
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'pa')
-    expect(await screen.findByRole('note')).toHaveTextContent('Questions are shown in English for now')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'zh')
+    expect(await screen.findByRole('note')).toHaveTextContent(zhUi.patient.languageNotice)
+  })
+
+  it('asks the check-in questions in the language the patient picks', async () => {
+    const user = userEvent.setup()
+    await scanAs('chest', 'patient')
+    await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
+    expect(await screen.findByRole('heading', { name: 'How are you feeling right now?' })).toBeInTheDocument()
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'zh')
+    expect(await screen.findByRole('heading', { name: translations.zh!.items.feeling_now!.text })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: translations.zh!.items.feeling_now!.options!.good })).toBeInTheDocument()
   })
 
   it('switches the page to right to left for Arabic and back for English', async () => {

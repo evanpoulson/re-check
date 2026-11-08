@@ -1,1 +1,146 @@
-{}
+{
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "模擬數據，示範用閾值"
+  },
+  "common": {
+    "loading": "載入中…",
+    "none": "沒有",
+    "yes": "是",
+    "no": "否",
+    "sending": "正在傳送…"
+  },
+  "patient": {
+    "language": "語言",
+    "departmentWait": "急症室目前估計，新到達的病人約需輪候{{estimate}}。",
+    "waitUnavailable": "暫時未能估計輪候時間。",
+    "waited": "你已輪候{{waited}}。",
+    "placeInLine": "你的回答不會改變你的輪候次序。",
+    "title": "你已完成登記",
+    "titleCompanion": "你正在協助病人登記",
+    "nextCheckin": "下次情況回報",
+    "startCheckin": "開始情況回報",
+    "reportChange": "報告病情變化",
+    "leaving": "我要離開",
+    "sendFailed": "未能傳送。請再試一次，或告訴職員。",
+    "languageNotice": "此翻譯為初稿，尚未經醫學翻譯員審閱。如有任何不清楚的地方，請向職員查詢。",
+    "signOut": "在這部手機登出",
+    "signOutHelp": "這部手機將停止傳送情況回報。病人的輪候次序不變，任何人掃描QR碼即可再次登入。",
+    "signOutConfirm": "登出",
+    "signOutFailed": "這部手機未能登出。請再試一次。",
+    "waitContext": "候診室資訊",
+    "contactStaff": "聯絡職員"
+  },
+  "pain": {
+    "low": "不痛",
+    "high": "最痛"
+  },
+  "answer": {
+    "unsure": "我不確定"
+  },
+  "change": {
+    "send": "傳送給職員"
+  },
+  "leaving": {
+    "title": "你要離開嗎？",
+    "info": "離開前請告訴職員。如果感到更不適，請立即返回分流站。",
+    "confirm": "是，我要離開",
+    "cancel": "不，我會留下"
+  },
+  "urgent": {
+    "title": "請立即告訴職員",
+    "body": "請走到最近的職員身邊，或大聲呼救。",
+    "sent": "你的報告已收到。",
+    "queued": "已儲存在這部手機，重新連線後便會傳送。",
+    "telling": "我正在告訴職員",
+    "sending": "正在傳送你的報告…",
+    "failed": "你的報告未能傳送。",
+    "retry": "重新傳送",
+    "followup": "回答跟進問題"
+  },
+  "sent": {
+    "title": "謝謝，我們已收到你的回答",
+    "queuedTitle": "已儲存在這部手機",
+    "queuedBody": "一連線便會傳送。",
+    "reported": "已報告",
+    "received": "醫護團隊已收到",
+    "waiting": "等待傳送",
+    "back": "返回",
+    "stillChecking": "職員仍會按他們自己的安排來查看你的情況。"
+  },
+  "message": {
+    "none": "職員會看到你的回答。",
+    "clinician_will_check": "醫護人員會來查看你的情況。",
+    "clinician_told": "已通知醫護人員。",
+    "leaving_info": "離開前請告訴職員。如果感到更不適，請立即返回分流站。"
+  },
+  "outbox": {
+    "saved": "已儲存，連線後便會傳送（{{count}}項等待傳送）。"
+  },
+  "exchange": {
+    "invalid": {
+      "title": "這個QR碼未能使用"
+    },
+    "askDesk": "請向分流站索取新的QR碼。",
+    "who": "誰在使用這部手機？",
+    "role": {
+      "patient": "我是病人",
+      "companion": "我是病人的陪同者"
+    },
+    "inactive": "這個QR碼已失效。請向分流站職員查詢。",
+    "failed": "未能完成。請再試一次，或向分流站職員查詢。",
+    "takeover": {
+      "title": "這會令另一部裝置登出",
+      "who": "{{who}}自{{time}}起已在另一部手機登入。同一時間只可以有一部手機登入。",
+      "confirm": "登出另一部手機並繼續",
+      "cancel": "取消"
+    },
+    "signedInAs": {
+      "patient": "病人本人",
+      "companion": "病人的陪同者"
+    },
+    "signedOut": {
+      "title": "你已登出。",
+      "help": "如現在需要協助，請告訴職員。如要再次登入，請掃描今次求診的QR碼。"
+    }
+  },
+  "privacy": {
+    "title": "我們儲存甚麼資料",
+    "stored1": "你的回答及回答時間。",
+    "stored2": "你的分流級別及主要病徵類別。",
+    "stored3": "職員作出了甚麼跟進。",
+    "notStored": "我們絕不會儲存你的姓名或醫療保健號碼。",
+    "synthetic": "此示範只使用模擬數據。"
+  },
+  "circle": {
+    "intro": "屏幕上會逐一出現不同圖形。請數圓形，不用理會方形。",
+    "once": "圖形只會出現一次。如果你做不到，請按「我做不到」，職員會來查看你的情況。",
+    "start": "開始",
+    "watch": "請留意屏幕，數一數有多少個圓形。",
+    "cantDo": "我做不到",
+    "countLabel": "圓形數目",
+    "fewer": "減一個",
+    "more": "加一個",
+    "confirm": "這是我數到的數目"
+  },
+  "desk": {
+    "title": "你的問題已轉交分流護士",
+    "body": "分流護士會來找你。你不需要再做任何事。",
+    "notClinical": "如果你感到更不適，或擔心自己的健康，請改按「我現在需要幫助」。"
+  },
+  "flow": {
+    "progress": "第{{n}}題，共{{total}}題",
+    "next": "下一步",
+    "send": "傳送",
+    "back": "返回",
+    "finishLater": "稍後完成",
+    "finishLaterHelp": "如果你中途停止，我們會傳送你已作答的內容。",
+    "sendNow": "立即傳送危險徵狀",
+    "progressLabel": "情況回報進度"
+  },
+  "pages": {
+    "patientEntry": "正在開啟你的情況回報"
+  }
+}

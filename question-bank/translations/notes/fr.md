@@ -1,0 +1,8 @@
+# French (fr-CA) translation notes
+
+- **Gender-neutral wording.** Companion text says "la personne" instead of "le patient". The role buttons say "Je suis la personne qui consulte" and "J'accompagne la personne qui consulte". Where an adjective would have to agree with "vous", the sentence is reworded, e.g. "Je ne sais pas" instead of "Je ne suis pas sûr(e)", "Votre session est fermée", and "Difficulté à ne pas s'endormir". Companion adjectives agree with "personne" (feminine), e.g. "éveillée" and "confuse". That is correct grammar, but please check that readers won't take it to mean the patient is a woman.
+- **"Check-in" = "questionnaire".** "Suivi" was not used because "followup" also needed a word ("Répondre à une autre question"). The "You are checked in" title became "Votre arrivée est enregistrée".
+- **Symptom terms to verify.** "Seizure (fit)" → "crise de convulsions". "Harder to stay awake" → "plus de mal à ne pas vous endormir". "More muddled" → "idées plus mêlées" (Quebec usage). "Facial droop" → "visage qui tombe d'un côté". The "OK" option → "Correct" (Quebec usage).
+- **"Worst headache of my life"** is a new_findings option shared by patient and companion, so it is rendered neutrally as "Pire mal de tête jamais ressenti".
+- **Clinician and nurse.** "Clinician" → "un membre de l'équipe médicale". "Triage nurse" → "personnel infirmier du triage", which avoids the feminine "l'infirmière". "Health number" → "numéro d'assurance maladie". Check the local Alberta term.
+- **Typography.** No space before ? or !. Guillemets « » use non-breaking spaces inside. No colons are used.

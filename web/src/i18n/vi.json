@@ -1,1 +1,146 @@
-{}
+{
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "Dữ liệu mô phỏng, ngưỡng dùng để minh họa"
+  },
+  "common": {
+    "loading": "Đang tải…",
+    "none": "Không có",
+    "yes": "Có",
+    "no": "Không",
+    "sending": "Đang gửi…"
+  },
+  "patient": {
+    "language": "Ngôn ngữ",
+    "departmentWait": "Thời gian chờ ước tính hiện nay cho người mới đến là khoảng {{estimate}}.",
+    "waitUnavailable": "Hiện chưa có thời gian ước tính.",
+    "waited": "Quý vị đã chờ {{waited}}.",
+    "placeInLine": "Câu trả lời của quý vị không bao giờ làm thay đổi thứ tự chờ.",
+    "title": "Quý vị đã đăng ký xong",
+    "titleCompanion": "Quý vị đang giúp người bệnh đăng ký",
+    "nextCheckin": "Lần kiểm tra tiếp theo",
+    "startCheckin": "Bắt đầu kiểm tra",
+    "reportChange": "Báo có thay đổi",
+    "leaving": "Tôi sẽ rời đi",
+    "sendFailed": "Chưa gửi được. Vui lòng thử lại hoặc báo cho nhân viên.",
+    "languageNotice": "Bản dịch này là bản nháp. Chưa có biên dịch viên y khoa kiểm tra. Nếu có điều gì không rõ, vui lòng hỏi nhân viên.",
+    "signOut": "Đăng xuất khỏi điện thoại này",
+    "signOutHelp": "Điện thoại này sẽ ngừng gửi các lần kiểm tra. Người bệnh vẫn giữ nguyên thứ tự chờ, và bất kỳ ai cũng có thể đăng nhập lại bằng cách quét mã QR.",
+    "signOutConfirm": "Đăng xuất",
+    "signOutFailed": "Không đăng xuất được điện thoại này. Vui lòng thử lại.",
+    "waitContext": "Thông tin phòng chờ",
+    "contactStaff": "Liên hệ nhân viên"
+  },
+  "pain": {
+    "low": "Không đau",
+    "high": "Đau nhất"
+  },
+  "answer": {
+    "unsure": "Tôi không chắc"
+  },
+  "change": {
+    "send": "Gửi cho nhân viên"
+  },
+  "leaving": {
+    "title": "Quý vị sắp rời đi?",
+    "info": "Vui lòng báo cho nhân viên trước khi đi. Nếu thấy mệt hơn, hãy quay lại quầy phân loại bệnh nhân ngay.",
+    "confirm": "Vâng, tôi sẽ rời đi",
+    "cancel": "Không, tôi ở lại"
+  },
+  "urgent": {
+    "title": "Báo cho nhân viên ngay",
+    "body": "Hãy đến chỗ nhân viên gần nhất hoặc gọi to để xin giúp đỡ.",
+    "sent": "Đã nhận được thông báo của quý vị.",
+    "queued": "Đã lưu trên điện thoại này. Sẽ tự gửi khi có mạng trở lại.",
+    "telling": "Tôi đang báo nhân viên",
+    "sending": "Đang gửi thông báo…",
+    "failed": "Thông báo của quý vị chưa được gửi.",
+    "retry": "Thử gửi lại",
+    "followup": "Trả lời câu hỏi tiếp theo"
+  },
+  "sent": {
+    "title": "Cảm ơn, chúng tôi đã nhận được câu trả lời",
+    "queuedTitle": "Đã lưu trên điện thoại này",
+    "queuedBody": "Sẽ gửi ngay khi có mạng.",
+    "reported": "Đã báo",
+    "received": "Đội ngũ chăm sóc đã nhận",
+    "waiting": "Đang chờ gửi",
+    "back": "Quay lại",
+    "stillChecking": "Nhân viên vẫn sẽ đến kiểm tra quý vị theo lịch riêng của họ."
+  },
+  "message": {
+    "none": "Nhân viên sẽ xem câu trả lời của quý vị.",
+    "clinician_will_check": "Bác sĩ hoặc y tá sẽ đến xem tình trạng của quý vị.",
+    "clinician_told": "Đã báo cho bác sĩ hoặc y tá.",
+    "leaving_info": "Vui lòng báo cho nhân viên trước khi rời đi. Nếu thấy mệt hơn, hãy quay lại quầy phân loại bệnh nhân ngay."
+  },
+  "outbox": {
+    "saved": "Đã lưu, sẽ gửi khi có mạng ({{count}} đang chờ)."
+  },
+  "exchange": {
+    "invalid": {
+      "title": "Mã này không dùng được"
+    },
+    "askDesk": "Vui lòng xin quầy phân loại bệnh nhân cấp mã mới.",
+    "who": "Ai đang dùng điện thoại này?",
+    "role": {
+      "patient": "Tôi là người bệnh",
+      "companion": "Tôi đi cùng người bệnh"
+    },
+    "inactive": "Mã này không còn hiệu lực. Vui lòng hỏi quầy phân loại bệnh nhân.",
+    "failed": "Không thực hiện được. Vui lòng thử lại hoặc hỏi quầy phân loại bệnh nhân.",
+    "takeover": {
+      "title": "Thao tác này sẽ đăng xuất thiết bị kia",
+      "who": "{{who}} đã đăng nhập trên một điện thoại khác từ {{time}}. Mỗi lần chỉ một điện thoại được đăng nhập.",
+      "confirm": "Đăng xuất điện thoại kia và tiếp tục",
+      "cancel": "Hủy"
+    },
+    "signedInAs": {
+      "patient": "Người bệnh",
+      "companion": "Người đi cùng người bệnh"
+    },
+    "signedOut": {
+      "title": "Quý vị đã được đăng xuất.",
+      "help": "Nếu cần giúp ngay, hãy báo cho nhân viên. Để đăng nhập lại, hãy quét mã QR của lượt khám này."
+    }
+  },
+  "privacy": {
+    "title": "Những gì chúng tôi lưu",
+    "stored1": "Câu trả lời của quý vị và thời điểm trả lời.",
+    "stored2": "Mức phân loại và nhóm triệu chứng chính của quý vị.",
+    "stored3": "Những việc nhân viên đã làm để đáp ứng.",
+    "notStored": "Chúng tôi không bao giờ lưu tên hay số thẻ bảo hiểm y tế của quý vị.",
+    "synthetic": "Bản minh họa này chỉ dùng dữ liệu mô phỏng."
+  },
+  "circle": {
+    "intro": "Quý vị sẽ thấy các hình hiện ra lần lượt từng hình một. Hãy đếm các hình tròn. Bỏ qua các hình vuông.",
+    "once": "Mỗi hình chỉ hiện một lần. Nếu không làm được, hãy bấm \"Tôi không làm được\" và nhân viên sẽ đến kiểm tra quý vị.",
+    "start": "Bắt đầu",
+    "watch": "Nhìn màn hình và đếm các hình tròn.",
+    "cantDo": "Tôi không làm được",
+    "countLabel": "Số hình tròn",
+    "fewer": "Bớt một",
+    "more": "Thêm một",
+    "confirm": "Đó là số tôi đếm được"
+  },
+  "desk": {
+    "title": "Câu hỏi của quý vị đã được gửi tới y tá phân loại",
+    "body": "Y tá phân loại sẽ đến gặp quý vị. Quý vị không cần làm gì thêm.",
+    "notClinical": "Nếu thấy mệt hơn hoặc lo lắng về sức khỏe, hãy bấm \"Tôi cần giúp ngay\" thay vì cách này."
+  },
+  "flow": {
+    "progress": "Câu {{n}}/{{total}}",
+    "next": "Tiếp",
+    "send": "Gửi",
+    "back": "Quay lại",
+    "finishLater": "Làm tiếp sau",
+    "finishLaterHelp": "Nếu dừng lại, chúng tôi sẽ gửi những câu trả lời quý vị đã đưa ra.",
+    "sendNow": "Gửi dấu hiệu nguy hiểm ngay",
+    "progressLabel": "Tiến độ kiểm tra"
+  },
+  "pages": {
+    "patientEntry": "Đang mở phần kiểm tra của quý vị"
+  }
+}

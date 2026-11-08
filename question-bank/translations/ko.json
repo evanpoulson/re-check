@@ -1,0 +1,155 @@
+{
+  "language": "ko",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "지금 도움이 필요합니다",
+      "companion": "환자에게 지금 도움이 필요합니다"
+    },
+    "worried": {
+      "text": "상태가 나빠지고 있는 것 같아 걱정됩니다",
+      "companion": "환자의 상태가 나빠지고 있는 것 같아 걱정됩니다"
+    },
+    "desk_question": {
+      "text": "제 대기 또는 진료에 관한 질문",
+      "companion": "환자의 대기 또는 진료에 관한 질문"
+    },
+    "leaving": {
+      "text": "병원을 떠납니다",
+      "companion": "환자가 병원을 떠납니다"
+    },
+    "feeling_now": {
+      "text": "지금 몸 상태는 어떠십니까?",
+      "companion": "지금 환자는 어때 보입니까?",
+      "options": {
+        "very_good": "매우 좋음",
+        "good": "좋음",
+        "ok": "보통",
+        "poor": "나쁨",
+        "very_poor": "매우 나쁨"
+      }
+    },
+    "feeling_change": {
+      "text": "직원이 마지막으로 확인했을 때와 비교해 몸 상태가 어떻습니까?",
+      "companion": "직원이 마지막으로 확인했을 때와 비교해 환자는 어때 보입니까?",
+      "options": {
+        "much_better": "훨씬 좋아짐",
+        "better": "좋아짐",
+        "same": "비슷함",
+        "worse": "나빠짐",
+        "much_worse": "훨씬 나빠짐"
+      }
+    },
+    "pain": {
+      "text": "지금 통증은 어느 정도입니까? 0은 통증 없음, 10은 상상할 수 있는 가장 심한 통증입니다."
+    },
+    "new_findings": {
+      "text": "병원에 도착한 후 다음 중 새로 생기거나 심해진 것이 있습니까? 해당하는 것을 모두 고르세요.",
+      "companion": "병원에 도착한 후 환자에게 다음 중 새로 생기거나 심해진 것이 보였습니까? 해당하는 것을 모두 고르세요.",
+      "options": {
+        "speech_change": "말이 평소와 다르거나 알아듣기 어려움",
+        "facial_droop": "얼굴 한쪽이 처져 보임",
+        "new_weakness_numbness": "몸 한쪽에 새로 힘이 빠지거나 감각이 없음",
+        "trouble_breathing": "숨쉬기가 더 힘듦",
+        "fainting": "기절했거나 기절할 뻔함",
+        "new_confusion": "정신이 더 혼란스러움",
+        "drowsiness": "깨어 있기 힘듦(자꾸 잠이 듦)",
+        "worst_headache": "살면서 가장 심한 두통",
+        "vomiting": "구토",
+        "vision_change": "앞이 잘 안 보이는 등 눈에 새로운 문제",
+        "balance_change": "균형 잡기나 걷기에 새로운 문제",
+        "chest_pain": "새로 생기거나 심해진 가슴 통증",
+        "heavy_bleeding": "심한 출혈"
+      },
+      "none": "해당 없음"
+    },
+    "circle_count": {
+      "text": "원의 개수를 세세요. 사각형은 세지 마세요. 원을 몇 개 보셨습니까?"
+    },
+    "pain_moved": {
+      "text": "통증이 다른 곳으로 옮겨 가거나 퍼졌습니까?",
+      "companion": "환자가 통증이 다른 곳으로 옮겨 가거나 퍼졌다고 말했습니까?"
+    },
+    "pain_new_location": {
+      "text": "통증이 어디로 옮겨 가거나 퍼졌습니까? 해당하는 것을 모두 고르세요.",
+      "companion": "환자는 통증이 어디로 옮겨 가거나 퍼졌다고 말했습니까? 해당하는 것을 모두 고르세요.",
+      "options": {
+        "chest": "가슴",
+        "between_shoulders": "양쪽 날개뼈 사이",
+        "lower_back": "허리(등 아래쪽)",
+        "belly": "배",
+        "neck_jaw": "목 또는 턱",
+        "arm": "팔",
+        "leg": "다리"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "통증이 갑자기 훨씬 심해졌습니까?",
+      "companion": "환자가 통증이 갑자기 훨씬 심해졌다고 말했습니까?"
+    },
+    "change_started": {
+      "text": "이 변화는 언제 시작되었습니까?",
+      "companion": "이 변화는 언제 시작되었습니까?",
+      "options": {
+        "under_15_min": "15분 이내",
+        "from_15_to_60_min": "15~60분 전",
+        "over_1_hr": "1시간보다 더 전"
+      }
+    },
+    "symptoms_change": {
+      "text": "처음 병원에 왔을 때의 증상이 좋아졌습니까, 그대로입니까, 아니면 나빠졌습니까?",
+      "companion": "환자가 처음 병원에 왔을 때의 증상이 좋아졌습니까, 그대로입니까, 아니면 나빠졌습니까?",
+      "options": {
+        "better": "좋아짐",
+        "same": "그대로임",
+        "worse": "나빠짐"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "두통이 갑자기 훨씬 심해졌습니까?",
+      "companion": "환자가 두통이 갑자기 훨씬 심해졌다고 말했습니까?"
+    },
+    "last_known_well": {
+      "text": "마지막으로 평소처럼 말하고 움직였던 때는 언제입니까?",
+      "companion": "환자가 마지막으로 평소처럼 말하고 움직였던 때는 언제입니까?",
+      "options": {
+        "under_1_hr": "1시간 이내",
+        "from_1_to_3_hr": "1~3시간 전",
+        "from_3_to_6_hr": "3~6시간 전",
+        "over_6_hr": "6시간보다 더 전"
+      }
+    },
+    "harder_to_wake": {
+      "text": "전보다 깨어 있기가 더 힘듭니까?",
+      "companion": "전보다 환자를 깨우거나 깨어 있게 하기가 더 힘듭니까?"
+    },
+    "vomit_count": {
+      "text": "병원에 도착한 후 몇 번 토했습니까?",
+      "companion": "병원에 도착한 후 환자가 몇 번 토했습니까?",
+      "options": {
+        "zero": "토하지 않음",
+        "one": "1번",
+        "two_plus": "2번 이상"
+      }
+    },
+    "headache_change": {
+      "text": "지난번 확인 때와 비교해 두통이 좋아졌습니까, 그대로입니까, 아니면 나빠졌습니까?",
+      "companion": "지난번 확인 때와 비교해 환자는 두통이 좋아졌다고, 그대로라고, 아니면 나빠졌다고 말했습니까?",
+      "options": {
+        "better": "좋아짐",
+        "same": "그대로임",
+        "worse": "나빠짐"
+      }
+    },
+    "seizure": {
+      "text": "병원에 도착한 후 경련(발작)을 한 적이 있습니까?",
+      "companion": "병원에 도착한 후 환자가 경련(발작)을 한 적이 있습니까?"
+    },
+    "more_confused": {
+      "text": "직원이 마지막으로 확인했을 때보다 정신이 더 멍하거나 혼란스럽습니까?",
+      "companion": "직원이 마지막으로 확인했을 때보다 환자가 더 혼란스러워 보입니까?"
+    }
+  }
+}

@@ -1,0 +1,155 @@
+{
+  "language": "fr",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "J'ai besoin d'aide maintenant",
+      "companion": "La personne a besoin d'aide maintenant"
+    },
+    "worried": {
+      "text": "J'ai peur que mon état s'aggrave",
+      "companion": "J'ai peur que l'état de la personne s'aggrave"
+    },
+    "desk_question": {
+      "text": "Question sur mon attente ou mes soins",
+      "companion": "Question sur l'attente ou les soins de la personne"
+    },
+    "leaving": {
+      "text": "Je pars",
+      "companion": "La personne s'en va"
+    },
+    "feeling_now": {
+      "text": "Comment vous sentez-vous en ce moment?",
+      "companion": "Selon vous, comment va la personne en ce moment?",
+      "options": {
+        "very_good": "Très bien",
+        "good": "Bien",
+        "ok": "Correct",
+        "poor": "Mal",
+        "very_poor": "Très mal"
+      }
+    },
+    "feeling_change": {
+      "text": "Par rapport à la dernière vérification par le personnel, comment vous sentez-vous?",
+      "companion": "Par rapport à la dernière vérification par le personnel, comment la personne vous semble-t-elle?",
+      "options": {
+        "much_better": "Beaucoup mieux",
+        "better": "Mieux",
+        "same": "À peu près pareil",
+        "worse": "Plus mal",
+        "much_worse": "Beaucoup plus mal"
+      }
+    },
+    "pain": {
+      "text": "À quel point avez-vous mal en ce moment? 0 veut dire aucune douleur, 10 veut dire la pire douleur que vous puissiez imaginer."
+    },
+    "new_findings": {
+      "text": "Depuis votre arrivée, est-ce qu'un de ces problèmes a commencé ou s'est aggravé? Cochez tout ce qui s'applique.",
+      "companion": "Depuis l'arrivée de la personne, avez-vous remarqué qu'un de ces problèmes a commencé ou s'est aggravé? Cochez tout ce qui s'applique.",
+      "options": {
+        "speech_change": "Parole différente ou difficile à comprendre",
+        "facial_droop": "Visage qui tombe d'un côté",
+        "new_weakness_numbness": "Nouvelle faiblesse ou engourdissement d'un côté du corps",
+        "trouble_breathing": "Plus de difficulté à respirer",
+        "fainting": "Évanouissement ou presque",
+        "new_confusion": "Plus de confusion",
+        "drowsiness": "Difficulté à ne pas s'endormir",
+        "worst_headache": "Pire mal de tête jamais ressenti",
+        "vomiting": "Vomissements",
+        "vision_change": "Nouveau problème de vision",
+        "balance_change": "Nouveau problème d'équilibre ou de marche",
+        "chest_pain": "Douleur à la poitrine nouvelle ou pire",
+        "heavy_bleeding": "Saignement abondant"
+      },
+      "none": "Aucun de ces problèmes"
+    },
+    "circle_count": {
+      "text": "Comptez les cercles. Ne tenez pas compte des carrés. Combien de cercles avez-vous vus?"
+    },
+    "pain_moved": {
+      "text": "La douleur s'est-elle déplacée ou étendue à un nouvel endroit?",
+      "companion": "La personne a-t-elle dit que la douleur s'est déplacée ou étendue à un nouvel endroit?"
+    },
+    "pain_new_location": {
+      "text": "Où la douleur s'est-elle déplacée ou étendue? Cochez tout ce qui s'applique.",
+      "companion": "Selon la personne, où la douleur s'est-elle déplacée ou étendue? Cochez tout ce qui s'applique.",
+      "options": {
+        "chest": "Poitrine",
+        "between_shoulders": "Entre les omoplates",
+        "lower_back": "Bas du dos",
+        "belly": "Ventre",
+        "neck_jaw": "Cou ou mâchoire",
+        "arm": "Bras",
+        "leg": "Jambe"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "La douleur est-elle soudainement devenue beaucoup plus forte?",
+      "companion": "La personne a-t-elle dit que la douleur est soudainement devenue beaucoup plus forte?"
+    },
+    "change_started": {
+      "text": "Quand ce changement a-t-il commencé?",
+      "companion": "Quand ce changement a-t-il commencé?",
+      "options": {
+        "under_15_min": "Il y a moins de 15 minutes",
+        "from_15_to_60_min": "Il y a 15 à 60 minutes",
+        "over_1_hr": "Il y a plus d'une heure"
+      }
+    },
+    "symptoms_change": {
+      "text": "Depuis votre arrivée, vos symptômes vont-ils mieux, sont-ils pareils ou pires?",
+      "companion": "Depuis l'arrivée de la personne, ses symptômes vont-ils mieux, sont-ils pareils ou pires?",
+      "options": {
+        "better": "Mieux",
+        "same": "Pareil",
+        "worse": "Pire"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "Votre mal de tête est-il soudainement devenu beaucoup plus fort?",
+      "companion": "La personne a-t-elle dit que son mal de tête est soudainement devenu beaucoup plus fort?"
+    },
+    "last_known_well": {
+      "text": "Quand avez-vous parlé et bougé normalement pour la dernière fois?",
+      "companion": "Quand la personne a-t-elle parlé et bougé normalement pour la dernière fois?",
+      "options": {
+        "under_1_hr": "Il y a moins d'une heure",
+        "from_1_to_3_hr": "Il y a 1 à 3 heures",
+        "from_3_to_6_hr": "Il y a 3 à 6 heures",
+        "over_6_hr": "Il y a plus de 6 heures"
+      }
+    },
+    "harder_to_wake": {
+      "text": "Avez-vous plus de mal qu'avant à ne pas vous endormir?",
+      "companion": "La personne est-elle plus difficile à réveiller ou à garder éveillée qu'avant?"
+    },
+    "vomit_count": {
+      "text": "Combien de fois avez-vous vomi depuis votre arrivée?",
+      "companion": "Combien de fois la personne a-t-elle vomi depuis son arrivée?",
+      "options": {
+        "zero": "Aucune",
+        "one": "Une fois",
+        "two_plus": "Deux fois ou plus"
+      }
+    },
+    "headache_change": {
+      "text": "Par rapport à la dernière vérification, votre mal de tête va-t-il mieux, est-il pareil ou pire?",
+      "companion": "Par rapport à la dernière vérification, la personne dit-elle que son mal de tête va mieux, est pareil ou pire?",
+      "options": {
+        "better": "Mieux",
+        "same": "Pareil",
+        "worse": "Pire"
+      }
+    },
+    "seizure": {
+      "text": "Avez-vous fait une crise de convulsions depuis votre arrivée?",
+      "companion": "La personne a-t-elle fait une crise de convulsions depuis son arrivée?"
+    },
+    "more_confused": {
+      "text": "Avez-vous les idées plus mêlées ou plus confuses qu'à la dernière vérification par le personnel?",
+      "companion": "La personne semble-t-elle plus confuse qu'à la dernière vérification par le personnel?"
+    }
+  }
+}

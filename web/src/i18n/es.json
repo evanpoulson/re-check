@@ -1,1 +1,146 @@
-{}
+{
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "Datos ficticios, umbrales de demostración"
+  },
+  "common": {
+    "loading": "Cargando…",
+    "none": "Ninguno",
+    "yes": "Sí",
+    "no": "No",
+    "sending": "Enviando…"
+  },
+  "patient": {
+    "language": "Idioma",
+    "departmentWait": "Para las personas que llegan ahora, la espera estimada en urgencias es de unos {{estimate}}.",
+    "waitUnavailable": "Estimación no disponible.",
+    "waited": "Usted lleva esperando {{waited}}.",
+    "placeInLine": "Sus respuestas nunca cambian su lugar en la fila.",
+    "title": "Su llegada está registrada",
+    "titleCompanion": "Usted está ayudando a una persona a responder el cuestionario",
+    "nextCheckin": "Próximo cuestionario",
+    "startCheckin": "Comenzar el cuestionario",
+    "reportChange": "Informar un cambio",
+    "leaving": "Me voy",
+    "sendFailed": "No se pudo enviar. Por favor, intente de nuevo o avise a un miembro del personal.",
+    "languageNotice": "Esta traducción es un borrador. Un traductor médico todavía no la ha revisado. Si algo no está claro, pregunte a un miembro del personal.",
+    "signOut": "Cerrar sesión en este teléfono",
+    "signOutHelp": "Este teléfono dejará de enviar cuestionarios. Se conserva el lugar en la fila, y cualquier persona puede volver a iniciar sesión escaneando el código QR.",
+    "signOutConfirm": "Cerrar sesión",
+    "signOutFailed": "No se pudo cerrar la sesión en este teléfono. Intente de nuevo.",
+    "waitContext": "Información de la sala de espera",
+    "contactStaff": "Contactar al personal"
+  },
+  "pain": {
+    "low": "Sin dolor",
+    "high": "El peor dolor"
+  },
+  "answer": {
+    "unsure": "No lo sé"
+  },
+  "change": {
+    "send": "Enviar al personal"
+  },
+  "leaving": {
+    "title": "¿Se va?",
+    "info": "Por favor, avise a un miembro del personal antes de irse. Si se siente peor, regrese a triaje de inmediato.",
+    "confirm": "Sí, me voy",
+    "cancel": "No, me quedo"
+  },
+  "urgent": {
+    "title": "Avise ahora a un miembro del personal",
+    "body": "Acérquese al miembro del personal más cercano o pida ayuda en voz alta.",
+    "sent": "Su aviso fue recibido.",
+    "queued": "Guardado en este teléfono. Se enviará cuando vuelva a tener conexión.",
+    "telling": "Voy a avisar al personal",
+    "sending": "Enviando su aviso…",
+    "failed": "Su aviso no se envió.",
+    "retry": "Intentar enviar de nuevo",
+    "followup": "Responder una pregunta más"
+  },
+  "sent": {
+    "title": "Gracias, recibimos sus respuestas",
+    "queuedTitle": "Guardado en este teléfono",
+    "queuedBody": "Se enviará en cuanto haya conexión.",
+    "reported": "Informado",
+    "received": "Recibido por el equipo de atención",
+    "waiting": "Pendiente de envío",
+    "back": "Volver",
+    "stillChecking": "El personal igual hará sus revisiones según su propio horario."
+  },
+  "message": {
+    "none": "El personal verá sus respuestas.",
+    "clinician_will_check": "Un profesional de la salud vendrá a hacerle una revisión.",
+    "clinician_told": "Ya se avisó a un profesional de la salud.",
+    "leaving_info": "Por favor, avise al personal antes de irse. Regrese a triaje de inmediato si se siente peor."
+  },
+  "outbox": {
+    "saved": "Guardado, se enviará al haber conexión ({{count}} en espera)."
+  },
+  "exchange": {
+    "invalid": {
+      "title": "Este código no funcionó"
+    },
+    "askDesk": "Pida un código nuevo en el mostrador de triaje.",
+    "who": "¿Quién está usando este teléfono?",
+    "role": {
+      "patient": "Soy la persona que vino a atenderse",
+      "companion": "Acompaño a la persona que vino a atenderse"
+    },
+    "inactive": "Este código ya no está activo. Por favor, hable con el mostrador de triaje.",
+    "failed": "No funcionó. Por favor, intente de nuevo o hable con el mostrador de triaje.",
+    "takeover": {
+      "title": "Esto cerrará la sesión en el otro dispositivo",
+      "who": "{{who}} tiene la sesión abierta en otro teléfono desde {{time}}. Solo un teléfono puede tener la sesión abierta.",
+      "confirm": "Cerrar la sesión en el otro teléfono y continuar",
+      "cancel": "Cancelar"
+    },
+    "signedInAs": {
+      "patient": "La persona que vino a atenderse",
+      "companion": "Alguien que acompaña a la persona"
+    },
+    "signedOut": {
+      "title": "Se cerró su sesión.",
+      "help": "Si necesita ayuda ahora, avise a un miembro del personal. Para volver a iniciar sesión, escanee el código QR de la visita."
+    }
+  },
+  "privacy": {
+    "title": "Qué información guardamos",
+    "stored1": "Sus respuestas y cuándo las dio.",
+    "stored2": "Su nivel de triaje y el grupo de su motivo de consulta.",
+    "stored3": "Lo que hizo el personal en respuesta.",
+    "notStored": "Nunca guardamos su nombre ni su número de tarjeta de salud.",
+    "synthetic": "Esta demostración usa solo datos ficticios."
+  },
+  "circle": {
+    "intro": "Verá aparecer figuras una por una. Cuente los círculos. No tome en cuenta los cuadrados.",
+    "once": "Solo las verá una vez. Si no puede hacerlo, toque \"No puedo hacerlo\" y el personal irá a ver cómo está.",
+    "start": "Comenzar",
+    "watch": "Mire la pantalla y cuente los círculos.",
+    "cantDo": "No puedo hacerlo",
+    "countLabel": "Número de círculos",
+    "fewer": "Uno menos",
+    "more": "Uno más",
+    "confirm": "Ese es mi total"
+  },
+  "desk": {
+    "title": "Su pregunta se envió al personal de enfermería de triaje",
+    "body": "Alguien del personal de enfermería se acercará a usted. No necesita hacer nada más.",
+    "notClinical": "Si se siente peor o le preocupa su salud, presione \"Necesito ayuda ahora\" en su lugar."
+  },
+  "flow": {
+    "progress": "Pregunta {{n}} de {{total}}",
+    "next": "Siguiente",
+    "send": "Enviar",
+    "back": "Atrás",
+    "finishLater": "Terminar más tarde",
+    "finishLaterHelp": "Si se detiene, enviaremos las respuestas que ya dio.",
+    "sendNow": "Enviar ahora las señales de alarma",
+    "progressLabel": "Avance del cuestionario"
+  },
+  "pages": {
+    "patientEntry": "Abriendo su cuestionario"
+  }
+}

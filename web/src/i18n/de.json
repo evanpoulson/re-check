@@ -1,1 +1,146 @@
-{}
+{
+  "app": {
+    "name": "Recheck"
+  },
+  "demo": {
+    "badge": "Synthetische Daten, Demo-Schwellenwerte"
+  },
+  "common": {
+    "loading": "Wird geladen…",
+    "none": "Keine",
+    "yes": "Ja",
+    "no": "Nein",
+    "sending": "Wird gesendet…"
+  },
+  "patient": {
+    "language": "Sprache",
+    "departmentWait": "Aktuelle Schätzung der Notaufnahme für neu Ankommende: etwa {{estimate}}.",
+    "waitUnavailable": "Keine Schätzung verfügbar.",
+    "waited": "Ihre bisherige Wartezeit: {{waited}}.",
+    "placeInLine": "Ihre Antworten ändern nie Ihren Platz in der Warteschlange.",
+    "title": "Sie sind angemeldet",
+    "titleCompanion": "Sie helfen bei der Anmeldung",
+    "nextCheckin": "Nächste Abfrage",
+    "startCheckin": "Abfrage starten",
+    "reportChange": "Veränderung melden",
+    "leaving": "Ich gehe jetzt",
+    "sendFailed": "Das wurde nicht gesendet. Bitte versuchen Sie es erneut oder sagen Sie es dem Personal.",
+    "languageNotice": "Diese Übersetzung ist ein Entwurf. Ein medizinischer Fachübersetzer hat sie noch nicht geprüft. Wenn etwas unklar ist, fragen Sie das Personal.",
+    "signOut": "Auf diesem Handy abmelden",
+    "signOutHelp": "Dieses Handy sendet dann keine Abfragen mehr. Der Platz in der Warteschlange bleibt erhalten, und jeder kann sich durch Scannen des QR-Codes wieder anmelden.",
+    "signOutConfirm": "Abmelden",
+    "signOutFailed": "Dieses Handy konnte nicht abgemeldet werden. Versuchen Sie es erneut.",
+    "waitContext": "Infos zum Wartebereich",
+    "contactStaff": "Personal kontaktieren"
+  },
+  "pain": {
+    "low": "Keine Schmerzen",
+    "high": "Stärkste Schmerzen"
+  },
+  "answer": {
+    "unsure": "Ich bin mir nicht sicher"
+  },
+  "change": {
+    "send": "An das Personal senden"
+  },
+  "leaving": {
+    "title": "Verlassen Sie die Notaufnahme?",
+    "info": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen. Wenn es Ihnen schlechter geht, kommen Sie sofort zur Ersteinschätzung (Triage) zurück.",
+    "confirm": "Ja, ich gehe",
+    "cancel": "Nein, ich bleibe"
+  },
+  "urgent": {
+    "title": "Sagen Sie jetzt dem Personal Bescheid",
+    "body": "Wenden Sie sich sofort an das nächste Klinikpersonal oder rufen Sie laut um Hilfe.",
+    "sent": "Ihre Meldung ist angekommen.",
+    "queued": "Auf diesem Handy gespeichert. Wird gesendet, sobald wieder eine Verbindung besteht.",
+    "telling": "Ich sage es dem Personal",
+    "sending": "Ihre Meldung wird gesendet…",
+    "failed": "Ihre Meldung wurde nicht gesendet.",
+    "retry": "Erneut senden",
+    "followup": "Folgefrage beantworten"
+  },
+  "sent": {
+    "title": "Danke, Ihre Antworten sind angekommen",
+    "queuedTitle": "Auf diesem Handy gespeichert",
+    "queuedBody": "Wird gesendet, sobald eine Verbindung besteht.",
+    "reported": "Gemeldet",
+    "received": "Vom Behandlungsteam erhalten",
+    "waiting": "Wartet auf Versand",
+    "back": "Zurück",
+    "stillChecking": "Das Personal sieht trotzdem nach eigenem Zeitplan nach Ihnen."
+  },
+  "message": {
+    "none": "Das Personal sieht Ihre Antworten.",
+    "clinician_will_check": "Eine medizinische Fachkraft wird nach Ihnen sehen.",
+    "clinician_told": "Eine medizinische Fachkraft wurde informiert.",
+    "leaving_info": "Bitte sagen Sie dem Personal Bescheid, bevor Sie gehen. Kommen Sie sofort zur Triage zurück, wenn es Ihnen schlechter geht."
+  },
+  "outbox": {
+    "saved": "Gespeichert, wird bei Verbindung gesendet (wartend: {{count}})."
+  },
+  "exchange": {
+    "invalid": {
+      "title": "Dieser Code hat nicht funktioniert"
+    },
+    "askDesk": "Bitten Sie am Triage-Schalter um einen neuen Code.",
+    "who": "Wer benutzt dieses Handy?",
+    "role": {
+      "patient": "Ich bin Patient/in",
+      "companion": "Ich begleite jemanden"
+    },
+    "inactive": "Dieser Code ist nicht mehr aktiv. Bitte wenden Sie sich an den Triage-Schalter.",
+    "failed": "Das hat nicht funktioniert. Bitte versuchen Sie es erneut oder wenden Sie sich an den Triage-Schalter.",
+    "takeover": {
+      "title": "Das andere Gerät wird abgemeldet",
+      "who": "{{who}} ist seit {{time}} auf einem anderen Handy angemeldet. Nur ein Handy kann angemeldet sein.",
+      "confirm": "Anderes Handy abmelden und weiter",
+      "cancel": "Abbrechen"
+    },
+    "signedInAs": {
+      "patient": "Die Patientin / der Patient",
+      "companion": "Eine Begleitperson"
+    },
+    "signedOut": {
+      "title": "Sie wurden abgemeldet.",
+      "help": "Wenn Sie jetzt Hilfe brauchen, sagen Sie es dem Personal. Zum erneuten Anmelden scannen Sie den QR-Code für diesen Besuch."
+    }
+  },
+  "privacy": {
+    "title": "Was wir speichern",
+    "stored1": "Ihre Antworten und wann Sie sie gegeben haben.",
+    "stored2": "Ihre Triage-Stufe und Beschwerdegruppe.",
+    "stored3": "Was das Personal daraufhin getan hat.",
+    "notStored": "Wir speichern nie Ihren Namen oder Ihre Krankenversicherungsnummer.",
+    "synthetic": "Diese Demo verwendet nur synthetische Daten."
+  },
+  "circle": {
+    "intro": "Es erscheinen nacheinander Formen. Zählen Sie die Kreise. Achten Sie nicht auf die Quadrate.",
+    "once": "Sie sehen sie nur einmal. Wenn Sie das nicht können, tippen Sie auf „Ich kann das nicht“, dann sieht das Personal nach Ihnen.",
+    "start": "Start",
+    "watch": "Schauen Sie auf den Bildschirm und zählen Sie die Kreise.",
+    "cantDo": "Ich kann das nicht",
+    "countLabel": "Anzahl der Kreise",
+    "fewer": "Einer weniger",
+    "more": "Einer mehr",
+    "confirm": "Das ist meine Zahl"
+  },
+  "desk": {
+    "title": "Ihre Frage ging an die Triage-Pflegekraft",
+    "body": "Die Triage-Pflegekraft kommt zu Ihnen. Sie müssen nichts weiter tun.",
+    "notClinical": "Wenn es Ihnen schlechter geht oder Sie sich Sorgen um Ihre Gesundheit machen, tippen Sie stattdessen auf „Ich brauche jetzt Hilfe“."
+  },
+  "flow": {
+    "progress": "Frage {{n}} von {{total}}",
+    "next": "Weiter",
+    "send": "Senden",
+    "back": "Zurück",
+    "finishLater": "Später beenden",
+    "finishLaterHelp": "Wenn Sie aufhören, senden wir die bisherigen Antworten.",
+    "sendNow": "Warnzeichen jetzt senden",
+    "progressLabel": "Fortschritt der Abfrage"
+  },
+  "pages": {
+    "patientEntry": "Ihre Abfrage wird geöffnet"
+  }
+}

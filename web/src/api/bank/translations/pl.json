@@ -1,0 +1,155 @@
+{
+  "language": "pl",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "Potrzebuję pomocy teraz",
+      "companion": "Ta osoba potrzebuje pomocy teraz"
+    },
+    "worried": {
+      "text": "Martwię się, że mój stan się pogarsza",
+      "companion": "Martwię się, że stan tej osoby się pogarsza"
+    },
+    "desk_question": {
+      "text": "Pytanie o mój czas oczekiwania lub opiekę",
+      "companion": "Pytanie o czas oczekiwania lub opiekę nad tą osobą"
+    },
+    "leaving": {
+      "text": "Wychodzę",
+      "companion": "Ta osoba wychodzi"
+    },
+    "feeling_now": {
+      "text": "Jakie jest teraz samopoczucie?",
+      "companion": "Jak wygląda teraz stan tej osoby?",
+      "options": {
+        "very_good": "Bardzo dobrze",
+        "good": "Dobrze",
+        "ok": "Średnio",
+        "poor": "Źle",
+        "very_poor": "Bardzo źle"
+      }
+    },
+    "feeling_change": {
+      "text": "Jakie jest samopoczucie w porównaniu z ostatnią kontrolą personelu?",
+      "companion": "Jak wygląda stan tej osoby w porównaniu z ostatnią kontrolą personelu?",
+      "options": {
+        "much_better": "Dużo lepiej",
+        "better": "Lepiej",
+        "same": "Mniej więcej tak samo",
+        "worse": "Gorzej",
+        "much_worse": "Dużo gorzej"
+      }
+    },
+    "pain": {
+      "text": "Jak silny jest teraz ból? 0 to brak bólu, 10 to najgorszy ból, jaki można sobie wyobrazić."
+    },
+    "new_findings": {
+      "text": "Czy od przyjazdu coś z poniższych pojawiło się lub nasiliło? Proszę zaznaczyć wszystkie pasujące.",
+      "companion": "Czy od przyjazdu tej osoby widać, że coś z poniższych pojawiło się lub nasiliło? Proszę zaznaczyć wszystkie pasujące.",
+      "options": {
+        "speech_change": "Mowa jest inna lub trudno ją zrozumieć",
+        "facial_droop": "Opadnięta jedna strona twarzy",
+        "new_weakness_numbness": "Nowe osłabienie lub drętwienie po jednej stronie ciała",
+        "trouble_breathing": "Trudniej oddychać",
+        "fainting": "Omdlenie lub prawie omdlenie",
+        "new_confusion": "Większe zagubienie, dezorientacja",
+        "drowsiness": "Trudno nie zasnąć",
+        "worst_headache": "Najgorszy ból głowy w życiu",
+        "vomiting": "Wymioty",
+        "vision_change": "Nowe problemy ze wzrokiem",
+        "balance_change": "Nowe problemy z równowagą lub chodzeniem",
+        "chest_pain": "Nowy lub silniejszy ból w klatce piersiowej",
+        "heavy_bleeding": "Silne krwawienie"
+      },
+      "none": "Nic z powyższych"
+    },
+    "circle_count": {
+      "text": "Proszę policzyć kółka, a kwadraty pominąć. Ile kółek było widać?"
+    },
+    "pain_moved": {
+      "text": "Czy ból przesunął się lub rozszerzył w nowe miejsce?",
+      "companion": "Czy ta osoba mówi, że ból przesunął się lub rozszerzył w nowe miejsce?"
+    },
+    "pain_new_location": {
+      "text": "Dokąd ból się przesunął lub rozszerzył? Proszę zaznaczyć wszystkie pasujące.",
+      "companion": "Dokąd według tej osoby ból się przesunął lub rozszerzył? Proszę zaznaczyć wszystkie pasujące.",
+      "options": {
+        "chest": "Klatka piersiowa",
+        "between_shoulders": "Między łopatkami",
+        "lower_back": "Dół pleców",
+        "belly": "Brzuch",
+        "neck_jaw": "Szyja lub szczęka",
+        "arm": "Ręka (ramię)",
+        "leg": "Noga"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "Czy ból nagle stał się dużo silniejszy?",
+      "companion": "Czy ta osoba mówi, że ból nagle stał się dużo silniejszy?"
+    },
+    "change_started": {
+      "text": "Kiedy zaczęła się ta zmiana?",
+      "companion": "Kiedy zaczęła się ta zmiana?",
+      "options": {
+        "under_15_min": "Mniej niż 15 minut temu",
+        "from_15_to_60_min": "15–60 minut temu",
+        "over_1_hr": "Ponad godzinę temu"
+      }
+    },
+    "symptoms_change": {
+      "text": "Jak zmieniły się objawy, które były powodem przyjścia: lepiej, bez zmian czy gorzej?",
+      "companion": "Jak zmieniły się objawy, które były powodem przyjścia tej osoby: lepiej, bez zmian czy gorzej?",
+      "options": {
+        "better": "Lepiej",
+        "same": "Bez zmian",
+        "worse": "Gorzej"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "Czy ból głowy nagle stał się dużo silniejszy?",
+      "companion": "Czy ta osoba mówi, że ból głowy nagle stał się dużo silniejszy?"
+    },
+    "last_known_well": {
+      "text": "Kiedy ostatnio mowa i ruchy były takie jak zwykle?",
+      "companion": "Kiedy ta osoba ostatnio mówiła i poruszała się jak zwykle?",
+      "options": {
+        "under_1_hr": "Mniej niż 1 godzinę temu",
+        "from_1_to_3_hr": "1–3 godziny temu",
+        "from_3_to_6_hr": "3–6 godzin temu",
+        "over_6_hr": "Ponad 6 godzin temu"
+      }
+    },
+    "harder_to_wake": {
+      "text": "Czy trudniej niż wcześniej jest nie zasypiać?",
+      "companion": "Czy trudniej niż wcześniej tę osobę obudzić albo nie dać jej zasnąć?"
+    },
+    "vomit_count": {
+      "text": "Ile razy od przyjazdu wystąpiły wymioty?",
+      "companion": "Ile razy ta osoba wymiotowała od przyjazdu?",
+      "options": {
+        "zero": "Ani razu",
+        "one": "Raz",
+        "two_plus": "Dwa razy lub więcej"
+      }
+    },
+    "headache_change": {
+      "text": "Jak zmienił się ból głowy od ostatniej ankiety: lepiej, bez zmian czy gorzej?",
+      "companion": "Co ta osoba mówi o bólu głowy od ostatniej ankiety: lepiej, bez zmian czy gorzej?",
+      "options": {
+        "better": "Lepiej",
+        "same": "Bez zmian",
+        "worse": "Gorzej"
+      }
+    },
+    "seizure": {
+      "text": "Czy od przyjazdu wystąpił napad drgawek?",
+      "companion": "Czy ta osoba miała od przyjazdu napad drgawek?"
+    },
+    "more_confused": {
+      "text": "Czy od ostatniej kontroli personelu pojawiło się większe zagubienie lub dezorientacja?",
+      "companion": "Czy ta osoba jest bardziej zagubiona lub zdezorientowana niż przy ostatniej kontroli personelu?"
+    }
+  }
+}

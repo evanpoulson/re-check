@@ -1,0 +1,7 @@
+# Spanish (es, neutral Latin American) translation notes
+
+- **The companion form must name the person.** Spanish third-person verbs look the same as the formal "usted" form, so "¿Cómo se ve?" could be read as a question about the companion. Every companion string therefore names "la persona", and some add "usted" for the companion, e.g. "¿Cómo ve usted a la persona?".
+- **Gender-neutral wording.** "Soy la persona que vino a atenderse" / "Acompaño a la persona que vino a atenderse". "I'm not sure" → "No lo sé", which avoids "seguro/a" and cannot be read as "no". "Harder to stay awake" → "¿Le cuesta más que antes no dormirse?". "Drowsiness" → "Dificultad para no dormirse". The patient's "more muddled or confused" → "¿Siente más confusión...?". Companion adjectives agree with "persona" ("confundida", "despierta").
+- **"Check-in" = "cuestionario"** ("control" could be confused with a staff exam). "Report" = "aviso". "Triage" = "triaje" (RAE). Some Latin American hospitals say "triage", so check what the site uses.
+- **Symptom terms to verify.** "Seizure (fit)" → "convulsión" only. "Ataque" was dropped because it can mean heart attack or stroke. "Numbness" → "adormecimiento". "Facial droop" → "la cara se ve caída de un lado". "Belly" → "Barriga (abdomen)". "OK" → "Regular", which in some regions can sound slightly negative.
+- **"Worst headache of my life"** is a shared option, so it is rendered neutrally as "El peor dolor de cabeza jamás sentido". "Clinician" → "profesional de la salud". "Health number" → "número de tarjeta de salud".

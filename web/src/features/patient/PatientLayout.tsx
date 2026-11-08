@@ -1,6 +1,7 @@
 import { CloudOff, Languages } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
+import { translations } from '@/api/bank'
 import type { ConcernCode, PatientHome } from '@/api/types'
 import { Brand } from '@/components/Brand'
 import { HelpBar } from '@/components/HelpBar'
@@ -77,10 +78,10 @@ export function PatientLayout({ home, dock, children }: Props) {
       </header>
       <div className="mx-auto max-w-md space-y-5 px-4 pt-6">
 
-      {/* The question bank is English only until translations are supplied. */}
-      {lang !== 'en' && (
+      {/* Unreviewed translations say so; a language with none says questions are in English. */}
+      {lang !== 'en' && translations[lang]?.status !== 'reviewed' && (
         <p role="note" className="rounded-card bg-brand-50 px-5 py-3 text-base">
-          {t('patient.languageNotice')}
+          {t(translations[lang] ? 'patient.languageNotice' : 'patient.languageMissing')}
         </p>
       )}
 

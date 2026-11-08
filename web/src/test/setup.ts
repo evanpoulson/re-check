@@ -3,6 +3,7 @@ import { cleanup } from '@testing-library/react'
 import { afterAll, afterEach, beforeAll, beforeEach } from 'vitest'
 import { resetMockState } from '@/api/mocks/store'
 import { server } from '@/api/mocks/server'
+import i18n from '@/i18n'
 
 // Node's fetch needs absolute URLs; the app uses relative API paths.
 const realFetch = globalThis.fetch
@@ -15,8 +16,10 @@ beforeEach(() => {
   localStorage.clear()
   sessionStorage.clear()
 })
-afterEach(() => {
+afterEach(async () => {
   cleanup()
+  // A test that switches the patient's language must not leak it into the next.
+  await i18n.changeLanguage('en')
   server.resetHandlers()
 })
 afterAll(() => server.close())

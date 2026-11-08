@@ -1,0 +1,155 @@
+{
+  "language": "zh",
+  "bankVersion": "2026-11-08.1",
+  "status": "draft",
+  "translatedBy": "Claude (Anthropic), 2026-11-07. Not yet reviewed by a certified medical translator.",
+  "items": {
+    "help_now": {
+      "text": "我现在需要帮助",
+      "companion": "病人现在需要帮助"
+    },
+    "worried": {
+      "text": "我担心自己的情况在变差",
+      "companion": "我担心病人的情况在变差"
+    },
+    "desk_question": {
+      "text": "关于我的等候或治疗的问题",
+      "companion": "关于病人的等候或治疗的问题"
+    },
+    "leaving": {
+      "text": "我要离开",
+      "companion": "病人要离开"
+    },
+    "feeling_now": {
+      "text": "您现在感觉怎么样？",
+      "companion": "病人现在看起来怎么样？",
+      "options": {
+        "very_good": "很好",
+        "good": "好",
+        "ok": "还可以",
+        "poor": "不好",
+        "very_poor": "很不好"
+      }
+    },
+    "feeling_change": {
+      "text": "和工作人员上次查看您时相比，您感觉怎么样？",
+      "companion": "和工作人员上次查看病人时相比，病人看起来怎么样？",
+      "options": {
+        "much_better": "好很多",
+        "better": "好一些",
+        "same": "差不多",
+        "worse": "更差",
+        "much_worse": "差很多"
+      }
+    },
+    "pain": {
+      "text": "您现在有多痛？0表示不痛，10表示您能想象到的最剧烈的疼痛。"
+    },
+    "new_findings": {
+      "text": "自从您到达后，以下情况有没有新出现或加重？请勾选所有符合的选项。",
+      "companion": "自从病人到达后，您有没有注意到以下情况新出现或加重？请勾选所有符合的选项。",
+      "options": {
+        "speech_change": "说话和平时不一样，或很难听懂",
+        "facial_droop": "一边脸看起来下垂",
+        "new_weakness_numbness": "身体一侧新出现无力或麻木",
+        "trouble_breathing": "呼吸比之前困难",
+        "fainting": "晕倒或差点晕倒",
+        "new_confusion": "比之前更糊涂、头脑更不清楚",
+        "drowsiness": "很难保持清醒",
+        "worst_headache": "这辈子最严重的头痛",
+        "vomiting": "呕吐",
+        "vision_change": "新出现看东西的问题",
+        "balance_change": "新出现平衡问题或走路困难",
+        "chest_pain": "新出现或加重的胸痛",
+        "heavy_bleeding": "大量出血"
+      },
+      "none": "以上都没有"
+    },
+    "circle_count": {
+      "text": "请数圆形，不用理会方形。您看到了几个圆形？"
+    },
+    "pain_moved": {
+      "text": "疼痛有没有转移或扩散到新的部位？",
+      "companion": "病人有没有说疼痛转移或扩散到新的部位？"
+    },
+    "pain_new_location": {
+      "text": "疼痛转移或扩散到了哪里？请勾选所有符合的选项。",
+      "companion": "病人说疼痛转移或扩散到了哪里？请勾选所有符合的选项。",
+      "options": {
+        "chest": "胸口",
+        "between_shoulders": "两块肩胛骨之间",
+        "lower_back": "下背部（腰部）",
+        "belly": "肚子",
+        "neck_jaw": "脖子或下巴",
+        "arm": "手臂",
+        "leg": "腿"
+      }
+    },
+    "pain_sudden_worse": {
+      "text": "疼痛是不是突然加重了很多？",
+      "companion": "病人有没有说疼痛突然加重了很多？"
+    },
+    "change_started": {
+      "text": "这个变化是什么时候开始的？",
+      "companion": "这个变化是什么时候开始的？",
+      "options": {
+        "under_15_min": "不到15分钟前",
+        "from_15_to_60_min": "15到60分钟前",
+        "over_1_hr": "超过1小时前"
+      }
+    },
+    "symptoms_change": {
+      "text": "您来就诊时的症状现在是好转了、没变，还是加重了？",
+      "companion": "病人来就诊时的症状现在是好转了、没变，还是加重了？",
+      "options": {
+        "better": "好转了",
+        "same": "没变",
+        "worse": "加重了"
+      }
+    },
+    "headache_sudden_worse": {
+      "text": "您的头痛是不是突然加重了很多？",
+      "companion": "病人有没有说头痛突然加重了很多？"
+    },
+    "last_known_well": {
+      "text": "您最后一次说话和活动都和平时一样，是什么时候？",
+      "companion": "病人最后一次说话和活动都和平时一样，是什么时候？",
+      "options": {
+        "under_1_hr": "不到1小时前",
+        "from_1_to_3_hr": "1到3小时前",
+        "from_3_to_6_hr": "3到6小时前",
+        "over_6_hr": "超过6小时前"
+      }
+    },
+    "harder_to_wake": {
+      "text": "您是不是比之前更难保持清醒？",
+      "companion": "病人是不是比之前更难叫醒，或更难保持清醒？"
+    },
+    "vomit_count": {
+      "text": "自从到达后，您呕吐了几次？",
+      "companion": "自从到达后，病人呕吐了几次？",
+      "options": {
+        "zero": "没有",
+        "one": "1次",
+        "two_plus": "2次或以上"
+      }
+    },
+    "headache_change": {
+      "text": "和上次检查相比，您的头痛是好转了、没变，还是加重了？",
+      "companion": "和上次检查相比，病人说头痛是好转了、没变，还是加重了？",
+      "options": {
+        "better": "好转了",
+        "same": "没变",
+        "worse": "加重了"
+      }
+    },
+    "seizure": {
+      "text": "自从到达后，您有没有发生过抽搐（癫痫发作）？",
+      "companion": "自从到达后，病人有没有发生过抽搐（癫痫发作）？"
+    },
+    "more_confused": {
+      "text": "和工作人员上次查看时相比，您是否觉得自己更糊涂、头脑更不清楚？",
+      "companion": "和工作人员上次查看时相比，病人是否更糊涂、头脑更不清楚？"
+    }
+  }
+}

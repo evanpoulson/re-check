@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { allowUnsure, noneOption, options, text } from '@/api/bank'
+import { allowUnsure, itemWording, noneOption, options, text } from '@/api/bank'
 import { newSubmissionId } from '@/api/client'
 import { baseItems } from '@/api/enableWhen'
 import type { CheckinReport, FindingCode, ItemAnswer, PatientHome, QuestionItem, Role } from '@/api/types'
@@ -188,7 +188,7 @@ function NotSure({ selected, onClick }: { selected: boolean; onClick: () => void
 }
 
 function StepView({ step, reporter, draft, setDraft }: ViewProps) {
-  if (step.kind === 'item') return <ItemStep item={step.item} draft={draft} setDraft={setDraft} />
+  if (step.kind === 'item') return <ItemStep item={step.item} reporter={reporter} draft={draft} setDraft={setDraft} />
   const { linkId } = step
 
   if (linkId === 'feeling_now' || linkId === 'feeling_change') {
@@ -244,16 +244,17 @@ function StepView({ step, reporter, draft, setDraft }: ViewProps) {
   return null
 }
 
-/** A follow-up item from PatientHome. Wording and "Not sure" come from the API, not the UI. */
-function ItemStep({ item, draft, setDraft }: { item: QuestionItem; draft: CheckinDraft; setDraft: (d: CheckinDraft) => void }) {
+/** A follow-up item from PatientHome. Which items and "Not sure" come from the API; wording is the bank's, in the UI language. */
+function ItemStep({ item, reporter, draft, setDraft }: { item: QuestionItem; reporter: Role; draft: CheckinDraft; setDraft: (d: CheckinDraft) => void }) {
   const { t } = useTranslation()
+  const words = itemWording(item, reporter)
   const current = draft.items[item.key]
   const set = (a: ItemAnswer) => setDraft({ ...draft, items: { ...draft.items, [item.key]: a } })
   const multi = current?.kind === 'multi_choice' ? current.value : []
 
   return (
     <>
-      <Question>{item.text}</Question>
+      <Question>{words.text}</Question>
       <div className="grid gap-3">
         {item.input_type === 'yes_no' && (
           <>
@@ -266,13 +267,13 @@ function ItemStep({ item, draft, setDraft }: { item: QuestionItem; draft: Checki
           </>
         )}
         {item.input_type === 'choice' &&
-          (item.options ?? []).map((o) => (
+          words.options.map((o) => (
             <AnswerButton key={o.code} selected={current?.kind === 'choice' && current.value === o.code} onClick={() => set({ kind: 'choice', value: o.code })}>
               {o.text}
             </AnswerButton>
           ))}
         {item.input_type === 'multi_choice' &&
-          (item.options ?? []).map((o) => (
+          words.options.map((o) => (
             <AnswerButton
               key={o.code}
               selected={multi.includes(o.code)}
