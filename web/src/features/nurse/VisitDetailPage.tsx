@@ -9,6 +9,7 @@ import { LevelChip } from '@/components/LevelChip'
 import { Timeline } from '@/components/Timeline'
 import { Card } from '@/components/ui/card'
 import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
+import { signedInText } from '@/lib/session'
 import { clock, useNow } from '@/lib/time'
 import { useDashboardEvents } from './useDashboardEvents'
 import { VisitActions } from './VisitActions'
@@ -47,6 +48,7 @@ export function VisitDetailPage() {
             <Field label={t('visit.channel')} value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')} />
             <Field label={t('visit.app')} value={visit.app_exclusion ? t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) }) : t('enrol.appOffered')} />
             <Field label={t('visit.status')} value={t(`visitStatus.${visit.status}`)} />
+            {!visit.app_exclusion && <Field label={t('visit.device')} value={signedInText(visit, t)} />}
             <Field label={t('visit.triaged')} value={clock(visit.triaged_at)} />
           </dl>
         </Card>

@@ -11,9 +11,12 @@ import {
   getPatientHome,
   getTriageBoard,
   getVisitDetail,
+  getVisitLink,
   getWorklist,
   postReport,
+  staffSignOut,
   updateVisitExclusion,
+  updateVisitStatus,
 } from './api/api'
 import { ApiError, newSubmissionId } from './api/client'
 import type { CheckinReport, PatientReport } from './api/types'
@@ -28,6 +31,13 @@ function renderApp(path: string) {
       <RouterProvider router={createTestRouter([path])} />
     </QueryClientProvider>,
   )
+}
+/** Open the visit's QR and say who is using the phone, as a person would. */
+async function scanAs(ref: string, role: 'patient' | 'companion') {
+  const user = userEvent.setup()
+  renderApp(`/v/demo-${ref}-token`)
+  await user.click(await screen.findByRole('button', { name: role === 'patient' ? "I'm the patient" : "I'm with the patient" }))
+  return user
 }
 const signInAsNurse = () => localStorage.setItem('recheck-demo-role', 'triage_nurse')
 const queue = async () => sortQueue(joinBoard(await getTriageBoard(), await getWorklist())).map((i) => i.board.visit_id)
@@ -71,22 +81,35 @@ describe('routes', () => {
 })
 
 describe('triage nurse: enrolment and QR', () => {
-  it('validates, then shows two QR cards that encode the exact links, once', async () => {
+  it('validates, then shows one QR card that encodes the exact link, and Show QR brings it back', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
 
-    await user.click(await screen.findByRole('button', { name: 'Create visit and QR codes' }))
+    await user.click(await screen.findByRole('button', { name: 'Create visit and QR code' }))
     expect(await screen.findByText('Choose a CTAS level from 2 to 5.')).toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: '3' }))
-    await user.click(screen.getByRole('button', { name: 'Create visit and QR codes' }))
+    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
 
     expect(await screen.findByRole('heading', { name: 'Visit created' })).toBeInTheDocument()
-    expect(screen.getByRole('alert')).toHaveTextContent('shown once')
-    expect(screen.getByRole('img', { name: 'QR code for Patient' })).toBeInTheDocument()
-    expect(screen.getByRole('img', { name: 'QR code for Companion' })).toBeInTheDocument()
-    expect(screen.getAllByText(/\/v\//)).toHaveLength(2)
+    expect(screen.getByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
+    const links = screen.getAllByText(/\/v\//)
+    expect(links).toHaveLength(1)
+    expect(screen.getByText(/show it again from the visit/)).toBeInTheDocument()
+  })
+
+  it('the visit shows who is signed in and can show the same QR again', async () => {
+    signInAsNurse()
+    const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}`)
+    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(2) // header and phone card
+    await user.click(screen.getByRole('button', { name: 'Show QR' }))
+    expect(await screen.findByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
+    expect(screen.getByText(/\/v\/demo-confused-token$/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sign out the phone' }))
+    expect(await screen.findAllByText('No one signed in')).toHaveLength(2)
   })
 
   it('shows the pager field only for the pager channel', async () => {
@@ -154,7 +177,7 @@ describe('triage board', () => {
   it('a new flag shows a badge but never moves a row or its numeral', async () => {
     signInAsNurse()
     const before = await queue()
-    await exchangeToken({ token: 'demo-patient-general-token' })
+    await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     await postReport({ kind: 'concern', concern: 'help_now', ...common() })
     expect(await queue()).toEqual(before)
 
@@ -168,7 +191,7 @@ describe('triage board', () => {
 
 describe('patient and companion check-in', () => {
   it('opens from the QR link and shows the place-in-line promise and wait range', async () => {
-    renderApp('/v/demo-patient-chest-token')
+    await scanAs('chest', 'patient')
     expect(await screen.findByRole('heading', { name: 'You are checked in' })).toBeInTheDocument()
     expect(screen.getByText(/Your answers never change your place in line\./)).toBeInTheDocument()
     expect(screen.getByText(/Estimated wait: 30 to 90 minutes/)).toBeInTheDocument()
@@ -176,7 +199,7 @@ describe('patient and companion check-in', () => {
   })
 
   it('shows all four always-visible buttons from the question bank', async () => {
-    renderApp('/v/demo-patient-chest-token')
+    await scanAs('chest', 'patient')
     await screen.findByRole('heading', { name: 'You are checked in' })
     for (const name of ['I need help now', "I'm worried I'm getting worse", 'Question about my wait or care', "I'm leaving"]) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument()
@@ -184,7 +207,7 @@ describe('patient and companion check-in', () => {
   })
 
   it('uses the bank\'s companion wording on the buttons for a companion', async () => {
-    renderApp('/v/demo-companion-general-token')
+    await scanAs('general', 'companion')
     await screen.findByRole('heading', { name: 'You are helping with a check-in' })
     expect(screen.getByRole('button', { name: 'They need help now' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'The patient is leaving' })).toBeInTheDocument()
@@ -192,12 +215,71 @@ describe('patient and companion check-in', () => {
 
   it('a bad code says so and never shows a visit', async () => {
     renderApp('/v/not-a-real-code-at-all-1234')
-    expect(await screen.findByText('This code did not work')).toBeInTheDocument()
+    await userEvent.setup().click(await screen.findByRole('button', { name: "I'm the patient" }))
+    expect(await screen.findByText('This code is no longer active. Please speak to the triage desk.')).toBeInTheDocument()
+  })
+
+  it('a code for a closed visit is no longer active', async () => {
+    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    await updateVisitStatus(visit.visit_id, { submission_id: newSubmissionId(), status: 'roomed' })
+    await expect(exchangeToken({ token: 'demo-general-token', role: 'patient' })).rejects.toMatchObject({ status: 410 })
+  })
+
+  it('a second phone must confirm before it signs out the first, and the first is then signed out', async () => {
+    // The seeded confused visit already has a companion's phone signed in.
+    const user = userEvent.setup()
+    renderApp('/v/demo-confused-token')
+    await user.click(await screen.findByRole('button', { name: "I'm the patient" }))
+    expect(await screen.findByRole('heading', { name: 'This will sign out the other device' })).toBeInTheDocument()
+    expect(screen.getByText(/Someone with the patient has been signed in on another phone/)).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Sign out the other phone and continue' }))
+    expect(await screen.findByRole('heading', { name: 'You are checked in' })).toBeInTheDocument()
+
+    const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
+    expect(visit.signed_in_as).toBe('patient')
+    const sessions = (await getVisitDetail(visit.visit_id)).timeline.filter((e) => 'session_id' in e)
+    expect(sessions).toEqual([
+      expect.objectContaining({ role: 'companion', end_reason: 'takeover' }),
+      expect.objectContaining({ role: 'patient', end_reason: null, replaces: (sessions[0] as { session_id: string }).session_id }),
+    ])
+  })
+
+  it('a takeover needs the session from the 409, and a stale one is refused with the current state', async () => {
+    const err = await exchangeToken({ token: 'demo-confused-token', role: 'patient' }).catch((e: ApiError) => e)
+    expect(err).toMatchObject({ status: 409, body: { signed_in_as: 'companion' } })
+    await expect(
+      exchangeToken({ token: 'demo-confused-token', role: 'patient', takeover_session_id: crypto.randomUUID() }),
+    ).rejects.toMatchObject({ status: 409 })
+    const ok = await exchangeToken({
+      token: 'demo-confused-token',
+      role: 'patient',
+      takeover_session_id: (err as ApiError & { body: { session_id: string } }).body.session_id,
+    })
+    expect(ok.replaced_other_device).toBe(true)
+  })
+
+  it('a reporter must match the role chosen at sign-in', async () => {
+    await exchangeToken({ token: 'demo-general-token', role: 'patient' })
+    await expect(postReport({ kind: 'concern', concern: 'worried', ...common('companion') })).rejects.toMatchObject({ status: 422 })
+  })
+
+  it('signing out, or staff signing the phone out, stops the device from sending', async () => {
+    const user = await scanAs('general', 'patient')
+    await user.click(await screen.findByRole('button', { name: 'Sign out of this phone' }))
+    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    expect(await screen.findByRole('heading', { name: "You've been signed out." })).toBeInTheDocument()
+    await expect(postReport({ kind: 'concern', concern: 'help_now', ...common() })).rejects.toMatchObject({ status: 401 })
+
+    await exchangeToken({ token: 'demo-general-token', role: 'companion' })
+    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    await staffSignOut(visit.visit_id, { submission_id: newSubmissionId() })
+    await expect(getPatientHome()).rejects.toMatchObject({ status: 401 })
+    expect((await getVisitDetail(visit.visit_id)).visit.signed_in_as).toBeNull()
   })
 
   it('the question to the desk goes to the triage nurse and never shows the urgent screen', async () => {
     const user = userEvent.setup()
-    renderApp('/v/demo-patient-general-token')
+    await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'Question about my wait or care' }))
     expect(await screen.findByRole('heading', { name: 'Your question went to the triage nurse' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Tell a staff member now' })).not.toBeInTheDocument()
@@ -205,26 +287,16 @@ describe('patient and companion check-in', () => {
 
   it('"I need help now" shows the tell-a-staff-member screen and never any task level', async () => {
     const user = userEvent.setup()
-    renderApp('/v/demo-patient-general-token')
+    await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'I need help now' }))
     expect(await screen.findByRole('heading', { name: 'Tell a staff member now' })).toBeInTheDocument()
     expect(screen.queryByText(/^Red$/)).not.toBeInTheDocument()
   })
 
-  it('asks "Who is answering?" first, preselected from the QR, in the bank wording', async () => {
-    const user = userEvent.setup()
-    renderApp('/v/demo-companion-general-token')
-    await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    expect(await screen.findByRole('heading', { name: 'Who is answering?' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Someone with the patient' })).toHaveAttribute('aria-pressed', 'true')
-    expect(screen.queryByRole('button', { name: "I'm not sure" })).not.toBeInTheDocument() // no "Not sure" on this question
-  })
-
   it('a companion is never asked for pain or the circle check', async () => {
     const user = userEvent.setup()
-    renderApp('/v/demo-companion-general-token')
+    await scanAs('general', 'companion')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    await user.click(await screen.findByRole('button', { name: 'Next' }))
     expect(await screen.findByRole('heading', { name: 'How do they seem right now?' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Good' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
@@ -239,9 +311,8 @@ describe('patient and companion check-in', () => {
 
   it('a patient is asked for pain, then the circle check, and "I can\'t do this" still names the prompt', async () => {
     const user = userEvent.setup()
-    renderApp('/v/demo-patient-general-token')
+    await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    await user.click(await screen.findByRole('button', { name: 'Next' })) // who is answering
     await user.click(await screen.findByRole('button', { name: 'Good' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     await user.click(await screen.findByRole('button', { name: 'About the same' }))
@@ -266,9 +337,8 @@ describe('patient and companion check-in', () => {
 
   it('a companion reporting new speech change routes an urgent task and asks the follow-up after', async () => {
     const user = userEvent.setup()
-    renderApp('/v/demo-companion-general-token')
+    await scanAs('general', 'companion')
     await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
-    await user.click(await screen.findByRole('button', { name: 'Next' }))
     await user.click(await screen.findByRole('button', { name: 'Good' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     await user.click(await screen.findByRole('button', { name: 'About the same' }))
@@ -284,7 +354,7 @@ describe('patient and companion check-in', () => {
 
   it('shows an English-only notice for Punjabi and Tagalog until translations exist', async () => {
     const user = userEvent.setup()
-    renderApp('/v/demo-patient-chest-token')
+    await scanAs('chest', 'patient')
     await screen.findByRole('heading', { name: 'You are checked in' })
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
     await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'pa')
@@ -296,8 +366,10 @@ describe('the loop and the backend rules', () => {
   it('runs enrol, scan, report, flag, acknowledge, assess against the contract', async () => {
     const before = await queue()
     const enrolled = await enrolVisit({ submission_id: newSubmissionId(), ctas: 3, complaint_group: 'chest_back_pain', cedis_code: '003', language: 'en', channel: 'phone' })
-    expect(enrolled.patient_link).toBeTruthy()
-    await exchangeToken({ token: enrolled.patient_link!.split('/v/')[1]! })
+    expect(enrolled.link).toBeTruthy()
+    // The desk can show the same code again.
+    expect((await getVisitLink(enrolled.visit_id)).link).toBe(enrolled.link)
+    await exchangeToken({ token: enrolled.link!.split('/v/')[1]!, role: 'patient' })
     const home = await getPatientHome()
     expect(home.role).toBe('patient')
     expect(home.items.map((i) => i.key)).toEqual(['pain_moved', 'pain_sudden_worse'])
@@ -326,7 +398,7 @@ describe('the loop and the backend rules', () => {
   })
 
   it('a "same" answer never cancels or raises a task, and "much worse" raises red', async () => {
-    await exchangeToken({ token: 'demo-patient-general-token' })
+    await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     const home = await getPatientHome()
     const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
     await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, home.questionnaire_version))
@@ -337,18 +409,18 @@ describe('the loop and the backend rules', () => {
 
   describe('the circle check', () => {
     it('a patient gets a prompt and a companion never does', async () => {
-      await exchangeToken({ token: 'demo-patient-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       const p = (await getPatientHome()).attention_prompt!
       expect(p.steps.length).toBeGreaterThanOrEqual(6)
       expect(p.show_ms).toBeGreaterThanOrEqual(200)
       expect((await getPatientHome()).attention_prompt!.prompt_id).toBe(p.prompt_id) // stable across refetches
 
-      await exchangeToken({ token: 'demo-companion-confused-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'companion' })
       expect((await getPatientHome()).attention_prompt).toBeNull()
     })
 
     it('a wrong count opens a non-urgent check; a prompt is single use', async () => {
-      await exchangeToken({ token: 'demo-patient-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       const home = await getPatientHome()
       const prompt = home.attention_prompt!
       const circles = prompt.steps.filter((s) => s.shape === 'circle').length
@@ -367,7 +439,7 @@ describe('the loop and the backend rules', () => {
     })
 
     it('a correct count opens no task', async () => {
-      await exchangeToken({ token: 'demo-patient-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       const home = await getPatientHome()
       const prompt = home.attention_prompt!
       const circles = prompt.steps.filter((s) => s.shape === 'circle').length
@@ -377,9 +449,9 @@ describe('the loop and the backend rules', () => {
     })
 
     it('a companion cannot send a prompt id or pain', async () => {
-      await exchangeToken({ token: 'demo-patient-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       const prompt = (await getPatientHome()).attention_prompt!
-      await exchangeToken({ token: 'demo-companion-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'companion' })
       const v = (await getPatientHome()).questionnaire_version
       await expect(postReport(checkin({ reporter: 'companion', pain: { kind: 'answered', value: 5 } }, v))).rejects.toMatchObject({ status: 422 })
       await expect(
@@ -388,7 +460,7 @@ describe('the loop and the backend rules', () => {
     })
 
     it('a patient response never moves the staff timer', async () => {
-      await exchangeToken({ token: 'demo-companion-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'companion' })
       const v = (await getPatientHome()).questionnaire_version
       const before = (await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)).staff_reassess_due_at
       await postReport(checkin({ reporter: 'companion' }, v))
@@ -399,7 +471,8 @@ describe('the loop and the backend rules', () => {
   describe('app exclusion', () => {
     it('an excluded enrolment has no links, no channel and no prompt timer', async () => {
       const e = await enrolVisit({ submission_id: newSubmissionId(), ctas: 4, complaint_group: 'general', cedis_code: '609', app_exclusion: 'child', language: 'en' })
-      expect(e).toMatchObject({ app_exclusion: 'child', patient_link: null, companion_link: null, links_expire_at: null })
+      expect(e).toMatchObject({ app_exclusion: 'child', link: null })
+      await expect(getVisitLink(e.visit_id)).rejects.toMatchObject({ status: 409 })
       const v = (await getVisitDetail(e.visit_id)).visit
       expect(v).toMatchObject({ app_exclusion: 'child', channel: null, next_prompt_due_at: null })
       expect(v.staff_reassess_due_at).not.toBeNull()
@@ -414,7 +487,7 @@ describe('the loop and the backend rules', () => {
     })
 
     it('stopping the app after enrolment signs the patient out, cannot be undone, and keeps the staff timer', async () => {
-      await exchangeToken({ token: 'demo-patient-general-token' })
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       await getPatientHome()
       const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
 

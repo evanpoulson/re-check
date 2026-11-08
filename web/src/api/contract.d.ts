@@ -133,6 +133,13 @@ export type WaitSource = ("ahs_feed" | "site_estimate")
  */
 export type PatientReport = (CheckinReport | ConcernReport | FindingReport | LeavingReport)
 /**
+ * Why a signed-in device was signed out. Sessions have no timer.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "SessionEndReason".
+ */
+export type SessionEndReason = ("takeover" | "signed_out" | "staff_signed_out" | "visit_closed" | "app_excluded")
+/**
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "TaskEventType".
  */
@@ -188,10 +195,15 @@ ReportReceipt?: ReportReceipt
 ReportRecord?: ReportRecord
 Reporter?: Reporter
 ScaleAnswered?: ScaleAnswered
+SessionEndReason?: SessionEndReason
 SessionInfo?: SessionInfo
+SessionRecord?: SessionRecord
 ShiftCount?: ShiftCount
+SignInConflict?: SignInConflict
+SignOut?: SignOut
 StaffRef?: StaffRef
 StaffRole?: StaffRole
+StaffSignOut?: StaffSignOut
 Task?: Task
 TaskEvent?: TaskEvent
 TaskEventType?: TaskEventType
@@ -205,6 +217,7 @@ VisitCreate?: VisitCreate
 VisitDetail?: VisitDetail
 VisitEnrolled?: VisitEnrolled
 VisitExclusionUpdate?: VisitExclusionUpdate
+VisitLink?: VisitLink
 VisitStatus?: VisitStatus
 VisitStatusUpdate?: VisitStatusUpdate
 VisitSummary?: VisitSummary
@@ -427,6 +440,9 @@ kind: "checkin"
 new_findings: (FindingsAnswered | Missing)
 pain: (PainAnswered | Missing)
 questionnaire_version: string
+/**
+ * For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.
+ */
 reporter: ("patient" | "companion")
 /**
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
@@ -533,6 +549,9 @@ captured_at: string
 channel: ("phone" | "pager")
 concern: ConcernCode
 kind: "concern"
+/**
+ * For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.
+ */
 reporter: ("patient" | "companion")
 /**
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
@@ -578,6 +597,9 @@ channel: ("phone" | "pager")
  */
 findings: [FindingCode, ...(FindingCode)[]]
 kind: "finding"
+/**
+ * For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.
+ */
 reporter: ("patient" | "companion")
 /**
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
@@ -684,6 +706,11 @@ last_staff_check_at: (string | null)
  */
 next_prompt_due_at: (string | null)
 pager_no: (string | null)
+/**
+ * Who is signed in on the visit's device, if anyone.
+ */
+signed_in_as: (("patient" | "companion") | null)
+signed_in_since: (string | null)
 site_id: string
 /**
  * Staff reassessment deadline. A patient report never moves this.
@@ -716,6 +743,9 @@ export interface LeavingReport {
 captured_at: string
 channel: ("phone" | "pager")
 kind: "leaving"
+/**
+ * For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.
+ */
 reporter: ("patient" | "companion")
 /**
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
@@ -841,9 +871,71 @@ visit_id: string
  * via the `definition` "SessionInfo".
  */
 export interface SessionInfo {
-expires_at: string
 language: Language
+/**
+ * True if signing in signed another device out.
+ */
+replaced_other_device: boolean
 role: ("patient" | "companion")
+}
+/**
+ * Someone signed in on the visit's device, and when and why that ended.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "SessionRecord".
+ */
+export interface SessionRecord {
+end_reason: (SessionEndReason | null)
+ended_at: (string | null)
+/**
+ * The session this one took over from.
+ */
+replaces: (string | null)
+role: ("patient" | "companion")
+session_id: string
+started_at: string
+type?: "session"
+visit_id: string
+}
+/**
+ * 409 body: someone is already signed in for this visit. Ask before taking over.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "SignInConflict".
+ */
+export interface SignInConflict {
+/**
+ * Send back as `takeover_session_id` to confirm.
+ */
+session_id: string
+signed_in_as: ("patient" | "companion")
+signed_in_since: string
+}
+/**
+ * The person signs this device out. The visit's QR still works for the next sign-in.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "SignOut".
+ */
+export interface SignOut {
+/**
+ * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
+ */
+submission_id: string
+}
+/**
+ * Staff sign out whichever device is signed in to a visit (for example a lost phone).
+ * 
+ * The visit comes from the path and the staff member from the staff session.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "StaffSignOut".
+ */
+export interface StaffSignOut {
+/**
+ * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
+ */
+submission_id: string
 }
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
@@ -861,12 +953,27 @@ task_id: string
 type?: "task_event"
 }
 /**
- * A device opens a QR link and trades the one-time token for a session cookie.
+ * A device scans the visit's QR, says who is using it, and gets a session cookie.
+ * 
+ * Only one device is signed in per visit. If one already is, the server answers
+ * 409 with `SignInConflict`. After the person confirms "This will sign out the
+ * other device", the client resends with `takeover_session_id` from that 409.
+ * The server signs out exactly that session; if it is no longer the open one
+ * (someone else took over meanwhile), or two sign-ins race, it answers 409
+ * again with the current state.
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "TokenExchange".
  */
 export interface TokenExchange {
+/**
+ * "I'm the patient" or "I'm with the patient".
+ */
+role: ("patient" | "companion")
+/**
+ * The session named in the 409, sent only after the person confirms signing it out.
+ */
+takeover_session_id?: (string | null)
 /**
  * URL-safe random token, at least 128 bits.
  */
@@ -919,7 +1026,7 @@ submission_id: string
  */
 export interface VisitDetail {
 open_task: (Task | null)
-timeline: (ReportRecord | VitalsRecord | FlagRecord | TaskEvent)[]
+timeline: (ReportRecord | VitalsRecord | FlagRecord | TaskEvent | SessionRecord)[]
 visit: VisitSummary
 }
 /**
@@ -942,9 +1049,9 @@ visit_id: string
 vitals_id: string
 }
 /**
- * Returned once at enrolment. The links carry the raw tokens and are never shown again.
+ * Returned at enrolment. One QR per visit; whoever scans it chooses patient or companion.
  * 
- * When the app is not offered, there are no links.
+ * When the app is not offered, there is no link.
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "VisitEnrolled".
@@ -952,15 +1059,10 @@ vitals_id: string
 export interface VisitEnrolled {
 app_exclusion?: (AppExclusion | null)
 /**
- * URL for the companion QR card (FR11). Single-use.
+ * URL for the visit's QR. Works while the visit is waiting; one device signed in at a time.
  */
-companion_link: (string | null)
-links_expire_at: (string | null)
+link: (string | null)
 pager_no?: (string | null)
-/**
- * URL for the patient QR card. Single-use, binds the first device.
- */
-patient_link: (string | null)
 visit_id: string
 }
 /**
@@ -978,6 +1080,20 @@ app_exclusion: AppExclusion
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
  */
 submission_id: string
+}
+/**
+ * The visit's QR again, for the desk to show from the staff app (for example to switch who is signed in).
+ * 
+ * The server decrypts the stored token to rebuild the same link, and records the
+ * re-show with `log_qr_shown` in the same transaction. Refused for a visit that is
+ * closed or doesn't offer the app.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "VisitLink".
+ */
+export interface VisitLink {
+link: string
+visit_id: string
 }
 /**
  * This interface was referenced by `Contract`'s JSON-Schema

@@ -17,7 +17,7 @@ const concern = (id: string): PatientReport => ({
 
 describe('outbox', () => {
   it('saves a report when offline and retries the identical body, so the server sees one report', async () => {
-    await exchangeToken({ token: 'demo-patient-general-token' })
+    await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     const sent: PatientReport[] = []
     server.use(http.post(endpoints.postReport(), () => HttpResponse.error()))
 
@@ -41,7 +41,7 @@ describe('outbox', () => {
   })
 
   it('keeps reports while the network is still down', async () => {
-    await exchangeToken({ token: 'demo-patient-general-token' })
+    await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     server.use(http.post(endpoints.postReport(), () => HttpResponse.error()))
     await sendReport(concern(crypto.randomUUID()))
     expect(await flushOutbox()).toBe(0)

@@ -10,7 +10,6 @@ import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { emptyEnrol, validateEnrol, type EnrolErrors, type EnrolForm } from '@/lib/enrol'
-import { clock } from '@/lib/time'
 
 const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general']
 const LANGUAGES: Language[] = ['en', 'pa', 'tl']
@@ -80,15 +79,11 @@ export function Enrol() {
           </Card>
         ) : (
           <>
-            <p role="alert" className="rounded-data border-l-8 border-level-amber bg-level-amber-bg p-3 font-bold text-level-amber">
-              {t('enrol.shownOnce')}
-            </p>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {visit.patient_link && <QrCard title={t('enrol.patientQr')} hint={t('enrol.patientHint')} link={visit.patient_link} />}
-              {visit.companion_link && <QrCard title={t('enrol.companionQr')} hint={t('enrol.companionHint')} link={visit.companion_link} />}
+            <div className="max-w-sm">
+              {visit.link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={visit.link} />}
             </div>
             <p className="text-muted">
-              {visit.links_expire_at ? t('enrol.expires', { time: clock(visit.links_expire_at) }) : ''}
+              {t('enrol.showAgain')}
               {pager ? ` ${t('enrol.pagerFallback', { pager: visit.pager_no ?? '' })}` : ''}
             </p>
           </>

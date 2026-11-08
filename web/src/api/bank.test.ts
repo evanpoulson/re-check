@@ -39,7 +39,6 @@ describe('question bank copy', () => {
   })
 
   it('knows where "Not sure" is allowed and what the none-option says', () => {
-    expect(allowUnsure('answerer')).toBe(false)
     expect(allowUnsure('feeling_now')).toBe(true)
     expect(noneOption('new_findings')).toBe('None of these')
   })
@@ -62,8 +61,8 @@ describe('question bank copy', () => {
 // Ported from api/tests/question_bank/test_question_bank.py.
 describe('branching (mirrors question_bank.py)', () => {
   it('patient-only base items', () => {
-    expect(baseItems('patient')).toEqual(['answerer', 'feeling_now', 'feeling_change', 'pain', 'new_findings', 'circle_count'])
-    expect(baseItems('companion')).toEqual(['answerer', 'feeling_now', 'feeling_change', 'new_findings'])
+    expect(baseItems('patient')).toEqual(['feeling_now', 'feeling_change', 'pain', 'new_findings', 'circle_count'])
+    expect(baseItems('companion')).toEqual(['feeling_now', 'feeling_change', 'new_findings'])
   })
 
   it('the general group gets no follow-ups', () => {

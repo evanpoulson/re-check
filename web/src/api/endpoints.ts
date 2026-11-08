@@ -6,6 +6,8 @@ export const endpoints = {
   visitStatus: (visitId: string) => `/api/visits/${visitId}/status`,
   visitExclusion: (visitId: string) => `/api/visits/${visitId}/exclusion`,
   visitDetail: (visitId: string) => `/api/visits/${visitId}`,
+  visitLink: (visitId: string) => `/api/visits/${visitId}/link`,
+  staffSignOut: (visitId: string) => `/api/visits/${visitId}/sign-out`,
   vitals: (visitId: string) => `/api/visits/${visitId}/vitals`,
   flagHigher: (visitId: string) => `/api/visits/${visitId}/flag`,
   triageBoard: () => '/api/triage-board',
@@ -13,6 +15,7 @@ export const endpoints = {
   acknowledgeTask: (taskId: string) => `/api/tasks/${taskId}/acknowledge`,
   assessTask: (taskId: string) => `/api/tasks/${taskId}/assess`,
   exchangeToken: () => '/api/session',
+  signOut: () => '/api/session/sign-out',
   patientHome: () => '/api/patient/home',
   postReport: () => '/api/patient/reports',
 } as const
