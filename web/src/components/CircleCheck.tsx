@@ -52,28 +52,31 @@ export function CircleCheck({ prompt, role, onDone, onExpired }: Props) {
   const unsure = () => onDone({ shown: true, skip: 'unsure' })
 
   return (
-    <section aria-labelledby="circle-q" className="space-y-4">
-      <h1 id="circle-q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+    <section aria-labelledby="circle-q" className="space-y-6">
+      <h1 id="circle-q">
         {text('circle_count', role)}
       </h1>
 
       {phase === 'intro' && (
         <>
-          <p className="text-lg">{t('circle.intro')}</p>
-          <p className="text-base text-muted">{t('circle.once')}</p>
-          <p className="text-base text-muted">{t('circle.notTest')}</p>
-          <Button size="lg" className="w-full" onClick={start}>
-            {t('circle.start')}
-          </Button>
-          <Button size="lg" variant="secondary" className="w-full" onClick={cantDo}>
-            {t('circle.cantDo')}
-          </Button>
+          <div className="space-y-2">
+            <p>{t('circle.intro')}</p>
+            <p className="text-base text-muted">{t('circle.notTest')}</p>
+          </div>
+          <div className="grid gap-3">
+            <Button size="lg" className="w-full" onClick={start}>
+              {t('circle.start')}
+            </Button>
+            <Button size="lg" variant="secondary" className="w-full" onClick={cantDo}>
+              {t('circle.cantDo')}
+            </Button>
+          </div>
         </>
       )}
 
       {phase === 'playing' && (
         <>
-          <p role="status" className="text-lg font-semibold">
+          <p role="status" className="font-medium">
             {t('circle.watch')}
           </p>
           <div
@@ -108,17 +111,19 @@ export function CircleCheck({ prompt, role, onDone, onExpired }: Props) {
               <Plus aria-hidden className="size-6" />
             </Button>
           </div>
-          <Button size="lg" className="w-full" onClick={() => onDone({ shown: true, count })}>
-            {t('circle.confirm')}
-          </Button>
-          {allowUnsure('circle_count') && (
-            <Button size="lg" variant="secondary" className="w-full" onClick={unsure}>
-              {t('answer.unsure')}
+          <div className="grid gap-3">
+            <Button size="lg" className="w-full" onClick={() => onDone({ shown: true, count })}>
+              {t('circle.confirm')}
             </Button>
-          )}
-          <Button size="lg" variant="secondary" className="w-full" onClick={cantDo}>
-            {t('circle.cantDo')}
-          </Button>
+            {allowUnsure('circle_count') && (
+              <Button size="lg" variant="secondary" className="w-full" onClick={unsure}>
+                {t('answer.unsure')}
+              </Button>
+            )}
+            <Button size="lg" variant="ghost" className="w-full" onClick={cantDo}>
+              {t('circle.cantDo')}
+            </Button>
+          </div>
         </>
       )}
     </section>

@@ -98,7 +98,6 @@
   },
   "circle": {
     "intro": "Na ekranie będą pojawiać się kolejno kształty. Proszę liczyć kółka, a kwadraty pomijać.",
-    "once": "Każdy kształt pojawi się tylko raz. Jeśli nie da się tego zrobić, proszę dotknąć „Nie mogę tego zrobić”, a personel przyjdzie sprawdzić stan zdrowia.",
     "start": "Start",
     "watch": "Proszę patrzeć na ekran i liczyć kółka.",
     "cantDo": "Nie mogę tego zrobić",

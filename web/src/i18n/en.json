@@ -489,8 +489,7 @@
     "notShown": "Not shown"
   },
   "circle": {
-    "intro": "You will see shapes appear one at a time. Count the circles. Ignore the squares.",
-    "once": "You only see them once. If you cannot do this, tap \"I can't do this\" and staff will check on you.",
+    "intro": "Shapes will appear one at a time. You see each one only once.",
     "start": "Start",
     "watch": "Watch the screen and count the circles.",
     "cantDo": "I can't do this",
@@ -498,7 +497,7 @@
     "fewer": "One fewer",
     "more": "One more",
     "confirm": "Done",
-    "notTest": "This is not a medical test. If it's hard, staff will simply come and check on you."
+    "notTest": "This is not a medical test. If it is hard, tap \"I can't do this\" and staff will check on you."
   },
   "desk": {
     "title": "Your question went to the triage nurse",

@@ -1,42 +1,45 @@
-import { Check } from 'lucide-react'
-import type { ButtonHTMLAttributes } from 'react'
+import { Check, ChevronRight } from 'lucide-react'
+import { useId, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 /**
- * A full-width answer row. Selection is shown by a blue outline, a heavier
- * weight and a check mark, so it never relies on colour alone.
+ * A full-width answer row. A radio or checkbox mark on the left shows the
+ * choice by shape as well as colour, and the label keeps its weight, so
+ * nothing moves when it is picked.
  *
  * `kind` sets what assistive tech hears: `radio` for one answer in a
  * `radiogroup`, `checkbox` for "choose all that apply" in a `group`, and
- * `button` for a plain choice that acts at once (such as who is answering).
+ * `button` for a plain choice that acts at once (such as who is answering),
+ * which shows a chevron instead of a mark.
  */
 export function AnswerButton({
   selected = false,
   kind = 'button',
+  hint,
   className,
   children,
   ...props
-}: ButtonHTMLAttributes<HTMLButtonElement> & { selected?: boolean; kind?: 'radio' | 'checkbox' | 'button' }) {
+}: ButtonHTMLAttributes<HTMLButtonElement> & {
+  selected?: boolean
+  kind?: 'radio' | 'checkbox' | 'button'
+  /** A second, quieter line under the label. */
+  hint?: ReactNode
+}) {
+  const hintId = useId()
   const state = kind === 'button' ? { 'aria-pressed': selected } : { role: kind, 'aria-checked': selected }
   return (
-    <button
-      type="button"
-      {...state}
-      className={cn(
-        'flex min-h-14 w-full items-center justify-between gap-3 rounded-card border bg-surface px-5 py-3 text-left text-xl transition-[border-color,box-shadow,background-color]',
-        selected
-          ? 'border-brand-500 font-semibold shadow-[0_0_0_1px_var(--color-brand-500)]'
-          : 'border-answer font-normal hover:border-muted',
-        className,
-      )}
-      {...props}
-    >
-      <span>{children}</span>
-      {selected ? (
-        <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-full bg-brand-500 text-white">
-          <Check className="size-4" strokeWidth={3} />
+    <button type="button" {...state} aria-describedby={hint ? hintId : undefined} className={cn('choice', selected && 'is-selected', className)} {...props}>
+      {kind !== 'button' && (
+        <span aria-hidden className={cn('choice-mark', kind)}>
+          {kind === 'checkbox' && selected && <Check className="size-4" strokeWidth={3} />}
         </span>
-      ) : null}
+      )}
+      <span className="choice-body">
+        {children}
+        {/* Read as the description, not as part of the button's name. */}
+        {hint && <span id={hintId} aria-hidden className="choice-hint">{hint}</span>}
+      </span>
+      {kind === 'button' && <ChevronRight aria-hidden className="chev size-5" />}
     </button>
   )
 }

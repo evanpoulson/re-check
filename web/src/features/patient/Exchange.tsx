@@ -1,3 +1,4 @@
+import { CircleAlert } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
@@ -49,9 +50,9 @@ export function Exchange() {
   if (state.name === 'inactive') {
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-2 text-center">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.inactive')}</h1>
-          <p className="text-muted">{t('exchange.help')}</p>
+        <Card role="alert" className="space-y-3 p-5">
+          <h1>{t('exchange.inactive')}</h1>
+          <p className="text-base text-muted">{t('exchange.help')}</p>
         </Card>
       </PatientLayout>
     )
@@ -61,9 +62,9 @@ export function Exchange() {
     const { conflict, role } = state
     return (
       <PatientLayout>
-        <Card className="space-y-5 text-center">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('exchange.takeover.title')}</h1>
-          <p className="text-muted">
+        <Card className="space-y-4 p-5">
+          <h1>{t('exchange.takeover.title')}</h1>
+          <p className="text-base text-muted">
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
               time: clock(conflict.signed_in_since),
@@ -85,37 +86,34 @@ export function Exchange() {
   const sending = state.name === 'sending'
   return (
     <PatientLayout>
-      <section aria-labelledby="who" className="space-y-6 pt-4">
-        <div className="space-y-3 text-center">
-          <h1 id="who" className="text-[2rem] font-semibold leading-tight tracking-tight">
-            {t('exchange.who')}
-          </h1>
-          <p className="text-base text-muted">{t('exchange.intro')}</p>
+      <section aria-labelledby="who" className="space-y-6">
+        <div>
+          <h1 id="who">{t('exchange.who')}</h1>
+          <p className="p-lede">{t('exchange.intro')}</p>
         </div>
         <div className="grid gap-3">
           {(['patient', 'companion'] as const).map((role) => (
-            <div key={role} className="space-y-1">
-              <AnswerButton
-                selected={sending && state.role === role}
-                disabled={sending}
-                aria-describedby={role === 'companion' ? 'companion-hint' : undefined}
-                onClick={() => void signIn(role)}
-              >
-                {t(`exchange.role.${role}`)}
-              </AnswerButton>
-              {role === 'companion' && (
-                <p id="companion-hint" className="px-5 text-base text-muted">{t('exchange.companionHint')}</p>
-              )}
-            </div>
+            <AnswerButton
+              key={role}
+              selected={sending && state.role === role}
+              disabled={sending}
+              hint={role === 'companion' ? t('exchange.companionHint') : undefined}
+              onClick={() => void signIn(role)}
+            >
+              {t(`exchange.role.${role}`)}
+            </AnswerButton>
           ))}
         </div>
-        <p className="text-center text-base font-semibold">{t('exchange.help')}</p>
-        {sending && <p role="status" className="text-center text-muted">{t('pages.patientEntry')}</p>}
+        {sending && <p role="status" className="text-base text-muted">{t('pages.patientEntry')}</p>}
         {state.name === 'failed' && (
-          <p role="alert" className="rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
+          <p role="alert" className="rounded-card bg-level-red-bg px-5 py-4 text-base font-medium text-level-red">
             {t('exchange.failed')}
           </p>
         )}
+        <p className="flex items-start gap-3 rounded-card bg-surface px-5 py-4 text-base font-medium shadow-card">
+          <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0 text-level-red" />
+          {t('exchange.help')}
+        </p>
       </section>
     </PatientLayout>
   )

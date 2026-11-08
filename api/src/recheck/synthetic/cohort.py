@@ -26,14 +26,14 @@ from datetime import datetime, timedelta
 from typing import Any
 from zoneinfo import ZoneInfo
 
-from .. import attention
-from ..contract.codes import ComplaintGroup
+from .. import attention, rules
+from ..contract.codes import ComplaintGroup, FeelingChange, FeelingNow, FindingCode
 from ..question_bank import QuestionBank, default_bank, ext_value, option_codes
 from . import calibration as cal
 
 SITE_ID = "foothills-demo"
 LOCAL_TZ = ZoneInfo("America/Edmonton")
-RULE_VERSION = "2026-11-07.demo"
+RULE_VERSION = "2026-11-08.demo"
 NAMESPACE = uuid.UUID("6f1d3c52-6a53-4e0b-9a52-1b1f6c0d2a11")
 COHORT_SIZE = 40
 
@@ -463,14 +463,19 @@ class _Sim:
         self.v.reports.append(r)
         self.checkins += 1
         self.v.next_prompt_due_at = t + self.interval
-        # Demo rules, as in the web mocks. A reassuring answer never cancels a task.
-        if r.findings:
-            self.raise_task(t, "red", f"finding_{r.findings[0]}", [r.id])
-        elif feeling_change == "much_worse":
-            self.raise_task(t, "red", "feeling_worse", [r.id])
-        elif feeling_change == "worse":
-            self.raise_task(t, "amber", "feeling_worse", [r.id])
+        # The live rules. A reassuring answer never cancels a task.
+        self.apply(t, r, r.findings or [], feeling_now, feeling_change)
         return r
+
+    def apply(self, t: datetime, r: Report, findings: list[str], feeling_now=None, feeling_change=None) -> None:
+        fires = rules.weigh(
+            [FindingCode(f) for f in findings],
+            FeelingNow(feeling_now) if feeling_now else None,
+            FeelingChange(feeling_change) if feeling_change else None,
+            ComplaintGroup(self.v.complaint_group),
+        )
+        if fires:
+            self.raise_task(t, rules.highest(f.level for f in fires).value, fires[0].reason_code, [r.id])
 
     def attention(self, r: Report) -> None:
         params = self.bank.attention_params()
@@ -546,7 +551,7 @@ class _Sim:
         reporter, channel, session = self.device
         r = Report(self.ids(), "finding", reporter, channel, t, t + timedelta(seconds=1), session, findings=codes)
         self.v.reports.append(r)
-        self.raise_task(t, "red", f"finding_{codes[0]}", [r.id])
+        self.apply(t, r, codes)
         return r
 
     def leaving(self, t: datetime) -> None:

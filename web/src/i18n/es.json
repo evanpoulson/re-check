@@ -98,7 +98,6 @@
   },
   "circle": {
     "intro": "Verá aparecer figuras una por una. Cuente los círculos. No tome en cuenta los cuadrados.",
-    "once": "Solo las verá una vez. Si no puede hacerlo, toque \"No puedo hacerlo\" y el personal irá a ver cómo está.",
     "start": "Comenzar",
     "watch": "Mire la pantalla y cuente los círculos.",
     "cantDo": "No puedo hacerlo",

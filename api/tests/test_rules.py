@@ -7,7 +7,7 @@ from hypothesis import strategies as st
 
 from recheck import rules
 from recheck.attention import AttentionResult
-from recheck.contract.codes import ConcernCode, FeelingChange, FeelingNow, FindingCode, PatientMessage, StaffRole, TaskLevel
+from recheck.contract.codes import ComplaintGroup, ConcernCode, FeelingChange, FeelingNow, FindingCode, PatientMessage, StaffRole, TaskLevel
 from recheck.contract.reports import CheckinReport, ConcernReport, FindingReport, LeavingReport
 from recheck.question_bank import default_bank
 
@@ -37,25 +37,55 @@ checkins = st.builds(
     now=st.none() | st.sampled_from(list(FeelingNow)),
 )
 attention = st.none() | st.sampled_from(list(AttentionResult))
+groups = st.none() | st.sampled_from(list(ComplaintGroup))
 
 
-@given(checkins, attention)
-def test_reassuring_answers_never_fire(report, att):
+@given(checkins, attention, groups)
+def test_reassuring_answers_never_fire(report, att, group):
     """same/better/no findings can't open or raise anything clinical (escalate-only)."""
     reassuring = report.feeling_change.kind == "missing" or report.feeling_change.value in (
         FeelingChange.SAME, FeelingChange.BETTER, FeelingChange.MUCH_BETTER
     )
     if reassuring and not rules.findings_of(report):
-        assert {f.level for f in rules.evaluate(report, att)} <= {TaskLevel.OVERDUE}
+        assert {f.level for f in rules.evaluate(report, att, group)} <= {TaskLevel.OVERDUE}
 
 
-@given(checkins, attention)
-def test_every_finding_is_red_and_the_patient_hears_a_clinician_will_check(report, att):
-    fires = rules.evaluate(report, att)
+@given(checkins, attention, groups)
+def test_every_finding_is_routed_and_the_patient_hears_a_doctor_or_nurse_will_check(report, att, group):
+    """No warning sign is dropped: each one raises at least a review, and the patient hears the same thing."""
+    fires = rules.evaluate(report, att, group)
+    reasons = {f.reason_code: f.level for f in fires}
     for code in rules.findings_of(report):
-        assert rules.Fire(TaskLevel.RED, f"finding_{code.value}") in fires
+        assert reasons[f"finding_{code.value}"] in (TaskLevel.RED, TaskLevel.AMBER)
     if rules.findings_of(report):
         assert rules.patient_message(report, fires) is PatientMessage.CLINICIAN_WILL_CHECK
+
+
+@given(checkins, attention, groups)
+def test_urgent_signs_are_red_on_their_own(report, att, group):
+    fires = rules.evaluate(report, att, group)
+    for code in rules.findings_of(report):
+        if rules.is_urgent(code, group):
+            assert rules.Fire(TaskLevel.RED, f"finding_{code.value}") in fires
+
+
+def test_one_broad_sign_asks_for_review_and_two_are_urgent():
+    assert rules.evaluate(checkin(findings=["vomiting"])) == [rules.Fire(TaskLevel.AMBER, "finding_vomiting")]
+    assert rules.evaluate(checkin(findings=["vision_change", "balance_change"])) == [
+        rules.Fire(TaskLevel.RED, "finding_vision_change"),
+        rules.Fire(TaskLevel.RED, "finding_balance_change"),
+    ]
+    much_worse = rules.evaluate(checkin(change="much_worse", findings=["worst_headache"]))
+    assert rules.Fire(TaskLevel.RED, "finding_worst_headache") in much_worse
+
+
+def test_a_sign_triage_already_recorded_asks_for_review():
+    report = checkin(findings=["chest_pain"])
+    assert rules.evaluate(report, None, ComplaintGroup.CHEST_BACK_PAIN) == [rules.Fire(TaskLevel.AMBER, "finding_chest_pain")]
+    assert rules.evaluate(report, None, ComplaintGroup.GENERAL) == [rules.Fire(TaskLevel.RED, "finding_chest_pain")]
+    # Corroborated, it is urgent again.
+    worse = rules.evaluate(checkin(change="much_worse", findings=["chest_pain"]), None, ComplaintGroup.CHEST_BACK_PAIN)
+    assert rules.Fire(TaskLevel.RED, "finding_chest_pain") in worse
 
 
 @given(checkins, attention)
@@ -84,9 +114,16 @@ def test_attention_check_only_asks_for_an_in_person_look(report, att):
     assert rules.patient_message(report, with_att) is rules.patient_message(report, without)
 
 
-def test_worse_is_amber_much_worse_is_red():
-    assert rules.evaluate(checkin(change="worse")) == [rules.Fire(TaskLevel.AMBER, "feeling_worse")]
-    assert rules.evaluate(checkin(change="much_worse")) == [rules.Fire(TaskLevel.RED, "feeling_worse")]
+def test_feeling_worse_asks_for_review_unless_they_feel_ok_now():
+    review = [rules.Fire(TaskLevel.AMBER, "feeling_worse")]
+    assert rules.evaluate(checkin(change="much_worse", now="very_poor")) == [rules.Fire(TaskLevel.RED, "feeling_worse")]
+    assert rules.evaluate(checkin(change="much_worse", now="poor")) == review
+    assert rules.evaluate(checkin(change="much_worse")) == review
+    assert rules.evaluate(checkin(change="much_worse", now="good")) == review
+    assert rules.evaluate(checkin(change="worse", now="poor")) == review
+    # "Not sure" how they feel now is not reassurance.
+    assert rules.evaluate(checkin(change="worse")) == review
+    assert rules.evaluate(checkin(change="worse", now="ok")) == []
 
 
 def test_concerns():
