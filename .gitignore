@@ -3,3 +3,4 @@
 env
 .seed-tokens*.json
 .claude/
+.codex/
