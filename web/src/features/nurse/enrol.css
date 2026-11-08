@@ -80,10 +80,8 @@
 
 .enrol-segments {
   display: flex;
-  gap: .25rem;
   border: 1px solid var(--color-answer);
   border-radius: var(--radius-tap);
-  padding: .25rem;
   background: var(--color-canvas);
 }
 
