@@ -24,16 +24,13 @@
   },
   "patient": {
     "language": "Język",
-    "waitUnavailable": "Teraz niedostępne.",
+    "waitUnavailable": "Szacunek czasu oczekiwania AHS jest teraz niedostępny.",
     "placeInLine": "Osoby w najcięższym stanie są przyjmowane najpierw. O kolejności decyduje personel, a nie ta aplikacja.",
-    "homeTitle": "Ankiety w poczekalni",
     "titleCompanion": "Tryb osoby towarzyszącej: odpowiedzi w imieniu pacjenta",
     "nextCheckin": "Następna ankieta",
     "startCheckin": "Rozpocznij ankietę",
     "checkinNotOpen": "Jeszcze nie otwarte. Jeśli coś się zmieni wcześniej, użyj przycisków poniżej.",
     "reportChange": "Zgłoś nowy objaw",
-    "reportChange_companion": "Zgłoś nową zauważoną zmianę",
-    "leaving": "Wychodzę",
     "sendFailed": "Nie udało się wysłać. Proszę spróbować ponownie lub powiedzieć o tym komuś z personelu.",
     "languageNotice": "To tłumaczenie jest wersją roboczą. Nie zostało jeszcze sprawdzone przez tłumacza medycznego. W razie niejasności proszę zapytać personel.",
     "languageMissing": "Na razie pytania są po angielsku. Proszę poprosić kogoś z personelu o tłumacza.",
@@ -43,12 +40,11 @@
     "signOutFailed": "Nie udało się wylogować tego telefonu. Proszę spróbować ponownie.",
     "waitContext": "Informacje o poczekalni",
     "contactStaff": "Kontakt z personelem",
-    "moreOptions": "Więcej opcji",
     "companionHint": "Proszę opisać, co widać lub słychać. Tylko ta osoba może powiedzieć, jak się czuje w środku.",
-    "waitedLabel": "Czas oczekiwania od triażu",
-    "estimateLabel": "Szacunek AHS",
-    "estimateValue": "{{estimate}} od triażu do wizyty u lekarza, dla mniej pilnych przypadków",
-    "estimateNote": "To nie jest indywidualny czas oczekiwania. Aktualizacja: {{time}}."
+    "departmentWait": "Aktualny szacunek AHS: {{estimate}} od triażu do wizyty u lekarza, dla mniej pilnych przypadków. To nie jest indywidualny czas oczekiwania.",
+    "title": "Zalogowano",
+    "updated": "Aktualizacja: {{time}}.",
+    "waited": "Czas oczekiwania od triażu: {{waited}}."
   },
   "pain": {
     "low": "Brak bólu",
@@ -58,8 +54,7 @@
     "unsure": "Nie wiem"
   },
   "change": {
-    "send": "Wyślij do personelu",
-    "chooseOne": "Proszę wybrać co najmniej jedną zmianę albo wrócić."
+    "send": "Wyślij do personelu"
   },
   "leaving": {
     "title": "Potwierdzenie wyjścia",
@@ -85,7 +80,7 @@
     "followup_few": "Odpowiedz na jeszcze {{count}} pytania",
     "followup_many": "Odpowiedz na jeszcze {{count}} pytań",
     "followup_other": "Odpowiedz na jeszcze {{count}} pytania",
-    "backHome": "Wróć do strony głównej"
+    "back": "Wstecz"
   },
   "message": {
     "none": "Personel zobaczy odpowiedzi.",
@@ -119,17 +114,13 @@
       "companion": "Osoba towarzysząca"
     },
     "signedOut": {
-      "title": "Nastąpiło wylogowanie",
-      "helpNow": "Jeśli pomoc jest potrzebna teraz, proszę powiedzieć komuś z personelu.",
-      "scanAgain": "Aby zalogować się ponownie, proszę zeskanować kod QR wizyty aparatem tego telefonu."
+      "title": "Nastąpiło wylogowanie.",
+      "help": "Jeśli pomoc jest potrzebna teraz, proszę powiedzieć komuś z personelu. Aby zalogować się ponownie, proszę zeskanować kod QR wizyty."
     },
     "intro": "Ta strona służy do informowania personelu SOR o zmianach w czasie oczekiwania. Nie zastępuje rozmowy z personelem.",
     "help": "Stan znacznie się pogorszył? Proszę od razu powiedzieć komuś z personelu.",
     "companionHint": "Rodzina lub znajomi odpowiadający w imieniu tej osoby",
-    "expired": {
-      "title": "Ten kod już nie działa",
-      "help": "Proszę poprosić kogoś z personelu o nowy kod."
-    }
+    "inactive": "Ten kod już nie działa. Proszę poprosić kogoś z personelu o nowy kod."
   },
   "privacy": {
     "title": "Co przechowujemy",
@@ -143,10 +134,7 @@
     "code": "Proszę nie pokazywać kodu innym."
   },
   "circle": {
-    "title": "Policz kółka",
-    "chooseCount": "Proszę nacisnąć − lub +, aby wybrać liczbę.",
-    "intro": "Na ekranie będą pojawiać się kolejno kształty. Proszę liczyć kółka, a kwadraty pomijać.",
-    "once": "Każdy kształt pojawi się tylko raz. Jeśli nie da się tego zrobić, proszę dotknąć „Nie mogę tego zrobić”, a personel przyjdzie sprawdzić stan zdrowia.",
+    "intro": "Na ekranie będą pojawiać się kolejno kształty. Każdy pojawi się tylko raz.",
     "start": "Start",
     "watch": "Proszę patrzeć na ekran i liczyć kółka.",
     "cantDo": "Nie mogę tego zrobić",
@@ -154,17 +142,12 @@
     "fewer": "O jedno mniej",
     "more": "O jedno więcej",
     "confirm": "Gotowe",
-    "notTest": "To nie jest badanie medyczne. Jeśli to trudne, ktoś z personelu po prostu przyjdzie sprawdzić stan."
+    "notTest": "To nie jest badanie medyczne. Jeśli to trudne, proszę dotknąć „Nie mogę tego zrobić”, a personel przyjdzie sprawdzić stan zdrowia."
   },
   "desk": {
     "title": "Pytanie trafiło do pielęgniarki triażowej",
-    "body": "Pielęgniarka triażowa dostanie pytanie i przyjdzie, gdy będzie mogła.",
-    "notClinical": "W razie pogorszenia proszę nacisnąć „Martwię się, że mój stan się pogarsza”. Jeśli pomoc jest potrzebna od razu, proszę nacisnąć „Potrzebuję pomocy teraz” albo podejść do punktu triażu.",
-    "confirmTitle": "Wysłać pytanie do pielęgniarki triażowej?",
-    "confirmBody": "To miejsce na pytania o czas oczekiwania lub leczenie. Pielęgniarka triażowa przyjdzie, gdy będzie mogła. W razie pogorszenia proszę zamiast tego nacisnąć „Martwię się, że mój stan się pogarsza”.",
-    "confirmBody_companion": "To miejsce na pytania o czas oczekiwania lub leczenie tej osoby. Pielęgniarka triażowa przyjdzie, gdy będzie mogła. Jeśli stan tej osoby wydaje się gorszy, proszę zamiast tego nacisnąć „Martwię się, że stan tej osoby się pogarsza”.",
-    "confirm": "Tak, wyślij pytanie",
-    "cancel": "Anuluj"
+    "body": "Pielęgniarka triażowa dostanie pytanie i przyjdzie, gdy będzie mogła. W razie pogorszenia proszę podejść do punktu triażu.",
+    "notClinical": "W razie pogorszenia proszę nacisnąć „Martwię się, że mój stan się pogarsza”. Jeśli pomoc jest potrzebna od razu, proszę nacisnąć „Potrzebuję pomocy teraz” albo podejść do punktu triażu."
   },
   "flow": {
     "progress": "Pytanie {{n}} z {{total}}",

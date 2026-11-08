@@ -476,16 +476,13 @@
   },
   "patient": {
     "language": "Language",
-    "waitUnavailable": "Not available right now.",
+    "waitUnavailable": "AHS wait estimate not available right now.",
     "placeInLine": "The sickest people are seen first. Staff decide the order of care, not this app.",
-    "homeTitle": "Waiting room check-ins",
     "titleCompanion": "You're answering for someone you're with",
     "nextCheckin": "Next check-in",
     "startCheckin": "Start check-in",
     "checkinNotOpen": "Not open yet. If anything changes before then, use the buttons below.",
     "reportChange": "Tell us about a new symptom",
-    "reportChange_companion": "Tell us about something new you notice",
-    "leaving": "I'm leaving",
     "sendFailed": "That did not send. Please try again, or tell a staff member.",
     "languageNotice": "This translation is a draft. A medical translator has not checked it yet. If anything is unclear, ask a staff member.",
     "languageMissing": "Questions are in English for now. Ask any staff member for an interpreter.",
@@ -495,12 +492,11 @@
     "signOutFailed": "This phone could not sign out. Try again.",
     "waitContext": "Waiting-room information",
     "contactStaff": "Contact staff",
-    "moreOptions": "More options",
     "companionHint": "Tell us what you see or hear. Only they can tell us how they feel inside.",
-    "waitedLabel": "You've waited since triage",
-    "estimateLabel": "AHS estimate",
-    "estimateValue": "{{estimate}} from triage to seeing a doctor, for less urgent patients",
-    "estimateNote": "Not your personal wait. Updated {{time}}."
+    "departmentWait": "AHS estimate right now: {{estimate}} from triage to seeing a doctor, for less urgent patients. It is not your personal wait.",
+    "title": "You're signed in",
+    "updated": "Updated {{time}}.",
+    "waited": "You have waited {{waited}} since triage."
   },
   "pain": {
     "low": "No pain",
@@ -510,8 +506,7 @@
     "unsure": "I'm not sure"
   },
   "change": {
-    "send": "Send to staff",
-    "chooseOne": "Choose at least one change, or go back."
+    "send": "Send to staff"
   },
   "leaving": {
     "title": "Are you leaving?",
@@ -535,7 +530,7 @@
     "stillChecking": "Staff will keep checking on you. If you feel worse, press \"I need help now\" or go to the triage desk.",
     "followup_one": "Answer 1 more question",
     "followup_other": "Answer {{count}} more questions",
-    "backHome": "Back to home"
+    "back": "Back"
   },
   "message": {
     "none": "Staff will see your answers.",
@@ -569,17 +564,13 @@
       "companion": "Someone with the patient"
     },
     "signedOut": {
-      "title": "You've been signed out",
-      "helpNow": "If you need help now, tell a staff member.",
-      "scanAgain": "To sign in again, scan the visit's QR code with this phone's camera."
+      "title": "You've been signed out.",
+      "help": "If you need help now, tell a staff member. To sign in again, scan the visit's QR code."
     },
     "intro": "Use this page to tell ER staff if things change while you wait. It does not replace talking to staff.",
     "help": "Feeling much worse? Tell a staff member now.",
     "companionHint": "Family member or friend answering for them",
-    "expired": {
-      "title": "This code no longer works",
-      "help": "Please ask a staff member for a new code."
-    }
+    "inactive": "This code does not work anymore. Please ask a staff member for a new one."
   },
   "privacy": {
     "title": "What we store",
@@ -604,10 +595,7 @@
     "notShown": "Not shown"
   },
   "circle": {
-    "title": "Count the circles",
-    "chooseCount": "Tap − or + to choose a number.",
-    "intro": "You will see shapes appear one at a time. Count the circles. Ignore the squares.",
-    "once": "You only see them once. If you cannot do this, tap \"I can't do this\" and staff will check on you.",
+    "intro": "Shapes will appear one at a time. You see each one only once.",
     "start": "Start",
     "watch": "Watch the screen and count the circles.",
     "cantDo": "I can't do this",
@@ -615,17 +603,12 @@
     "fewer": "One fewer",
     "more": "One more",
     "confirm": "Done",
-    "notTest": "This is not a medical test. If it's hard, staff will simply come and check on you."
+    "notTest": "This is not a medical test. If it is hard, tap \"I can't do this\" and staff will check on you."
   },
   "desk": {
     "title": "Your question went to the triage nurse",
-    "body": "The triage nurse will get your question and come when they can.",
-    "notClinical": "If you feel worse, press \"I'm worried I'm getting worse\". If you need help right away, press \"I need help now\" or go to the triage desk.",
-    "confirmTitle": "Send a question to the triage nurse?",
-    "confirmBody": "This is for questions about your wait or care. The triage nurse will come when they can. If you feel worse, press \"I'm worried I'm getting worse\" instead.",
-    "confirmBody_companion": "This is for questions about their wait or care. The triage nurse will come when they can. If they seem worse, press \"I'm worried they're getting worse\" instead.",
-    "confirm": "Yes, send my question",
-    "cancel": "Cancel"
+    "body": "The triage nurse will get your question and come when they can. If you feel worse, go to the triage desk.",
+    "notClinical": "If you feel worse, press \"I'm worried I'm getting worse\". If you need help right away, press \"I need help now\" or go to the triage desk."
   },
   "flow": {
     "progress": "Question {{n}} of {{total}}",
