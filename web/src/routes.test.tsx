@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { RouterProvider } from 'react-router'
@@ -96,8 +96,8 @@ describe('staff sign-in', () => {
     const user = userEvent.setup()
     renderApp('/staff/sign-in')
     expect(screen.queryByRole('button', { name: /^Sign in/ })).not.toBeInTheDocument() // mocks have no Auth0
-    await user.click(await screen.findByRole('button', { name: 'Open physician worklist' }))
-    expect(await screen.findByRole('link', { name: /Review worklist/ })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Physician' }))
+    expect(await screen.findByRole('link', { name: /Physician worklist/ })).toBeInTheDocument()
     expect(await getStaffSession()).toMatchObject({ user_id: 'demo|physician', role: 'physician' })
   })
 
@@ -107,7 +107,7 @@ describe('staff sign-in', () => {
     const nav = await screen.findByRole('navigation', { name: 'Staff' })
     expect(within(nav).getByRole('link', { name: /Triage board/ })).toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: /New visit/ })).toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /Review worklist/ })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: /Physician worklist/ })).toBeInTheDocument()
   })
 
   it('signing out clears the server session', async () => {
@@ -115,7 +115,8 @@ describe('staff sign-in', () => {
     const user = userEvent.setup()
     renderApp('/staff/triage')
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
-    expect(await screen.findByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument()
+    // The sign-in page can re-render once while the session clears, so query the live DOM each time.
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument())
     await expect(getStaffSession()).rejects.toMatchObject({ status: 401 })
   })
 
@@ -124,7 +125,22 @@ describe('staff sign-in', () => {
     renderApp('/staff/sign-in?error=access_denied')
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent("isn't on the Recheck staff list")
-    expect(screen.queryByRole('button', { name: 'Open triage board' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Triage nurse' })).not.toBeInTheDocument()
+  })
+
+  it('shows an Auth0 error instead of redirecting to an old demo session', async () => {
+    signInAsNurse()
+    renderApp('/staff/sign-in?error=no_staff_role')
+    expect(await screen.findByRole('alert')).toHaveTextContent('has no Recheck staff role')
+    expect(screen.getByRole('heading', { name: 'Demo roles' })).toBeInTheDocument()
+    await waitFor(() => expect(getStaffSession()).rejects.toMatchObject({ status: 401 }))
+  })
+
+  it('names each staff page in the tab title', async () => {
+    signInAsNurse()
+    renderApp('/staff/triage')
+    await screen.findByRole('heading', { name: 'Triage board' })
+    expect(document.title).toBe('Triage board – Recheck')
   })
 })
 
@@ -628,7 +644,7 @@ describe('physician review flow', () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     const user = userEvent.setup()
     renderApp('/staff/physician')
-    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Physician worklist' })).toBeInTheDocument()
     const list = await screen.findByRole('list', { name: 'Review tasks' })
     expect(within(list).getAllByRole('listitem')).toHaveLength(2)
     expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('New chest pain reported')
@@ -666,7 +682,7 @@ describe('physician review flow', () => {
   it('redirects a physician from nurse enrolment', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     renderApp('/staff/visits/new')
-    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Physician worklist' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'New visit' })).not.toBeInTheDocument()
   })
 

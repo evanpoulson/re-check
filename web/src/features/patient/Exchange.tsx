@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { exchangeToken } from '@/api/api'
@@ -27,6 +27,8 @@ export function Exchange() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
   const [state, setState] = useState<State>({ name: 'choose' })
+  const titleKey = state.name === 'inactive' ? 'exchange.inactive' : state.name === 'conflict' ? 'exchange.takeover.title' : 'exchange.who'
+  useEffect(() => { document.title = `${t(titleKey)} · Recheck` }, [titleKey, t])
 
   async function signIn(role: Role, takeover?: string) {
     setState({ name: 'sending', role })

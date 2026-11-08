@@ -10,7 +10,8 @@
     "none": "None",
     "yes": "Yes",
     "no": "No",
-    "sending": "Sending…"
+    "sending": "Sending…",
+    "retry": "Try again"
   },
   "pages": {
     "signIn": "Staff sign-in",
@@ -38,10 +39,11 @@
     "auth0": "Sign in",
     "auth0Hint": "Use Google, GitHub or a Recheck demo account.",
     "demoHeading": "Or open a demo role without an account",
+    "demoRoles": "Demo roles",
     "open": {
-      "triage_nurse": "Open triage board",
-      "physician": "Open physician worklist",
-      "charge_nurse": "Open as charge nurse"
+      "triage_nurse": "Triage nurse",
+      "physician": "Physician",
+      "charge_nurse": "Charge nurse"
     },
     "signedInAs": "{{name}} · {{role}}",
     "noPages": "Recheck has no pages for the {{role}} role yet.",
@@ -303,7 +305,7 @@
     "failed": "This visit could not be loaded.",
     "app": "Patient app",
     "device": "Signed in",
-    "backToReview": "Back to review worklist",
+    "backToReview": "Back to physician worklist",
     "assessmentRecorded": "Assessment recorded",
     "details": "Visit details",
     "routedTo": "Routed to {{roles}}",
@@ -538,7 +540,7 @@
     "app_excluded": "the app is no longer offered"
   },
   "review": {
-    "title": "Review worklist",
+    "title": "Physician worklist",
     "refresh": "Refresh",
     "updated": "Updated {{time}}",
     "stale": "Update failed. Showing the list from {{time}}.",

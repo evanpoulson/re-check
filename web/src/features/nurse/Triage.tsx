@@ -3,7 +3,7 @@ import { Link } from 'react-router'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getTriageBoard, getWorklist } from '@/api/api'
-import type { ComplaintGroup, TaskLevel } from '@/api/types'
+import type { TaskLevel } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
 import { LevelChip } from '@/components/LevelChip'
 import { Sparkline } from '@/components/Sparkline'
@@ -22,12 +22,13 @@ import {
   type BoardItem,
   type Filters,
 } from '@/lib/board'
+import { COMPLAINT_GROUPS as COMPLAINTS } from '@/lib/enrol'
+import { usePageTitle } from '@/lib/page'
 import { formatMinutes, sinceMs, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { SiteSettingsCard } from './SiteSettings'
 import { useDashboardEvents } from './useDashboardEvents'
 
-const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'general']
 const SELECT = 'min-h-11 rounded-tap border border-line bg-surface pl-4 pr-8 text-[0.9375rem]'
 const pill = 'inline-flex items-center rounded-full px-2.5 py-0.5 text-[0.8125rem] font-semibold whitespace-nowrap'
 
@@ -48,6 +49,7 @@ export function Triage() {
   const { data, isPending, isError } = useBoard()
   const now = useNow()
   const [filters, setFilters] = useState<Filters>({ needsReview: false, ctas: null, complaint: null })
+  usePageTitle(t('pages.triage'))
 
   if (isPending) return <main id="main-content" className="p-6">{t('common.loading')}</main>
   if (isError) return <main id="main-content" className="p-6 font-semibold text-level-red" role="alert">{t('triage.failed')}</main>

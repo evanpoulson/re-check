@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query'
 import { Printer, UserRoundCheck } from 'lucide-react'
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { enrolVisit } from '@/api/api'
 import { ApiError, newSubmissionId } from '@/api/client'
@@ -10,9 +10,9 @@ import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { LANGUAGES } from '@/i18n'
-import { emptyEnrol, validateEnrol, type EnrolErrors, type EnrolForm } from '@/lib/enrol'
+import { COMPLAINT_GROUPS as COMPLAINTS, emptyEnrol, validateEnrol, type EnrolErrors, type EnrolForm } from '@/lib/enrol'
+import { focusHeading, usePageTitle } from '@/lib/page'
 
-const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general']
 const EXCLUSIONS: AppExclusion[] = ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma']
 const FIELD = 'field'
 const LABEL = 'mb-1.5 block text-[0.9375rem] font-semibold'
@@ -30,6 +30,19 @@ export function Enrol() {
   const [done, setDone] = useState<{ visit: VisitEnrolled; pager: boolean } | null>(null)
   // Created once and reused on retry, so a double submit cannot enrol two visits.
   const submissionId = useRef(newSubmissionId())
+  const heading = useRef<HTMLHeadingElement>(null)
+  const shown = useRef(false)
+  usePageTitle(done ? t('enrol.doneTitle') : t('pages.enrol'))
+
+  // "Visit created" and "Enrol another" swap the page in place: open each at the top, heading focused.
+  useEffect(() => {
+    if (!shown.current) {
+      shown.current = true
+      return
+    }
+    window.scrollTo(0, 0)
+    focusHeading(heading.current)
+  }, [done])
 
   const mutation = useMutation({
     mutationFn: enrolVisit,
@@ -74,7 +87,7 @@ export function Enrol() {
     const excluded = visit.app_exclusion
     return (
       <main id="main-content" className="mx-auto max-w-4xl space-y-8 px-4 py-12 sm:px-6">
-        <h1 className="text-center text-4xl font-semibold tracking-tight sm:text-5xl">{t('enrol.doneTitle')}</h1>
+        <h1 ref={heading} className="text-center text-4xl font-semibold tracking-tight sm:text-5xl">{t('enrol.doneTitle')}</h1>
         {excluded ? (
           <Card className="mx-auto max-w-xl space-y-3 text-center">
             <span aria-hidden className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-50 text-brand-600">
@@ -119,7 +132,7 @@ export function Enrol() {
 
   return (
     <main id="main-content" className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 className="mb-8 text-center text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.enrol')}</h1>
+      <h1 ref={heading} className="mb-8 text-center text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.enrol')}</h1>
       <Card className="p-6 sm:p-10">
         <form onSubmit={submit} noValidate className="space-y-7">
           <fieldset>

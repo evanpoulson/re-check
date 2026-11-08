@@ -71,6 +71,10 @@
     outline: 3px solid rgb(0 113 227 / 0.6);
     outline-offset: 2px;
   }
+  /* A page heading takes focus for screen readers on page change; it isn't a control, so no ring. */
+  h1[tabindex='-1']:focus {
+    outline: none;
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
   }
@@ -614,14 +618,37 @@
     accent-color: var(--color-brand-700);
   }
 }
+/* Staff header: one row down to 761 px. Narrower, two rows (brand and sign-out, then nav) and not sticky. */
+.staff-nav-link,
+.staff-who {
+  white-space: nowrap;
+}
 @media (max-width: 1100px) {
   .staff-header {
-    padding: 16px 24px;
-    gap: 24px;
-    flex-wrap: wrap;
+    padding: 6px 24px;
+    gap: 16px;
+  }
+  .staff-header nav {
+    gap: 4px;
+  }
+  .staff-nav-link svg {
+    display: none;
   }
   .staff-identity {
     font-size: 13px;
+  }
+  /* Icon only; the text stays for screen readers and in the tooltip. */
+  .demo-badge.is-compact {
+    padding: 4px;
+  }
+  .demo-badge.is-compact .demo-badge-text,
+  .staff-sign-out-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .staff-page {
     padding: 32px 24px;
@@ -632,18 +659,23 @@
 }
 @media (max-width: 760px) {
   .staff-header {
-    gap: 12px;
-    padding: 16px 20px;
+    position: static;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding: 4px 16px;
   }
   .staff-header nav {
+    order: 3;
+    width: 100%;
     gap: 4px;
+    margin-inline: -8px;
+  }
+  .staff-who {
+    display: none;
   }
   .staff-nav-link {
     font-size: 14px;
     padding: 8px;
-  }
-  .staff-nav-link svg {
-    display: none;
   }
   .staff-page {
     padding: 24px 20px;
@@ -755,6 +787,7 @@ html:has(.patient-shell.has-dock) {
 @media (min-width: 761px) and (max-width: 1100px) {
 }
 .staff-header > a {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   min-height: 44px;

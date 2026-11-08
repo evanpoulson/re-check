@@ -1,6 +1,9 @@
 import { checkEnrolment } from '@/api/cedis'
 import type { AppExclusion, ComplaintGroup, Language, VisitCreate } from '@/api/types'
 
+/** Every complaint group, in the order the enrol form and the board filter list them. */
+export const COMPLAINT_GROUPS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general']
+
 export interface EnrolForm {
   ctas: number | null
   complaint_group: ComplaintGroup

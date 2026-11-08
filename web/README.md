@@ -14,20 +14,20 @@ Open the address Vite prints (usually http://localhost:5173). There is no backen
 ### Try the loop
 
 1. Open `/` and choose **Triage nurse** (a labelled demo role picker; there is no real sign-in yet).
-2. **New visit**: pick a CTAS level and complaint, or type a CEDIS code (try `402`, `003` or `351`). A mapped code locks the complaint group, and an excluded complaint pre-selects "app not offered". Create it. Two QR codes appear, once. Each QR encodes a link such as `/v/<token>`.
-3. Open the **Patient** link in a second tab (or scan it with a phone on the same network). Answer a check-in, play the circle check, or use any of the four always-visible buttons.
+2. **New visit**: pick a CTAS level and complaint, or type a CEDIS code (try `402`, `003` or `351`). A mapped code locks the complaint group, and an excluded complaint pre-selects "app not offered". Create it. One QR code appears, encoding a link such as `/v/<token>`. Whoever scans it chooses patient or companion. The triage nurse can show the same QR again from the visit's **Visit management** tab.
+3. Open the QR link in a second tab, choose **Patient** (or scan it with a phone on the same network). Answer a check-in, play the circle check, or use any of the four always-visible buttons.
 4. Back on the **Triage board**, the flag appears as a badge. The place-in-line numeral on the left does not change: the queue stays in CTAS then arrival order.
 5. Open the patient row, **Acknowledge**, then **Record assessment**. Acknowledging and assessing are separate steps. **Stop offering the app** signs the patient out.
 
-Seeded demo patients, if you want to skip enrolment (each code opens once per browser):
+Seeded demo patients, if you want to skip enrolment. One device is signed in per visit; opening a link on a second device asks to take over.
 
-| Case | Patient link | Companion link |
-| --- | --- | --- |
-| Worsening chest pain, CTAS 2, already flagged red | `/v/demo-patient-chest-token` | `/v/demo-companion-chest-token` |
-| Calm general visit, CTAS 3, no flag | `/v/demo-patient-general-token` | `/v/demo-companion-general-token` |
-| Head injury, CTAS 3, check-in missed (silent) | `/v/demo-patient-head-token` | `/v/demo-companion-head-token` |
-| Confused or drowsy, CTAS 3, companion-only check-in | `/v/demo-patient-confused-token` | `/v/demo-companion-confused-token` |
-| Child, CTAS 4, app not offered | no QR | no QR |
+| Case | QR link (choose patient or companion) |
+| --- | --- |
+| Worsening chest pain, CTAS 2, already flagged red | `/v/demo-chest-token` |
+| Calm general visit, CTAS 3, no flag | `/v/demo-general-token` |
+| Head injury, CTAS 3, check-in missed (silent) | `/v/demo-head-token` |
+| Confused or drowsy, CTAS 3, companion-only check-in | `/v/demo-confused-token` |
+| Child, CTAS 4, app not offered | no QR |
 
 Companion on the general visit, then reporting "Speech is different or hard to understand", is the "new speech change on an unrelated complaint" case.
 
