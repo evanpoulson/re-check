@@ -2,4 +2,4 @@
 .env.*
 env
 .seed-tokens*.json
-.claude
+.claude/
