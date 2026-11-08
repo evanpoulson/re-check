@@ -1,0 +1,345 @@
+{
+ "_source": "question-bank/questionnaire.json, made by tools/make_stub_bank.py. Don't edit by hand.",
+ "version": "2026-11-08.1",
+ "attention": {
+  "circles_min": 4,
+  "circles_max": 8,
+  "squares_min": 2,
+  "squares_max": 4,
+  "show_ms": 1000,
+  "gap_ms": 500,
+  "expires_minutes": 15
+ },
+ "follow_up": [
+  {
+   "item": {
+    "key": "pain_moved",
+    "input_type": "yes_no",
+    "text": "Has the pain moved or spread somewhere new?",
+    "options": [],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "chest_back_pain"
+    }
+   ],
+   "behavior": null,
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "pain_new_location",
+    "input_type": "multi_choice",
+    "text": "Where has it moved or spread to? Tick all that apply.",
+    "options": [
+     {
+      "code": "chest",
+      "text": "Chest"
+     },
+     {
+      "code": "between_shoulders",
+      "text": "Between the shoulder blades"
+     },
+     {
+      "code": "lower_back",
+      "text": "Lower back"
+     },
+     {
+      "code": "belly",
+      "text": "Belly"
+     },
+     {
+      "code": "neck_jaw",
+      "text": "Neck or jaw"
+     },
+     {
+      "code": "arm",
+      "text": "Arm"
+     },
+     {
+      "code": "leg",
+      "text": "Leg"
+     }
+    ],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "pain_moved",
+     "answer": true
+    }
+   ],
+   "behavior": null,
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "pain_sudden_worse",
+    "input_type": "yes_no",
+    "text": "Did the pain suddenly get much worse?",
+    "options": [],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "chest_back_pain"
+    }
+   ],
+   "behavior": null,
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "change_started",
+    "input_type": "choice",
+    "text": "When did this change start?",
+    "options": [
+     {
+      "code": "under_15_min",
+      "text": "Less than 15 minutes ago"
+     },
+     {
+      "code": "from_15_to_60_min",
+      "text": "15 to 60 minutes ago"
+     },
+     {
+      "code": "over_1_hr",
+      "text": "More than an hour ago"
+     }
+    ],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "pain_moved",
+     "answer": true
+    },
+    {
+     "question": "pain_sudden_worse",
+     "answer": true
+    }
+   ],
+   "behavior": "any",
+   "after_routing": true
+  },
+  {
+   "item": {
+    "key": "symptoms_change",
+    "input_type": "choice",
+    "text": "Are the symptoms you came in with better, the same, or worse?",
+    "options": [
+     {
+      "code": "better",
+      "text": "Better"
+     },
+     {
+      "code": "same",
+      "text": "The same"
+     },
+     {
+      "code": "worse",
+      "text": "Worse"
+     }
+    ],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "neuro_change"
+    }
+   ],
+   "behavior": null,
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "headache_sudden_worse",
+    "input_type": "yes_no",
+    "text": "Has your headache suddenly become much worse?",
+    "options": [],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "neuro_change"
+    },
+    {
+     "question": "cedis_code",
+     "answer": "404"
+    }
+   ],
+   "behavior": "all",
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "last_known_well",
+    "input_type": "choice",
+    "text": "When were you last speaking and moving as usual?",
+    "options": [
+     {
+      "code": "under_1_hr",
+      "text": "Less than 1 hour ago"
+     },
+     {
+      "code": "from_1_to_3_hr",
+      "text": "1 to 3 hours ago"
+     },
+     {
+      "code": "from_3_to_6_hr",
+      "text": "3 to 6 hours ago"
+     },
+     {
+      "code": "over_6_hr",
+      "text": "More than 6 hours ago"
+     }
+    ],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "new_findings",
+     "answer": "speech_change"
+    },
+    {
+     "question": "new_findings",
+     "answer": "facial_droop"
+    },
+    {
+     "question": "new_findings",
+     "answer": "new_weakness_numbness"
+    }
+   ],
+   "behavior": "any",
+   "after_routing": true
+  },
+  {
+   "item": {
+    "key": "harder_to_wake",
+    "input_type": "yes_no",
+    "text": "Is it harder to stay awake than before?",
+    "options": [],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "head_injury"
+    },
+    {
+     "question": "complaint_group",
+     "answer": "confused_drowsy"
+    }
+   ],
+   "behavior": "any",
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "vomit_count",
+    "input_type": "choice",
+    "text": "How many times have you vomited since arriving?",
+    "options": [
+     {
+      "code": "zero",
+      "text": "None"
+     },
+     {
+      "code": "one",
+      "text": "Once"
+     },
+     {
+      "code": "two_plus",
+      "text": "Twice or more"
+     }
+    ],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "head_injury"
+    }
+   ],
+   "behavior": null,
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "headache_change",
+    "input_type": "choice",
+    "text": "Compared with the last check, is your headache better, the same, or worse?",
+    "options": [
+     {
+      "code": "better",
+      "text": "Better"
+     },
+     {
+      "code": "same",
+      "text": "The same"
+     },
+     {
+      "code": "worse",
+      "text": "Worse"
+     }
+    ],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "head_injury"
+    }
+   ],
+   "behavior": null,
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "seizure",
+    "input_type": "yes_no",
+    "text": "Have you had a seizure (fit) since arriving?",
+    "options": [],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "head_injury"
+    },
+    {
+     "question": "complaint_group",
+     "answer": "confused_drowsy"
+    }
+   ],
+   "behavior": "any",
+   "after_routing": false
+  },
+  {
+   "item": {
+    "key": "more_confused",
+    "input_type": "yes_no",
+    "text": "Do you feel more muddled or confused than when staff last checked?",
+    "options": [],
+    "allow_unsure": true
+   },
+   "enable_when": [
+    {
+     "question": "complaint_group",
+     "answer": "head_injury"
+    },
+    {
+     "question": "complaint_group",
+     "answer": "confused_drowsy"
+    }
+   ],
+   "behavior": "any",
+   "after_routing": false
+  }
+ ]
+}

@@ -1,0 +1,6 @@
+{
+  "api_base": "stub",
+  "pager_no": "42",
+  "pager_key": "dev-pager-key-not-secret",
+  "stub_group": "chest_back_pain"
+}
