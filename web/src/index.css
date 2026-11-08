@@ -671,7 +671,14 @@
     gap: 16px;
   }
   .staff-header nav {
-    gap: 4px;
+    gap: 2px;
+  }
+  /* The charge nurse has four links: tighter links, and the role name gives way so sign-out stays on screen. */
+  .staff-nav-link {
+    padding-inline: 8px;
+  }
+  .staff-header:has(.staff-nav-link:nth-child(4)) .staff-who {
+    display: none;
   }
   .staff-nav-link svg {
     display: none;
@@ -851,7 +858,8 @@ html:has(.patient-shell.has-dock) {
 
 @media (max-width: 450px) {
   .staff-header { gap: 4px 8px; padding: 6px 12px; }
-  .staff-header nav { flex-wrap: wrap; }
+  .staff-header nav { flex-wrap: wrap; gap: 0; }
+  .staff-nav-link { padding-inline: 6px; font-size: 13px; }
   .staff-identity { gap: 2px; }
   .staff-page { padding: 16px 12px; }
   .page-heading { margin-bottom: 12px; }

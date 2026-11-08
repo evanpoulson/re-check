@@ -50,6 +50,8 @@ export const handlers = [
     return reply(() => store.updateSiteSettings(body))
   }),
   http.get(endpoints.worklist(), () => reply(() => store.worklist())),
+  http.get(endpoints.escalations(), () => reply(() => store.escalations())),
+  http.get(endpoints.handover(), () => reply(() => store.handover())),
   http.get(withParam(endpoints.visitDetail), ({ params }) => reply(() => store.visitDetail(String(params.id)))),
   http.post(withParam(endpoints.vitals), async ({ request }) => {
     const body = (await request.json()) as VitalsCreate

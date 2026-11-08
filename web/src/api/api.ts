@@ -3,8 +3,10 @@ import { endpoints } from './endpoints'
 import type {
   AcknowledgeTask,
   AssessTask,
+  ChargeNurseView,
   FlagHigher,
   FlagRecord,
+  Handover,
   PatientHome,
   PatientReport,
   ReportReceipt,
@@ -54,6 +56,10 @@ export const getSiteSettings = () => request<SiteSettings>('GET', endpoints.site
 export const updateSiteSettings = (body: SiteSettingsUpdate) =>
   request<SiteSettings>('PUT', endpoints.siteSettings(), body)
 export const getWorklist = () => request<Worklist>('GET', endpoints.worklist())
+
+// Charge nurse
+export const getEscalations = () => request<ChargeNurseView>('GET', endpoints.escalations())
+export const getHandover = () => request<Handover>('GET', endpoints.handover())
 export const getVisitDetail = (id: string) => request<VisitDetail>('GET', endpoints.visitDetail(id))
 export const postVitals = (body: VitalsCreate) => request<VitalsRecord>('POST', endpoints.vitals(body.visit_id), body)
 export const postFlagHigher = (body: FlagHigher) => request<FlagRecord>('POST', endpoints.flagHigher(body.visit_id), body)

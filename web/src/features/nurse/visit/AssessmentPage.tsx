@@ -6,7 +6,7 @@ import { useVisit } from './model'
 
 export function AssessmentPage() {
   const { t } = useTranslation()
-  const { detail, stale, canAct, canAcknowledge, isNurse, onComplete } = useVisit()
+  const { detail, stale, canAct, canAcknowledge, isDesk, canFlag, onComplete } = useVisit()
   const task = detail.open_task
   // Acknowledging here moves focus straight to the outcomes, the next step.
   const [focusRequest, setFocusRequest] = useState(0)
@@ -15,7 +15,7 @@ export function AssessmentPage() {
     <>
       <PageHeading title={t('visitTabs.assessment')} lead={t('visitPage.assessment.lead')} />
       <div className="grid items-start gap-6 lg:grid-cols-2 xl:grid-cols-[30rem_minmax(0,1fr)_21.5rem]">
-        {isNurse && (
+        {isDesk && (
           <div className="min-w-0 space-y-4">
             <VitalsCard key={detail.visit.visit_id} detail={detail} stale={stale} />
             <Note>
@@ -53,7 +53,7 @@ export function AssessmentPage() {
               />
             </SectionCard>
           )}
-          {isNurse && <FlagHigherCard visit={detail.visit} stale={stale} />}
+          {canFlag && <FlagHigherCard visit={detail.visit} stale={stale} />}
         </div>
       </div>
     </>

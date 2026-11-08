@@ -20,7 +20,8 @@
     "visit": "Visit",
     "patientEntry": "Opening your check-in",
     "checkIn": "Check-in",
-    "notFound": "Page not found"
+    "notFound": "Page not found",
+    "escalations": "Escalations"
   },
   "nav": {
     "label": "Staff",
@@ -29,7 +30,8 @@
     "signOut": "Sign out",
     "skip": "Skip to content",
     "home": "Recheck staff home",
-    "synthetic": "Synthetic data"
+    "synthetic": "Synthetic data",
+    "escalations": "Escalations"
   },
   "signIn": {
     "explain": "Sign in with your staff account. All visits are synthetic.",
@@ -326,6 +328,7 @@
     "app": "Patient app",
     "device": "Signed in",
     "backToReview": "Back to physician worklist",
+    "backToEscalations": "Back to escalations",
     "assessmentRecorded": "Assessment recorded",
     "details": "Visit details",
     "routedTo": "Routed to {{roles}}",
@@ -735,5 +738,43 @@
     "showLevelHelp": "Applies to every patient at this site. When off, patients see only How triage works. Target times are never shown.",
     "saving": "Saving…",
     "failed": "That setting did not save. Try again."
+  },
+  "escalations": {
+    "tabsLabel": "Charge nurse views",
+    "tabs": {
+      "escalations": "Escalations",
+      "handover": "Handover"
+    },
+    "lead": "Urgent tasks not acknowledged in time, tasks routed to the charge nurse, and triage nurse flags. Highest level first.",
+    "leadNoTlp": "No triage liaison physician is on duty, so every open task is shown here. Highest level first.",
+    "loading": "Loading escalations",
+    "failed": "Escalations unavailable",
+    "empty": "No escalations",
+    "emptyBody": "Nothing has been escalated or routed to the charge nurse.",
+    "listLabel": "Escalated and routed tasks",
+    "backup": "Routed to backup",
+    "raised": "Raised {{time}}"
+  },
+  "handover": {
+    "loading": "Loading handover",
+    "failed": "Handover unavailable",
+    "shift": "Shift {{start}} – {{end}}",
+    "template": "Fixed template. Named handover of tasks is not recorded here.",
+    "patients": "Waiting patients",
+    "openTasks": "Open tasks",
+    "reassessOverdue": "Overdue staff reassessments",
+    "noPatients": "No patients waiting",
+    "noTasks": "No open tasks",
+    "noReassess": "No staff reassessments overdue",
+    "noTask": "No open task",
+    "waited": "waiting {{time}}",
+    "flags": {
+      "ack": "Acknowledgement {{time}} overdue",
+      "reassess": "Reassessment overdue",
+      "silent": "Check-in missed",
+      "prompt": "Check-in late",
+      "leave": "May leave",
+      "none": "Nothing overdue"
+    }
   }
 }
