@@ -39,7 +39,7 @@ async function scanAs(ref: string, role: 'patient' | 'companion') {
   await user.click(await screen.findByRole('button', { name: role === 'patient' ? "I'm the patient" : "I'm with the patient" }))
   return user
 }
-const signInAsNurse = () => localStorage.setItem('recheck-demo-role', 'triage_nurse')
+const signInAsNurse = () => sessionStorage.setItem('recheck-demo-role', 'triage_nurse')
 const queue = async () => sortQueue(joinBoard(await getTriageBoard(), await getWorklist())).map((i) => i.board.visit_id)
 const common = (reporter: 'patient' | 'companion' = 'patient') => ({
   submission_id: newSubmissionId(),
@@ -345,10 +345,10 @@ describe('patient and companion check-in', () => {
     await user.click(await screen.findByRole('button', { name: 'About the same' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     await user.click(await screen.findByRole('button', { name: 'Speech is different or hard to understand' }))
-    await user.click(screen.getByRole('button', { name: 'Send' }))
+    await user.click(screen.getByRole('button', { name: 'Send warning signs now' }))
 
     expect(await screen.findByRole('heading', { name: 'Tell a staff member now' })).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: "I'm telling staff" }))
+    await user.click(await screen.findByRole('button', { name: 'Answer a follow-up' }))
     // The follow-up is asked only after the urgent screen, in the companion wording.
     expect(await screen.findByRole('heading', { name: 'When were they last speaking and moving as usual?' })).toBeInTheDocument()
   })
@@ -499,5 +499,63 @@ describe('the loop and the backend rules', () => {
       await expect(getPatientHome()).rejects.toMatchObject({ status: 401 })
       await expect(updateVisitExclusion(visit.visit_id, { submission_id: newSubmissionId(), app_exclusion: 'child' })).rejects.toMatchObject({ status: 409 })
     })
+  })
+})
+
+describe('physician review flow', () => {
+  it('shows ranked active concerns and filters acknowledged tasks', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    const user = userEvent.setup()
+    renderApp('/staff/physician')
+    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    const list = await screen.findByRole('list', { name: 'Review tasks' })
+    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('New chest pain reported')
+    await user.click(screen.getByRole('button', { name: /Needs assessment/ }))
+    expect(await screen.findByText('No acknowledged tasks')).toBeInTheDocument()
+  })
+
+  it('requires acknowledgement and an explicit disposition before completing an assessment', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    const user = userEvent.setup()
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    renderApp(`/staff/visits/${visit.visit_id}`)
+    await user.click(await screen.findByRole('button', { name: 'Acknowledge' }))
+    const save = await screen.findByRole('button', { name: 'Record assessment' })
+    expect(save).toBeDisabled()
+    await user.selectOptions(screen.getByLabelText('Outcome of the assessment'), 'tests_ordered')
+    await user.click(save)
+    expect(await screen.findByRole('heading', { name: 'Assessment recorded' })).toBeInTheDocument()
+    expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
+
+  })
+
+  it('redirects a physician from nurse enrolment', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    renderApp('/staff/visits/new')
+    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'New visit' })).not.toBeInTheDocument()
+  })
+
+  it('keeps desk-only questions off physician review and shows a subsequent urgent concern', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    await exchangeToken({ token: 'demo-general-token', role: 'patient' })
+    await postReport({ kind: 'concern', concern: 'desk_question', ...common() })
+    const visit = await visitWhere((row) => row.open_task?.routed_to.length === 1 && row.open_task.routed_to[0] === 'triage_nurse')
+    renderApp('/staff/physician')
+    const list = await screen.findByRole('list', { name: 'Review tasks' })
+    expect(list.querySelector(`a[href="/staff/visits/${visit.visit_id}"]`)).toBeNull()
+    await postReport({ kind: 'concern', concern: 'help_now', ...common() })
+    expect((await getVisitDetail(visit.visit_id)).open_task?.routed_to).toContain('physician')
+  })
+
+  it('attributes mock physician actions to the chosen demo role', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const task = (await getVisitDetail(visit.visit_id)).open_task!
+    const acknowledged = await acknowledgeTask(task.task_id, { submission_id: newSubmissionId() })
+    expect(acknowledged.acknowledged_by?.role).toBe('physician')
+    const assessed = await assessTask(task.task_id, { submission_id: newSubmissionId(), disposition: 'tests_ordered' })
+    expect(assessed.assessed_by?.role).toBe('physician')
   })
 })

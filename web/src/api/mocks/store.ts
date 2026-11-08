@@ -93,6 +93,16 @@ interface Session {
 const KEY = 'recheck-mock-state-v3'
 const SESSION_KEY = 'recheck-mock-session-v3'
 export const NURSE: StaffRef = { user_id: 'demo-nurse', role: 'triage_nurse' }
+
+/** Browser demo attribution only. Production identity belongs to the server session. */
+function demoStaff(): StaffRef {
+  try {
+    const role = sessionStorage.getItem('recheck-demo-role')
+    if (role === 'physician' || role === 'charge_nurse') return { user_id: `demo-${role}`, role }
+  } catch { /* fall back to the seeded nurse */ }
+  return NURSE
+}
+
 const LEVELS: TaskLevel[] = ['overdue', 'leave_risk', 'silent', 'amber', 'red']
 const MIN = 60_000
 const INTERVAL_MIN: Record<number, number> = { 2: 15, 3: 30, 4: 60, 5: 120 }
@@ -363,7 +373,14 @@ function raise(
   }
   // A task's level can only go up; new reasons are added to the same task.
   const raised = LEVELS.indexOf(level) > LEVELS.indexOf(r.task.level)
-  r.task = { ...r.task, level: raised ? level : r.task.level, reasons: [...r.task.reasons, reason] }
+  const deadline = iso(at + (level === 'red' ? 2 : 10) * MIN)
+  r.task = {
+    ...r.task,
+    level: raised ? level : r.task.level,
+    routed_to: [...new Set([...r.task.routed_to, ...routedTo])],
+    ack_due_at: r.task.ack_due_at && r.task.ack_due_at < deadline ? r.task.ack_due_at : deadline,
+    reasons: [...r.task.reasons, reason],
+  }
   r.events.push({
     type: 'task_event',
     task_id: r.task.task_id,
@@ -613,8 +630,8 @@ export function acknowledge(taskId: string): Task {
   const t = r.task!
   if (t.status !== 'open') throw new MockError(409, 'Task is already acknowledged')
   const at = iso(Date.now())
-  r.task = { ...t, status: 'acknowledged', acknowledged_at: at, acknowledged_by: NURSE }
-  r.events.push({ type: 'task_event', task_id: t.task_id, event: 'acknowledged', at, level: t.level, by: NURSE })
+  r.task = { ...t, status: 'acknowledged', acknowledged_at: at, acknowledged_by: demoStaff() }
+  r.events.push({ type: 'task_event', task_id: t.task_id, event: 'acknowledged', at, level: t.level, by: demoStaff() })
   save(s)
   notify(r.visit.visit_id, 'task.changed', t.task_id)
   return r.task
@@ -632,8 +649,8 @@ export function assess(taskId: string, disposition: Disposition): Task {
   if (t.status !== 'acknowledged') throw new MockError(409, 'Acknowledge the task before assessing it')
   const now = Date.now()
   const at = iso(now)
-  const done: Task = { ...t, status: 'completed', assessed_at: at, assessed_by: NURSE, disposition }
-  r.events.push({ type: 'task_event', task_id: t.task_id, event: 'assessed', at, level: t.level, by: NURSE })
+  const done: Task = { ...t, status: 'completed', assessed_at: at, assessed_by: demoStaff(), disposition }
+  r.events.push({ type: 'task_event', task_id: t.task_id, event: 'assessed', at, level: t.level, by: demoStaff() })
   r.done.push(done)
   r.task = null
   r.visit = { ...r.visit, last_staff_check_at: at, staff_reassess_due_at: iso(now + intervalOf(r.visit.ctas) * MIN) }

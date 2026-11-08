@@ -117,3 +117,581 @@
     display: none !important;
   }
 }
+
+@layer components {
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    font-size: 25px;
+    letter-spacing: -1px;
+    font-weight: 600;
+  }
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    background: var(--color-ink);
+    color: white;
+    border-radius: 9px;
+    margin-right: 9px;
+  }
+  .brand-period {
+    color: var(--color-brand-600);
+  }
+  /* The redesign's sticky glass bar. */
+  .staff-header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 56px;
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    padding: 6px 32px;
+    border-bottom: 1px solid rgb(210 210 215 / 0.7);
+    background: rgb(251 251 253 / 0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  .staff-header nav {
+    display: flex;
+    gap: 8px;
+  }
+  .staff-nav-link {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 44px;
+    padding: 8px 12px;
+    color: rgb(29 29 31 / 0.8);
+    font-size: 0.875rem;
+    transition: color 150ms;
+  }
+  .staff-nav-link:hover,
+  .staff-nav-link.is-active {
+    color: var(--color-ink);
+  }
+  .staff-nav-link.is-active {
+    font-weight: 600;
+  }
+  .staff-identity {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+  .staff-page {
+    max-width: 1280px;
+    padding: 28px 32px;
+    margin: auto;
+  }
+  .page-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 18px;
+  }
+  .page-heading h1 {
+    font-size: 34px;
+    line-height: 1.15;
+    letter-spacing: -0.9px;
+    font-weight: 600;
+  }
+  .page-heading p {
+    margin-top: 8px;
+    color: var(--color-muted);
+  }
+  .review-surface {
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    overflow: clip;
+  }
+  .list-toolbar {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .filter-group {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    background: var(--color-canvas);
+    border-radius: var(--radius-tap);
+  }
+  .filter-group button {
+    min-height: 44px;
+    padding: 6px 12px;
+    font-size: 14px;
+    border-radius: var(--radius-tap);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .filter-group button[aria-pressed='true'] {
+    background: white;
+    color: var(--color-ink);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
+    font-weight: 600;
+  }
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--color-muted);
+    min-width: 0;
+  }
+  .search-field input {
+    min-height: 44px;
+    font-size: 14px;
+    width: 190px;
+    min-width: 0;
+    background: transparent;
+  }
+  .review-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 235px) 18px;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 20px;
+  }
+  .review-list li + li {
+    border-top: 1px solid var(--color-line);
+  }
+  .review-row {
+    transition: background 0.15s;
+  }
+  .review-row:hover {
+    background: #f9faf8;
+  }
+  .review-row:focus-visible {
+    outline-offset: -4px;
+  }
+  .task-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .task-label::before {
+    content: '';
+    height: 6px;
+    width: 6px;
+    background: currentColor;
+    border-radius: 50%;
+  }
+  .task-red {
+    color: var(--color-level-red);
+  }
+  .task-amber,
+  .task-leave_risk {
+    color: var(--color-level-amber);
+  }
+  .task-silent,
+  .task-overdue {
+    color: var(--color-muted);
+  }
+  .concern-cell h2 {
+    font-size: 19px;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    margin: 4px 0;
+  }
+  .concern-cell p {
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+  .concern-cell p strong {
+    color: var(--color-ink);
+    font-weight: 550;
+  }
+  .review-status {
+    font-size: 14px;
+  }
+  .review-status p {
+    color: var(--color-muted);
+    font-size: 13px;
+    margin-top: 2px;
+  }
+  .row-arrow {
+    color: var(--color-muted);
+  }
+  .page-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 12px;
+    padding: 64px 24px;
+    color: var(--color-muted);
+  }
+  .page-state h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--color-ink);
+  }
+  .page-state p {
+    max-width: 440px;
+  }
+  .skip-link {
+    position: absolute;
+    top: -100px;
+    left: 16px;
+    z-index: 30;
+    padding: 12px;
+    background: white;
+  }
+  .skip-link:focus {
+    top: 12px;
+  }
+  .back-link {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    min-height: 44px;
+    font-size: 0.9375rem;
+    color: var(--color-brand-600);
+    margin-bottom: 16px;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+  .visit-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .visit-heading h1 {
+    font-size: 32px;
+    line-height: 1.2;
+    font-weight: 600;
+    letter-spacing: -0.6px;
+  }
+  .visit-heading p {
+    color: var(--color-muted);
+    margin-top: 8px;
+  }
+  .concern-panel {
+    padding: 28px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .concern-panel h2 {
+    font-size: 28px;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    font-weight: 600;
+    margin: 12px 0;
+  }
+  .concern-panel .routing {
+    font-size: 15px;
+    color: var(--color-muted);
+    margin-top: 12px;
+  }
+  .section-title {
+    font-size: 19px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .disclosure {
+    border-top: 1px solid var(--color-line);
+    padding-top: 16px;
+  }
+  .disclosure > summary {
+    cursor: pointer;
+    min-height: 44px;
+    font-weight: 550;
+    font-size: 16px;
+  }
+  .disclosure[open] > summary {
+    margin-bottom: 16px;
+  }
+  .patient-shell {
+    min-height: 100dvh;
+    padding-bottom: 40px;
+    font-size: 18px;
+  }
+  .patient-shell.has-dock {
+    padding-bottom: calc(142px + env(safe-area-inset-bottom));
+  }
+  .patient-context {
+    color: var(--color-muted);
+    font-size: 15px;
+    line-height: 1.5;
+    margin: 16px 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-line);
+  }
+  .patient-context span {
+    display: block;
+    margin-top: 6px;
+  }
+  .patient-shell main {
+    margin-bottom: 16px;
+  }
+  .patient-shell h1 {
+    font-size: 30px;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -0.6px;
+  }
+  .patient-checkin-card {
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+  .patient-checkin-card h2 {
+    font-size: 21px;
+    font-weight: 600;
+  }
+  .patient-checkin-card p {
+    font-size: 16px;
+    color: var(--color-muted);
+    margin: 8px 0 20px;
+  }
+  .patient-next {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 16px;
+    margin-top: 16px;
+    border-top: 1px solid var(--color-line);
+    font-size: 15px;
+    color: var(--color-muted);
+  }
+  /* Compact version of the redesign's glass help bar. */
+  .patient-dock {
+    position: fixed;
+    inset: auto 0 0;
+    z-index: 10;
+    background: rgb(251 251 253 / 0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid rgb(210 210 215 / 0.7);
+    padding: 8px 16px max(8px, env(safe-area-inset-bottom));
+  }
+  .patient-dock-inner {
+    max-width: 448px;
+    margin: auto;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px 8px;
+  }
+  .patient-dock button {
+    min-height: 44px;
+    padding: 5px 10px;
+    border-radius: var(--radius-tap);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.2;
+  }
+  .patient-help {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    color: white;
+    background: var(--color-level-red);
+    font-weight: 600;
+  }
+  .patient-help:hover {
+    background: color-mix(in srgb, var(--color-level-red), black 15%);
+  }
+  .patient-help-secondary {
+    color: var(--color-brand-600);
+    background: var(--color-surface);
+    border: 1px solid var(--color-brand-500);
+  }
+  .patient-help-secondary:hover {
+    background: var(--color-brand-50);
+  }
+  .patient-dock button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .question-progress {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    font-size: 14px;
+    color: var(--color-muted);
+  }
+  .question-progress progress {
+    width: 96px;
+    height: 4px;
+    accent-color: var(--color-brand-700);
+  }
+}
+@media (max-width: 1100px) {
+  .staff-header {
+    padding: 16px 24px;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .staff-identity {
+    font-size: 13px;
+  }
+  .staff-page {
+    padding: 32px 24px;
+  }
+  .list-toolbar {
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 760px) {
+  .staff-header {
+    gap: 12px;
+    padding: 16px 20px;
+  }
+  .staff-header nav {
+    gap: 4px;
+  }
+  .staff-nav-link {
+    font-size: 14px;
+    padding: 8px;
+  }
+  .staff-nav-link svg {
+    display: none;
+  }
+  .staff-page {
+    padding: 24px 20px;
+  }
+  .page-heading {
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .page-heading h1 {
+    font-size: 29px;
+  }
+  .page-heading p {
+    font-size: 15px;
+  }
+  .page-heading > button {
+    font-size: 0;
+    padding: 0;
+    min-width: 44px;
+  }
+  .page-heading > button svg {
+    width: 18px;
+    height: 18px;
+  }
+  .filter-group {
+    width: 100%;
+  }
+  .filter-group button {
+    flex: 1;
+    font-size: 13px;
+    padding: 6px 7px;
+    min-height: 44px;
+  }
+  .list-toolbar {
+    padding: 12px;
+    gap: 8px;
+  }
+  .search-field {
+    padding-inline: 8px;
+    width: 100%;
+  }
+  .search-field input {
+    font-size: 16px;
+    width: 100%;
+  }
+  .review-row {
+    grid-template-columns: minmax(0, 1fr) 18px;
+    gap: 6px 12px;
+    padding: 12px 14px;
+  }
+  .review-status {
+    grid-column: 1;
+  }
+  .row-arrow {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+
+  .visit-heading h1 {
+    font-size: 28px;
+  }
+  .visit-heading {
+    margin-bottom: 24px;
+  }
+  .concern-panel {
+    padding: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 760px) {
+  .concern-panel {
+    width: 100%;
+  }
+}
+html:has(.patient-shell.has-dock) {
+  scroll-padding-bottom: calc(142px + env(safe-area-inset-bottom));
+}
+.question-progress progress::-webkit-progress-bar {
+  background: var(--color-line);
+  border-radius: 4px;
+}
+.question-progress progress::-webkit-progress-value {
+  background: var(--color-brand-500);
+  border-radius: 4px;
+}
+.question-progress progress {
+  appearance: none;
+  border: 0;
+  border-radius: 4px;
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+}
+.staff-header > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+.filter-group button {
+  min-height: 44px;
+}
+.worklist-footer {
+  align-items: center;
+}
+.worklist-footer a {
+  min-height: 44px;
+}
+@media (max-width: 760px) {
+  .worklist-footer {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 450px) {
+  .staff-header { gap: 4px 8px; padding: 6px 12px; }
+  .staff-header nav { flex-wrap: wrap; }
+  .staff-identity { gap: 2px; }
+  .staff-page { padding: 16px 12px; }
+  .page-heading { margin-bottom: 12px; }
+  .filter-group { flex-wrap: wrap; }
+  .filter-group button { white-space: normal; }
+}

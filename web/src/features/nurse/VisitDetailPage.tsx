@@ -1,92 +1,138 @@
 import { useQuery } from '@tanstack/react-query'
-import { Check, ChevronLeft, Circle } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
+import { useEffect, useRef } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getVisitDetail } from '@/api/api'
-import type { CheckinReport, Task, VisitDetail } from '@/api/types'
+import { bankItems, text } from '@/api/bank'
+import type { CheckinReport, Task, TimelineEntry } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
-import { LevelChip } from '@/components/LevelChip'
+import { PageState } from '@/components/PageState'
 import { Timeline } from '@/components/Timeline'
-import { Card } from '@/components/ui/card'
-import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
+import { itemAnswerText } from '@/lib/answers'
 import { signedInText } from '@/lib/session'
-import { clock, useNow } from '@/lib/time'
+import { getPrimaryTaskReason } from '@/lib/taskLabels'
+import { useNow } from '@/lib/time'
+import { useStaff } from './staff'
 import { useDashboardEvents } from './useDashboardEvents'
-import { VisitActions } from './VisitActions'
+import { VisitActions, VisitTaskAction } from './VisitActions'
+
+const stamp = (value: string) =>
+  new Date(value).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 export function VisitDetailPage() {
   const { t } = useTranslation()
   const { id = '' } = useParams()
+  const { role } = useStaff()
   useDashboardEvents()
   const now = useNow()
-  const { data, isPending, isError } = useQuery({ queryKey: ['visit', id], queryFn: () => getVisitDetail(id) })
+  const { data, isPending, isError, refetch } = useQuery({
+    queryKey: ['visit', id],
+    queryFn: () => getVisitDetail(id),
+    retry: false,
+  })
+  const isNurse = role === 'triage_nurse'
+  const back = isNurse ? '/staff/triage' : '/staff/physician'
+  const task = data?.open_task
+  const completedTitle = useRef<HTMLHeadingElement>(null)
+  const focusCompletion = useRef(false)
 
-  if (isPending) return <main className="p-6">{t('common.loading')}</main>
-  if (isError) return <main role="alert" className="p-6 font-semibold text-level-red">{t('visit.failed')}</main>
+  useEffect(() => {
+    if (!task && focusCompletion.current && completedTitle.current) {
+      completedTitle.current.focus()
+      focusCompletion.current = false
+    }
+  }, [task])
 
-  const { visit, open_task: task } = data
   return (
-    <main className="mx-auto grid max-w-[88rem] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[1fr_26rem]">
-      <div className="space-y-5">
-        <Link to="/staff/triage" className="inline-flex min-h-11 items-center gap-1 text-[0.9375rem] text-brand-600 hover:underline underline-offset-4">
-          <ChevronLeft aria-hidden className="size-4" />
-          {t('visit.back')}
-        </Link>
+    <main id="main-content" className="staff-page max-w-3xl">
+      <Link to={back} className="back-link">
+        <ChevronLeft aria-hidden size={16} />
+        {isNurse ? t('visit.back') : t('visit.backToReview')}
+      </Link>
+      {!data ? (
+        <PageState
+          loading={isPending}
+          title={isPending ? t('common.loading') : t('visit.failed')}
+          retry={isError ? () => void refetch() : undefined}
+        />
+      ) : (
+        <>
+          <header className="visit-heading">
+            <div>
+              <h1>
+                {data.visit.pager_no
+                  ? t('visit.pager', { pager: data.visit.pager_no })
+                  : t('visit.title', { ref: data.visit.visit_id.slice(0, 4) })}
+              </h1>
+              <p>
+                {t(`complaint.${data.visit.complaint_group}`)} · {t('visit.ctas')} {data.visit.ctas}
+              </p>
+            </div>
+            <span className="text-sm text-muted">{t(`visitStatus.${data.visit.status}`)}</span>
+          </header>
 
-        <Card className="space-y-6">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-4xl font-semibold tracking-tight">
-              {visit.pager_no ? t('visit.pager', { pager: visit.pager_no }) : t('visit.title', { ref: visit.visit_id.slice(0, 4) })}
-            </h1>
-            {task && <LevelChip level={task.level} />}
+          <div className="space-y-6">
+            {isError && (
+              <p role="status" className="rounded-data border border-line bg-surface p-3">
+                {t('visit.stale')}
+              </p>
+            )}
+            {task ? (
+              <Concern
+                task={task}
+                entries={data.timeline}
+                canAct={!!role && task.routed_to.includes(role)}
+                stale={isError}
+                onComplete={() => { focusCompletion.current = true }}
+              />
+            ) : (
+              <section aria-live="polite" className="border-b border-line pb-4">
+                <h2 ref={completedTitle} tabIndex={-1} className="text-lg font-semibold">
+                  {data.timeline.some((entry) => 'event' in entry && entry.event === 'assessed')
+                    ? t('visit.assessmentRecorded')
+                    : t('visit.noTask')}
+                </h2>
+              </section>
+            )}
+
+            <dl className="flex flex-wrap gap-x-8 gap-y-3 border-b border-line pb-4">
+              <div>
+                <dt className="eyebrow">{t('visit.nextReassess')}</dt>
+                <dd className="font-semibold"><CountdownChip due={data.visit.staff_reassess_due_at} now={now} /></dd>
+              </div>
+              <div>
+                <dt className="eyebrow">{t('visit.nextPrompt')}</dt>
+                <dd>
+                  {data.visit.app_exclusion
+                    ? t('time.notApplicable')
+                    : <CountdownChip due={data.visit.next_prompt_due_at} now={now} />}
+                </dd>
+              </div>
+            </dl>
+
+            <VisitHistory entries={data.timeline} />
+            {isNurse && <VisitActions key={id} detail={data} stale={isError} />}
+
+            <details className="disclosure">
+              <summary>{t('visit.details')}</summary>
+              <dl className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <Field label={t('visit.triaged')} value={stamp(data.visit.triaged_at)} />
+                <Field label={t('visit.cedis')} value={data.visit.cedis_code ?? t('common.none')} />
+                <Field label={t('visit.language')} value={t(`language.${data.visit.language}`)} />
+                <Field label={t('visit.channel')} value={data.visit.channel ? t(`channel.${data.visit.channel}`) : t('common.none')} />
+                <Field label={t('visit.app')} value={
+                  data.visit.app_exclusion
+                    ? t('enrol.notOffered', { reason: t(`exclusion.${data.visit.app_exclusion}`) })
+                    : t('enrol.appOffered')
+                } />
+                {!data.visit.app_exclusion && <Field label={t('visit.device')} value={signedInText(data.visit, t)} />}
+                <Field label={t('visit.lastStaffCheck')} value={data.visit.last_staff_check_at ? stamp(data.visit.last_staff_check_at) : t('common.none')} />
+              </dl>
+            </details>
           </div>
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
-            <Field label={t('visit.ctas')} value={String(visit.ctas)} />
-            <Field label={t('visit.complaint')} value={t(`complaint.${visit.complaint_group}`)} />
-            <Field label={t('visit.cedis')} value={visit.cedis_code ?? t('common.none')} />
-            <Field label={t('visit.language')} value={t(`language.${visit.language}`)} />
-            <Field label={t('visit.channel')} value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')} />
-            <Field label={t('visit.app')} value={visit.app_exclusion ? t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) }) : t('enrol.appOffered')} />
-            <Field label={t('visit.status')} value={t(`visitStatus.${visit.status}`)} />
-            {!visit.app_exclusion && <Field label={t('visit.device')} value={signedInText(visit, t)} />}
-            <Field label={t('visit.triaged')} value={clock(visit.triaged_at)} />
-          </dl>
-        </Card>
-
-        <Card className="space-y-4">
-          <h2 className="text-2xl font-semibold tracking-tight">{t('visit.timers')}</h2>
-          <p className="text-sm text-muted">{t('visit.timersHelp')}</p>
-          <dl className="grid gap-4 sm:grid-cols-3">
-            <div>
-              <dt className="eyebrow">{t('visit.nextPrompt')}</dt>
-              <dd className="mt-0.5 text-[1.0625rem]">{visit.app_exclusion ? t('time.notApplicable') : <CountdownChip due={visit.next_prompt_due_at} now={now} />}</dd>
-            </div>
-            <div>
-              <dt className="eyebrow">{t('visit.nextReassess')}</dt>
-              <dd className="mt-0.5 text-[1.0625rem]"><CountdownChip due={visit.staff_reassess_due_at} now={now} /></dd>
-            </div>
-            <div>
-              <dt className="eyebrow">{t('visit.lastStaffCheck')}</dt>
-              <dd className="mt-0.5 text-[1.0625rem]">{visit.last_staff_check_at ? clock(visit.last_staff_check_at) : t('common.none')}</dd>
-            </div>
-          </dl>
-        </Card>
-
-        {task ? <TaskCard task={task} /> : (
-          <Card><p className="text-muted">{t('visit.noTask')}</p></Card>
-        )}
-
-        <LatestAnswers detail={data} />
-
-        <Card className="space-y-3">
-          <h2 className="text-2xl font-semibold tracking-tight">{t('visit.timeline')}</h2>
-          <Timeline entries={data.timeline} />
-        </Card>
-      </div>
-
-      <aside>
-        <VisitActions detail={data} />
-      </aside>
+        </>
+      )}
     </main>
   )
 }
@@ -100,79 +146,128 @@ function Field({ label, value }: { label: string; value: string }) {
   )
 }
 
-/** Why it was flagged, and where the task is: created, delivered, acknowledged, assessed. */
-function TaskCard({ task }: { task: Task }) {
+function Concern({ task, entries, canAct, stale, onComplete }: {
+  task: Task
+  entries: TimelineEntry[]
+  canAct: boolean
+  stale: boolean
+  onComplete: () => void
+}) {
   const { t } = useTranslation()
+  const reason = getPrimaryTaskReason(task)
+  const source = entries.find(
+    (entry): entry is Extract<TimelineEntry, { report_id: string }> =>
+      'report_id' in entry && !!reason?.evidence.some((ref) => ref.kind === 'report' && ref.id === entry.report_id),
+  )
   const steps = [
-    { key: 'created', at: task.created_at, by: null as string | null },
-    { key: 'delivered', at: task.delivered_at, by: null },
-    { key: 'acknowledged', at: task.acknowledged_at, by: task.acknowledged_by ? t(`role.${task.acknowledged_by.role}`) : null },
-    { key: 'assessed', at: task.assessed_at, by: task.assessed_by ? t(`role.${task.assessed_by.role}`) : null },
+    { key: 'created', at: task.created_at, role: null },
+    { key: 'delivered', at: task.delivered_at, role: null },
+    { key: 'acknowledged', at: task.acknowledged_at, role: task.acknowledged_by?.role },
+    { key: 'assessed', at: task.assessed_at, role: task.assessed_by?.role },
   ]
+  const roles = task.routed_to.map((role) => t(`role.${role}`)).join(', ')
+
   return (
-    <Card className="space-y-4">
-      <h2 className="text-2xl font-semibold tracking-tight">{t('visit.whyFlagged')}</h2>
-      <ul className="space-y-2">
-        {task.reasons.map((r, i) => (
-          <li key={i} className="rounded-2xl bg-canvas p-4">
-            <div className="flex items-center gap-2">
-              <LevelChip level={r.level} />
-              <span className="font-semibold">{t(`reason.${r.reason_code}`, { defaultValue: r.reason_code })}</span>
-            </div>
-            <div className="mt-1 text-sm text-muted">
-              {t('visit.ruleLine', { rule: r.rule_id, version: r.rule_version, count: r.evidence.length })}
-            </div>
-          </li>
-        ))}
-      </ul>
-      <ol className="grid gap-2 sm:grid-cols-2" aria-label={t('visit.steps')}>
-        {steps.map((s) => (
-          <li key={s.key} className="flex items-center gap-2">
-            {s.at ? <Check aria-hidden className="size-5 text-brand-500" /> : <Circle aria-hidden className="size-5 text-line" />}
-            <span className="font-semibold">{t(`taskStep.${s.key}`)}</span>
-            <span className="tabular text-muted">
-              {s.at ? clock(s.at) : t('visit.pending')}
-              {s.by ? `, ${s.by}` : ''}
-              {s.key === 'assessed' && task.disposition ? `, ${t(`disposition.${task.disposition}`)}` : ''}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </Card>
+    <section className="concern-panel" aria-labelledby="active-concern">
+      <span className={`task-label task-${task.level}`}>{t(`taskLevel.${task.level}`)}</span>
+      <h2 id="active-concern">
+        {reason
+          ? t(`reason.${reason.reason_code}`, { defaultValue: reason.reason_code.replaceAll('_', ' ') })
+          : t('actions.task')}
+      </h2>
+      <div className="mb-4 space-y-1 text-sm text-muted">
+        {source ? (
+          <p>{t('answers.from', { who: t(`reporter.${source.report.reporter}`), time: stamp(source.received_at) })}</p>
+        ) : reason && (
+          <p>{t('visit.flaggedAt', { time: stamp(reason.fired_at) })}</p>
+        )}
+        <p>
+          {t('visit.routedTo', { roles })}
+          {task.escalated && <> · {t('visit.routedToBackup')}</>}
+        </p>
+      </div>
+      {canAct && <VisitTaskAction key={task.task_id} task={task} stale={stale} onComplete={onComplete} />}
+      <details className="disclosure mt-4">
+        <summary>{t('visit.reviewEvidence')}</summary>
+        <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {steps.map(({ key, at, role }) => (
+            <Field key={key} label={t(`taskStep.${key}`)} value={
+              [at ? stamp(at) : t('visit.pending'), role ? t(`role.${role}`) : null].filter(Boolean).join(' · ')
+            } />
+          ))}
+        </dl>
+        <ul className="mt-4 space-y-3">
+          {task.reasons.map((entry, i) => (
+            <li key={i}>
+              <p>{t(`reason.${entry.reason_code}`, { defaultValue: entry.reason_code.replaceAll('_', ' ') })}</p>
+              <p className="text-sm text-muted">
+                {stamp(entry.fired_at)} · {t('visit.ruleLine', { rule: entry.rule_id, version: entry.rule_version, count: entry.evidence.length })}
+              </p>
+              {entry.evidence.map((e) => (
+                <p className="break-all text-sm text-muted" key={`${e.kind}-${e.id}`}>{e.kind}: {e.id}</p>
+              ))}
+            </li>
+          ))}
+        </ul>
+      </details>
+    </section>
   )
 }
 
-const humanKey = (k: string) => k.replace(/_/g, ' ')
-
-/** The latest check-in, with every missing reason kept distinct from "no". */
-function LatestAnswers({ detail }: { detail: VisitDetail }) {
+function VisitHistory({ entries }: { entries: TimelineEntry[] }) {
   const { t } = useTranslation()
-  const last = [...detail.timeline]
-    .reverse()
-    .find((e): e is Extract<typeof e, { report_id: string }> => 'report_id' in e && e.report.kind === 'checkin')
-  if (!last) return null
-  const c = last.report as CheckinReport
-  const rows: [string, string][] = [
-    [t('answers.feelingChange'), choiceText(c.feeling_change, 'feeling_change', t)],
-    [t('answers.feelingNow'), choiceText(c.feeling_now, 'feeling_now', t)],
-    [t('answers.pain'), painText(c.pain, t)],
-    [t('answers.findings'), findingsText(c.new_findings, t)],
-    [t('answers.attention'), attentionText(c.attention, t)],
-    ...Object.entries(c.items ?? {}).map(([k, a]): [string, string] => [humanKey(k), itemAnswerText(a, t)]),
-  ]
+  const days = new Map<string, TimelineEntry[]>()
+  for (const entry of entries) {
+    const at = 'received_at' in entry ? entry.received_at : 'started_at' in entry ? entry.started_at : entry.at
+    const day = new Date(at).toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' })
+    const list = days.get(day) ?? []
+    list.push(entry)
+    days.set(day, list)
+  }
+  const branchReports = entries.flatMap((entry) =>
+    'report_id' in entry && entry.report.kind === 'checkin' && Object.keys(entry.report.items ?? {}).length > 0
+      ? [{ report: entry.report, at: entry.received_at, id: entry.report_id }]
+      : [],
+  )
+
   return (
-    <Card className="space-y-4">
-      <h2 className="text-2xl font-semibold tracking-tight">{t('visit.latestAnswers')}</h2>
-      <p className="text-sm text-muted">{t('answers.from', { who: t(`reporter.${c.reporter}`), time: clock(last.received_at) })}</p>
-      {c.reporter === 'companion' && <p className="text-sm font-semibold">{t('answers.companionOnly')}</p>}
-      <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
-        {rows.map(([k, v]) => (
-          <div key={k}>
-            <dt className="eyebrow">{k}</dt>
-            <dd className="mt-0.5 text-[1.0625rem]">{v}</dd>
-          </div>
+    <section aria-labelledby="visit-history">
+      <h2 id="visit-history" className="section-title">{t('visit.timeline')}</h2>
+      {days.size === 0 && <Timeline entries={[]} />}
+      {[...days].map(([day, records]) => (
+        <div className="mt-4" key={day}>
+          <h3 className="mb-2 text-sm font-semibold text-muted">{day}</h3>
+          <Timeline entries={records} />
+        </div>
+      ))}
+      {branchReports.length > 0 && (
+        <details className="disclosure mt-4">
+          <summary>{t('visit.historyDetail')}</summary>
+          <ul className="space-y-4">
+            {branchReports.map(({ report, at, id }) => (
+              <li key={id}><BranchAnswers report={report} at={at} /></li>
+            ))}
+          </ul>
+        </details>
+      )}
+    </section>
+  )
+}
+
+function BranchAnswers({ report, at }: { report: CheckinReport; at: string }) {
+  const { t } = useTranslation()
+  return (
+    <>
+      <p className="mb-2 text-sm text-muted">{t('answers.from', { who: t(`reporter.${report.reporter}`), time: stamp(at) })}</p>
+      <dl className="grid gap-3 sm:grid-cols-2">
+        {Object.entries(report.items ?? {}).map(([key, value]) => (
+          <Field
+            key={key}
+            label={bankItems.has(key) ? text(key, report.reporter) : key.replaceAll('_', ' ')}
+            value={itemAnswerText(value, t)}
+          />
         ))}
       </dl>
-    </Card>
+    </>
   )
 }

@@ -2,7 +2,9 @@ import { createContext, useCallback, useContext, useMemo, useState, type ReactNo
 import { Navigate, NavLink, Outlet, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { StaffRole } from '@/api/types'
+import { Brand } from '@/components/Brand'
 import { DemoBadge } from '@/components/DemoBadge'
+import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -19,7 +21,8 @@ const Ctx = createContext<StaffContext | null>(null)
 
 const readRole = (): StaffRole | null => {
   try {
-    return localStorage.getItem(KEY) as StaffRole | null
+    const role = sessionStorage.getItem(KEY)
+    return role === 'physician' || role === 'triage_nurse' ? role : null
   } catch {
     return null
   }
@@ -29,7 +32,7 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<StaffRole | null>(readRole)
   const signIn = useCallback((r: StaffRole) => {
     try {
-      localStorage.setItem(KEY, r)
+      sessionStorage.setItem(KEY, r)
     } catch {
       /* in memory only */
     }
@@ -37,7 +40,7 @@ export function StaffProvider({ children }: { children: ReactNode }) {
   }, [])
   const signOut = useCallback(() => {
     try {
-      localStorage.removeItem(KEY)
+      sessionStorage.removeItem(KEY)
     } catch {
       /* ignore */
     }
@@ -53,45 +56,43 @@ export function useStaff(): StaffContext {
   return v
 }
 
-const link = ({ isActive }: { isActive: boolean }) =>
-  cn(
-    'inline-flex min-h-11 items-center px-3 text-[0.8125rem] transition-colors',
-    isActive ? 'font-semibold text-ink' : 'text-ink/80 hover:text-ink',
-  )
+const link = ({ isActive }: { isActive: boolean }) => cn('staff-nav-link', isActive && 'is-active')
+export const staffHome = (role: StaffRole) => role === 'physician' ? '/staff/physician' : '/staff/triage'
 
-/** Chrome for every staff screen. Sends you to sign-in when no demo role is chosen. */
+export function RequireStaffRole({ role: allowed }: { role: StaffRole }) {
+  const { role } = useStaff()
+  if (!role) return <Navigate to="/staff/sign-in" replace />
+  return role === allowed ? <Outlet /> : <Navigate to={staffHome(role)} replace />
+}
+
+/** This controls demo navigation. The service must authorize staff requests. */
 export function StaffLayout() {
   const { t } = useTranslation()
   const { role, signOut } = useStaff()
   const navigate = useNavigate()
   if (!role) return <Navigate to="/staff/sign-in" replace />
   return (
-    <div className="min-h-dvh">
-      <header className="glass sticky top-0 z-20 border-b border-line/70 no-print">
-        <div className="mx-auto flex max-w-[88rem] flex-wrap items-center gap-x-4 gap-y-1 px-4 sm:px-6">
-          <span className="text-lg font-semibold tracking-tight">{t('app.name')}</span>
-          <nav aria-label={t('nav.label')} className="flex">
-            <NavLink to="/staff/triage" className={link}>
-              {t('nav.triage')}
-            </NavLink>
-            <NavLink to="/staff/visits/new" className={link}>
-              {t('nav.enrol')}
-            </NavLink>
-          </nav>
-          <div className="ml-auto flex items-center gap-3">
-            <DemoBadge />
-            <span className="text-[0.8125rem] text-muted">{t(`role.${role}`)}</span>
-            <Button
-              variant="ghost"
-              className="min-h-11 px-2 text-[0.8125rem]"
-              onClick={() => {
-                signOut()
-                navigate('/staff/sign-in')
-              }}
-            >
-              {t('nav.signOut')}
-            </Button>
-          </div>
+    <div className="staff-shell">
+      <a href="#main-content" className="skip-link">{t('nav.skip')}</a>
+      <header className="staff-header no-print">
+        <NavLink to={staffHome(role)} aria-label={t('nav.home')}><Brand /></NavLink>
+        <nav aria-label={t('nav.label')}>
+          {role === 'physician' ? (
+            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
+          ) : (
+            <>
+              <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>
+              <NavLink to="/staff/visits/new" className={link}><Plus size={18} aria-hidden />{t('nav.enrol')}</NavLink>
+            </>
+          )}
+        </nav>
+        <div className="staff-identity">
+          <DemoBadge />
+          <span className="hidden sm:inline">{t(`role.${role}`)}</span>
+          <Button variant="ghost" aria-label={t('nav.changeRole')} onClick={() => {
+            signOut()
+            navigate('/staff/sign-in')
+          }}><LogOut size={18} aria-hidden /></Button>
         </div>
       </header>
       <Outlet />

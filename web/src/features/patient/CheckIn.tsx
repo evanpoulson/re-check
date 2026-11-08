@@ -1,11 +1,19 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { CircleAlert, CircleCheckBig, Clock, OctagonAlert } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight, CircleAlert, CircleCheckBig, Clock, OctagonAlert } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
 import { options, text } from '@/api/bank'
 import { ApiError, newSubmissionId } from '@/api/client'
-import type { CheckinReport, ConcernCode, FindingCode, PatientHome, PatientMessage, PatientReport, ReportReceipt } from '@/api/types'
+import type {
+  CheckinReport,
+  ConcernCode,
+  FindingCode,
+  PatientHome,
+  PatientMessage,
+  PatientReport,
+  ReportReceipt,
+} from '@/api/types'
 import { AnswerButton } from '@/components/AnswerButton'
 import { CountdownChip } from '@/components/CountdownChip'
 import { Button } from '@/components/ui/button'
@@ -21,9 +29,13 @@ type View =
   | { name: 'change' }
   | { name: 'confirmLeave' }
   | { name: 'followup'; keys: string[] }
-  | { name: 'urgent'; queued: boolean; followUps: string[] }
   | { name: 'desk'; queued: boolean }
   | { name: 'sent'; queued: boolean; message: PatientMessage }
+
+type UrgentNotice = {
+  status: 'sending' | 'sent' | 'queued' | 'failed'
+  followUps: string[]
+}
 
 const URGENT: PatientMessage[] = ['clinician_will_check', 'clinician_told']
 
@@ -42,16 +54,40 @@ export function CheckIn() {
   const [view, setView] = useState<View>({ name: 'home' })
   const [sending, setSending] = useState(false)
   const [failed, setFailed] = useState(false)
+  const [urgent, setUrgent] = useState<UrgentNotice | null>(null)
+  const urgentBody = useRef<PatientReport | null>(null)
+  const urgentInFlight = useRef(false)
+  const urgentHeading = useRef<HTMLHeadingElement>(null)
+  const urgentVisible = urgent !== null
+  useEffect(() => {
+    if (urgentVisible) urgentHeading.current?.focus()
+  }, [urgentVisible])
+  const content = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (urgentVisible) return
+    const heading = content.current?.querySelector('h1')
+    if (heading) {
+      heading.tabIndex = -1
+      heading.focus()
+    }
+  }, [view.name, urgentVisible])
 
-  if (isPending) return <PatientLayout><p role="status">{t('common.loading')}</p></PatientLayout>
-  if (error || !home) {
+  if (isPending)
+    return (
+      <PatientLayout>
+        <p role="status">{t('common.loading')}</p>
+      </PatientLayout>
+    )
+  if (!home || (error instanceof ApiError && error.status === 401 && !urgentVisible)) {
     // Signed out by takeover, by staff, by the person, or because the visit closed.
     // A signed-out device can't send anything, so it says to tell staff.
     const signedOut = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
         <Card role="alert" className="space-y-2 text-center">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}</h1>
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+            {t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}
+          </h1>
           <p className="text-muted">{t(signedOut ? 'exchange.signedOut.help' : 'exchange.askDesk')}</p>
         </Card>
       </PatientLayout>
@@ -71,8 +107,8 @@ export function CheckIn() {
     setFailed(false)
     try {
       const result = await sendReport(body)
-      if (!result.queued) await qc.invalidateQueries({ queryKey: ['home'] })
       setView(after(result.queued ? null : result.receipt))
+      if (!result.queued) void qc.invalidateQueries({ queryKey: ['home'] })
     } catch (e) {
       // A prompt the server no longer accepts (expired or already used): get a fresh one.
       // Signed out (401): refetching shows the signed-out screen.
@@ -86,190 +122,253 @@ export function CheckIn() {
   const afterReport = (receipt: ReportReceipt | null): View => {
     if (!receipt) return { name: 'sent', queued: true, message: 'none' }
     const followUps = receipt.follow_up_items ?? []
-    if (URGENT.includes(receipt.patient_message)) return { name: 'urgent', queued: false, followUps }
+    if (URGENT.includes(receipt.patient_message)) {
+      setUrgent((current) => current ?? { status: 'sent', followUps })
+      return { name: 'home' }
+    }
     if (followUps.length > 0) return { name: 'followup', keys: followUps }
     return { name: 'sent', queued: false, message: receipt.patient_message }
   }
 
-  const concern = (c: ConcernCode) => {
-    if (c === 'desk_question') {
-      // Non-clinical: it goes to the triage nurse, so it never shows the urgent screen.
-      return void deliver({ kind: 'concern', concern: c, ...common() }, (receipt) => ({ name: 'desk', queued: receipt === null }))
+  async function deliverUrgent(body: PatientReport, finish?: () => void) {
+    if (urgentInFlight.current) return
+    urgentInFlight.current = true
+    urgentBody.current = body
+    setUrgent({ status: 'sending', followUps: [] })
+    try {
+      const result = await sendReport(body)
+      const followUps = result.queued ? [] : (result.receipt.follow_up_items ?? [])
+      setUrgent({ status: result.queued ? 'queued' : 'sent', followUps })
+      finish?.()
+      if (!result.queued) void qc.invalidateQueries({ queryKey: ['home'] })
+    } catch {
+      setUrgent({ status: 'failed', followUps: [] })
+    } finally {
+      urgentInFlight.current = false
     }
-    return void deliver({ kind: 'concern', concern: c, ...common() }, (receipt) =>
-      // A help request always shows the "tell staff now" screen, even if it could not be sent yet.
-      receipt ? { name: 'urgent', queued: false, followUps: receipt.follow_up_items ?? [] } : { name: 'urgent', queued: true, followUps: [] },
-    )
   }
 
-  const submitCheckin = (report: CheckinReport) => void deliver(report, afterReport)
+  const concern = (c: ConcernCode) => {
+    const body = { kind: 'concern', concern: c, ...common() } as const
+    if (c === 'desk_question') {
+      return void deliver(body, (receipt) => ({ name: 'desk', queued: receipt === null }))
+    }
+    void deliverUrgent(body)
+  }
+
+  const submitCheckin = (report: CheckinReport) => {
+    if (report.new_findings.kind === 'answered' && report.new_findings.value.length > 0) {
+      void deliverUrgent(report, () => setView({ name: 'home' }))
+    } else {
+      void deliver(report, afterReport)
+    }
+  }
+  const endSession = async (submission_id: string) => {
+    await signOut({ submission_id })
+    await qc.invalidateQueries({ queryKey: ['home'] })
+  }
   const refreshPrompt = () => void qc.invalidateQueries({ queryKey: ['home'] })
 
   return (
-    <PatientLayout home={home} dock={{ onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}>
-      {failed && (
-        <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
-          <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
-          {t('patient.sendFailed')}
-        </p>
-      )}
-
-      {view.name === 'home' && (
-        <Home
-          home={home}
-          now={now}
-          setView={setView}
-          onSignOut={async () => {
-            await signOut({ submission_id: newSubmissionId() }).catch(() => undefined)
-            await qc.invalidateQueries({ queryKey: ['home'] })
-          }}
-        />
-      )}
-
-      {view.name === 'checkin' && (
-        <CheckinFlow
-          key={`full-${home.attention_prompt?.prompt_id ?? 'none'}`}
-          home={home}
-          sending={sending}
-          onSubmit={submitCheckin}
-          onCancel={() => setView({ name: 'home' })}
-          onPromptExpired={refreshPrompt}
-        />
-      )}
-
-      {view.name === 'followup' && (
-        <CheckinFlow
-          key="followup"
-          home={home}
-          mode="followup"
-          itemKeys={view.keys}
-          sending={sending}
-          onSubmit={submitCheckin}
-          onCancel={() => setView({ name: 'home' })}
-          onPromptExpired={refreshPrompt}
-        />
-      )}
-
-      {view.name === 'change' && (
-        <ReportChange
-          home={home}
-          sending={sending}
-          onCancel={() => setView({ name: 'home' })}
-          onSend={(findings) => void deliver({ kind: 'finding', findings: findings as [FindingCode, ...FindingCode[]], ...common() }, afterReport)}
-        />
-      )}
-
-      {view.name === 'confirmLeave' && (
-        <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
-          <p>{t('leaving.info')}</p>
-          <Button
-            size="lg"
-            variant="danger"
-            className="w-full"
-            disabled={sending}
-            onClick={() =>
-              void deliver({ kind: 'leaving', ...common() }, (r) =>
-                r ? { name: 'sent', queued: false, message: r.patient_message } : { name: 'sent', queued: true, message: 'leaving_info' },
-              )
-            }
-          >
-            {t('leaving.confirm')}
-          </Button>
-          <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
-            {t('leaving.cancel')}
-          </Button>
-        </Card>
-      )}
-
-      {view.name === 'urgent' && (
-        <Card role="alert" className="space-y-4 text-center ring-2 ring-level-red">
+    <PatientLayout
+      home={home}
+      dock={urgentVisible ? undefined : { onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
+    >
+      {urgent && (
+        <section className="space-y-4 rounded-card bg-surface p-6 text-center shadow-card ring-2 ring-level-red" aria-labelledby="urgent-heading">
           <span aria-hidden className="mx-auto flex size-16 items-center justify-center rounded-full bg-level-red-bg text-level-red">
             <OctagonAlert className="size-8" />
           </span>
-          <h1 className="text-3xl font-semibold leading-tight tracking-tight text-level-red">{t('urgent.title')}</h1>
+          <h1 ref={urgentHeading} tabIndex={-1} id="urgent-heading" className="text-level-red">
+            {t('urgent.title')}
+          </h1>
           <p className="text-xl">{t('urgent.body')}</p>
-          <p className="font-semibold">{view.queued ? t('urgent.queued') : t('urgent.sent')}</p>
-          <Button
-            size="lg"
-            variant="danger"
-            className="w-full"
-            onClick={() => setView(view.followUps.length > 0 ? { name: 'followup', keys: view.followUps } : { name: 'home' })}
-          >
-            {t('urgent.telling')}
-          </Button>
-        </Card>
+          <p role="status" className="text-base text-muted">{t(`urgent.${urgent.status}`)}</p>
+          {urgent.status === 'failed' && (
+            <Button size="lg" variant="secondary" onClick={() => {
+              const body = urgentBody.current
+              if (body) void deliverUrgent(body, body.kind === 'concern' ? undefined : () => setView({ name: 'home' }))
+            }}>
+              {t('urgent.retry')}
+            </Button>
+          )}
+          {urgent.status !== 'sending' && (
+            <div className="grid gap-2">
+              <Button size="lg" variant="danger" className="w-full" onClick={() => setUrgent(null)}>
+                {t('urgent.telling')}
+              </Button>
+              {urgent.followUps.length > 0 && (
+                <Button size="lg" variant="ghost" className="w-full" onClick={() => {
+                  setView({ name: 'followup', keys: urgent.followUps })
+                  setUrgent(null)
+                }}>
+                  {t('urgent.followup')}
+                </Button>
+              )}
+            </div>
+          )}
+        </section>
       )}
+      <div ref={content} className="space-y-5" hidden={urgentVisible}>
+        {failed && (
+          <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
+            <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
+            {t('patient.sendFailed')}
+          </p>
+        )}
 
-      {view.name === 'desk' && (
-        <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{view.queued ? t('sent.queuedTitle') : t('desk.title')}</h1>
-          <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
-          <p className="text-base text-muted">{t('desk.notClinical')}</p>
-          <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-            {t('sent.back')}
-          </Button>
-        </Card>
-      )}
+        {view.name === 'home' && <Home home={home} now={now} setView={setView} onSignOut={endSession} />}
 
-      {view.name === 'sent' && (
-        <Card className="space-y-3">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
-          <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
-          {/* Never "all clear": staff still check on their own schedule. */}
-          <p className="text-base text-muted">{t('sent.stillChecking')}</p>
-          {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
-          <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
-            <li className="flex items-center gap-2">
-              <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
-              {t('sent.reported')}
-            </li>
-            <li className={view.queued ? 'flex items-center gap-2 text-muted' : 'flex items-center gap-2'}>
-              {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />}
-              {view.queued ? t('sent.waiting') : t('sent.received')}
-            </li>
-          </ol>
-          <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
-            {t('sent.back')}
-          </Button>
-        </Card>
-      )}
+        {view.name === 'checkin' && (
+          <CheckinFlow
+            key={`full-${home.attention_prompt?.prompt_id ?? 'none'}`}
+            home={home}
+            sending={sending}
+            onSubmit={submitCheckin}
+            onCancel={() => setView({ name: 'home' })}
+            onPromptExpired={refreshPrompt}
+          />
+        )}
+
+        {view.name === 'followup' && (
+          <CheckinFlow
+            key="followup"
+            home={home}
+            mode="followup"
+            itemKeys={view.keys}
+            sending={sending}
+            onSubmit={submitCheckin}
+            onCancel={() => setView({ name: 'home' })}
+            onPromptExpired={refreshPrompt}
+          />
+        )}
+
+        {view.name === 'change' && (
+          <ReportChange
+            home={home}
+            sending={sending}
+            onCancel={() => setView({ name: 'home' })}
+            onSend={(findings) =>
+              void deliverUrgent(
+                { kind: 'finding', findings: findings as [FindingCode, ...FindingCode[]], ...common() },
+                () => setView({ name: 'home' }),
+              )
+            }
+          />
+        )}
+
+        {view.name === 'confirmLeave' && (
+          <Card className="space-y-3">
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
+            <p>{t('leaving.info')}</p>
+            <Button
+              size="lg"
+              variant="danger"
+              className="w-full"
+              disabled={sending}
+              onClick={() =>
+                void deliver({ kind: 'leaving', ...common() }, (r) =>
+                  r
+                    ? { name: 'sent', queued: false, message: r.patient_message }
+                    : { name: 'sent', queued: true, message: 'leaving_info' },
+                )
+              }
+            >
+              {t('leaving.confirm')}
+            </Button>
+            <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('leaving.cancel')}
+            </Button>
+          </Card>
+        )}
+
+        {view.name === 'desk' && (
+          <Card className="space-y-3">
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+              {view.queued ? t('sent.queuedTitle') : t('desk.title')}
+            </h1>
+            <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
+            <p className="text-base text-muted">{t('desk.notClinical')}</p>
+            <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('sent.back')}
+            </Button>
+          </Card>
+        )}
+
+        {view.name === 'sent' && (
+          <Card className="space-y-3">
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+              {view.queued ? t('sent.queuedTitle') : t('sent.title')}
+            </h1>
+            <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+            {/* Never "all clear": staff still check on their own schedule. */}
+            <p className="text-base text-muted">{t('sent.stillChecking')}</p>
+            {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
+            <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
+              <li className="flex items-center gap-2">
+                <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
+                {t('sent.reported')}
+              </li>
+              <li className={view.queued ? 'flex items-center gap-2 text-muted' : 'flex items-center gap-2'}>
+                {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />}
+                {view.queued ? t('sent.waiting') : t('sent.received')}
+              </li>
+            </ol>
+            <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
+              {t('sent.back')}
+            </Button>
+          </Card>
+        )}
+      </div>
     </PatientLayout>
   )
 }
 
-function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: number; setView: (v: View) => void; onSignOut: () => Promise<void> }) {
+function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: number; setView: (v: View) => void; onSignOut: (submissionId: string) => Promise<void> }) {
   const { t } = useTranslation()
   return (
-    <div className="space-y-5">
-      <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
-      {home.message !== 'none' && <p className="rounded-card bg-brand-50 px-5 py-4">{t(`message.${home.message}`)}</p>}
-      <Card className="space-y-1">
-        <div className="eyebrow">{t('patient.nextCheckin')}</div>
-        <div className="text-3xl font-semibold tracking-tight">
+    <div>
+      <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
+      {home.message !== 'none' && <p className="mt-3 rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
+      <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
+        <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
+          {t('patient.startCheckin')}
+          <ArrowRight size={20} aria-hidden />
+        </Button>
+        <div className="patient-next">
+          <span>{t('patient.nextCheckin')}</span>
           <CountdownChip due={home.next_checkin_due_at} now={now} />
         </div>
-      </Card>
-      <div className="grid gap-3">
-        <Button size="lg" onClick={() => setView({ name: 'checkin' })}>
-          {t('patient.startCheckin')}
-        </Button>
-        <Button size="lg" variant="secondary" onClick={() => setView({ name: 'change' })}>
-          {t('patient.reportChange')}
-        </Button>
-      </div>
+      </section>
+      <Button size="lg" variant="ghost" className="mt-2 w-full" onClick={() => setView({ name: 'change' })}>
+        {t('patient.reportChange')}
+      </Button>
       <SignOutButton onSignOut={onSignOut} />
     </div>
   )
 }
 
 /** Signing out asks first: after it, this device can't send anything until someone scans again. */
-function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
+function SignOutButton({ onSignOut }: { onSignOut: (submissionId: string) => Promise<void> }) {
   const { t } = useTranslation()
   const [confirm, setConfirm] = useState(false)
+  const [pending, setPending] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const submission = useRef(newSubmissionId())
+  async function confirmSignOut() {
+    setPending(true)
+    setFailed(false)
+    try {
+      await onSignOut(submission.current)
+    } catch {
+      setFailed(true)
+    } finally {
+      setPending(false)
+    }
+  }
   if (!confirm) {
     return (
-      <Button variant="secondary" onClick={() => setConfirm(true)}>
+      <Button variant="ghost" className="text-muted" onClick={() => setConfirm(true)}>
         {t('patient.signOut')}
       </Button>
     )
@@ -277,9 +376,10 @@ function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
   return (
     <Card className="space-y-3">
       <p>{t('patient.signOutHelp')}</p>
+      {failed && <p role="alert">{t('patient.signOutFailed')}</p>}
       <div className="grid grid-cols-2 gap-3">
-        <Button onClick={() => void onSignOut()}>{t('patient.signOutConfirm')}</Button>
-        <Button variant="secondary" onClick={() => setConfirm(false)}>
+        <Button disabled={pending} onClick={() => void confirmSignOut()}>{t('patient.signOutConfirm')}</Button>
+        <Button disabled={pending} variant="secondary" onClick={() => setConfirm(false)}>
           {t('exchange.takeover.cancel')}
         </Button>
       </div>
@@ -288,7 +388,17 @@ function SignOutButton({ onSignOut }: { onSignOut: () => Promise<void> }) {
 }
 
 /** Report one or more new warning signs outside a scheduled check-in. Options come from the bank. */
-function ReportChange({ home, onSend, onCancel, sending }: { home: PatientHome; onSend: (f: FindingCode[]) => void; onCancel: () => void; sending: boolean }) {
+function ReportChange({
+  home,
+  onSend,
+  onCancel,
+  sending,
+}: {
+  home: PatientHome
+  onSend: (f: FindingCode[]) => void
+  onCancel: () => void
+  sending: boolean
+}) {
   const { t } = useTranslation()
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
@@ -300,7 +410,11 @@ function ReportChange({ home, onSend, onCancel, sending }: { home: PatientHome; 
         {options('new_findings').map((o) => {
           const code = o.code as FindingCode
           return (
-            <AnswerButton key={code} selected={picked.includes(code)} onClick={() => setPicked(picked.includes(code) ? picked.filter((x) => x !== code) : [...picked, code])}>
+            <AnswerButton
+              key={code}
+              selected={picked.includes(code)}
+              onClick={() => setPicked(picked.includes(code) ? picked.filter((x) => x !== code) : [...picked, code])}
+            >
               {o.text}
             </AnswerButton>
           )
