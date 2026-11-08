@@ -220,13 +220,16 @@
     flex-wrap: wrap;
     gap: 0 22px;
     align-items: center;
-    /* The brand starts at the same left edge as every page below it; sign-out stays at the far right. */
+    /* Keep the brand anchored to the viewport gutter at every width. */
     padding-block: 6px;
-    padding-inline: max(var(--staff-pad), calc((100% - var(--staff-max)) / 2 + var(--staff-pad))) var(--staff-pad);
+    padding-inline: var(--staff-pad);
     border-bottom: 1px solid rgb(210 210 215 / 0.7);
     background: rgb(251 251 253 / 0.92);
     -webkit-backdrop-filter: blur(20px);
     backdrop-filter: blur(20px);
+  }
+  .staff-header nav:empty {
+    display: none;
   }
   .staff-header nav {
     display: flex;
@@ -313,7 +316,7 @@
   }
   /* The heading is 1.15 x 34px tall; a 44px button sits centred on it. */
   .page-heading > button {
-    margin-top: calc((var(--text-page) * 1.15 - 2.75rem) / 2);
+    margin-top: max(0px, calc((var(--text-page) * 1.15 - 2.75rem) / 2));
   }
   .page-heading p {
     margin-top: 8px;
@@ -1066,7 +1069,7 @@ html:has(.patient-shell.has-dock) {
   /* The 44px New visit button sits centred on the 1.15 x 34px heading. */
   .board-heading-action {
     flex-shrink: 0;
-    margin-top: calc((var(--text-page) * 1.15 - 2.75rem) / 2);
+    margin-top: max(0px, calc((var(--text-page) * 1.15 - 2.75rem) / 2));
   }
 
   /* Level cards: deploy's metric cards, and each one is the filter for its level. */
@@ -1131,6 +1134,17 @@ html:has(.patient-shell.has-dock) {
   .board-scroll {
     border-radius: 0;
   }
+  /* The empty end of each row fills spare space without stretching any data column. */
+  .board-scroll tr::after {
+    content: '';
+    display: table-cell;
+  }
+  .board-scroll thead tr::after {
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-surface);
+  }
   .board-th {
     position: sticky;
     top: 0;
@@ -1141,13 +1155,12 @@ html:has(.patient-shell.has-dock) {
     background: var(--color-surface);
   }
   .board-th:first-child {
-    padding-inline-start: 20px;
+    padding-inline-start: 10px;
   }
   .board-th:last-child {
-    padding-inline-end: 20px;
+    padding-inline-end: 10px;
   }
   .board-row {
-    cursor: pointer;
     vertical-align: middle;
     transition: background-color 150ms;
   }
@@ -1163,10 +1176,11 @@ html:has(.patient-shell.has-dock) {
     padding: 10px 6px;
   }
   .board-row > :first-child {
-    padding-inline: 20px 6px;
+    padding-inline: 10px 6px;
+    box-shadow: inset 3px 0 0 var(--board-row-accent, transparent);
   }
   .board-row > :last-child {
-    padding-inline-end: 20px;
+    padding-inline-end: 10px;
   }
 
   /* Header buttons: sort and filter share one quiet pill shape; the active one turns blue. */
@@ -1436,4 +1450,163 @@ html:has(.patient-shell.has-dock) {
   .sheet-body {
     overflow: visible;
   }
+}
+
+.staff-menu {
+  position: relative;
+}
+.staff-menu summary {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+  border-radius: var(--radius-tap);
+}
+.staff-menu summary::-webkit-details-marker { display: none; }
+.staff-menu summary:hover { background: var(--color-canvas); }
+.staff-menu-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 4px);
+  z-index: 1;
+  min-width: 10.5rem;
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+.staff-menu-panel > :is(a, button) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.staff-menu-panel > :is(a, button):hover { background: var(--color-canvas); }
+.board-row > *, .board-th {
+  text-align: center;
+  padding: 7px 6px;
+  overflow-wrap: break-word;
+}
+.board-row > :is(:first-child, :last-child),
+.board-th:is(:first-child, :last-child) { padding-inline: 6px; }
+.board-th {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.board-th :is(.column-sort, .column-filter) {
+  justify-content: center;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.board-th[data-resizable]:not([data-collapsed]) {
+  padding-inline: 11px;
+}
+.column-resize {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 9px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+}
+.column-resize::after {
+  content: '';
+  position: absolute;
+  inset-block: 25%;
+  inset-inline-end: 2px;
+  border-inline-end: 1px solid var(--color-line);
+}
+.column-resize:is(:hover, :focus-visible)::after {
+  border-inline-end: 2px solid var(--color-brand-600);
+}
+
+.board-width-probe {
+  position: fixed;
+  inset: 0 auto auto 0;
+  visibility: hidden;
+  pointer-events: none;
+  table-layout: auto;
+  width: max-content !important;
+}
+.board-width-probe :is(th, td, button, span, div) {
+  white-space: nowrap !important;
+  max-width: none !important;
+  overflow-wrap: normal !important;
+}
+.staff-menu-profile {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: min(15rem, 70vw);
+  padding: 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.board-row > :is([data-resizable], [data-collapsed]) {
+  cursor: col-resize;
+}
+.board-cell-content > svg {
+  margin-inline: auto;
+}
+.board-row .board-flags > .inline-flex {
+  flex-shrink: 0;
+  min-height: calc(1.4em + 6px);
+}
+.board-row :is([data-column="nextCheckin"], [data-column="reassess"]) .whitespace-nowrap {
+  max-width: 100%;
+  white-space: normal;
+}
+.board-th[data-collapsed],
+.board-row > [data-collapsed] {
+  padding-inline: 1px;
+  background: var(--color-canvas);
+}
+.board-scroll [data-column="pain"] {
+  position: sticky;
+  inset-inline-end: 0;
+  box-shadow: inset 1px 0 var(--color-line);
+  user-select: none;
+}
+.board-row > [data-column="pain"] {
+  z-index: 1;
+}
+.board-row > [data-column="pain"]:not([data-collapsed]) {
+  background: var(--color-surface);
+}
+@media (hover: hover) {
+  .board-row:hover > [data-column="pain"]:not([data-collapsed]) {
+    background: #fafafc;
+  }
+}
+.board-th[data-column="pain"] {
+  z-index: 11;
+}
+.board-expand-column {
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  min-height: 28px;
+  cursor: zoom-in;
+  border-radius: 5px;
+  color: var(--color-muted);
+}
+.board-expand-column:hover {
+  color: var(--color-brand-600);
+}
+.board-width-probe .board-cell-content:not([hidden]) {
+  display: inline-block;
+  width: max-content;
+}
+.board-width-probe .board-flags {
+  flex-wrap: nowrap;
 }

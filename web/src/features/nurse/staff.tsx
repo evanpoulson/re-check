@@ -1,15 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
-import { Navigate, NavLink, Outlet, useNavigate } from 'react-router'
+import { Navigate, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { clearStaffSession, demoStaffSignIn, getStaffSession, type StaffSessionInfo } from '@/api/api'
 import { ApiError } from '@/api/client'
 import { endpoints } from '@/api/endpoints'
 import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
-import { DemoBadge } from '@/components/DemoBadge'
 import { PageState } from '@/components/PageState'
-import { BellRing, ClipboardList, LayoutList, LogOut } from 'lucide-react'
+import { BellRing, ClipboardList, LayoutList, LogOut, Menu, Settings, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -108,6 +107,7 @@ export function StaffLayout() {
   const { t } = useTranslation()
   const { staff, role, loading, signOut } = useStaff()
   const navigate = useNavigate()
+  const onTriage = useLocation().pathname === '/staff/triage'
   if (loading) return <StaffLoading />
   if (!staff || !role) return <Navigate to="/staff/sign-in" replace />
   const home = staffHome(role) ?? '/staff/sign-in'
@@ -121,7 +121,7 @@ export function StaffLayout() {
           {role === 'charge_nurse' && (
             <NavLink to="/staff/escalations" className={link}><BellRing aria-hidden className="size-[1.125rem]" />{t('nav.escalations')}</NavLink>
           )}
-          {SEES_TRIAGE.includes(role) && (
+          {SEES_TRIAGE.includes(role) && !onTriage && (
             // New visit opens as a sheet from the board's own button.
             <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
           )}
@@ -130,13 +130,35 @@ export function StaffLayout() {
           )}
         </nav>
         <div className="staff-identity">
-          <DemoBadge compact />
-          <span className="staff-who">
-            {staff.name ? t('signIn.signedInAs', { name: staff.name, role: t(`role.${role}`) }) : t(`role.${role}`)}
-          </span>
-          <Button variant="ghost" title={t('nav.signOut')} className="staff-sign-out" onClick={() => {
-            void signOut().then(() => navigate('/staff/sign-in'))
-          }}><LogOut aria-hidden className="size-[1.125rem]" /><span className="staff-sign-out-label">{t('nav.signOut')}</span></Button>
+          <details className="staff-menu" onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false
+          }} onKeyDown={(event) => {
+            if (event.key !== 'Escape' || !event.currentTarget.open) return
+            event.currentTarget.open = false
+            event.currentTarget.querySelector('summary')?.focus()
+          }}>
+            <summary id="staff-menu-button" aria-label={t('nav.menu')} title={t('nav.menu')}>
+              <Menu aria-hidden className="size-5" />
+            </summary>
+            <div className="staff-menu-panel">
+              <div className="staff-menu-profile">
+                <UserRound aria-hidden className="size-5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold">{staff.name ?? t('nav.staffProfile')}</p>
+                  {staff.email && <p className="break-all text-muted">{staff.email}</p>}
+                  <p className="text-muted">{t(`role.${role}`)}</p>
+                </div>
+              </div>
+              {onTriage && SEES_TRIAGE.includes(role) && (
+                <Link to="?panel=settings" preventScrollReset onClick={(event) => {
+                  event.currentTarget.closest('details')!.open = false
+                }}><Settings aria-hidden className="size-4" />{t('triage.settings')}</Link>
+              )}
+              <Button variant="ghost" onClick={() => {
+                void signOut().then(() => navigate('/staff/sign-in'))
+              }}><LogOut aria-hidden className="size-4" />{t('nav.signOut')}</Button>
+            </div>
+          </details>
         </div>
       </header>
       <Outlet />

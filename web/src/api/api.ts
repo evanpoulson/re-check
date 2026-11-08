@@ -39,6 +39,7 @@ export interface StaffSessionInfo {
   /** Auth0 user ID, or `demo|<role>` from the demo role picker. */
   user_id: string
   name: string | null
+  email?: string | null
   role: StaffRole
   site_id: string
   /** Demo setting (RECHECK_DEMO_CHECKINS): desk staff can open a patient's check-in now. */
