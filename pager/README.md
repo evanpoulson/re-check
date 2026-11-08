@@ -10,8 +10,9 @@ separate change. Until then, test against `tools/fake_recheck.py` (steps 1 to 4 
 
 | Path | What it is |
 |---|---|
-| `sketch/sketch.ino` | MCU (STM32): draws text, reads the buttons, drives the LEDs |
-| `python/main.py` | Linux side: every screen, the API calls; also runs on a laptop as a simulator |
+| `sketch/sketch.ino` | MCU (STM32): draws text and the circle check's shapes, reads the buttons, drives the LEDs |
+| `python/main.py` | Linux side: pages, reports, the API calls; also runs on a laptop as a simulator |
+| `python/checkin.py` | The check-in: its questions, screens, answers and report body (no hardware, no network) |
 | `python/pager_config.example.json` | Copy to `pager_config.json` (git-ignored) and fill in |
 | `tools/fake_recheck.py` | In-memory stand-in for the pager API, for testing with no database writes |
 | `tests/` | Screen and report tests (`python -m unittest discover -s pager/tests`) |
@@ -39,8 +40,14 @@ separate change. Until then, test against `tools/fake_recheck.py` (steps 1 to 4 
   - **Check-in** (only while one is due; the pager jumps to it and blinks red)
   - **Status** (minutes waited, next check-in)
   - **Report something**
-- **Check-in**: "Feeling now?" and "Since last check?", worded as in the phone's question set, each with "Not sure".
-  "Not sure" is sent as unknown, never as an answer.
+- **Check-in**: the phone's check-in, one question per screen, in the phone's order
+  (`web/src/features/patient/CheckinFlow.tsx`). The title bar shows the question number and a short name.
+  1. How are you feeling right now?
+  2. Compared with when staff last checked on you, how do you feel?
+  3. Pain, 0 to 10
+  4. New warning signs: the 13 signs, tick all that apply, or "None of these"
+  5. The circle check, when the server issued a prompt
+  6. The visit's follow-up questions, as the server lists them
 - **Report** (mirrors the phone):
   - I need help now
   - I'm worried
@@ -52,9 +59,58 @@ separate change. Until then, test against `tools/fake_recheck.py` (steps 1 to 4 
   Every option except symptoms asks "yes / no" first. Leaving shows the phone's 911 and 811 advice.
 - **Called**: "PLEASE GO TO THE TRIAGE DESK NOW" when staff room the patient.
 
+### How each kind of question shows
+
+The screen has 8 lines of 21 characters: a title bar, 6 rows and a button hint.
+
+| Kind | Questions | On the pager |
+|---|---|---|
+| One choice | feeling now, since last check, `change_started`, `symptoms_change`, `last_known_well`, `vomit_count`, `headache_change` | The question, then the options. LEFT and RIGHT move, CONFIRM chooses and goes on. |
+| Yes or no | `pain_moved`, `pain_sudden_worse`, `headache_sudden_worse`, `harder_to_wake`, `seizure`, `more_confused` | Yes, No |
+| Tick all that apply | new warning signs, `pain_new_location` | `[ ]` rows that CONFIRM ticks, then "Next (n ticked)". Warning signs also have "None of these". |
+| 0 to 10 | pain | A number and a bar. LEFT is less, RIGHT is more. Past 10: Not sure, Back. |
+| Circle check | `circle_count` | Start or "I can't do this". The shapes play, then the count: 0 to 20, then Not sure and "I can't do this". |
+
+On every question:
+- **Wording.** It is the bank's, in full. A new question opens on its first line. A long option is cut ("..")
+  until the cursor is on it, then it shows in full over several highlighted lines.
+- **Not sure** is on every question that allows it, and is sent as unknown, never as an answer.
+- **Back** goes to the previous question with its answer selected. On the first question it leaves the check-in,
+  but only while nothing is answered.
+- **Stop and send** appears once something is answered. It sends the answers so far; the rest are sent as not reached.
+- **Next** with nothing ticked says "Tick one, or None".
+
+As on the phone:
+- **Urgent signs.** Ticking a warning sign that is urgent on its own (speech, face, one-sided weakness, breathing,
+  fainting, bleeding, confusion, chest pain) turns Next into "Send now". The check-in goes at once, and the unreached
+  questions are sent as not reached.
+- **Follow-ups.** When a receipt names follow-up questions, the result screen says "Next: a few more". The pager then
+  asks them as a follow-up. A question already offered since the check-in started isn't asked again.
+- **Report bodies.** They match `buildCheckinReport` in `web/src/lib/checkin.ts`.
+
+### The circle check
+
+The server's prompt (`AttentionPrompt`) sets the shapes, where they go, and how long each shows:
+- **Order.** A blank screen for 0.6 s, then each shape for `show_ms` with `gap_ms` blank after it.
+- **Shapes.** Circles and squares, drawn as thick outlines so they differ by shape, not colour.
+- **Size and position.** About 19 pixels across. The positions (0 to 1) are spread over the whole 128 x 64 screen.
+- **Timing.** The MCU times the shapes, so a busy Linux side can't stretch one. Python doesn't redraw or poll until
+  they're done.
+- **Stopping.** LEFT stops the shapes. That is sent as "unable to respond", with the prompt's ID, so staff can tell
+  "shown but not answered" from "never shown". The check is shown once, and Back steps over it.
+- **Expiry.** An expired prompt is fetched again. If there is no new one, the check is skipped and sent as not asked.
+
+### What the pager reads from the server
+
+The check-in uses the phone's data (`PatientHome`), as extra fields on the pager state:
+- **`items`**: the visit's follow-up questions, as `QuestionItem`s.
+- **`attention_prompt`**: the circle check, while a check-in is open.
+
+The pager API doesn't send these yet. Until it does, the pager asks the four fixed questions and sends the circle
+check as not asked. `tools/fake_recheck.py` sends both, so every screen can be tested now.
+
 MVP limits:
-- English only (the OLED font is ASCII).
-- Wellness questions only: pain, the attention check and follow-up questions stay on the phone and with staff.
+- English only (the OLED font is ASCII; server text is turned into ASCII).
 - The visit's QR stays as the phone fallback.
 
 ## Wiring (3.3 V logic, no soldering)
@@ -72,16 +128,21 @@ The buttons use internal pull-ups. Nothing connects to 3.3 V or 5 V.
 
 ## Testing, in order
 
-1. **Screens (no hardware).** Run `python -m unittest discover -s pager/tests`. It covers every screen,
-   every report body and the 21-character OLED width. `api/tests/test_pager_contract.py` checks every
-   body the pager can send against the real Pydantic contract.
+1. **Screens (no hardware).** Run `python -m unittest discover -s pager/tests`. It draws every question in
+   `question-bank/questionnaire.json` at every cursor position against the OLED's 8 x 21 characters. It also covers
+   every answer and report body, and checks the pager's copy of the fixed wording and the urgent signs against the
+   bank, the phone and the server. `api/tests/test_pager_contract.py` (in the API change) checks the bodies against
+   the real Pydantic contract.
 2. **Wiring.** Run `wiring-test/sketch.ino` on the board. Expect red x3, green x3, then each button lights its LED.
 3. **Real board, fake server (no database writes).**
    - On a laptop on the same Wi-Fi as the board (a phone hotspot works):
      `python pager/tools/fake_recheck.py`, then type `assign` and `open`.
    - Set `api_base` in `pager_config.json` to `http://<laptop IP>:8765` and `pager_key` to `dev-pager-key-not-secret`.
    - Load the app (below). `call` and `unassign` show the other screens.
+   - `group head_injury` (or `chest_back_pain`, `neuro_change`, `confused_drowsy`, `general`) and `cedis 404` choose the
+     visit's follow-up questions. The console prints each report and scores each circle check.
 4. **Simulator against any server.** `cd pager/python && python main.py`. Keys: `a` LEFT, `s` CONFIRM, `d` RIGHT, then Enter.
+   The circle check prints each shape as a small picture (`O` circle, `#` square) on the board's timing.
 5. **Backend.** In `api/`, run `uv run pytest tests/test_pager.py tests/test_pager_contract.py` (offline) and
    `uv run pytest tests/test_pager_live.py tests/test_reports_live.py` (live, always rolled back).
 6. **End to end on the deployed server.**
@@ -93,7 +154,7 @@ The buttons use internal pull-ups. Nothing connects to 3.3 V or 5 V.
 ## Loading the app in Arduino App Lab
 
 1. Open the **Blink LED** example and choose **Copy**. The copy already has the Bridge libraries.
-2. Replace `sketch/sketch.ino` and `python/main.py`, and add `python/pager_config.json`.
+2. Replace `sketch/sketch.ino` and `python/main.py`, and add `python/checkin.py` and `python/pager_config.json`.
 3. **Add sketch libraries**: `Adafruit SSD1306`, `Adafruit GFX Library` and `Adafruit BusIO`.
    App Lab doesn't add dependencies on its own.
 4. **Run.** Expect "RECHECK PAGER Starting..." then "Connecting...". A blinking red LED with a blank screen means the OLED

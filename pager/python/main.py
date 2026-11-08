@@ -1,7 +1,9 @@
 """Recheck pager: Linux side of the Arduino UNO Q app.
 
-Holds every screen and talks to the Recheck API over Wi-Fi. The MCU sketch
-(sketch/sketch.ino) only draws text, reads the three buttons and drives the LEDs.
+Holds every screen and talks to the Recheck API over Wi-Fi. The check-in's questions,
+answers and report body are in checkin.py, next to this file. The MCU sketch
+(sketch/sketch.ino) only draws text and the circle check's shapes, reads the three
+buttons and drives the LEDs.
 
 Buttons: LEFT (D2) = up / previous / back, CONFIRM (D3) = choose, RIGHT (D4) = down / next.
 
@@ -31,49 +33,31 @@ import urllib.request
 import uuid
 from datetime import datetime, timezone
 
-LEFT, CONFIRM, RIGHT = 1, 2, 3
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)  # checkin.py sits next to this file
 
-WIDTH = 21          # characters per OLED line
-ROWS = 6            # list rows between the title and the footer
+from checkin import (  # noqa: E402
+    CONFIRM, FINDINGS, LEFT, LIST_FOOTER, RIGHT, ROWS, WIDTH, Flow, checkin_questions, followup_questions,
+    list_screen, play_ms, play_spec,
+)
+
 POLL_SECONDS = 5
 HTTP_TIMEOUT = 6
 OFFLINE_AFTER_FAILURES = 3
 RESULT_SECONDS = 8
 SEND_TRIES = 3
+PLAY_SLACK_MS = 300  # Bridge delay before the MCU starts the shapes
 
-HERE = os.path.dirname(os.path.abspath(__file__))
 CONFIG_PATH = os.path.join(HERE, "pager_config.json")
 
 BACK = "__back"
 SEND = "__send"
 
-# Wording follows question-bank/questionnaire.json, shortened to fit the screen.
-FEELING_NOW = [("Very good", "very_good"), ("Good", "good"), ("OK", "ok"),
-               ("Poor", "poor"), ("Very poor", "very_poor"), ("Not sure", None)]
-FEELING_CHANGE = [("Much better", "much_better"), ("Better", "better"), ("About the same", "same"),
-                  ("Worse", "worse"), ("Much worse", "much_worse"), ("Not sure", None)]
-SYMPTOMS = [
-    ("Speech changed", "speech_change"),
-    ("Face droopy", "facial_droop"),
-    ("Weak/numb 1 side", "new_weakness_numbness"),
-    ("Hard to breathe", "trouble_breathing"),
-    ("Fainted/nearly", "fainting"),
-    ("More confused", "new_confusion"),
-    ("Very drowsy", "drowsiness"),
-    ("Worst headache", "worst_headache"),
-    ("Vomiting", "vomiting"),
-    ("Vision problem", "vision_change"),
-    ("Balance/walking", "balance_change"),
-    ("Chest pain worse", "chest_pain"),
-    ("Heavy bleeding", "heavy_bleeding"),
-]
 # Mirrors the phone's always-available options.
 REPORT_MENU = [("I need help now", "help_now"), ("I'm worried", "worried"), ("New symptom", "symptoms"),
                ("Question for desk", "desk_question"), ("I'm leaving", "leaving"), ("Back", BACK)]
 
-LIST_TITLES = {"q1": "1/2 Feeling now?", "q2": "2/2 Since last check?",
-               "report": "Report to staff", "symptoms": "New symptoms"}
-LIST_FOOTER = "< up   * ok   down >"
+LIST_TITLES = {"report": "Report to staff", "symptoms": "New symptoms"}
 
 CONFIRM_TEXT = {
     "help_now": ("Get help now?", "Staff will be told", "you need help now."),
@@ -95,9 +79,9 @@ AFTER_KIND = {  # when patient_message is "none"
     "desk_question": ("Sent", "The desk will come", "to you when free."),
     "leaving": ("Sent", "Staff know you", "are leaving."),
     "finding": ("Sent", "Staff know about", "your new symptom."),
+    "followup": ("Thank you", "Answers sent."),
 }
-
-NOT_ASKED = {"kind": "missing", "reason": "not_asked"}
+MORE_QUESTIONS = "Next: a few more"   # the result screen when the server asked for follow-ups
 
 
 def load_config(path: str = CONFIG_PATH) -> dict:
@@ -176,11 +160,14 @@ class PagerUI:
         self.failures = 0
         self.offset = 0.0               # server time minus local time, seconds
         self.next_poll = 0.0
-        self.view = "pages"             # pages | q1 | q2 | report | symptoms | confirm | result
+        self.view = "pages"             # pages | flow | report | symptoms | confirm | result
         self.page = "status"            # checkin | status | report
         self.cursor = 0
         self.top = 0
-        self.answer_now: str | None = None
+        self.flow: Flow | None = None
+        self.play_until = 0.0
+        self.followups: list[str] = []  # follow-up items the last receipt asked for
+        self.asked: set[str] = set()    # questions offered since the check-in started
         self.picked: list[str] = []
         self.pending: str | None = None
         self.result_lines: tuple = ()
@@ -207,7 +194,10 @@ class PagerUI:
         self.state = st
 
     def now_iso(self) -> str:
-        return datetime.fromtimestamp(self.clock() + self.offset, timezone.utc).isoformat()
+        return datetime.fromtimestamp(self.server_now(), timezone.utc).isoformat()
+
+    def server_now(self) -> float:
+        return self.clock() + self.offset
 
     def pages(self) -> list[str]:
         st = self.state or {}
@@ -216,7 +206,7 @@ class PagerUI:
     # -- buttons ------------------------------------------------------------
     def handle(self, button: int) -> None:
         if self.view == "result":
-            self.to_pages()
+            self.end_result()
             return
         if (self.state or {}).get("state") != "waiting" or self.failures >= OFFLINE_AFTER_FAILURES:
             return
@@ -230,9 +220,12 @@ class PagerUI:
             elif button == RIGHT:
                 self.page = pages[(i + 1) % len(pages)]
             elif self.page == "checkin":
-                self.open_list("q1", 2)
+                self.start_checkin()
             elif self.page == "report":
                 self.open_list("report", 0)
+            return
+        if self.view == "flow":
+            self.flow_button(button)
             return
         if self.view == "confirm":
             if button == CONFIRM:
@@ -251,18 +244,7 @@ class PagerUI:
             self.choose(items[self.cursor][1])
 
     def choose(self, value) -> None:
-        if self.view == "q1":
-            if value == BACK:
-                self.to_pages("checkin")
-            else:
-                self.answer_now = value
-                self.open_list("q2", 2)
-        elif self.view == "q2":
-            if value == BACK:
-                self.open_list("q1", [v for _, v in FEELING_NOW].index(self.answer_now))
-            else:
-                self.submit_checkin(self.answer_now, value)
-        elif self.view == "report":
+        if self.view == "report":
             if value == BACK:
                 self.to_pages("report")
             elif value == "symptoms":
@@ -276,7 +258,8 @@ class PagerUI:
                 self.open_list("report", 2)
             elif value == SEND:
                 if self.picked:
-                    findings = [code for _, code in SYMPTOMS if code in self.picked]
+                    self.asked = set()      # a new report: its follow-ups are all new
+                    findings = [code for code, _ in FINDINGS if code in self.picked]
                     self.send({"kind": "finding", "findings": findings}, "finding")
             elif value in self.picked:
                 self.picked.remove(value)
@@ -284,15 +267,11 @@ class PagerUI:
                 self.picked.append(value)
 
     def items(self) -> list[tuple[str, object]]:
-        if self.view == "q1":
-            return FEELING_NOW + [("Back", BACK)]
-        if self.view == "q2":
-            return FEELING_CHANGE + [("Back", BACK)]
         if self.view == "report":
             return REPORT_MENU
         if self.view == "symptoms":
-            rows = [(("[x] " if code in self.picked else "[ ] ") + label, code) for label, code in SYMPTOMS]
-            return rows + [(f"Send ({len(self.picked)})", SEND), ("Back", BACK)]
+            rows = [(("[x] " if code in self.picked else "[ ] ") + label, code) for code, label in FINDINGS]
+            return rows + [(f"Send ({len(self.picked)} ticked)", SEND), ("Back", BACK)]
         return []
 
     def open_list(self, view: str, cursor: int) -> None:
@@ -300,28 +279,80 @@ class PagerUI:
 
     def to_pages(self, page: str | None = None) -> None:
         self.view = "pages"
+        self.flow = None
         if page:
             self.page = page
 
+    # -- the check-in -------------------------------------------------------
+    def start_checkin(self) -> None:
+        st = self.state or {}
+        questions = checkin_questions(st)
+        self.asked = {q.key for q in questions}
+        self.flow = Flow(questions, prompt=st.get("attention_prompt"), version=st.get("questionnaire_version"))
+        self.view = "flow"
+
+    def start_followups(self, keys: list[str]) -> None:
+        """Ask the follow-ups a receipt named. The server lists them in the state's items.
+
+        A question already offered since the check-in started isn't asked again, so
+        skipping one can't bring it back over and over.
+        """
+        self.poll()
+        st = self.state or {}
+        questions = [q for q in followup_questions(st, keys) if q.key not in self.asked]
+        if not questions or st.get("state") != "waiting":
+            return
+        self.asked |= {q.key for q in questions}
+        self.flow = Flow(questions, mode="followup", version=st.get("questionnaire_version"))
+        self.view = "flow"
+
+    def flow_button(self, button: int) -> None:
+        flow = self.flow
+        was_playing = flow.playing
+        action = flow.handle(button)
+        if was_playing and not flow.playing:
+            self.io.redraw()            # stopped: the MCU was drawing shapes
+        if action == "exit":
+            self.to_pages("checkin" if flow.mode == "full" else "status")
+        elif action == "send":
+            self.send_flow()
+        elif action == "play":
+            self.play_circles()
+
+    def send_flow(self) -> None:
+        flow = self.flow
+        if flow.mode != "full" and not flow.any_answered():
+            self.to_pages("status")     # a follow-up with no answers sends nothing
+            return
+        self.send(flow.report(), "checkin" if flow.mode == "full" else "followup")
+
+    def play_circles(self) -> None:
+        """Start the circle check. An expired prompt is fetched again first, as on the phone."""
+        flow = self.flow
+        prompt = flow.prompt
+        expires = parse_time((prompt or {}).get("expires_at"))
+        if prompt and expires and expires.timestamp() <= self.server_now():
+            self.poll()
+            fresh = (self.state or {}).get("attention_prompt")
+            if fresh and fresh.get("prompt_id") != prompt.get("prompt_id"):
+                flow.prompt = prompt = fresh
+            else:
+                prompt = None
+        if not prompt:
+            if flow.skip_circle() == "send":
+                self.send_flow()
+            return
+        flow.start_playing()
+        self.io.play(play_spec(prompt))
+        self.play_until = self.clock() + (play_ms(prompt) + PLAY_SLACK_MS) / 1000
+
     # -- reports ------------------------------------------------------------
-    def submit_checkin(self, now_value, change_value) -> None:
-        def answer(v):
-            return {"kind": "answered", "value": v} if v else {"kind": "missing", "reason": "unsure"}
-
-        body = {
-            "kind": "checkin",
-            "questionnaire_version": (self.state or {}).get("questionnaire_version"),
-            "feeling_now": answer(now_value),
-            "feeling_change": answer(change_value),
-            # The pager asks the two wellness questions only; the rest stays on the phone and with staff.
-            "pain": NOT_ASKED, "new_findings": NOT_ASKED, "attention": NOT_ASKED, "items": {},
-        }
-        self.send(body, "checkin")
-
     def send(self, body: dict, kind: str) -> None:
         """POST a report. Retries reuse the same submission_id, so a retry is never counted twice."""
         body = {"submission_id": str(uuid.uuid4()), "reporter": "patient", "channel": "pager",
                 "captured_at": self.now_iso(), **body}
+        self.flow = None
+        self.followups = []
         self.io.show(f"RECHECK PAGER {self.pager_no}", "", "Sending...")
         self.io.leds(0, 1)
         for attempt in range(SEND_TRIES):
@@ -344,7 +375,11 @@ class PagerUI:
                 continue
             self.io.ack(1)
             message = receipt.get("patient_message", "none")
-            self.result(MESSAGES.get(message) or AFTER_KIND.get(kind, ("Sent",)), ok=True)
+            lines = MESSAGES.get(message) or AFTER_KIND.get(kind, ("Sent",))
+            self.followups = [str(k) for k in receipt.get("follow_up_items") or []]
+            if self.followups:
+                lines = (*lines[:5], "", MORE_QUESTIONS)
+            self.result(lines, ok=True)
             self.next_poll = 0          # refresh the state right away
             return
         self.result(("Not sent", "No connection.", "Please tell the", "triage desk."), ok=False)
@@ -353,6 +388,13 @@ class PagerUI:
         self.view = "result"
         self.result_lines, self.result_ok = lines, ok
         self.result_until = self.clock() + RESULT_SECONDS
+
+    def end_result(self) -> None:
+        """The result was read or timed out: go home, or on to the follow-up questions."""
+        keys, self.followups = self.followups, []
+        self.to_pages()
+        if keys:
+            self.start_followups(keys)
 
     # -- drawing ------------------------------------------------------------
     def screen(self) -> tuple[tuple, int, int]:
@@ -364,15 +406,17 @@ class PagerUI:
         if st is None:
             return (header, "", "Connecting..."), 0, 0
         if st.get("state") == "called":
-            self.view = "pages"
+            self.to_pages()
             return (header, "", "PLEASE GO TO THE", "TRIAGE DESK NOW", "", "Staff are ready", "for you."), 2, 1
         if self.view == "result":
             if self.clock() < self.result_until:
                 return (self.result_lines[0], "", *self.result_lines[1:]), 0 if self.result_ok else 1, 1
-            self.to_pages()
+            self.end_result()
         if st.get("state") != "waiting":
-            self.view = "pages"
+            self.to_pages()
             return (header, "", "Not in use.", "", "Staff give this", "pager out at triage."), 0, 1
+        if self.view == "flow":
+            return self.flow.lines(), 0, 1
         if self.view == "confirm":
             title, *body = CONFIRM_TEXT[self.pending]
             return (title, "", *body, "", "", CONFIRM_FOOTER), 0, 1
@@ -381,14 +425,9 @@ class PagerUI:
         return self.page_screen(), (2 if st.get("checkin_open") else 0), 1
 
     def list_screen(self) -> tuple:
-        items = self.items()
-        if self.cursor < self.top:
-            self.top = self.cursor
-        elif self.cursor >= self.top + ROWS:
-            self.top = self.cursor - ROWS + 1
-        rows = [(">" if i == self.cursor else " ") + label
-                for i, (label, _) in enumerate(items[self.top:self.top + ROWS], start=self.top)]
-        return (LIST_TITLES[self.view], *rows, *([""] * (ROWS - len(rows))), LIST_FOOTER)
+        lines, self.top = list_screen(LIST_TITLES[self.view], [], [label for label, _ in self.items()],
+                                      self.cursor, self.top)
+        return lines
 
     def page_screen(self) -> tuple:
         st = self.state or {}
@@ -397,7 +436,8 @@ class PagerUI:
             self.page = "status"
         nav = "<" + f"page {pages.index(self.page) + 1}/{len(pages)}".center(WIDTH - 2) + ">"
         if self.page == "checkin":
-            return ("CHECK-IN TIME", "", "2 quick questions", "about how you feel.", "", "Press * to start", nav)
+            n = len(checkin_questions(st))
+            return ("CHECK-IN TIME", "", f"{n} quick questions", "about how you feel.", "", "Press * to start", nav)
         if self.page == "report":
             return ("REPORT SOMETHING", "Need help? Worried?", "New symptom? Desk", "question? Leaving?",
                     "", "Press * to choose", nav)
@@ -414,15 +454,21 @@ class PagerUI:
 
     def render(self) -> None:
         lines, red, green = self.screen()
-        self.io.show(*lines)
+        # While the MCU draws the circle check, leave the screen to it.
+        if not (self.view == "flow" and self.flow and self.flow.playing):
+            self.io.show(*lines)
         self.io.leds(red, green)
 
     def tick(self, events: "queue.Queue[int]") -> None:
-        if self.clock() >= self.next_poll:
+        if self.view == "flow" and self.flow and self.flow.playing:
+            if self.clock() >= self.play_until:
+                self.flow.played()
+                self.io.redraw()
+        elif self.clock() >= self.next_poll:   # never poll mid-shapes: a slow call would stretch them
             self.poll()
             self.next_poll = self.clock() + POLL_SECONDS
         try:
-            self.handle(events.get(timeout=0.1))
+            self.handle(events.get(timeout=0.05))
         except queue.Empty:
             pass
         self.render()
@@ -457,6 +503,15 @@ class BoardIo:
     def ack(self, n: int = 1) -> None:
         self._call("ack", n)
 
+    def play(self, spec: str) -> None:
+        """The MCU shows the circle check's shapes with its own timer, so Linux delays can't stretch them."""
+        self._screen = None
+        self._call("play", spec)
+
+    def redraw(self) -> None:
+        """The MCU drew something else: send the next screen even if it hasn't changed."""
+        self._screen = None
+
 
 class ConsoleIo:
     def __init__(self):
@@ -480,6 +535,28 @@ class ConsoleIo:
 
     def ack(self, n: int = 1) -> None:
         print("[green double flash: staff received it]")
+
+    def play(self, spec: str) -> None:
+        """Print each shape as a small picture, on the same timing as the board (O circle, # square)."""
+        self._screen = None
+        lead, show_ms, gap_ms = (int(v) for v in spec.split(";")[0].split(","))
+        shapes = [s.split(",") for s in spec.split(";")[1:]]
+
+        def run() -> None:
+            time.sleep(lead / 1000)
+            for kind, x, y in shapes:
+                col, row = int(x) * 31 // 127, int(y) * 7 // 63
+                grid = [[" "] * 32 for _ in range(8)]
+                grid[row][col] = "O" if kind == "C" else "#"
+                print("\n" * 3 + "\n".join("|" + "".join(r) + "|" for r in grid))
+                time.sleep(show_ms / 1000)
+                print("\n" * 12)
+                time.sleep(gap_ms / 1000)
+
+        threading.Thread(target=run, daemon=True).start()
+
+    def redraw(self) -> None:
+        self._screen = None
 
 
 def run_board() -> None:
