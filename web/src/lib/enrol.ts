@@ -15,7 +15,7 @@ export interface EnrolForm {
   pager_no: string
 }
 
-export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no', string>> & {
+export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no' | 'app_exclusion', string>> & {
   /** The backend's own message when the CEDIS map contradicts the nurse's choices. */
   conflict?: string
   /** The field the conflict points at, for the error summary link. */
@@ -23,7 +23,7 @@ export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no', str
 }
 
 export const emptyEnrol: EnrolForm = {
-  ctas: null,
+  ctas: 2,
   complaint_group: 'general',
   cedis_code: '',
   language: 'en',

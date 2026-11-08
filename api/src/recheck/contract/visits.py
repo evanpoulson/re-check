@@ -17,7 +17,7 @@ SiteId = Annotated[str, StringConstraints(pattern=r"^[a-z0-9][a-z0-9_-]{0,31}$")
 
 
 class VisitCreate(InputModel):
-    """Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used."""
+    """Triage nurse enrols a waiting patient (FR1)."""
 
     submission_id: SubmissionId
     ctas: Ctas

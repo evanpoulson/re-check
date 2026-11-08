@@ -1043,7 +1043,7 @@ generated_at: string
 rows: BoardRow[]
 }
 /**
- * Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used.
+ * Triage nurse enrols a waiting patient (FR1).
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "VisitCreate".

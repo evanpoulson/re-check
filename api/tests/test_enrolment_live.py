@@ -67,6 +67,7 @@ def test_enrol_returns_link_and_stores_only_hash_and_ciphertext(live_client):
                    "prompt_due": True, "staff_due": True}
 
 
+
 @pytest.mark.parametrize("language", ["ko", "ar", "yue"])
 def test_enrol_and_sign_in_in_a_newer_language(live_client, language):
     """The database accepts every contract language, and the patient's phone gets it."""

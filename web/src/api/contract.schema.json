@@ -2268,7 +2268,7 @@
     },
     "VisitCreate": {
       "additionalProperties": false,
-      "description": "Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used.",
+      "description": "Triage nurse enrols a waiting patient (FR1).",
       "properties": {
         "app_exclusion": {
           "anyOf": [

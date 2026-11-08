@@ -204,13 +204,16 @@ describe('triage nurse: enrolment and QR', () => {
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
 
-    await user.click(await screen.findByRole('button', { name: 'Create visit and QR code' }))
+    // CTAS defaults to 2 (#56), so a pager with no number is the missing field here.
+    await user.click(await screen.findByRole('radio', { name: 'Pager' }))
+    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
     // GOV.UK error summary at the top, linked to the field, plus the inline error.
     expect(await screen.findByRole('heading', { name: 'There is a problem' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Choose a CTAS level from 2 to 5.' })).toHaveAttribute('href', '#ctas-2')
-    expect(screen.getAllByText('Choose a CTAS level from 2 to 5.')).toHaveLength(2)
+    expect(screen.getByRole('link', { name: 'Enter a pager number of 1 to 6 digits.' })).toHaveAttribute('href', '#pager')
+    expect(screen.getAllByText('Enter a pager number of 1 to 6 digits.')).toHaveLength(2)
     expect(document.title).toBe('Error: New visit – Recheck')
 
+    await user.click(screen.getByRole('radio', { name: 'Phone' }))
     await user.click(screen.getByRole('radio', { name: '3' }))
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
 
@@ -656,7 +659,7 @@ describe('the loop and the backend rules', () => {
     expect(home.attention_prompt).not.toBeNull()
 
     const report = checkin(
-      { reporter: 'patient', feeling_change: { kind: 'answered', value: 'worse' }, new_findings: { kind: 'answered', value: ['chest_pain'] }, items: { pain_moved: { kind: 'yes_no', value: true } } },
+      { reporter: 'patient', feeling_change: { kind: 'answered', value: 'much_worse' }, new_findings: { kind: 'answered', value: ['chest_pain'] }, items: { pain_moved: { kind: 'yes_no', value: true } } },
       home.questionnaire_version,
     )
     const receipt = await postReport(report)
@@ -677,13 +680,14 @@ describe('the loop and the backend rules', () => {
     expect((await getVisitDetail(enrolled.visit_id)).open_task).toBeNull()
   })
 
-  it('a "same" answer never cancels or raises a task, and "much worse" raises red', async () => {
+  it('a "better" answer never cancels or raises a task, and "much worse" while feeling very poor raises red', async () => {
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     const home = await getPatientHome()
     const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
     await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, home.questionnaire_version))
     expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
-    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'much_worse' } }, home.questionnaire_version))
+    // Same weighting as rules.py (#50): "much worse" alone is amber; with "very poor" it is red.
+    await postReport(checkin({ reporter: 'patient', feeling_now: { kind: 'answered', value: 'very_poor' }, feeling_change: { kind: 'answered', value: 'much_worse' } }, home.questionnaire_version))
     expect((await getVisitDetail(visit.visit_id)).open_task?.level).toBe('red')
   })
 

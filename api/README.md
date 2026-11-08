@@ -169,7 +169,9 @@ events.onmessage = () => refetch()             // e.data is the DashboardEvent J
 
 ## Rules and tasks
 
-`recheck/rules.py` decides which review tasks a report raises; `recheck/tasks.py` applies them to the visit's one active task in the same transaction that stores the report. They match the synthetic cohort and the web mocks (ruleset `2026-11-07.demo`). All levels, codes and deadlines are demo values for clinical review.
+`recheck/rules.py` decides which review tasks a report raises; `recheck/tasks.py` applies them to the visit's one active task in the same transaction that stores the report. They match the synthetic cohort and the web mocks (ruleset `2026-11-08.demo`). All levels, codes and deadlines are demo values for clinical review.
+
+Answers are weighed, not counted. Specific, time-critical signs (speech, face, one-sided weakness, breathing, fainting, bleeding, new confusion, new chest pain) are red on their own. Broader signs, and signs the triage complaint already covers, ask for an amber review unless something corroborates them: a second sign, or "much worse". "Much worse" is red only alongside "very poor" right now, and "worse" raises nothing when the person also says they feel OK now. Nothing is ever dropped: every reported sign raises at least a review. `rules.weigh` is shared with the synthetic cohort, and `web/src/lib/findings.ts` holds the same urgent list for the patient screen.
 
 | Report | Task level | Reason code |
 | --- | --- | --- |

@@ -144,6 +144,12 @@ CREATE TABLE visit (
     ctas                     smallint         NOT NULL CHECK (ctas BETWEEN 2 AND 5),
     complaint_group          complaint_group  NOT NULL,
     cedis_code               text             CHECK (cedis_code ~ '^[0-9]{3}$'),
+    complaint_detail         text             CONSTRAINT visit_complaint_detail_check CHECK (
+        complaint_detail IS NULL OR (
+            complaint_group = 'general' AND char_length(complaint_detail) BETWEEN 1 AND 200
+            AND complaint_detail ~ '[^[:space:]]'
+        )
+    ),
     -- Matches the contract's Language codes (api/src/recheck/contract/codes.py).
     language                 text             NOT NULL CHECK (language IN (
                                  'en', 'tl', 'pa', 'fr', 'es', 'de', 'yue', 'zh',

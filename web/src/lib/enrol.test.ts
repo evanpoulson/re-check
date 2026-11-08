@@ -5,10 +5,10 @@ const id = '11111111-1111-4111-8111-111111111111'
 
 describe('validateEnrol (mirrors VisitCreate)', () => {
   it('requires a CTAS level from 2 to 5', () => {
-    expect(validateEnrol(emptyEnrol, id)).toMatchObject({ ok: false, errors: { ctas: 'ctas' } })
+    expect(validateEnrol({ ...emptyEnrol, ctas: null }, id)).toMatchObject({ ok: false, errors: { ctas: 'ctas' } })
     expect(validateEnrol({ ...emptyEnrol, ctas: 1 }, id).ok).toBe(false)
     expect(validateEnrol({ ...emptyEnrol, ctas: 6 }, id).ok).toBe(false)
-    expect(validateEnrol({ ...emptyEnrol, ctas: 2 }, id).ok).toBe(true)
+    expect(validateEnrol(emptyEnrol, id)).toMatchObject({ ok: true, body: { ctas: 2 } })
   })
 
   it('needs a pager number only for the pager channel', () => {
