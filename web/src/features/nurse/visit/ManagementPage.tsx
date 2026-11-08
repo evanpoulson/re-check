@@ -8,8 +8,8 @@ import { useVisit } from './model'
 
 export function ManagementPage() {
   const { t } = useTranslation()
-  const { detail, stale, isNurse } = useVisit()
-  if (!isNurse) return <Navigate to=".." relative="path" replace />
+  const { detail, stale, isDesk } = useVisit()
+  if (!isDesk) return <Navigate to=".." relative="path" replace />
   const { visit } = detail
 
   return (
