@@ -8,6 +8,7 @@ Start with the [repository README](../README.md). It tells what Recheck is and h
 | --- | --- |
 | [Project plan](recheck-project-plan.md) | Status, pages, release gate, workstreams, judging and sponsor evidence |
 | [`AGENTS.md`](../AGENTS.md) | Demo scope, stack, staff sign-in, clinical and data rules, Git workflow |
+| [External runbook 2026](external-runbook-2026.pdf) | The runbook from the hackathon organizers: schedule, prompts, judging |
 
 ## Research
 
@@ -17,7 +18,7 @@ Read these documents before you change clinical pathways, escalation policy or p
 | --- | --- |
 | [Adaptive reassessment in the waiting room](research/recheck-waiting-room.md) | The clinical case for Recheck, the workflow, the follow-up groups, the data model |
 | [Patient view evidence](research/patient-view-evidence.md) | The evidence for the escalation buttons, the wellness questions, the circle check and the patient text |
-| [`research_notes/`](../research_notes/) | Source notes for the patient view evidence: Alberta and AHS, clinical red flags, design and accessibility, self-report evidence, UK precedents |
+| [`research/patient-view-evidence/`](research/patient-view-evidence/) | Source notes for the patient view evidence: Alberta and AHS, clinical red flags, design and accessibility, self-report evidence, UK precedents |
 | [Question bank sources](../question-bank/SOURCES.md) | The evidence for each question |
 
 ## Design
