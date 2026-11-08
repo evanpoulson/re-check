@@ -53,3 +53,12 @@ def test_unknown_fields_are_rejected():
     with client() as c:
         c.post("/api/staff/session", json={"role": "triage_nurse"})
         assert c.post("/api/visits", json={**ENROL, "name": "Jane"}).status_code == 422
+
+
+def test_only_desk_staff_change_site_settings():
+    with client() as c:
+        assert c.get("/api/site-settings").status_code == 401
+        assert c.put("/api/site-settings", json={"show_triage_level": True}).status_code == 401
+        c.post("/api/staff/session", json={"role": "physician"})
+        assert c.get("/api/site-settings").status_code == 403
+        assert c.put("/api/site-settings", json={"show_triage_level": True}).status_code == 403

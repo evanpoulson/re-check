@@ -1,4 +1,4 @@
-from . import actions, events, patient, reports, session, staff, staff_session, visits
+from . import actions, events, patient, reports, session, settings, staff, staff_session, visits
 
 ROUTERS = (
     staff_session.router,
@@ -9,4 +9,5 @@ ROUTERS = (
     patient.router,
     reports.router,
     events.router,
+    settings.router,
 )

@@ -12,7 +12,15 @@ from pydantic.json_schema import models_json_schema
 from .events import DashboardEvent
 from .patient import PatientHome
 from .reports import PatientReport, ReportReceipt
-from .staff import AcknowledgeTask, AssessTask, FlagHigher, VitalsCreate, VitalsRecord
+from .staff import (
+    AcknowledgeTask,
+    AssessTask,
+    FlagHigher,
+    SiteSettings,
+    SiteSettingsUpdate,
+    VitalsCreate,
+    VitalsRecord,
+)
 from .tasks import Task
 from .views import ChargeNurseView, Handover, QualitySummary, TriageBoard, VisitDetail, Worklist
 from .visits import (
@@ -39,6 +47,7 @@ REQUEST_MODELS = (
     FlagHigher,
     AcknowledgeTask,
     AssessTask,
+    SiteSettingsUpdate,
 )
 RESPONSE_MODELS = (
     VisitEnrolled,
@@ -56,6 +65,7 @@ RESPONSE_MODELS = (
     Handover,
     QualitySummary,
     DashboardEvent,
+    SiteSettings,
 )
 
 patient_report_adapter: TypeAdapter[PatientReport] = TypeAdapter(PatientReport)
@@ -86,6 +96,8 @@ __all__ = [
     "SessionInfo",
     "SignInConflict",
     "SignOut",
+    "SiteSettings",
+    "SiteSettingsUpdate",
     "StaffSignOut",
     "Task",
     "TokenExchange",

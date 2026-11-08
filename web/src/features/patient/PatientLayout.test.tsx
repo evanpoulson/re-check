@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import type { PatientHome } from '@/api/types'
-import '@/i18n'
+import i18n from '@/i18n'
 import { PatientLayout } from './PatientLayout'
 
 const home = (over: Partial<PatientHome>): PatientHome => ({
@@ -32,5 +32,39 @@ describe('department wait', () => {
     render(<PatientLayout home={home({ wait_estimate: null, waited_minutes: 5 })}>x</PatientLayout>)
     expect(screen.getByText('AHS wait estimate not available right now.')).toBeInTheDocument()
     expect(screen.getByText('You have waited 5 minutes since triage.')).toBeInTheDocument()
+  })
+})
+
+describe('triage card', () => {
+  it('always explains how triage works, and hides the level unless the site shows it', () => {
+    render(<PatientLayout home={home({ triage_level: null })}>x</PatientLayout>)
+    expect(screen.getByText('How triage works')).toBeInTheDocument()
+    expect(screen.getByText(/sees the sickest people first/)).toBeInTheDocument()
+    expect(screen.queryByText('Your triage level')).not.toBeInTheDocument()
+  })
+
+  it('shows the level in plain words when the server sends it', () => {
+    render(<PatientLayout home={home({ triage_level: 3 })}>x</PatientLayout>)
+    expect(screen.getByRole('heading', { name: 'Your triage level' })).toBeInTheDocument()
+    expect(screen.getByText('Level 3: Urgent')).toBeInTheDocument()
+    expect(screen.getByText(/People who are sicker may be seen first/)).toBeInTheDocument()
+  })
+
+  it('words the heading for a companion', () => {
+    render(<PatientLayout home={home({ role: 'companion', triage_level: 5 })}>x</PatientLayout>)
+    expect(screen.getByRole('heading', { name: "The patient's triage level" })).toBeInTheDocument()
+    expect(screen.getByText('Level 5: Not urgent')).toBeInTheDocument()
+  })
+
+  it('shows the card in the chosen language, right to left for Arabic', async () => {
+    await i18n.changeLanguage('ar')
+    try {
+      render(<PatientLayout home={home({ triage_level: 4 })}>x</PatientLayout>)
+      expect(screen.getByText('المستوى 4: أقل إلحاحًا')).toBeInTheDocument()
+      expect(screen.getByText('كيف يعمل الفرز (الترياج)')).toBeInTheDocument()
+      expect(document.documentElement.dir).toBe('rtl')
+    } finally {
+      await i18n.changeLanguage('en')
+    }
   })
 })

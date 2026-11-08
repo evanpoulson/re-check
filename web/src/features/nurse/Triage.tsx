@@ -24,6 +24,7 @@ import {
 } from '@/lib/board'
 import { formatMinutes, sinceMs, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
+import { SiteSettingsCard } from './SiteSettings'
 import { useDashboardEvents } from './useDashboardEvents'
 
 const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'general']
@@ -78,6 +79,8 @@ export function Triage() {
           </li>
         ))}
       </ul>
+
+      <SiteSettingsCard />
 
       <div className="flex flex-wrap items-center gap-3">
         <label

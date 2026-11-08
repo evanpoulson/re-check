@@ -5,6 +5,7 @@ import { translations } from '@/api/bank'
 import type { ConcernCode, PatientHome } from '@/api/types'
 import { Brand } from '@/components/Brand'
 import { HelpBar } from '@/components/HelpBar'
+import { TriageCard } from '@/components/TriageCard'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
 import { LANGUAGES } from '@/i18n'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
@@ -100,6 +101,7 @@ export function PatientLayout({ home, dock, children }: Props) {
           </>
         )}
       </section>
+      {home && <TriageCard level={home.triage_level} role={home.role} />}
       <PrivacyPanel />
       </div>
       {dock && home ? <HelpBar role={home.role} {...dock} /> : null}

@@ -129,5 +129,35 @@
   },
   "pages": {
     "patientEntry": "Ouverture de votre questionnaire"
+  },
+  "triageInfo": {
+    "title": "Comment fonctionne le triage",
+    "sickestFirst": "Les urgences voient d'abord les personnes les plus malades. Ce n'est pas l'ordre d'arrivée.",
+    "levels": "À l'arrivée de chaque personne, le personnel infirmier du triage évalue l'urgence de ses besoins. Le Canada utilise 5 niveaux. Le niveau 1 est le plus urgent.",
+    "checkins": "Les réponses au questionnaire aident le personnel à remarquer les changements. Un membre de l'équipe médicale décide de la suite.",
+    "worse": "Si vous vous sentez plus mal, avertissez le personnel immédiatement.",
+    "leaving": "Veuillez avertir le personnel avant de partir.",
+    "level": {
+      "heading": "Votre niveau de triage",
+      "heading_companion": "Niveau de triage du patient ou de la patiente",
+      "label": "Niveau {{level}} : {{name}}",
+      "setAtTriage": "C'est le niveau fixé par le personnel infirmier du triage à l'arrivée.",
+      "2": {
+        "name": "Très urgent",
+        "body": "Le personnel infirmier a relevé des signes qui demandent des soins très rapidement. Le personnel passera souvent."
+      },
+      "3": {
+        "name": "Urgent",
+        "body": "Des soins sont nécessaires bientôt, mais la vie n'est pas en danger pour le moment. Les personnes plus malades peuvent passer avant."
+      },
+      "4": {
+        "name": "Moins urgent",
+        "body": "Ce n'est pas une urgence pour le moment. L'attente peut être longue. Vous êtes au bon endroit."
+      },
+      "5": {
+        "name": "Non urgent",
+        "body": "Cela peut attendre sans danger. L'attente peut être longue. Vous êtes au bon endroit."
+      }
+    }
   }
 }

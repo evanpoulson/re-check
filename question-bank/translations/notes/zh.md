@@ -11,3 +11,4 @@
 - "Triage" = 分诊台 (desk/location). "Clinician" = 医护人员 (doctor or nurse practitioner), not 医生 only.
 - "Code" in exchange screens rendered as QR码 for clarity.
 - "I'm not sure" = 我不确定 (does not mean no).
+- **Triage card (`triageInfo`):** Level names: "非常紧急 / 紧急 / 次紧急 / 非紧急", with "第 {{level}} 级". Check them against mainland triage usage. No target times are shown on purpose; please keep it that way.

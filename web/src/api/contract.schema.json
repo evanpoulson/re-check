@@ -1266,6 +1266,22 @@
           "title": "Role",
           "type": "string"
         },
+        "triage_level": {
+          "anyOf": [
+            {
+              "description": "Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.",
+              "maximum": 5,
+              "minimum": 2,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "The level set at triage, sent only when the site shows it (SiteSettings.show_triage_level). The screen explains it in plain words and never shows a target time.",
+          "title": "Triage Level"
+        },
         "wait_estimate": {
           "anyOf": [
             {
@@ -1778,6 +1794,50 @@
         "submission_id"
       ],
       "title": "SignOut",
+      "type": "object"
+    },
+    "SiteSettings": {
+      "description": "Switches for the whole site, changed by the triage or charge nurse.\n\nA site that has never saved settings gets the defaults.",
+      "properties": {
+        "show_triage_level": {
+          "description": "When true, patients and companions see the level set at triage, in plain words. Off by default: no public AHS policy says whether staff share it (research brief \u00a74a). Target times are never shown.",
+          "title": "Show Triage Level",
+          "type": "boolean"
+        },
+        "updated_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Last change, or null while the site uses the defaults.",
+          "title": "Updated At"
+        }
+      },
+      "required": [
+        "show_triage_level",
+        "updated_at"
+      ],
+      "title": "SiteSettings",
+      "type": "object"
+    },
+    "SiteSettingsUpdate": {
+      "additionalProperties": false,
+      "description": "Replace the site's settings. Sending the same body again changes nothing, so retries are safe.",
+      "properties": {
+        "show_triage_level": {
+          "title": "Show Triage Level",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "show_triage_level"
+      ],
+      "title": "SiteSettingsUpdate",
       "type": "object"
     },
     "StaffRef": {
@@ -3232,6 +3292,12 @@
     },
     "SignOut": {
       "$ref": "#/$defs/SignOut"
+    },
+    "SiteSettings": {
+      "$ref": "#/$defs/SiteSettings"
+    },
+    "SiteSettingsUpdate": {
+      "$ref": "#/$defs/SiteSettingsUpdate"
     },
     "StaffRef": {
       "$ref": "#/$defs/StaffRef"

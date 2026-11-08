@@ -7,3 +7,4 @@
 - **Seizure:** Rendered as "جھٹکوں والا دورہ (مرگی جیسا دورہ)". Check that it is clear and not stigmatizing. "Confusion" became "ذہنی الجھن (کنفیوژن)".
 - **Check-in:** The repeated questionnaire became "سوالات" ("questions"), for example "اگلے سوالات" and "سوالات شروع کریں". Being registered became "اندراج". Check this is clear for low-literacy readers. "Sign in/out" stays as the English loanwords سائن اِن / سائن آؤٹ.
 - **Vomiting:** Rendered as "اُلٹی (قے)". Shoulder blades became "پیٹھ پر دونوں کندھوں کے درمیان".
+- **Triage card (`triageInfo`):** The heading keeps "ترجیحی سطح (ٹرائیج لیول)" from the privacy panel. The nurse sentence uses "ٹرائیج نرس کی طرف سے" to avoid a gendered verb. Level names: "انتہائی فوری / فوری / کم فوری / غیر فوری". No target times are shown on purpose; please keep it that way.

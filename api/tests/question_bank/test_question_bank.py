@@ -47,7 +47,7 @@ def write_bank(tmp_path: Path, questionnaire: dict, concept_map: dict) -> Path:
 
 
 def raw(name: str) -> dict:
-    return json.loads((BANK_DIR / name).read_text())
+    return json.loads((BANK_DIR / name).read_text(encoding="utf-8"))
 
 
 # --- the bank matches the contract ----------------------------------------
@@ -101,7 +101,7 @@ def test_every_question_and_button_has_companion_wording(bank):
 
 
 def test_every_question_cites_evidence_listed_in_sources(bank):
-    sources = (BANK_DIR / "SOURCES.md").read_text()
+    sources = (BANK_DIR / "SOURCES.md").read_text(encoding="utf-8")
     for key in bank.section("base") + bank.section("follow_up"):
         evidence = ext_values(bank.items[key], "evidence")
         assert evidence, f"{key} has no evidence"
@@ -113,7 +113,7 @@ def test_every_language_has_a_current_translation(bank):
     """A bank wording change bumps the version, which needs every translation redone."""
     assert set(bank.translations) == {lang.value for lang in Language} - {"en"}
     for path in (BANK_DIR / "translations").glob("*.json"):
-        assert json.loads(path.read_text())["bankVersion"] == bank.version, f"{path.name} is for an older bank"
+        assert json.loads(path.read_text(encoding="utf-8"))["bankVersion"] == bank.version, f"{path.name} is for an older bank"
 
 
 def test_translations_cover_every_visible_string_and_nothing_hidden(bank):

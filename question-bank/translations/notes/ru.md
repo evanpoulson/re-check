@@ -9,3 +9,4 @@
 - **Symptom wording to verify:** "Одна сторона лица опустилась" (facial droop), "Сильнее путаница в мыслях, растерянность" (more confused), "Трудно не заснуть" (hard to stay awake), "судорожный приступ (судороги)" (seizure).
 - **Health number** became "номер медицинской страховки". Alberta calls it the "Personal Health Number".
 - **Placeholders:** {{count}} sits after a colon ("ожидают отправки: {{count}}"), so it works with any number. {{estimate}} follows "примерно", which takes the nominative case. {{who}} sits before a colon so the verb does not need to agree with it.
+- **Triage card (`triageInfo`):** Level names: "Очень срочно / Срочно / Менее срочно / Не срочно". "Медсестра триажа" is feminine, as in the existing text. "Вы пришли по адресу" is idiomatic for "you are in the right place"; check that it fits the register. No target times are shown on purpose; please keep it that way.

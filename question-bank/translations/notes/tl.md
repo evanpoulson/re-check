@@ -8,3 +8,4 @@
 - **"Hindi ako sigurado"** (I'm not sure) means not knowing. It is not a "no".
 - **"Between the shoulder blades"** became "Likod, sa pagitan ng mga balikat" (back, between the shoulders) for plain wording.
 - **`takeover.who`** starts with {{who}}, which is filled with "Ang pasyente" / "Isang kasama ng pasyente". The capitalization is correct only at the start of the sentence.
+- **Triage card (`triageInfo`):** Level names: "Napakaapurahan / Apurahan / Hindi gaanong apurahan / Hindi apurahan". "Level" is kept in English, as in the existing "triage level". Check that "Hindi apurahan" doesn't sound like "you can go home". No target times are shown on purpose; please keep it that way.
