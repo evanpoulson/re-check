@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime
 from uuid import uuid4
 
@@ -68,7 +69,8 @@ def test_rules_are_deterministic_and_well_formed(report, att):
     fires = rules.evaluate(report, att)
     assert fires == rules.evaluate(report, att)
     for f in fires:
-        assert f.rule_id.startswith("demo-") and f.rule_id.endswith("-v1")
+        assert f.rule_id == f"demo_{f.reason_code}_v1"
+        assert re.fullmatch(r"[a-z][a-z0-9_]{0,63}", f.rule_id), "must be a valid contract Code"
         assert f.level in rules.ACK_DUE
         assert f.routed_to
 

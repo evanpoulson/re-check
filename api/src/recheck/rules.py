@@ -40,7 +40,8 @@ class Fire:
 
     @property
     def rule_id(self) -> str:
-        return f"demo-{self.reason_code.replace('_', '-')}-v1"
+        # Same format as the synthetic cohort, and a valid contract Code (lowercase, digits, underscores).
+        return f"demo_{self.reason_code}_v1"
 
 
 Report = CheckinReport | ConcernReport | FindingReport | LeavingReport
