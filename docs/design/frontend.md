@@ -11,7 +11,7 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 
 ## Decisions
 
-- The patient is in the queue from **enrolment**. Scanning the QR binds a device; the nurse sees Connected or Not connected yet.
+- The patient is in the queue from **enrolment**. Scanning the QR signs in one device as the patient or the companion; the nurse sees Patient signed in, Companion signed in or No one signed in.
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
 - Calm clinical light theme, desktop-first staff UI, shadcn/ui with Radix, languages `en`, `pa`, `tl`.
@@ -23,7 +23,7 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 | Screen | Route | Notes |
 | --- | --- | --- |
 | Demo role picker | `/staff/sign-in` | Labelled synthetic demo |
-| Nurse enrolment | `/staff/visits/new` | CTAS 2 to 5, complaint, language, channel. QR cards shown once |
+| Nurse enrolment | `/staff/visits/new` | CTAS 2 to 5, complaint, language, channel. One QR card, which the desk can show again |
 | Nurse triage board | `/staff/triage` | All waiting patients, flags, conditions |
 | Visit timeline | `/staff/visits/:id` | Reusable sheet or page, shared with the physician view |
 | Patient and companion | `/v/:token`, then `/check-in` | The token exchange sets the session, then redirects |
@@ -43,7 +43,7 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 - **Tokens** (CSS variables in the Tailwind theme): neutral slate surfaces and one calm teal-blue primary. Task-level colours map 1:1 to `TaskLevel`: `red`, `amber`, `silent` (violet with a clock icon), `leave_risk` (orange with a door icon) and `overdue` (blue-grey with an hourglass). There is no bright green for "fine"; baseline is muted grey.
 - **Type:** Inter or system. Patient body text 18px or larger and answer buttons 20px. The nurse table uses 14px with tabular numerals for timers.
 - **shadcn/ui and Radix:** Button, Card, Badge, Table, Sheet, Dialog, Tabs, Toast, Tooltip, Progress, RadioGroup, Select, Slider, Skeleton.
-- **Custom components:** `AnswerButton`, `HelpBar`, `LevelChip`, `StateChip` (condition), `MissedChip`, `LinkChip` (Connected or Not connected yet), `CountdownChip`, `Sparkline`, `Timeline`, `QrCard`, `PrivacyPanel`.
+- **Custom components:** `AnswerButton`, `HelpBar`, `LevelChip`, `StateChip` (condition), `MissedChip`, `LinkChip` (Patient signed in, Companion signed in or No one signed in), `CountdownChip`, `Sparkline`, `Timeline`, `QrCard`, `PrivacyPanel`.
 
 ## Triage nurse side
 
@@ -59,7 +59,7 @@ Fields exactly as the contract and schema:
 - `channel`: phone or pager. `pager_no` (1 to 6 digits) appears only for pager. A pager already bound to a waiting patient is rejected by the schema, so show the server error inline.
 - A client `submission_id` is generated once and reused on retry.
 
-After submit (`VisitEnrolled`), show two QR cards, **Patient** and **Companion** (`patient_link`, `companion_link`), with Print and Save, the expiry from `links_expire_at`, and a clear warning: **"Shown once. Print or hand over now."** Also show when the first prompt and the staff reassessment are due (CTAS demo defaults of 15, 30, 60 and 120 minutes). Pager patients also get a phone fallback QR.
+After submit (`VisitEnrolled`), show one QR card (`link`) with Print and Save and the expiry from `link_expires_at`. The same code serves the patient and the companion: whoever scans it chooses who they are. Only one device is signed in at a time. To switch people or phones, the nurse opens the visit and taps **Show QR**, which fetches `VisitLink` (the same code again). Also show when the first prompt and the staff reassessment are due (CTAS demo defaults of 15, 30, 60 and 120 minutes). For pager patients, the same QR is the phone fallback.
 
 ```
 +--------------------------------------------------------------+
@@ -70,11 +70,11 @@ After submit (`VisitEnrolled`), show two QR cards, **Patient** and **Companion**
 |                                          [ Create visit ]    |
 +--------------------------------------------------------------+
    after submit:
-+--------------------+  +--------------------+
-|  [ PATIENT QR ]    |  |  [ COMPANION QR ]  |  Shown once.
-|  Scan to check in  |  |  Scan if helping   |  Expires 14:30
-|  [Print] [Save]    |  |  [Print] [Save]    |  First check-in 14:15
-+--------------------+  +--------------------+
++--------------------------+
+|        [ VISIT QR ]      |  Patient or companion scans.
+|  Scan to check in        |  Expires 14:30
+|  [Print] [Save]          |  First check-in 14:15
++--------------------------+  Show again from the visit.
 ```
 
 ### Triage board (`/staff/triage`, fixed queue order)
@@ -128,7 +128,7 @@ Subscribe to `DashboardEvent` and refetch the affected view, since events are ch
 
 ## Patient and companion side (`/v/:token`, then `/check-in`)
 
-`POST` token exchange returns `SessionInfo` and an HttpOnly cookie holds the session. **Which QR was scanned decides patient or companion**, so there is no role picker. An invalid, expired or used token shows "Ask the triage desk for a new code".
+After scanning, the person picks **"I'm the patient"** or **"I'm with the patient"**. The `POST` token exchange (`TokenExchange` with `role`) returns `SessionInfo`, and an HttpOnly cookie holds the session. If another device is already signed in, the server answers 409 with `SignInConflict` (who is signed in and since when). Show **"This will sign out the other device"** and, only after the person confirms, resend with `takeover_session_id` from the 409. If someone else took over in the meantime, the server answers 409 again and the person is asked again. Sessions have no timer: they end on takeover, when the person taps **Sign out** (`SignOut`), when staff sign the device out (`StaffSignOut`), or when the visit closes. A signed-out device can't send anything, including reports it queued offline, so it shows "You've been signed out. If you need help now, tell a staff member." and a way to scan again. An invalid or expired token shows "Ask the triage desk for a new code".
 
 Every screen shows the wait range when present, "Your answers never change your place in line.", a language switch, a "What we store" link to the `PrivacyPanel`, and the persistent `HelpBar` (I'm worried, I need help now).
 
@@ -163,7 +163,7 @@ Every screen shows the wait range when present, "Your answers never change your 
 
 1. **The triage board row is too thin.** `BoardRow` has only CTAS, complaint, `triaged_at`, level and the reassessment due and overdue fields. The project plan already says to extend it. The dashboard needs the last report (time, who, channel), `trend`, latest findings, prompt due and overdue, `silent`, `leave_risk`, a missed-check count and queue-order data. Recommendation: extend `BoardRow` with these fields from `WorklistRow` instead of sorting the severity-ranked `Worklist` on the client.
 2. **No missed-check count.** Rows carry only booleans. Add `missed_checkins: int`.
-3. **No connected state.** The schema has `patient_token_used_at` and `companion_token_used_at`, but `VisitSummary` does not expose them. Add `patient_linked` and `companion_linked`.
+3. **Signed-in state.** `VisitSummary` has `signed_in_as` and `signed_in_since`, and the visit timeline includes `SessionRecord` entries for each sign-in and takeover. `BoardRow` still needs them.
 4. **"Condition" is not a field.** It is derived from the last `feeling_change`, the findings and the task level. Confirm the rule.
 5. **Staff identity** for acknowledge and assess is defined only as `StaffRef`. The demo role picker covers the hackathon.
 6. **The FastAPI routes do not exist yet.** The frontend works against generated types (`@hey-api/openapi-ts`) and MSW mocks.
@@ -211,14 +211,14 @@ Each step is its own small branch and pull request.
 
 1. `docs/frontend-design`: this document.
 2. `feat/web-scaffold`: Vite app, theme tokens, shadcn, i18n, generated types, MSW.
-3. `feat/nurse-enrol-qr`: role picker, enrolment form, QR cards.
+3. `feat/nurse-enrol-qr`: role picker, enrolment form, QR card, Show QR and staff sign-out.
 4. `feat/patient-checkin`: token exchange, home, check-in, urgent, status, offline queue, privacy panel.
 5. `feat/nurse-triage-board`: board, flags, detail sheet, live refetch.
 6. `feat/nurse-actions`: acknowledge, assess, vitals, flag higher, visit status.
 
 ## Verification
 
-- Run the Vite dev server with MSW and walk the loop. The nurse enrols and the QR appears once. The patient scans and reports "worse" with a finding. The board flag appears with the row **in the same position**. The nurse acknowledges and assesses.
+- Run the Vite dev server with MSW and walk the loop. The nurse enrols and the QR appears; Show QR brings the same code back. The patient scans and reports "worse" with a finding. The board flag appears with the row **in the same position**. The nurse acknowledges and assesses.
 - Confirm the three synthetic cases and the missed-check flag after one and two missed prompts.
 - Patient checks: a companion cannot send pain, a partial check-in sends `not_reached`, "Not sure" sends `unsure`, no task level or reason reaches patient screens, and an offline submit that reconnects with the same `submission_id` shows once.
 - Accessibility: keyboard only, 200% zoom, a 360px viewport, a colour-blind check (status is never colour-only), axe or Lighthouse, and all three languages.
@@ -227,5 +227,5 @@ Each step is its own small branch and pull request.
 ## Open items
 
 - The frontend directory name `web/` is assumed.
-- Agree the `BoardRow` extension and the missed-count and linked fields with the backend before step 5.
+- Agree the `BoardRow` extension and the missed-count and signed-in fields with the backend before step 5.
 - The Voltex energy-data and Solana tracks are out of scope.

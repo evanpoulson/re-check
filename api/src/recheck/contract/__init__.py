@@ -15,13 +15,26 @@ from .reports import PatientReport, ReportReceipt
 from .staff import AcknowledgeTask, AssessTask, FlagHigher, VitalsCreate, VitalsRecord
 from .tasks import Task
 from .views import ChargeNurseView, Handover, QualitySummary, TriageBoard, VisitDetail, Worklist
-from .visits import SessionInfo, TokenExchange, VisitCreate, VisitEnrolled, VisitExclusionUpdate, VisitStatusUpdate
+from .visits import (
+    SessionInfo,
+    SignInConflict,
+    SignOut,
+    StaffSignOut,
+    TokenExchange,
+    VisitCreate,
+    VisitEnrolled,
+    VisitExclusionUpdate,
+    VisitLink,
+    VisitStatusUpdate,
+)
 
 REQUEST_MODELS = (
     VisitCreate,
     TokenExchange,
     VisitStatusUpdate,
     VisitExclusionUpdate,
+    SignOut,
+    StaffSignOut,
     VitalsCreate,
     FlagHigher,
     AcknowledgeTask,
@@ -29,7 +42,9 @@ REQUEST_MODELS = (
 )
 RESPONSE_MODELS = (
     VisitEnrolled,
+    VisitLink,
     SessionInfo,
+    SignInConflict,
     ReportReceipt,
     PatientHome,
     VitalsRecord,
@@ -69,6 +84,9 @@ __all__ = [
     "QualitySummary",
     "ReportReceipt",
     "SessionInfo",
+    "SignInConflict",
+    "SignOut",
+    "StaffSignOut",
     "Task",
     "TokenExchange",
     "TriageBoard",
@@ -76,6 +94,7 @@ __all__ = [
     "VisitDetail",
     "VisitEnrolled",
     "VisitExclusionUpdate",
+    "VisitLink",
     "VisitStatusUpdate",
     "VitalsCreate",
     "VitalsRecord",

@@ -49,6 +49,12 @@ CREATE TYPE channel AS ENUM ('phone', 'pager', 'desk');
 -- Who answered. Independent of the channel.
 CREATE TYPE reporter AS ENUM ('patient', 'companion', 'staff');
 
+-- Why a visit session ended. Revoking is one-way. Sessions have no timer:
+-- they last until one of these happens.
+CREATE TYPE session_end_reason AS ENUM (
+    'takeover', 'signed_out', 'staff_signed_out', 'visit_closed', 'app_excluded'
+);
+
 CREATE TYPE staff_role AS ENUM ('triage_nurse', 'physician', 'charge_nurse', 'quality');
 
 -- Wellness questions adapted from the Patient Wellness Questionnaire (Martha's Rule).
@@ -124,8 +130,10 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- visit: one waiting-room stay (FR1 to FR3)
--- No name or health number is stored. QR tokens are stored only as SHA-256
--- hashes; the raw tokens go on the QR cards and nowhere else.
+-- No name or health number is stored. Each app visit has one QR token, reusable
+-- until it expires. It is stored twice: a SHA-256 hash to look it up on scan,
+-- and a copy encrypted by the API server (key held outside the database) so
+-- the desk can show the same QR again. Neither reaches the audit log.
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE visit (
@@ -141,13 +149,11 @@ CREATE TABLE visit (
     app_exclusion            app_exclusion,
     channel                  channel          CHECK (channel IN ('phone', 'pager')),
     pager_no                 text             CHECK (pager_no ~ '^[0-9]{1,6}$'),
-    -- Every app visit gets a patient link (phone is the fallback for pager
-    -- patients) and a companion link (FR11).
-    patient_token_hash       bytea            UNIQUE CHECK (octet_length(patient_token_hash) = 32),
-    companion_token_hash     bytea            UNIQUE CHECK (octet_length(companion_token_hash) = 32),
-    patient_token_used_at    timestamptz,
-    companion_token_used_at  timestamptz,
-    tokens_expire_at         timestamptz,
+    -- One QR per app visit (phone is the fallback for pager patients). The
+    -- person who scans it chooses patient or companion (FR11).
+    token_hash               bytea            UNIQUE CHECK (octet_length(token_hash) = 32),
+    token_ciphertext         bytea            CHECK (octet_length(token_ciphertext) BETWEEN 16 AND 512),
+    token_expires_at         timestamptz,
     triaged_at               timestamptz      NOT NULL DEFAULT now(),
     status                   visit_status     NOT NULL DEFAULT 'waiting',
     closed_at                timestamptz,
@@ -161,7 +167,7 @@ CREATE TABLE visit (
     -- and token history; visit_exclusion_guard handles that change.
     CONSTRAINT visit_app_offer CHECK (
         CASE WHEN app_exclusion IS NULL THEN
-            num_nulls(channel, patient_token_hash, companion_token_hash, tokens_expire_at) = 0
+            num_nulls(channel, token_hash, token_ciphertext, token_expires_at) = 0
         ELSE
             next_prompt_due_at IS NULL
         END
@@ -193,8 +199,7 @@ CREATE FUNCTION visit_set_first_due() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.app_exclusion IS NOT NULL
-       AND num_nonnulls(NEW.channel, NEW.pager_no, NEW.patient_token_hash, NEW.companion_token_hash,
-                        NEW.tokens_expire_at, NEW.patient_token_used_at, NEW.companion_token_used_at) > 0 THEN
+       AND num_nonnulls(NEW.channel, NEW.pager_no, NEW.token_hash, NEW.token_ciphertext, NEW.token_expires_at) > 0 THEN
         RAISE EXCEPTION 'a visit enrolled without the app has no channel, pager or QR tokens'
             USING ERRCODE = 'check_violation';
     END IF;
@@ -231,34 +236,105 @@ CREATE TRIGGER visit_exclusion_guard
     FOR EACH ROW EXECUTE FUNCTION visit_exclusion_guard();
 
 -- ---------------------------------------------------------------------------
--- visit_session: a device bound to a visit by exchanging a one-time token
+-- visit_session: one device signed in to a visit as the patient or companion
+--
+-- Scanning the visit's QR and choosing a role creates a session. Only one
+-- session per visit is open at a time. Signing in on a second device needs the
+-- person to confirm the specific session they were shown; the server then
+-- revokes that session (reason 'takeover') and inserts the new one, with
+-- replaces = the old session, in the same transaction. If that session is no
+-- longer open, or two sign-ins race, the unique index or the revoke matching
+-- no row means the server answers 409 again rather than signing out someone
+-- the person wasn't warned about.
+--
+-- Sessions have no expiry. They end when the visit closes or is excluded, on
+-- takeover, or when the person or staff sign the device out. A report from a
+-- signed-out device is rejected (report_session_open).
 -- ---------------------------------------------------------------------------
 
 CREATE TABLE visit_session (
-    id            uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
-    visit_id      uuid         NOT NULL REFERENCES visit (id),
-    role          reporter     NOT NULL CHECK (role IN ('patient', 'companion')),
-    session_hash  bytea        NOT NULL UNIQUE CHECK (octet_length(session_hash) = 32),
-    created_at    timestamptz  NOT NULL DEFAULT now(),
-    expires_at    timestamptz  NOT NULL,
-    revoked_at    timestamptz
+    id              uuid                PRIMARY KEY DEFAULT gen_random_uuid(),
+    visit_id        uuid                NOT NULL REFERENCES visit (id),
+    role            reporter            NOT NULL CHECK (role IN ('patient', 'companion')),
+    session_hash    bytea               NOT NULL UNIQUE CHECK (octet_length(session_hash) = 32),
+    created_at      timestamptz         NOT NULL DEFAULT now(),
+    revoked_at      timestamptz,
+    revoked_reason  session_end_reason,
+    -- The session this one took over from, if any.
+    replaces        uuid                UNIQUE REFERENCES visit_session (id),
+    CONSTRAINT visit_session_revoked_shape CHECK (num_nonnulls(revoked_at, revoked_reason) IN (0, 2)),
+    -- Lets a report reference (session, visit, role) so its reporter must match
+    -- the role chosen at sign-in.
+    CONSTRAINT visit_session_visit_role_uq UNIQUE (id, visit_id, role)
 );
 
-CREATE INDEX visit_session_visit_idx ON visit_session (visit_id);
+-- One signed-in device per visit.
+CREATE UNIQUE INDEX visit_session_one_open_uq ON visit_session (visit_id) WHERE revoked_at IS NULL;
 
--- Excluding a visit after enrolment signs out its patient and companion devices.
-CREATE FUNCTION visit_revoke_sessions_on_exclusion() RETURNS trigger
+CREATE INDEX visit_session_visit_idx ON visit_session (visit_id, created_at DESC);
+
+-- A session can only start on a waiting visit that offers the app. A session
+-- that replaces another must replace one from the same visit that was revoked
+-- for takeover.
+CREATE FUNCTION visit_session_check() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
-    UPDATE visit_session SET revoked_at = now() WHERE visit_id = NEW.id AND revoked_at IS NULL;
+    IF TG_OP = 'INSERT' THEN
+        -- FOR SHARE blocks a concurrent close or exclusion until this sign-in
+        -- commits, so the visit's revoke trigger always sees the new session.
+        PERFORM FROM visit
+        WHERE id = NEW.visit_id AND status = 'waiting' AND app_exclusion IS NULL
+        FOR SHARE;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'sign-in needs a waiting visit that offers the app' USING ERRCODE = 'check_violation';
+        END IF;
+        IF NEW.revoked_at IS NOT NULL THEN
+            RAISE EXCEPTION 'a new session cannot start revoked' USING ERRCODE = 'check_violation';
+        END IF;
+        IF NEW.replaces IS NOT NULL AND NOT EXISTS (
+            SELECT FROM visit_session
+            WHERE id = NEW.replaces AND visit_id = NEW.visit_id AND revoked_reason = 'takeover'
+        ) THEN
+            RAISE EXCEPTION 'a session can only replace one from the same visit revoked for takeover'
+                USING ERRCODE = 'check_violation';
+        END IF;
+        RETURN NEW;
+    END IF;
+    -- Only revocation can change a session, once.
+    IF OLD.revoked_at IS NOT NULL
+       OR (NEW.id, NEW.visit_id, NEW.role, NEW.session_hash, NEW.created_at, NEW.replaces)
+          IS DISTINCT FROM (OLD.id, OLD.visit_id, OLD.role, OLD.session_hash, OLD.created_at, OLD.replaces) THEN
+        RAISE EXCEPTION 'a session can only be revoked, once' USING ERRCODE = 'check_violation';
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER visit_session_check
+    BEFORE INSERT OR UPDATE ON visit_session
+    FOR EACH ROW EXECUTE FUNCTION visit_session_check();
+
+-- Closing a visit or excluding it from the app signs out its device.
+CREATE FUNCTION visit_revoke_sessions() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    UPDATE visit_session
+    SET revoked_at = now(),
+        revoked_reason = CASE WHEN NEW.app_exclusion IS NOT NULL AND OLD.app_exclusion IS NULL
+                              THEN 'app_excluded'::session_end_reason
+                              ELSE 'visit_closed'::session_end_reason END
+    WHERE visit_id = NEW.id AND revoked_at IS NULL;
     RETURN NULL;
 END
 $$;
 
-CREATE TRIGGER visit_revoke_sessions_on_exclusion
-    AFTER UPDATE OF app_exclusion ON visit
-    FOR EACH ROW WHEN (OLD.app_exclusion IS NULL AND NEW.app_exclusion IS NOT NULL)
-    EXECUTE FUNCTION visit_revoke_sessions_on_exclusion();
+CREATE TRIGGER visit_revoke_sessions
+    AFTER UPDATE OF app_exclusion, status ON visit
+    FOR EACH ROW WHEN (
+        (OLD.app_exclusion IS NULL AND NEW.app_exclusion IS NOT NULL)
+        OR (OLD.status = 'waiting' AND NEW.status <> 'waiting')
+    )
+    EXECUTE FUNCTION visit_revoke_sessions();
 
 -- ---------------------------------------------------------------------------
 -- submission: one row per client-generated submission ID
@@ -332,12 +408,18 @@ CREATE TABLE report (
     -- Complaint-specific answers keyed by question bank item key (FR6).
     items                  jsonb            NOT NULL DEFAULT '{}' CHECK (jsonb_typeof(items) = 'object'),
     concern                concern_code,
+    -- The phone session that sent it. The database checks the reporter matches
+    -- the role chosen at sign-in. Pager and desk reports have no session.
+    session_id             uuid,
     -- Staff flag only.
     note                   text             CHECK (char_length(note) BETWEEN 1 AND 280),
     entered_by             text,
     PRIMARY KEY (id, received_at),
     CONSTRAINT report_attention_prompt_fk FOREIGN KEY (attention_prompt_id, visit_id)
         REFERENCES attention_prompt (id, visit_id),
+    CONSTRAINT report_session_fk FOREIGN KEY (session_id, visit_id, reporter)
+        REFERENCES visit_session (id, visit_id, role),
+    CONSTRAINT report_session_for_phone CHECK ((channel = 'phone') = (session_id IS NOT NULL)),
     CONSTRAINT report_staff_only_from_desk CHECK (
         (reporter = 'staff') = (channel = 'desk')
         AND (reporter = 'staff') = (kind = 'staff_flag')
@@ -373,6 +455,26 @@ CREATE TABLE report (
 );
 
 SELECT create_hypertable('report', by_range('received_at', interval '1 day'));
+
+-- A signed-out device can't report. FOR SHARE holds off a concurrent sign-out
+-- or takeover until this report commits.
+CREATE FUNCTION report_session_open() RETURNS trigger
+LANGUAGE plpgsql AS $$
+BEGIN
+    IF NEW.session_id IS NOT NULL THEN
+        PERFORM FROM visit_session WHERE id = NEW.session_id AND revoked_at IS NULL FOR SHARE;
+        IF NOT FOUND THEN
+            RAISE EXCEPTION 'this device was signed out; reports from it are not accepted'
+                USING ERRCODE = 'check_violation';
+        END IF;
+    END IF;
+    RETURN NEW;
+END
+$$;
+
+CREATE TRIGGER report_session_open
+    BEFORE INSERT ON report
+    FOR EACH ROW EXECUTE FUNCTION report_session_open();
 
 CREATE INDEX report_visit_received_idx ON report (visit_id, received_at DESC);
 
@@ -525,7 +627,8 @@ CREATE INDEX audit_log_event_at_idx ON audit_log (event, at DESC);
 
 -- One audit row per insert/update. event is "<table>.<op>", e.g.
 -- "task.update". The table name is a trigger argument because on hypertables
--- TG_TABLE_NAME is the internal chunk. Token and session hashes are left out.
+-- TG_TABLE_NAME is the internal chunk. Token hashes, encrypted tokens and
+-- session hashes are left out.
 CREATE FUNCTION audit_write() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
@@ -533,10 +636,18 @@ BEGIN
     VALUES (
         current_actor(),
         TG_ARGV[0] || '.' || lower(TG_OP),
-        to_jsonb(NEW) - 'patient_token_hash' - 'companion_token_hash' - 'session_hash' - 'fingerprint'
+        to_jsonb(NEW) - 'token_hash' - 'token_ciphertext' - 'session_hash' - 'fingerprint'
     );
     RETURN NEW;
 END
+$$;
+
+-- Staff re-showing a visit's QR decrypts a live credential, so the API logs
+-- each re-show through this function in the same transaction as the read.
+CREATE FUNCTION log_qr_shown(visit uuid) RETURNS void
+LANGUAGE sql AS $$
+    INSERT INTO audit_log (actor, event, payload)
+    VALUES (current_actor(), 'visit.qr_shown', jsonb_build_object('visit_id', visit));
 $$;
 
 CREATE TRIGGER visit_audit         AFTER INSERT OR UPDATE ON visit         FOR EACH ROW EXECUTE FUNCTION audit_write('visit');
