@@ -1,0 +1,3072 @@
+{
+  "$defs": {
+    "AcknowledgeTask": {
+      "additionalProperties": false,
+      "description": "\"I've seen this.\" Separate from assessment.",
+      "properties": {
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id"
+      ],
+      "title": "AcknowledgeTask",
+      "type": "object"
+    },
+    "AppExclusion": {
+      "description": "Why the patient app was not offered. Staff watch these patients directly.",
+      "enum": [
+        "child",
+        "pregnancy_over_20_weeks",
+        "self_harm_or_violence",
+        "major_trauma"
+      ],
+      "title": "AppExclusion",
+      "type": "string"
+    },
+    "AssessTask": {
+      "additionalProperties": false,
+      "description": "Record the in-person outcome and complete the task (FR16).",
+      "properties": {
+        "disposition": {
+          "$ref": "#/$defs/Disposition"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "disposition"
+      ],
+      "title": "AssessTask",
+      "type": "object"
+    },
+    "AttentionAnswered": {
+      "additionalProperties": false,
+      "description": "The patient's count for a circle-counting prompt. The server scores it against what it issued.",
+      "properties": {
+        "count": {
+          "maximum": 20,
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "prompt_id": {
+          "description": "The attention prompt the server issued for this check-in.",
+          "format": "uuid",
+          "title": "Prompt Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "prompt_id",
+        "count"
+      ],
+      "title": "AttentionAnswered",
+      "type": "object"
+    },
+    "AttentionMissing": {
+      "additionalProperties": false,
+      "description": "No count. Carries the prompt ID when one was shown, so staff can tell \"shown but not answered\"\nfrom \"never shown\" (a companion check-in, for example).",
+      "properties": {
+        "kind": {
+          "const": "missing",
+          "title": "Kind",
+          "type": "string"
+        },
+        "prompt_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Prompt Id"
+        },
+        "reason": {
+          "$ref": "#/$defs/MissingReason"
+        }
+      },
+      "required": [
+        "kind",
+        "reason"
+      ],
+      "title": "AttentionMissing",
+      "type": "object"
+    },
+    "AttentionPrompt": {
+      "description": "Circle-counting reliability check, generated and stored by the server for one check-in.\n\nThe patient counts the circles and ignores the squares. Shapes are distinguished\nby outline, not colour alone. Not a clinical test: a wrong or missing count only\nasks staff to check the patient in person.",
+      "properties": {
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "gap_ms": {
+          "description": "Blank time between shapes.",
+          "minimum": 0,
+          "title": "Gap Ms",
+          "type": "integer"
+        },
+        "prompt_id": {
+          "format": "uuid",
+          "title": "Prompt Id",
+          "type": "string"
+        },
+        "show_ms": {
+          "description": "How long each shape stays on screen.",
+          "minimum": 200,
+          "title": "Show Ms",
+          "type": "integer"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/AttentionStep"
+          },
+          "minItems": 1,
+          "title": "Steps",
+          "type": "array"
+        }
+      },
+      "required": [
+        "prompt_id",
+        "steps",
+        "show_ms",
+        "gap_ms",
+        "expires_at"
+      ],
+      "title": "AttentionPrompt",
+      "type": "object"
+    },
+    "AttentionStep": {
+      "description": "One shape shown during the circle-counting check. Positions are fractions of the play area.",
+      "properties": {
+        "shape": {
+          "enum": [
+            "circle",
+            "square"
+          ],
+          "title": "Shape",
+          "type": "string"
+        },
+        "x": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "X",
+          "type": "number"
+        },
+        "y": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Y",
+          "type": "number"
+        }
+      },
+      "required": [
+        "shape",
+        "x",
+        "y"
+      ],
+      "title": "AttentionStep",
+      "type": "object"
+    },
+    "BoardRow": {
+      "description": "Triage nurse's silent board (FR17).",
+      "properties": {
+        "complaint_group": {
+          "$ref": "#/$defs/ComplaintGroup"
+        },
+        "ctas": {
+          "description": "Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.",
+          "maximum": 5,
+          "minimum": 2,
+          "title": "Ctas",
+          "type": "integer"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TaskLevel"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reassess_overdue": {
+          "title": "Reassess Overdue",
+          "type": "boolean"
+        },
+        "staff_reassess_due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Staff Reassess Due At"
+        },
+        "triaged_at": {
+          "format": "date-time",
+          "title": "Triaged At",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "visit_id",
+        "ctas",
+        "complaint_group",
+        "triaged_at",
+        "level",
+        "staff_reassess_due_at",
+        "reassess_overdue"
+      ],
+      "title": "BoardRow",
+      "type": "object"
+    },
+    "Channel": {
+      "description": "The device a report came through.",
+      "enum": [
+        "phone",
+        "pager",
+        "desk"
+      ],
+      "title": "Channel",
+      "type": "string"
+    },
+    "ChargeNurseView": {
+      "description": "Escalated tasks, nurse flags and everything routed outside TLP hours (FR18).",
+      "properties": {
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "tasks": {
+          "items": {
+            "$ref": "#/$defs/Task"
+          },
+          "title": "Tasks",
+          "type": "array"
+        },
+        "tlp_on_duty": {
+          "title": "Tlp On Duty",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "generated_at",
+        "tlp_on_duty",
+        "tasks"
+      ],
+      "title": "ChargeNurseView",
+      "type": "object"
+    },
+    "CheckinReport": {
+      "additionalProperties": false,
+      "description": "A scheduled check-in (FR5, FR6). May be partial: unreached questions are `not_reached`.\n\nUrgent findings are routed as soon as this is received, even if partial.",
+      "properties": {
+        "attention": {
+          "description": "Circle-counting reliability check. Patient only; a companion sends it as missing.",
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/AttentionAnswered",
+              "missing": "#/$defs/AttentionMissing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/AttentionAnswered"
+            },
+            {
+              "$ref": "#/$defs/AttentionMissing"
+            }
+          ],
+          "title": "Attention"
+        },
+        "captured_at": {
+          "description": "When the person answered on the device. The server records its own received time.",
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "phone",
+            "pager"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "feeling_change": {
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/FeelingChangeAnswered",
+              "missing": "#/$defs/Missing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/FeelingChangeAnswered"
+            },
+            {
+              "$ref": "#/$defs/Missing"
+            }
+          ],
+          "title": "Feeling Change"
+        },
+        "feeling_now": {
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/FeelingNowAnswered",
+              "missing": "#/$defs/Missing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/FeelingNowAnswered"
+            },
+            {
+              "$ref": "#/$defs/Missing"
+            }
+          ],
+          "title": "Feeling Now"
+        },
+        "items": {
+          "description": "Complaint-specific answers keyed by question bank item key.",
+          "patternProperties": {
+            "^[a-z][a-z0-9_]{0,63}$": {
+              "discriminator": {
+                "mapping": {
+                  "choice": "#/$defs/ChoiceAnswered",
+                  "missing": "#/$defs/Missing",
+                  "multi_choice": "#/$defs/MultiChoiceAnswered",
+                  "scale": "#/$defs/ScaleAnswered",
+                  "yes_no": "#/$defs/YesNoAnswered"
+                },
+                "propertyName": "kind"
+              },
+              "oneOf": [
+                {
+                  "$ref": "#/$defs/YesNoAnswered"
+                },
+                {
+                  "$ref": "#/$defs/ChoiceAnswered"
+                },
+                {
+                  "$ref": "#/$defs/MultiChoiceAnswered"
+                },
+                {
+                  "$ref": "#/$defs/ScaleAnswered"
+                },
+                {
+                  "$ref": "#/$defs/Missing"
+                }
+              ]
+            }
+          },
+          "title": "Items",
+          "type": "object"
+        },
+        "kind": {
+          "const": "checkin",
+          "title": "Kind",
+          "type": "string"
+        },
+        "new_findings": {
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/FindingsAnswered",
+              "missing": "#/$defs/Missing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/FindingsAnswered"
+            },
+            {
+              "$ref": "#/$defs/Missing"
+            }
+          ],
+          "title": "New Findings"
+        },
+        "pain": {
+          "discriminator": {
+            "mapping": {
+              "answered": "#/$defs/PainAnswered",
+              "missing": "#/$defs/Missing"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PainAnswered"
+            },
+            {
+              "$ref": "#/$defs/Missing"
+            }
+          ],
+          "title": "Pain"
+        },
+        "questionnaire_version": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+          "title": "Questionnaire Version",
+          "type": "string"
+        },
+        "reporter": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Reporter",
+          "type": "string"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "reporter",
+        "channel",
+        "captured_at",
+        "kind",
+        "questionnaire_version",
+        "feeling_now",
+        "feeling_change",
+        "pain",
+        "new_findings",
+        "attention"
+      ],
+      "title": "CheckinReport",
+      "type": "object"
+    },
+    "ChoiceAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "choice",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ChoiceAnswered",
+      "type": "object"
+    },
+    "ComplaintGroup": {
+      "description": "Pathway selected from the triage CEDIS complaint (question-bank/cedis-groups.json).",
+      "enum": [
+        "chest_back_pain",
+        "neuro_change",
+        "head_injury",
+        "confused_drowsy",
+        "general"
+      ],
+      "title": "ComplaintGroup",
+      "type": "string"
+    },
+    "ConcernCode": {
+      "description": "Always-visible buttons. `desk_question` is non-clinical and goes to the triage nurse only.",
+      "enum": [
+        "worried",
+        "help_now",
+        "desk_question"
+      ],
+      "title": "ConcernCode",
+      "type": "string"
+    },
+    "ConcernReport": {
+      "additionalProperties": false,
+      "description": "\"I'm worried\", \"I need help now\" or \"Question about my wait or care\", available at any time.",
+      "properties": {
+        "captured_at": {
+          "description": "When the person answered on the device. The server records its own received time.",
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "phone",
+            "pager"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "concern": {
+          "$ref": "#/$defs/ConcernCode"
+        },
+        "kind": {
+          "const": "concern",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reporter": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Reporter",
+          "type": "string"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "reporter",
+        "channel",
+        "captured_at",
+        "kind",
+        "concern"
+      ],
+      "title": "ConcernReport",
+      "type": "object"
+    },
+    "CtasCount": {
+      "properties": {
+        "count": {
+          "minimum": 0,
+          "title": "Count",
+          "type": "integer"
+        },
+        "ctas": {
+          "description": "Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.",
+          "maximum": 5,
+          "minimum": 2,
+          "title": "Ctas",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "ctas",
+        "count"
+      ],
+      "title": "CtasCount",
+      "type": "object"
+    },
+    "DashboardEvent": {
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "event_id": {
+          "format": "uuid",
+          "title": "Event Id",
+          "type": "string"
+        },
+        "task_id": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Task Id"
+        },
+        "type": {
+          "$ref": "#/$defs/DashboardEventType"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "event_id",
+        "type",
+        "at",
+        "visit_id"
+      ],
+      "title": "DashboardEvent",
+      "type": "object"
+    },
+    "DashboardEventType": {
+      "enum": [
+        "report.received",
+        "vitals.recorded",
+        "task.changed",
+        "visit.changed"
+      ],
+      "title": "DashboardEventType",
+      "type": "string"
+    },
+    "Disposition": {
+      "description": "Outcome recorded when a task is completed (FR16, brief section 4).",
+      "enum": [
+        "assessed_stable",
+        "tests_ordered",
+        "re_triaged",
+        "roomed",
+        "treated_and_released",
+        "left_before_assessment",
+        "not_located"
+      ],
+      "title": "Disposition",
+      "type": "string"
+    },
+    "EvidenceRef": {
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "report",
+            "vitals",
+            "flag"
+          ],
+          "title": "Kind",
+          "type": "string"
+        }
+      },
+      "required": [
+        "kind",
+        "id"
+      ],
+      "title": "EvidenceRef",
+      "type": "object"
+    },
+    "FeelingChange": {
+      "description": "Wellness question 2: compared with when staff last checked. \"Not sure\" is a missing reason.",
+      "enum": [
+        "much_better",
+        "better",
+        "same",
+        "worse",
+        "much_worse"
+      ],
+      "title": "FeelingChange",
+      "type": "string"
+    },
+    "FeelingChangeAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FeelingChange"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FeelingChangeAnswered",
+      "type": "object"
+    },
+    "FeelingNow": {
+      "description": "Wellness question 1, adapted from the Patient Wellness Questionnaire (Martha's Rule).\n\n\"Not sure\" is a missing reason.",
+      "enum": [
+        "very_good",
+        "good",
+        "ok",
+        "poor",
+        "very_poor"
+      ],
+      "title": "FeelingNow",
+      "type": "string"
+    },
+    "FeelingNowAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/FeelingNow"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FeelingNowAnswered",
+      "type": "object"
+    },
+    "FindingCode": {
+      "description": "New warning signs a patient or companion can report (FR5, FR11, brief section 4).",
+      "enum": [
+        "chest_pain",
+        "trouble_breathing",
+        "new_confusion",
+        "fainting",
+        "new_weakness_numbness",
+        "heavy_bleeding",
+        "vomiting",
+        "worst_headache",
+        "speech_change",
+        "facial_droop",
+        "drowsiness",
+        "vision_change",
+        "balance_change"
+      ],
+      "title": "FindingCode",
+      "type": "string"
+    },
+    "FindingReport": {
+      "additionalProperties": false,
+      "description": "A new warning sign reported outside a scheduled check-in.",
+      "properties": {
+        "captured_at": {
+          "description": "When the person answered on the device. The server records its own received time.",
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "phone",
+            "pager"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "findings": {
+          "items": {
+            "$ref": "#/$defs/FindingCode"
+          },
+          "minItems": 1,
+          "title": "Findings",
+          "type": "array",
+          "uniqueItems": true
+        },
+        "kind": {
+          "const": "finding",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reporter": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Reporter",
+          "type": "string"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "reporter",
+        "channel",
+        "captured_at",
+        "kind",
+        "findings"
+      ],
+      "title": "FindingReport",
+      "type": "object"
+    },
+    "FindingsAnswered": {
+      "additionalProperties": false,
+      "description": "An empty list means the person said none of these apply.",
+      "properties": {
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "$ref": "#/$defs/FindingCode"
+          },
+          "minItems": 0,
+          "title": "Value",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "FindingsAnswered",
+      "type": "object"
+    },
+    "FlagHigher": {
+      "additionalProperties": false,
+      "description": "Triage nurse's one-tap \"flag higher\" (FR17). Opens or raises an amber task.",
+      "properties": {
+        "note": {
+          "anyOf": [
+            {
+              "maxLength": 280,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Note"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "visit_id"
+      ],
+      "title": "FlagHigher",
+      "type": "object"
+    },
+    "FlagRecord": {
+      "properties": {
+        "flag_id": {
+          "format": "uuid",
+          "title": "Flag Id",
+          "type": "string"
+        },
+        "flagged_by": {
+          "$ref": "#/$defs/StaffRef"
+        },
+        "note": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Note"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "type": {
+          "const": "flag",
+          "default": "flag",
+          "title": "Type",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "flag_id",
+        "visit_id",
+        "received_at",
+        "flagged_by",
+        "note"
+      ],
+      "title": "FlagRecord",
+      "type": "object"
+    },
+    "Handover": {
+      "description": "Shift handover built from a fixed template, no AI (FR19).",
+      "properties": {
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "open_tasks": {
+          "items": {
+            "$ref": "#/$defs/Task"
+          },
+          "title": "Open Tasks",
+          "type": "array"
+        },
+        "patients": {
+          "items": {
+            "$ref": "#/$defs/WorklistRow"
+          },
+          "title": "Patients",
+          "type": "array"
+        },
+        "reassess_overdue": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Reassess Overdue",
+          "type": "array"
+        },
+        "shift_end": {
+          "format": "date-time",
+          "title": "Shift End",
+          "type": "string"
+        },
+        "shift_start": {
+          "format": "date-time",
+          "title": "Shift Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "generated_at",
+        "shift_start",
+        "shift_end",
+        "patients",
+        "open_tasks",
+        "reassess_overdue"
+      ],
+      "title": "Handover",
+      "type": "object"
+    },
+    "HourBucket": {
+      "properties": {
+        "audible_alerts": {
+          "minimum": 0,
+          "title": "Audible Alerts",
+          "type": "integer"
+        },
+        "hour": {
+          "format": "date-time",
+          "title": "Hour",
+          "type": "string"
+        },
+        "patients_waiting": {
+          "minimum": 0,
+          "title": "Patients Waiting",
+          "type": "integer"
+        },
+        "tasks_created": {
+          "minimum": 0,
+          "title": "Tasks Created",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "hour",
+        "tasks_created",
+        "audible_alerts",
+        "patients_waiting"
+      ],
+      "title": "HourBucket",
+      "type": "object"
+    },
+    "ItemInputType": {
+      "enum": [
+        "yes_no",
+        "choice",
+        "multi_choice",
+        "scale"
+      ],
+      "title": "ItemInputType",
+      "type": "string"
+    },
+    "Language": {
+      "enum": [
+        "en",
+        "pa",
+        "tl"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "LastReport": {
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "channel": {
+          "$ref": "#/$defs/Channel"
+        },
+        "kind": {
+          "enum": [
+            "checkin",
+            "concern",
+            "finding",
+            "leaving"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "reporter": {
+          "$ref": "#/$defs/Reporter"
+        }
+      },
+      "required": [
+        "at",
+        "kind",
+        "reporter",
+        "channel"
+      ],
+      "title": "LastReport",
+      "type": "object"
+    },
+    "LeavingReport": {
+      "additionalProperties": false,
+      "description": "\"I'm leaving\" (FR9).",
+      "properties": {
+        "captured_at": {
+          "description": "When the person answered on the device. The server records its own received time.",
+          "format": "date-time",
+          "title": "Captured At",
+          "type": "string"
+        },
+        "channel": {
+          "enum": [
+            "phone",
+            "pager"
+          ],
+          "title": "Channel",
+          "type": "string"
+        },
+        "kind": {
+          "const": "leaving",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reporter": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Reporter",
+          "type": "string"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "reporter",
+        "channel",
+        "captured_at",
+        "kind"
+      ],
+      "title": "LeavingReport",
+      "type": "object"
+    },
+    "Missing": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "missing",
+          "title": "Kind",
+          "type": "string"
+        },
+        "reason": {
+          "$ref": "#/$defs/MissingReason"
+        }
+      },
+      "required": [
+        "kind",
+        "reason"
+      ],
+      "title": "Missing",
+      "type": "object"
+    },
+    "MissingReason": {
+      "description": "Why a question has no answer. Never treat any of these as a negative.",
+      "enum": [
+        "unsure",
+        "unable_to_respond",
+        "not_asked",
+        "not_reached"
+      ],
+      "title": "MissingReason",
+      "type": "string"
+    },
+    "MultiChoiceAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "multi_choice",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "minItems": 0,
+          "title": "Value",
+          "type": "array",
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "MultiChoiceAnswered",
+      "type": "object"
+    },
+    "PainAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "answered",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "description": "Self-reported pain, 0 to 10.",
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "PainAnswered",
+      "type": "object"
+    },
+    "PatientHome": {
+      "description": "Every screen shows the wait range and \"Your answers never change your place in line.\" (FR8).",
+      "properties": {
+        "attention_prompt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AttentionPrompt"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Present for the patient role on a due check-in; never for a companion."
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/QuestionItem"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "message": {
+          "$ref": "#/$defs/PatientMessage"
+        },
+        "next_checkin_due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Next Checkin Due At"
+        },
+        "questionnaire_version": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+          "title": "Questionnaire Version",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Role",
+          "type": "string"
+        },
+        "wait_range": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/WaitRange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "role",
+        "language",
+        "wait_range",
+        "next_checkin_due_at",
+        "questionnaire_version",
+        "items",
+        "message"
+      ],
+      "title": "PatientHome",
+      "type": "object"
+    },
+    "PatientMessage": {
+      "description": "What the patient screen shows after a report (FR9, FR10, escalation table).",
+      "enum": [
+        "none",
+        "clinician_will_check",
+        "clinician_told",
+        "leaving_info"
+      ],
+      "title": "PatientMessage",
+      "type": "string"
+    },
+    "PatientReport": {
+      "discriminator": {
+        "mapping": {
+          "checkin": "#/$defs/CheckinReport",
+          "concern": "#/$defs/ConcernReport",
+          "finding": "#/$defs/FindingReport",
+          "leaving": "#/$defs/LeavingReport"
+        },
+        "propertyName": "kind"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CheckinReport"
+        },
+        {
+          "$ref": "#/$defs/ConcernReport"
+        },
+        {
+          "$ref": "#/$defs/FindingReport"
+        },
+        {
+          "$ref": "#/$defs/LeavingReport"
+        }
+      ]
+    },
+    "QualitySummary": {
+      "description": "Aggregates only. Individual logs are for incident review (FR20).",
+      "properties": {
+        "hourly": {
+          "items": {
+            "$ref": "#/$defs/HourBucket"
+          },
+          "title": "Hourly",
+          "type": "array"
+        },
+        "median_seconds_to_ack": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Median Seconds To Ack"
+        },
+        "median_seconds_to_assess": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Median Seconds To Assess"
+        },
+        "unacknowledged_by_shift": {
+          "items": {
+            "$ref": "#/$defs/ShiftCount"
+          },
+          "title": "Unacknowledged By Shift",
+          "type": "array"
+        },
+        "walkouts_by_ctas": {
+          "items": {
+            "$ref": "#/$defs/CtasCount"
+          },
+          "title": "Walkouts By Ctas",
+          "type": "array"
+        },
+        "window_end": {
+          "format": "date-time",
+          "title": "Window End",
+          "type": "string"
+        },
+        "window_start": {
+          "format": "date-time",
+          "title": "Window Start",
+          "type": "string"
+        }
+      },
+      "required": [
+        "window_start",
+        "window_end",
+        "hourly",
+        "median_seconds_to_ack",
+        "median_seconds_to_assess",
+        "unacknowledged_by_shift",
+        "walkouts_by_ctas"
+      ],
+      "title": "QualitySummary",
+      "type": "object"
+    },
+    "QuestionItem": {
+      "description": "One fixed question from the question bank, in the session's language.",
+      "properties": {
+        "allow_unsure": {
+          "default": true,
+          "description": "Show a \"Not sure\" button, sent as missing: unsure.",
+          "title": "Allow Unsure",
+          "type": "boolean"
+        },
+        "input_type": {
+          "$ref": "#/$defs/ItemInputType"
+        },
+        "key": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Key",
+          "type": "string"
+        },
+        "options": {
+          "items": {
+            "$ref": "#/$defs/QuestionOption"
+          },
+          "title": "Options",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key",
+        "input_type",
+        "text"
+      ],
+      "title": "QuestionItem",
+      "type": "object"
+    },
+    "QuestionOption": {
+      "properties": {
+        "code": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Code",
+          "type": "string"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code",
+        "text"
+      ],
+      "title": "QuestionOption",
+      "type": "object"
+    },
+    "ReportReceipt": {
+      "description": "Returned for every report, including a duplicate retry.",
+      "properties": {
+        "duplicate": {
+          "description": "True if this submission ID was already received with the same content.",
+          "title": "Duplicate",
+          "type": "boolean"
+        },
+        "follow_up_items": {
+          "description": "Question bank items to ask next, chosen after any urgent routing has happened.",
+          "items": {
+            "pattern": "^[a-z][a-z0-9_]{0,63}$",
+            "type": "string"
+          },
+          "title": "Follow Up Items",
+          "type": "array"
+        },
+        "patient_message": {
+          "$ref": "#/$defs/PatientMessage"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "received_at",
+        "duplicate",
+        "patient_message"
+      ],
+      "title": "ReportReceipt",
+      "type": "object"
+    },
+    "ReportRecord": {
+      "properties": {
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "report": {
+          "discriminator": {
+            "mapping": {
+              "checkin": "#/$defs/CheckinReport",
+              "concern": "#/$defs/ConcernReport",
+              "finding": "#/$defs/FindingReport",
+              "leaving": "#/$defs/LeavingReport"
+            },
+            "propertyName": "kind"
+          },
+          "oneOf": [
+            {
+              "$ref": "#/$defs/CheckinReport"
+            },
+            {
+              "$ref": "#/$defs/ConcernReport"
+            },
+            {
+              "$ref": "#/$defs/FindingReport"
+            },
+            {
+              "$ref": "#/$defs/LeavingReport"
+            }
+          ],
+          "title": "Report"
+        },
+        "report_id": {
+          "description": "Equal to the report's submission ID.",
+          "format": "uuid",
+          "title": "Report Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "report",
+          "default": "report",
+          "title": "Type",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "report_id",
+        "visit_id",
+        "received_at",
+        "report"
+      ],
+      "title": "ReportRecord",
+      "type": "object"
+    },
+    "Reporter": {
+      "description": "Who answered. Independent of the channel.",
+      "enum": [
+        "patient",
+        "companion",
+        "staff"
+      ],
+      "title": "Reporter",
+      "type": "string"
+    },
+    "ScaleAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "scale",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "description": "Self-reported pain, 0 to 10.",
+          "maximum": 10,
+          "minimum": 0,
+          "title": "Value",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "ScaleAnswered",
+      "type": "object"
+    },
+    "SessionInfo": {
+      "description": "Body returned with the session cookie. The session itself is an HttpOnly cookie.",
+      "properties": {
+        "expires_at": {
+          "format": "date-time",
+          "title": "Expires At",
+          "type": "string"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "role": {
+          "enum": [
+            "patient",
+            "companion"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "language",
+        "expires_at"
+      ],
+      "title": "SessionInfo",
+      "type": "object"
+    },
+    "ShiftCount": {
+      "properties": {
+        "shift_start": {
+          "format": "date-time",
+          "title": "Shift Start",
+          "type": "string"
+        },
+        "unacknowledged": {
+          "minimum": 0,
+          "title": "Unacknowledged",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "shift_start",
+        "unacknowledged"
+      ],
+      "title": "ShiftCount",
+      "type": "object"
+    },
+    "StaffRef": {
+      "properties": {
+        "role": {
+          "$ref": "#/$defs/StaffRole"
+        },
+        "user_id": {
+          "title": "User Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "user_id",
+        "role"
+      ],
+      "title": "StaffRef",
+      "type": "object"
+    },
+    "StaffRole": {
+      "enum": [
+        "triage_nurse",
+        "physician",
+        "charge_nurse",
+        "quality"
+      ],
+      "title": "StaffRole",
+      "type": "string"
+    },
+    "Task": {
+      "properties": {
+        "ack_due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ack Due At"
+        },
+        "acknowledged_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Acknowledged At"
+        },
+        "acknowledged_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StaffRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "assessed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Assessed At"
+        },
+        "assessed_by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StaffRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "delivered_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "First shown on a staff dashboard.",
+          "title": "Delivered At"
+        },
+        "disposition": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Disposition"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "escalated": {
+          "description": "True once routed to the charge nurse as backup.",
+          "title": "Escalated",
+          "type": "boolean"
+        },
+        "level": {
+          "$ref": "#/$defs/TaskLevel"
+        },
+        "reasons": {
+          "items": {
+            "$ref": "#/$defs/TaskReason"
+          },
+          "minItems": 1,
+          "title": "Reasons",
+          "type": "array"
+        },
+        "routed_to": {
+          "items": {
+            "$ref": "#/$defs/StaffRole"
+          },
+          "title": "Routed To",
+          "type": "array"
+        },
+        "status": {
+          "$ref": "#/$defs/TaskStatus"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "visit_id",
+        "level",
+        "status",
+        "escalated",
+        "routed_to",
+        "reasons",
+        "created_at",
+        "ack_due_at",
+        "delivered_at",
+        "acknowledged_at",
+        "acknowledged_by",
+        "assessed_at",
+        "assessed_by",
+        "disposition"
+      ],
+      "title": "Task",
+      "type": "object"
+    },
+    "TaskEvent": {
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "by": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/StaffRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Staff member for acknowledge and assess; null for system events."
+        },
+        "event": {
+          "$ref": "#/$defs/TaskEventType"
+        },
+        "level": {
+          "$ref": "#/$defs/TaskLevel"
+        },
+        "task_id": {
+          "format": "uuid",
+          "title": "Task Id",
+          "type": "string"
+        },
+        "type": {
+          "const": "task_event",
+          "default": "task_event",
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "task_id",
+        "event",
+        "at",
+        "level",
+        "by"
+      ],
+      "title": "TaskEvent",
+      "type": "object"
+    },
+    "TaskEventType": {
+      "enum": [
+        "created",
+        "reason_added",
+        "level_raised",
+        "escalated",
+        "delivered",
+        "acknowledged",
+        "assessed"
+      ],
+      "title": "TaskEventType",
+      "type": "string"
+    },
+    "TaskLevel": {
+      "description": "Escalation level, lowest first. A task's level can only go up.\n\nThe order matches the physician list ranking in FR13, reversed.",
+      "enum": [
+        "overdue",
+        "leave_risk",
+        "silent",
+        "amber",
+        "red"
+      ],
+      "title": "TaskLevel",
+      "type": "string"
+    },
+    "TaskReason": {
+      "description": "Why a rule fired, pinned to the ruleset version it ran under.",
+      "properties": {
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceRef"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "fired_at": {
+          "format": "date-time",
+          "title": "Fired At",
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/TaskLevel"
+        },
+        "reason_code": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Reason Code",
+          "type": "string"
+        },
+        "rule_id": {
+          "pattern": "^[a-z][a-z0-9_]{0,63}$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "rule_version": {
+          "pattern": "^[a-z0-9][a-z0-9._-]{0,63}$",
+          "title": "Rule Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "rule_version",
+        "level",
+        "reason_code",
+        "evidence",
+        "fired_at"
+      ],
+      "title": "TaskReason",
+      "type": "object"
+    },
+    "TaskStatus": {
+      "enum": [
+        "open",
+        "acknowledged",
+        "completed"
+      ],
+      "title": "TaskStatus",
+      "type": "string"
+    },
+    "TokenExchange": {
+      "additionalProperties": false,
+      "description": "A device opens a QR link and trades the one-time token for a session cookie.",
+      "properties": {
+        "token": {
+          "description": "URL-safe random token, at least 128 bits.",
+          "maxLength": 128,
+          "minLength": 22,
+          "pattern": "^[A-Za-z0-9_-]+$",
+          "title": "Token",
+          "type": "string"
+        }
+      },
+      "required": [
+        "token"
+      ],
+      "title": "TokenExchange",
+      "type": "object"
+    },
+    "TrendPoint": {
+      "description": "One check-in on the sparkline. Null means the question had no answer.",
+      "properties": {
+        "at": {
+          "format": "date-time",
+          "title": "At",
+          "type": "string"
+        },
+        "feeling_change": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FeelingChange"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "feeling_now": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FeelingNow"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pain": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Pain"
+        }
+      },
+      "required": [
+        "at",
+        "pain",
+        "feeling_now",
+        "feeling_change"
+      ],
+      "title": "TrendPoint",
+      "type": "object"
+    },
+    "TriageBoard": {
+      "properties": {
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/BoardRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        }
+      },
+      "required": [
+        "generated_at",
+        "rows"
+      ],
+      "title": "TriageBoard",
+      "type": "object"
+    },
+    "VisitCreate": {
+      "additionalProperties": false,
+      "description": "Triage nurse enrols a waiting patient (FR1). Four fields plus the pager number if used.",
+      "properties": {
+        "app_exclusion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppExclusion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Set when the patient app is not offered. The visit still appears on the staff list and the staff reassessment timer still runs, but no QR is issued and no prompts are sent."
+        },
+        "cedis_code": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9]{3}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "CEDIS presenting complaint code, kept with its source vocabulary.",
+          "title": "Cedis Code"
+        },
+        "channel": {
+          "anyOf": [
+            {
+              "enum": [
+                "phone",
+                "pager"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Required unless the app is not offered.",
+          "title": "Channel"
+        },
+        "complaint_group": {
+          "$ref": "#/$defs/ComplaintGroup"
+        },
+        "ctas": {
+          "description": "Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.",
+          "maximum": 5,
+          "minimum": 2,
+          "title": "Ctas",
+          "type": "integer"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "pager_no": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9]{1,6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pager No"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "ctas",
+        "complaint_group",
+        "language"
+      ],
+      "title": "VisitCreate",
+      "type": "object"
+    },
+    "VisitDetail": {
+      "description": "Full timeline for one patient (FR15), oldest first.",
+      "properties": {
+        "open_task": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Task"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "timeline": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "flag": "#/$defs/FlagRecord",
+                "report": "#/$defs/ReportRecord",
+                "task_event": "#/$defs/TaskEvent",
+                "vitals": "#/$defs/VitalsRecord"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/ReportRecord"
+              },
+              {
+                "$ref": "#/$defs/VitalsRecord"
+              },
+              {
+                "$ref": "#/$defs/FlagRecord"
+              },
+              {
+                "$ref": "#/$defs/TaskEvent"
+              }
+            ]
+          },
+          "title": "Timeline",
+          "type": "array"
+        },
+        "visit": {
+          "$ref": "#/$defs/VisitSummary"
+        }
+      },
+      "required": [
+        "visit",
+        "open_task",
+        "timeline"
+      ],
+      "title": "VisitDetail",
+      "type": "object"
+    },
+    "VisitEnrolled": {
+      "description": "Returned once at enrolment. The links carry the raw tokens and are never shown again.\n\nWhen the app is not offered, there are no links.",
+      "properties": {
+        "app_exclusion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppExclusion"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "companion_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "URL for the companion QR card (FR11). Single-use.",
+          "title": "Companion Link"
+        },
+        "links_expire_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Links Expire At"
+        },
+        "pager_no": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9]{1,6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Pager No"
+        },
+        "patient_link": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "URL for the patient QR card. Single-use, binds the first device.",
+          "title": "Patient Link"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "visit_id",
+        "patient_link",
+        "companion_link",
+        "links_expire_at"
+      ],
+      "title": "VisitEnrolled",
+      "type": "object"
+    },
+    "VisitExclusionUpdate": {
+      "additionalProperties": false,
+      "description": "Staff stop offering the app after enrolment.\n\nThe server revokes the visit's sessions and stops patient prompts. The staff\ntimer keeps running. An exclusion can't be removed once set.",
+      "properties": {
+        "app_exclusion": {
+          "$ref": "#/$defs/AppExclusion"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "app_exclusion"
+      ],
+      "title": "VisitExclusionUpdate",
+      "type": "object"
+    },
+    "VisitStatus": {
+      "enum": [
+        "waiting",
+        "roomed",
+        "left",
+        "discharged"
+      ],
+      "title": "VisitStatus",
+      "type": "string"
+    },
+    "VisitStatusUpdate": {
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "roomed",
+            "left",
+            "discharged"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "status"
+      ],
+      "title": "VisitStatusUpdate",
+      "type": "object"
+    },
+    "VisitSummary": {
+      "properties": {
+        "app_exclusion": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AppExclusion"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "cedis_code": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9]{3}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Cedis Code"
+        },
+        "channel": {
+          "anyOf": [
+            {
+              "enum": [
+                "phone",
+                "pager"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Channel"
+        },
+        "closed_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Closed At"
+        },
+        "complaint_group": {
+          "$ref": "#/$defs/ComplaintGroup"
+        },
+        "ctas": {
+          "description": "Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.",
+          "maximum": 5,
+          "minimum": 2,
+          "title": "Ctas",
+          "type": "integer"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "last_staff_check_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Staff Check At"
+        },
+        "next_prompt_due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Next patient check-in prompt.",
+          "title": "Next Prompt Due At"
+        },
+        "pager_no": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9]{1,6}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Pager No"
+        },
+        "site_id": {
+          "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$",
+          "title": "Site Id",
+          "type": "string"
+        },
+        "staff_reassess_due_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Staff reassessment deadline. A patient report never moves this.",
+          "title": "Staff Reassess Due At"
+        },
+        "status": {
+          "$ref": "#/$defs/VisitStatus"
+        },
+        "triaged_at": {
+          "format": "date-time",
+          "title": "Triaged At",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "visit_id",
+        "site_id",
+        "ctas",
+        "complaint_group",
+        "cedis_code",
+        "language",
+        "app_exclusion",
+        "channel",
+        "pager_no",
+        "status",
+        "triaged_at",
+        "closed_at",
+        "next_prompt_due_at",
+        "staff_reassess_due_at",
+        "last_staff_check_at"
+      ],
+      "title": "VisitSummary",
+      "type": "object"
+    },
+    "VitalsCreate": {
+      "additionalProperties": false,
+      "description": "Repeat vitals entered by the triage nurse (FR17). Ranges reject typos, not abnormal values.",
+      "properties": {
+        "dbp": {
+          "anyOf": [
+            {
+              "maximum": 200,
+              "minimum": 20,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Dbp"
+        },
+        "hr": {
+          "anyOf": [
+            {
+              "maximum": 250,
+              "minimum": 20,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Hr"
+        },
+        "measured_at": {
+          "format": "date-time",
+          "title": "Measured At",
+          "type": "string"
+        },
+        "rr": {
+          "anyOf": [
+            {
+              "maximum": 60,
+              "minimum": 4,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Rr"
+        },
+        "sbp": {
+          "anyOf": [
+            {
+              "maximum": 300,
+              "minimum": 40,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sbp"
+        },
+        "spo2": {
+          "anyOf": [
+            {
+              "maximum": 100,
+              "minimum": 50,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Spo2"
+        },
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ID of an earlier vitals record this one corrects. The original is kept.",
+          "title": "Supersedes"
+        },
+        "temp_c": {
+          "anyOf": [
+            {
+              "maximum": 44,
+              "minimum": 30,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Temp C"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id",
+        "visit_id",
+        "measured_at"
+      ],
+      "title": "VitalsCreate",
+      "type": "object"
+    },
+    "VitalsRecord": {
+      "properties": {
+        "dbp": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dbp"
+        },
+        "entered_by": {
+          "$ref": "#/$defs/StaffRef"
+        },
+        "hr": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Hr"
+        },
+        "measured_at": {
+          "format": "date-time",
+          "title": "Measured At",
+          "type": "string"
+        },
+        "received_at": {
+          "format": "date-time",
+          "title": "Received At",
+          "type": "string"
+        },
+        "rr": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rr"
+        },
+        "sbp": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sbp"
+        },
+        "spo2": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Spo2"
+        },
+        "supersedes": {
+          "anyOf": [
+            {
+              "format": "uuid",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Supersedes"
+        },
+        "temp_c": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Temp C"
+        },
+        "type": {
+          "const": "vitals",
+          "default": "vitals",
+          "title": "Type",
+          "type": "string"
+        },
+        "visit_id": {
+          "format": "uuid",
+          "title": "Visit Id",
+          "type": "string"
+        },
+        "vitals_id": {
+          "format": "uuid",
+          "title": "Vitals Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "vitals_id",
+        "visit_id",
+        "measured_at",
+        "received_at",
+        "entered_by",
+        "sbp",
+        "dbp",
+        "hr",
+        "rr",
+        "spo2",
+        "temp_c",
+        "supersedes"
+      ],
+      "title": "VitalsRecord",
+      "type": "object"
+    },
+    "WaitRange": {
+      "properties": {
+        "as_of": {
+          "format": "date-time",
+          "title": "As Of",
+          "type": "string"
+        },
+        "high_minutes": {
+          "minimum": 0,
+          "title": "High Minutes",
+          "type": "integer"
+        },
+        "low_minutes": {
+          "minimum": 0,
+          "title": "Low Minutes",
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/WaitSource"
+        }
+      },
+      "required": [
+        "low_minutes",
+        "high_minutes",
+        "source",
+        "as_of"
+      ],
+      "title": "WaitRange",
+      "type": "object"
+    },
+    "WaitSource": {
+      "enum": [
+        "ahs_feed",
+        "site_estimate"
+      ],
+      "title": "WaitSource",
+      "type": "string"
+    },
+    "Worklist": {
+      "description": "Ranked red, amber, silent, leave risk, overdue, then by wait time (FR13).",
+      "properties": {
+        "generated_at": {
+          "format": "date-time",
+          "title": "Generated At",
+          "type": "string"
+        },
+        "rows": {
+          "items": {
+            "$ref": "#/$defs/WorklistRow"
+          },
+          "title": "Rows",
+          "type": "array"
+        }
+      },
+      "required": [
+        "generated_at",
+        "rows"
+      ],
+      "title": "Worklist",
+      "type": "object"
+    },
+    "WorklistRow": {
+      "description": "One row of the physician's \"see next\" list (FR14).",
+      "properties": {
+        "last_report": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LastReport"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "leave_risk": {
+          "title": "Leave Risk",
+          "type": "boolean"
+        },
+        "open_task": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Task"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "prompt_overdue": {
+          "title": "Prompt Overdue",
+          "type": "boolean"
+        },
+        "rank": {
+          "minimum": 1,
+          "title": "Rank",
+          "type": "integer"
+        },
+        "reassess_overdue": {
+          "title": "Reassess Overdue",
+          "type": "boolean"
+        },
+        "silent": {
+          "title": "Silent",
+          "type": "boolean"
+        },
+        "trend": {
+          "items": {
+            "$ref": "#/$defs/TrendPoint"
+          },
+          "title": "Trend",
+          "type": "array"
+        },
+        "visit": {
+          "$ref": "#/$defs/VisitSummary"
+        }
+      },
+      "required": [
+        "rank",
+        "visit",
+        "open_task",
+        "silent",
+        "leave_risk",
+        "prompt_overdue",
+        "reassess_overdue",
+        "last_report",
+        "trend"
+      ],
+      "title": "WorklistRow",
+      "type": "object"
+    },
+    "YesNoAnswered": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "yes_no",
+          "title": "Kind",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kind",
+        "value"
+      ],
+      "title": "YesNoAnswered",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "AcknowledgeTask": {
+      "$ref": "#/$defs/AcknowledgeTask"
+    },
+    "AppExclusion": {
+      "$ref": "#/$defs/AppExclusion"
+    },
+    "AssessTask": {
+      "$ref": "#/$defs/AssessTask"
+    },
+    "AttentionAnswered": {
+      "$ref": "#/$defs/AttentionAnswered"
+    },
+    "AttentionMissing": {
+      "$ref": "#/$defs/AttentionMissing"
+    },
+    "AttentionPrompt": {
+      "$ref": "#/$defs/AttentionPrompt"
+    },
+    "AttentionStep": {
+      "$ref": "#/$defs/AttentionStep"
+    },
+    "BoardRow": {
+      "$ref": "#/$defs/BoardRow"
+    },
+    "Channel": {
+      "$ref": "#/$defs/Channel"
+    },
+    "ChargeNurseView": {
+      "$ref": "#/$defs/ChargeNurseView"
+    },
+    "CheckinReport": {
+      "$ref": "#/$defs/CheckinReport"
+    },
+    "ChoiceAnswered": {
+      "$ref": "#/$defs/ChoiceAnswered"
+    },
+    "ComplaintGroup": {
+      "$ref": "#/$defs/ComplaintGroup"
+    },
+    "ConcernCode": {
+      "$ref": "#/$defs/ConcernCode"
+    },
+    "ConcernReport": {
+      "$ref": "#/$defs/ConcernReport"
+    },
+    "CtasCount": {
+      "$ref": "#/$defs/CtasCount"
+    },
+    "DashboardEvent": {
+      "$ref": "#/$defs/DashboardEvent"
+    },
+    "DashboardEventType": {
+      "$ref": "#/$defs/DashboardEventType"
+    },
+    "Disposition": {
+      "$ref": "#/$defs/Disposition"
+    },
+    "EvidenceRef": {
+      "$ref": "#/$defs/EvidenceRef"
+    },
+    "FeelingChange": {
+      "$ref": "#/$defs/FeelingChange"
+    },
+    "FeelingChangeAnswered": {
+      "$ref": "#/$defs/FeelingChangeAnswered"
+    },
+    "FeelingNow": {
+      "$ref": "#/$defs/FeelingNow"
+    },
+    "FeelingNowAnswered": {
+      "$ref": "#/$defs/FeelingNowAnswered"
+    },
+    "FindingCode": {
+      "$ref": "#/$defs/FindingCode"
+    },
+    "FindingReport": {
+      "$ref": "#/$defs/FindingReport"
+    },
+    "FindingsAnswered": {
+      "$ref": "#/$defs/FindingsAnswered"
+    },
+    "FlagHigher": {
+      "$ref": "#/$defs/FlagHigher"
+    },
+    "FlagRecord": {
+      "$ref": "#/$defs/FlagRecord"
+    },
+    "Handover": {
+      "$ref": "#/$defs/Handover"
+    },
+    "HourBucket": {
+      "$ref": "#/$defs/HourBucket"
+    },
+    "ItemInputType": {
+      "$ref": "#/$defs/ItemInputType"
+    },
+    "Language": {
+      "$ref": "#/$defs/Language"
+    },
+    "LastReport": {
+      "$ref": "#/$defs/LastReport"
+    },
+    "LeavingReport": {
+      "$ref": "#/$defs/LeavingReport"
+    },
+    "Missing": {
+      "$ref": "#/$defs/Missing"
+    },
+    "MissingReason": {
+      "$ref": "#/$defs/MissingReason"
+    },
+    "MultiChoiceAnswered": {
+      "$ref": "#/$defs/MultiChoiceAnswered"
+    },
+    "PainAnswered": {
+      "$ref": "#/$defs/PainAnswered"
+    },
+    "PatientHome": {
+      "$ref": "#/$defs/PatientHome"
+    },
+    "PatientMessage": {
+      "$ref": "#/$defs/PatientMessage"
+    },
+    "PatientReport": {
+      "$ref": "#/$defs/PatientReport"
+    },
+    "QualitySummary": {
+      "$ref": "#/$defs/QualitySummary"
+    },
+    "QuestionItem": {
+      "$ref": "#/$defs/QuestionItem"
+    },
+    "QuestionOption": {
+      "$ref": "#/$defs/QuestionOption"
+    },
+    "ReportReceipt": {
+      "$ref": "#/$defs/ReportReceipt"
+    },
+    "ReportRecord": {
+      "$ref": "#/$defs/ReportRecord"
+    },
+    "Reporter": {
+      "$ref": "#/$defs/Reporter"
+    },
+    "ScaleAnswered": {
+      "$ref": "#/$defs/ScaleAnswered"
+    },
+    "SessionInfo": {
+      "$ref": "#/$defs/SessionInfo"
+    },
+    "ShiftCount": {
+      "$ref": "#/$defs/ShiftCount"
+    },
+    "StaffRef": {
+      "$ref": "#/$defs/StaffRef"
+    },
+    "StaffRole": {
+      "$ref": "#/$defs/StaffRole"
+    },
+    "Task": {
+      "$ref": "#/$defs/Task"
+    },
+    "TaskEvent": {
+      "$ref": "#/$defs/TaskEvent"
+    },
+    "TaskEventType": {
+      "$ref": "#/$defs/TaskEventType"
+    },
+    "TaskLevel": {
+      "$ref": "#/$defs/TaskLevel"
+    },
+    "TaskReason": {
+      "$ref": "#/$defs/TaskReason"
+    },
+    "TaskStatus": {
+      "$ref": "#/$defs/TaskStatus"
+    },
+    "TokenExchange": {
+      "$ref": "#/$defs/TokenExchange"
+    },
+    "TrendPoint": {
+      "$ref": "#/$defs/TrendPoint"
+    },
+    "TriageBoard": {
+      "$ref": "#/$defs/TriageBoard"
+    },
+    "VisitCreate": {
+      "$ref": "#/$defs/VisitCreate"
+    },
+    "VisitDetail": {
+      "$ref": "#/$defs/VisitDetail"
+    },
+    "VisitEnrolled": {
+      "$ref": "#/$defs/VisitEnrolled"
+    },
+    "VisitExclusionUpdate": {
+      "$ref": "#/$defs/VisitExclusionUpdate"
+    },
+    "VisitStatus": {
+      "$ref": "#/$defs/VisitStatus"
+    },
+    "VisitStatusUpdate": {
+      "$ref": "#/$defs/VisitStatusUpdate"
+    },
+    "VisitSummary": {
+      "$ref": "#/$defs/VisitSummary"
+    },
+    "VitalsCreate": {
+      "$ref": "#/$defs/VitalsCreate"
+    },
+    "VitalsRecord": {
+      "$ref": "#/$defs/VitalsRecord"
+    },
+    "WaitRange": {
+      "$ref": "#/$defs/WaitRange"
+    },
+    "WaitSource": {
+      "$ref": "#/$defs/WaitSource"
+    },
+    "Worklist": {
+      "$ref": "#/$defs/Worklist"
+    },
+    "WorklistRow": {
+      "$ref": "#/$defs/WorklistRow"
+    },
+    "YesNoAnswered": {
+      "$ref": "#/$defs/YesNoAnswered"
+    }
+  },
+  "title": "Contract",
+  "type": "object"
+}
