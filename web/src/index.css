@@ -996,3 +996,388 @@ html:has(.patient-shell.has-dock .flow-next) {
   border: 0;
   border-radius: 4px;
 }
+
+/*
+  Triage board: level cards, the table card and its header filters, and the New visit sheet.
+*/
+@layer components {
+  .board > * + * {
+    margin-top: 16px;
+  }
+  .board-heading {
+    margin-bottom: 0;
+  }
+  /* The 44px New visit button sits centred on the 1.15 x 34px heading. */
+  .board-heading-action {
+    flex-shrink: 0;
+    margin-top: calc((var(--text-page) * 1.15 - 2.75rem) / 2);
+  }
+
+  /* Level cards: deploy's metric cards, and each one is the filter for its level. */
+  .level-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @media (min-width: 640px) {
+    .level-cards {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .level-cards {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  .level-card {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    padding: 14px 44px 14px 16px;
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    text-align: start;
+    cursor: pointer;
+    transition: box-shadow 150ms, background-color 150ms;
+  }
+  @media (hover: hover) {
+    .level-card:hover {
+      box-shadow: 0 4px 18px rgb(0 0 0 / 0.1);
+    }
+  }
+  /* Selected is the blue selection ring, never a status colour. */
+  .level-card[aria-pressed='true'] {
+    background: var(--color-brand-50);
+    box-shadow: inset 0 0 0 2px var(--color-brand-500), var(--shadow-card);
+  }
+  .level-card-count {
+    font-size: var(--text-display);
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  /* The table card's title row: heading and count, then the active filters. */
+  .board-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    min-height: 60px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .board-scroll {
+    border-radius: 0;
+  }
+  .board-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 10px 6px 8px;
+    vertical-align: bottom;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-surface);
+  }
+  .board-th:first-child {
+    padding-inline-start: 20px;
+  }
+  .board-th:last-child {
+    padding-inline-end: 20px;
+  }
+  .board-row {
+    cursor: pointer;
+    vertical-align: middle;
+    transition: background-color 150ms;
+  }
+  .board-row + .board-row {
+    border-top: 1px solid rgb(210 210 215 / 0.7);
+  }
+  @media (hover: hover) {
+    .board-row:hover {
+      background: #fafafc;
+    }
+  }
+  .board-row > * {
+    padding: 10px 6px;
+  }
+  .board-row > :first-child {
+    padding-inline: 20px 6px;
+  }
+  .board-row > :last-child {
+    padding-inline-end: 20px;
+  }
+
+  /* Header buttons: sort and filter share one quiet pill shape; the active one turns blue. */
+  .column-sort,
+  .column-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 28px;
+    margin-inline: -6px;
+    padding-inline: 6px;
+    border-radius: var(--radius-tap);
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 150ms, color 150ms;
+  }
+  @media (hover: hover) {
+    .column-sort:hover,
+    .column-filter:hover {
+      background: var(--color-canvas);
+      color: var(--color-ink);
+    }
+  }
+  .column-sort.is-active {
+    color: var(--color-ink);
+  }
+  .column-filter[aria-expanded='true'] {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+  .column-filter.is-active {
+    color: var(--color-brand-600);
+  }
+  .column-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding-inline: 5px;
+    border-radius: var(--radius-tap);
+    background: var(--color-brand-500);
+    color: white;
+    font-size: var(--text-note);
+    line-height: 1;
+  }
+
+  /* The open filter menu: a frosted card with hairline edge, as in macOS menus. */
+  .filter-menu {
+    position: fixed;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    min-width: 15rem;
+    max-width: calc(100vw - 32px);
+    max-height: min(26rem, calc(100dvh - 32px));
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid rgb(0 0 0 / 0.08);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.92);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.06);
+    font-size: var(--text-small);
+    font-weight: 400;
+    color: var(--color-ink);
+    text-align: start;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+  .filter-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-align: start;
+    cursor: pointer;
+  }
+  @media (hover: hover) {
+    .filter-menu-item:hover {
+      background: var(--color-canvas);
+    }
+  }
+  .filter-menu-item:focus {
+    outline: none;
+    background: var(--color-brand-50);
+  }
+  .filter-menu-item:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-brand-500);
+  }
+
+  /* An active filter: a grey pill with its own remove cross. */
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 10px 4px 12px;
+    border-radius: var(--radius-tap);
+    background: var(--color-brand-50);
+    color: var(--color-brand-700);
+    font-size: var(--text-note);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+  @media (hover: hover) {
+    .filter-chip:hover {
+      background: var(--color-brand-100);
+    }
+  }
+
+  /* New visit: a sheet that slides in from the right over the dimmed board. */
+  .sheet-root {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+  }
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 0.28);
+    animation: sheet-fade 200ms ease-out;
+  }
+  .sheet {
+    position: absolute;
+    inset-block: 10px;
+    inset-inline-end: 10px;
+    display: flex;
+    flex-direction: column;
+    width: min(36rem, calc(100vw - 20px));
+    border-radius: var(--radius-card);
+    background: var(--color-canvas);
+    box-shadow: 0 24px 64px rgb(0 0 0 / 0.22);
+    overflow: hidden;
+    animation: sheet-in 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sheet:focus {
+    outline: none;
+  }
+  [dir='rtl'] .sheet {
+    animation-name: sheet-in-rtl;
+  }
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 24px 28px 32px;
+  }
+  .sheet-heading {
+    margin-bottom: 18px;
+    padding-inline-end: 48px;
+  }
+  .sheet-heading h2 {
+    font-size: var(--text-heading);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .sheet-heading h2:focus {
+    outline: none;
+  }
+  .sheet-heading p {
+    margin-top: 6px;
+    color: var(--color-muted);
+  }
+  /* Round close button, as on Apple sheets: grey disc, dark cross. */
+  .sheet-close {
+    position: absolute;
+    top: 20px;
+    inset-inline-end: 20px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: rgb(118 118 128 / 0.14);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+  }
+  @media (hover: hover) {
+    .sheet-close:hover {
+      background: rgb(118 118 128 / 0.24);
+      color: var(--color-ink);
+    }
+  }
+  /* A 44px hit area around the 36px disc. */
+  .sheet-close::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+  @media (max-width: 640px) {
+    .sheet {
+      inset: 0;
+      width: 100%;
+      border-radius: 0;
+    }
+    .sheet-body {
+      padding: 20px 16px 28px;
+    }
+    .sheet-close {
+      top: 16px;
+      inset-inline-end: 12px;
+    }
+  }
+  @media (max-width: 760px) {
+    .level-card {
+      padding: 12px 40px 12px 14px;
+    }
+    .level-card-count {
+      font-size: var(--text-heading);
+    }
+    .board-toolbar {
+      padding: 10px 14px;
+    }
+    /* The heading's action keeps its label: it is the page's main task. */
+    .board-heading-action {
+      margin-top: 0;
+    }
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateX(calc(100% + 16px));
+  }
+}
+@keyframes sheet-in-rtl {
+  from {
+    transform: translateX(calc(-100% - 16px));
+  }
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet-backdrop {
+    animation: none;
+  }
+}
+@media print {
+  /* With the sheet open, print only what it shows (the new visit's QR). */
+  body:has(.sheet-root) > :not(.sheet-host) {
+    display: none !important;
+  }
+  .sheet-root,
+  .sheet {
+    position: static;
+    width: auto;
+    box-shadow: none;
+    background: none;
+    overflow: visible;
+  }
+  .sheet-body {
+    overflow: visible;
+  }
+}

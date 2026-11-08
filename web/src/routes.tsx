@@ -1,7 +1,6 @@
 import { createBrowserRouter, createMemoryRouter, Navigate, Outlet, type RouteObject } from 'react-router'
 import { AppFrame } from '@/components/AppFrame'
 import { Physician } from '@/features/nurse/Physician'
-import { Enrol } from '@/features/nurse/Enrol'
 import { Escalations } from '@/features/nurse/Escalations'
 import { SignIn } from '@/features/nurse/SignIn'
 import { RequireStaffRole, StaffLayout, StaffProvider } from '@/features/nurse/staff'
@@ -38,7 +37,8 @@ const pages: RouteObject[] = [
           ] },
           { element: <RequireStaffRole roles={['triage_nurse', 'charge_nurse']} />, children: [
             { path: '/staff/triage', element: <Triage /> },
-            { path: '/staff/visits/new', element: <Enrol /> },
+            // New visit is a sheet over the board; the old address still opens it.
+            { path: '/staff/visits/new', element: <Navigate to="/staff/triage?panel=new-visit" replace /> },
           ] },
           {
             path: '/staff/visits/:id',

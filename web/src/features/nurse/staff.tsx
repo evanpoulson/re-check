@@ -9,7 +9,7 @@ import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
 import { DemoBadge } from '@/components/DemoBadge'
 import { PageState } from '@/components/PageState'
-import { BellRing, ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
+import { BellRing, ClipboardList, LayoutList, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -122,10 +122,8 @@ export function StaffLayout() {
             <NavLink to="/staff/escalations" className={link}><BellRing aria-hidden className="size-[1.125rem]" />{t('nav.escalations')}</NavLink>
           )}
           {SEES_TRIAGE.includes(role) && (
-            <>
-              <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
-              <NavLink to="/staff/visits/new" className={link}><Plus aria-hidden className="size-[1.125rem]" />{t('nav.enrol')}</NavLink>
-            </>
+            // New visit opens as a sheet from the board's own button.
+            <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
           )}
           {SEES_WORKLIST.includes(role) && (
             <NavLink to="/staff/physician" className={link}><ClipboardList aria-hidden className="size-[1.125rem]" />{t('review.title')}</NavLink>

@@ -113,7 +113,8 @@ describe('staff sign-in', () => {
     renderApp('/staff/physician')
     const nav = await screen.findByRole('navigation', { name: 'Staff' })
     expect(within(nav).getByRole('link', { name: /Triage board/ })).toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /New visit/ })).toBeInTheDocument()
+    // New visit is a sheet opened from the board, not a page of its own.
+    expect(within(nav).queryByRole('link', { name: /New visit/ })).not.toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: /Physician worklist/ })).toBeInTheDocument()
   })
 
@@ -208,6 +209,9 @@ describe('triage nurse: enrolment and QR', () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
+    // The old address opens the board with the New visit sheet over it.
+    const sheet = await screen.findByRole('dialog', { name: 'New visit' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Triage board' })).toBeInTheDocument()
 
     // CTAS defaults to 2 (#56), so a pager with no number is the missing field here.
     await user.click(await screen.findByRole('radio', { name: 'Pager' }))
@@ -222,7 +226,8 @@ describe('triage nurse: enrolment and QR', () => {
     await user.click(screen.getByRole('radio', { name: '3' }))
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
 
-    expect(await screen.findByRole('heading', { name: 'Visit created' })).toBeInTheDocument()
+    expect(await within(sheet).findByRole('heading', { name: 'Visit created' })).toHaveFocus()
+    expect(screen.getByRole('dialog', { name: 'Visit created' })).toBe(sheet)
     expect(screen.getByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
     const links = screen.getAllByText(/\/v\//)
     expect(links).toHaveLength(1)
@@ -399,6 +404,111 @@ describe('triage board', () => {
     expect(row).toHaveTextContent('Other complaint')
     expect(row).toHaveTextContent('Red')
     expect(within(row).getByRole('rowheader')).toHaveTextContent(String(before.indexOf(general) + 1))
+  })
+
+  it('filters by column from header menus, keeps place in line, and clears', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = await screen.findByRole('table')
+    const total = within(table).getAllByRole('row').length - 1
+    const order = await queue()
+
+    const complaint = within(table).getByRole('button', { name: 'Complaint' })
+    expect(complaint).toHaveAttribute('aria-haspopup', 'menu')
+    expect(complaint).toHaveAttribute('aria-expanded', 'false')
+    await user.click(complaint)
+    expect(complaint).toHaveAttribute('aria-expanded', 'true')
+    const menu = screen.getByRole('menu', { name: 'Filter by Complaint' })
+    // Focus starts on the first choice; arrows move, Space toggles and the menu stays open.
+    expect(within(menu).getAllByRole('menuitemcheckbox')[0]).toHaveFocus()
+    await user.keyboard('{ArrowDown}{ArrowDown}')
+    const head = within(menu).getByRole('menuitemcheckbox', { name: /Head injury/ })
+    expect(head).toHaveFocus()
+    await user.keyboard(' ')
+    expect(head).toHaveAttribute('aria-checked', 'true')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(complaint).toHaveFocus()
+    expect(complaint).toHaveAccessibleDescription('Filtered: 1 choice.')
+
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.length).toBeLessThan(total)
+    for (const r of rows) {
+      expect(r).toHaveTextContent('Head injury')
+      // The numeral is still the place in the whole queue.
+      const id = order.find((v) => r.textContent!.includes(`P-${v.slice(0, 4)}`))!
+      expect(within(r).getByRole('rowheader')).toHaveTextContent(String(order.indexOf(id) + 1))
+    }
+    expect(screen.getByText(`Showing ${rows.length} of ${total} patients`)).toBeInTheDocument()
+
+    // Filters in two columns combine; each active filter shows as a removable chip.
+    await user.click(within(table).getByRole('button', { name: 'CTAS' }))
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /CTAS 2/ }))
+    await user.keyboard('{Escape}')
+    const active = screen.getByRole('list', { name: 'Active filters' })
+    expect(within(active).getByRole('button', { name: 'Remove filter Complaint: Head injury' })).toBeInTheDocument()
+    await user.click(within(active).getByRole('button', { name: 'Remove filter CTAS 2' }))
+    expect(within(table).getAllByRole('row').slice(1)).toHaveLength(rows.length)
+
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(within(table).getAllByRole('row')).toHaveLength(total + 1)
+    expect(screen.queryByRole('list', { name: 'Active filters' })).not.toBeInTheDocument()
+  })
+
+  it('a level card filters by its level and explains it in a tooltip', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = await screen.findByRole('table')
+    const red = screen.getByRole('button', { name: /^Red \d+$/ })
+    await user.click(red)
+    expect(red).toHaveAttribute('aria-pressed', 'true')
+    for (const r of within(table).getAllByRole('row').slice(1)) expect(r).toHaveTextContent('Red')
+    expect(screen.getByRole('button', { name: 'About Red' })).toHaveAccessibleDescription(/Urgent review/)
+    await user.click(red)
+    expect(red).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('New visit opens a sheet over the board that traps focus, closes on Escape and returns focus', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    await screen.findByRole('table')
+    const open = screen.getByRole('button', { name: 'New visit' })
+    expect(open).toHaveAttribute('aria-expanded', 'false')
+    await user.click(open)
+
+    const sheet = await screen.findByRole('dialog', { name: 'New visit' })
+    expect(sheet).toHaveAttribute('aria-modal', 'true')
+    expect(within(sheet).getByRole('heading', { name: 'New visit' })).toHaveFocus()
+    expect(document.title).toBe('New visit – Recheck')
+    // Tab wraps inside the sheet at both ends.
+    const close = within(sheet).getByRole('button', { name: 'Close' })
+    const submit = within(sheet).getByRole('button', { name: 'Create visit and QR code' })
+    submit.focus()
+    await user.tab()
+    expect(close).toHaveFocus()
+    await user.tab({ shift: true })
+    expect(submit).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+    expect(document.title).toBe('Triage board – Recheck')
+
+    // The round close button does the same.
+    await user.click(open)
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+  })
+
+  it('the charge nurse can open New visit too', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+    renderApp('/staff/visits/new')
+    expect(await screen.findByRole('dialog', { name: 'New visit' })).toBeInTheDocument()
   })
 })
 
