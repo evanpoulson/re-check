@@ -92,13 +92,13 @@ def test_login_redirects_to_auth0_with_pkce_and_state():
 def test_full_sign_in_sets_staff_cookie_and_real_actor(monkeypatch):
     with client() as c:
         params = start(c)
-        r, seen = finish(c, monkeypatch, params, id_token(params["nonce"]))
+        r, seen = finish(c, monkeypatch, params, id_token(params["nonce"], email="clinician@example.test"))
         assert r.status_code == 302
         assert r.headers["location"] == "http://localhost:5173/staff/physician"
         assert seen["code"] == "one-time-code" and oidc._challenge(seen["verifier"]) == params["code_challenge"]
         assert "httponly" in r.headers["set-cookie"].lower()
         me = c.get("/api/staff/session").json()
-        assert me == {"user_id": "google-oauth2|1234567890", "name": "Dr. Test", "role": "physician",
+        assert me == {"user_id": "google-oauth2|1234567890", "name": "Dr. Test", "email": "clinician@example.test", "role": "physician",
                       "site_id": "foothills-demo", "demo_checkins": False}
         # The role from Auth0 is enforced: a physician can't enrol.
         assert c.post("/api/visits", json=ENROL).status_code == 403

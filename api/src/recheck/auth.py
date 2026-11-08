@@ -45,6 +45,7 @@ class Staff:
     role: StaffRole
     site_id: str
     name: str | None = None
+    email: str | None = None
 
     @property
     def actor(self) -> str:
@@ -77,6 +78,7 @@ def set_staff_cookie(response: Response, staff: Staff) -> None:
         "role": staff.role.value,
         "site": staff.site_id,
         "name": staff.name,
+        "email": staff.email,
         "exp": int(time.time()) + STAFF_SESSION_SECONDS,
     }
     response.set_cookie(
@@ -108,6 +110,7 @@ def current_staff(request: Request) -> Staff:
                 role=StaffRole(payload["role"]),
                 site_id=str(payload["site"]),
                 name=payload.get("name"),
+                email=payload.get("email"),
             )
         except (KeyError, ValueError):
             pass

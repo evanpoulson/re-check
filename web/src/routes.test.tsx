@@ -124,6 +124,7 @@ describe('staff sign-in', () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/triage')
+    await user.click(await screen.findByLabelText('Staff menu'))
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
     // The sign-in page can re-render once while the session clears, so query the live DOM each time.
     await waitFor(() => expect(screen.getByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument())
@@ -392,6 +393,90 @@ describe('triage board', () => {
     expect(rows[0]).toHaveTextContent('Chest or back pain')
     expect(rows[0]).toHaveTextContent('Red')
     expect(boardRow(rows, demoVisitId('head'))).toHaveTextContent('Silent')
+  })
+
+  it('toggles Place and Waiting without renumbering queue positions', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = within(await screen.findByRole('table'))
+    const order = await queue()
+    const positions = () => table.getAllByRole('rowheader').map((cell) => Number(cell.textContent?.match(/\d+$/)?.[0]))
+    const place = table.getByRole('button', { name: 'Place' })
+    await user.click(place)
+    expect(positions()).toEqual(order.map((_, i) => order.length - i))
+    await user.click(place)
+    expect(positions()).toEqual(order.map((_, i) => i + 1))
+    const waiting = table.getByRole('button', { name: 'Waiting' })
+    await user.click(waiting)
+    expect(waiting.closest('th')).toHaveAttribute('aria-sort', 'descending')
+    const longestFirst = positions()
+    await user.click(waiting)
+    expect(waiting.closest('th')).toHaveAttribute('aria-sort', 'ascending')
+    expect(positions()).toEqual([...longestFirst].reverse())
+  })
+
+  it('resizes only the selected column and keeps compact columns fixed', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = within(await screen.findByRole('table'))
+    const complaint = table.getByRole('separator', { name: 'Resize Complaint column' })
+    const columns = Array.from(screen.getByRole('table').querySelectorAll('col'))
+    const complaintIndex = (complaint.closest('th') as HTMLTableCellElement).cellIndex
+    const complaintWidth = Number(complaint.getAttribute('aria-valuenow'))
+    const otherWidths = () => columns.filter((_, index) => index !== complaintIndex).map((col) => col.style.width)
+    const initialWidths = otherWidths()
+
+    complaint.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(complaint).toHaveAttribute('aria-valuenow', String(complaintWidth + 8))
+    expect(otherWidths()).toEqual(initialWidths)
+    expect(table.queryByRole('separator', { name: 'Resize Place column' })).not.toBeInTheDocument()
+    expect(table.queryByRole('separator', { name: 'Resize CTAS column' })).not.toBeInTheDocument()
+    expect(table.queryByRole('separator', { name: 'Resize Pain column' })).not.toBeInTheDocument()
+
+    await user.keyboard('{ArrowLeft>20/}')
+    expect(complaint).toHaveAttribute('aria-valuenow', complaint.getAttribute('aria-valuemin'))
+    expect(table.getByRole('button', { name: 'Complaint' })).toBeVisible()
+  })
+
+  it('keeps Pain at the right edge while preserving the saved order of other columns', async () => {
+    signInAsNurse()
+    localStorage.setItem('recheck-triage-columns-v1', JSON.stringify([
+      'pain', 'ctas', 'place', 'ref', 'complaint', 'waiting', 'condition', 'flags', 'reassess', 'lastCheckin', 'nextCheckin',
+    ]))
+    const user = userEvent.setup()
+    renderApp('/staff/triage?panel=settings')
+    const settings = within(await screen.findByRole('dialog', { name: 'Board settings' }))
+    expect(settings.queryByRole('button', { name: 'Move Pain earlier' })).not.toBeInTheDocument()
+    const nextCheckin = settings.getByRole('button', { name: 'Move Next check-in later' })
+    expect(nextCheckin).toHaveAttribute('aria-disabled', 'true')
+    await user.click(nextCheckin)
+    await user.click(settings.getByRole('button', { name: 'Close' }))
+
+    const headers = within(await screen.findByRole('table')).getAllByRole('columnheader')
+    expect(headers[0]).toHaveTextContent('CTAS')
+    expect(headers.at(-2)).toHaveTextContent('Next check-in')
+    expect(headers.at(-1)).toHaveTextContent('Pain')
+  })
+
+  it('lets staff deliberately hide and restore a secondary column from the board', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage?panel=settings')
+    const settings = await screen.findByRole('dialog', { name: 'Board settings' })
+    await user.click(within(settings).getByRole('button', { name: 'Hide Complaint column' }))
+    for (const name of ['Patient', 'CTAS', 'Flags', 'Reassess']) {
+      expect(within(settings).queryByRole('button', { name: `Hide ${name} column` })).not.toBeInTheDocument()
+    }
+    await user.click(within(settings).getByRole('button', { name: 'Close' }))
+
+    const table = within(await screen.findByRole('table'))
+    expect(table.queryByRole('button', { name: 'Complaint' })).not.toBeInTheDocument()
+    await user.click(table.getByRole('button', { name: 'Expand Complaint column' }))
+    expect(table.getByRole('button', { name: 'Complaint' })).toHaveFocus()
+    expect(table.getAllByRole('cell', { name: 'Chest or back pain' })[0]).toBeVisible()
   })
 
   it('an excluded patient shows "App not offered", not applicable for check-ins, and is never "No response"', async () => {

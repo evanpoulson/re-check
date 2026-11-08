@@ -31,7 +31,7 @@ def test_physician_cant_enrol():
 def test_demo_sign_in_round_trip():
     with client() as c:
         r = c.post("/api/staff/session", json={"role": "triage_nurse"})
-        assert r.json() == {"user_id": "demo|triage_nurse", "name": None, "role": "triage_nurse", "site_id": "foothills-demo",
+        assert r.json() == {"user_id": "demo|triage_nurse", "name": None, "email": None, "role": "triage_nurse", "site_id": "foothills-demo",
                             "demo_checkins": False}
         assert "httponly" in r.headers["set-cookie"].lower()
         assert c.get("/api/staff/session").json()["role"] == "triage_nurse"

@@ -151,8 +151,8 @@ export type BoardSort = 'place' | 'waiting' | 'nextCheckin' | 'reassess'
 
 const dueOrLast = (iso: string | null) => (iso ? Date.parse(iso) : Number.POSITIVE_INFINITY)
 
-export function sortRows(items: BoardItem[], by: BoardSort): BoardItem[] {
-  if (by === 'place') return items
+export function sortRows(items: BoardItem[], by: BoardSort, reversed = false): BoardItem[] {
+  if (by === 'place') return reversed ? [...items].reverse() : items
   const key: Record<Exclude<BoardSort, 'place'>, (i: BoardItem) => number> = {
     // Longest wait first.
     waiting: (i) => Date.parse(i.board.triaged_at),
@@ -161,5 +161,12 @@ export function sortRows(items: BoardItem[], by: BoardSort): BoardItem[] {
     reassess: (i) => dueOrLast(i.board.staff_reassess_due_at),
   }
   const k = key[by]
-  return [...items].sort((a, b) => k(a) - k(b))
+  return [...items].sort((a, b) => {
+    const first = k(a)
+    const second = k(b)
+    if (first === second) return 0
+    if (!Number.isFinite(first)) return 1
+    if (!Number.isFinite(second)) return -1
+    return (first - second) * (reversed ? -1 : 1)
+  })
 }

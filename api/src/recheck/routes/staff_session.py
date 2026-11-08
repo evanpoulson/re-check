@@ -53,6 +53,7 @@ class StaffSessionInfo(BaseModel):
     model_config = ConfigDict(frozen=True)
     user_id: str
     name: str | None
+    email: str | None = None
     role: StaffRole
     site_id: str
     # Shows "Open check-in now" on the visit page (RECHECK_DEMO_CHECKINS).
@@ -67,7 +68,7 @@ class SignInOptions(BaseModel):
 
 def _info(staff: Staff) -> StaffSessionInfo:
     return StaffSessionInfo(
-        user_id=staff.user_id, name=staff.name, role=staff.role, site_id=staff.site_id,
+        user_id=staff.user_id, name=staff.name, email=staff.email, role=staff.role, site_id=staff.site_id,
         demo_checkins=demo_checkins_enabled(),
     )
 
@@ -159,7 +160,11 @@ async def callback(
     except oidc.SignInError as exc:
         return fail(exc.code, str(exc))
 
-    staff = Staff(user_id=str(claims["sub"]), role=role, site_id=site_id(), name=oidc.display_name(claims))
+    email = claims.get("email")
+    staff = Staff(
+        user_id=str(claims["sub"]), role=role, site_id=site_id(), name=oidc.display_name(claims),
+        email=email if isinstance(email, str) else None,
+    )
     log.info("staff signed in: %s as %s", staff.user_id, staff.role.value)
     response = RedirectResponse(f"{public_url()}{_safe_return_to(flow.get('return_to'))}", status_code=status.HTTP_302_FOUND)
     response.delete_cookie(FLOW_COOKIE, path=FLOW_COOKIE_PATH)
