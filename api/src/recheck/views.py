@@ -293,6 +293,21 @@ def worklist_rows(visits: list[VisitSummary], tasks: list[Task], reports: list[d
     return [WorklistRow(rank=i + 1, **r) for i, r in enumerate(unranked)]
 
 
+def for_charge_nurse(task: Task, tlp_on_duty: bool) -> bool:
+    """FR18: escalated tasks, anything routed to the charge nurse, nurse flags, and everything while no TLP is on duty."""
+    return (
+        not tlp_on_duty
+        or task.escalated
+        or "charge_nurse" in task.routed_to
+        or any(r.reason_code == "staff_flag" for r in task.reasons)
+    )
+
+
+def by_urgency(tasks: list[Task]) -> list[Task]:
+    """Highest level first, then oldest."""
+    return sorted(tasks, key=lambda t: (-rank_key(t.level), t.created_at))
+
+
 def board_rows(visits: list[VisitSummary], tasks: list[Task], now: datetime) -> list[BoardRow]:
     task_by_visit = {t.visit_id: t for t in tasks}
     return [

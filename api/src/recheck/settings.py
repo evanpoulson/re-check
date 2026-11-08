@@ -11,6 +11,8 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from datetime import time
+
 # api/src/recheck/settings.py -> repository root
 ROOT_ENV = Path(__file__).resolve().parents[3] / ".env"
 
@@ -56,6 +58,35 @@ def public_url() -> str:
 def site_id() -> str:
     """The site staff act for. One site in the demo; real staff sign-in will supply it."""
     return _get("RECHECK_SITE_ID") or "foothills-demo"
+
+
+def site_timezone() -> str:
+    """The site's local time zone, for duty hours and shift handover."""
+    return _get("RECHECK_SITE_TIMEZONE") or "America/Edmonton"
+
+
+def _clock(value: str) -> time:
+    hours, _, minutes = value.strip().partition(":")
+    return time(int(hours) % 24, int(minutes or 0))
+
+
+def tlp_hours() -> tuple[time, time] | None:
+    """When the triage liaison physician is on duty, as local "HH:MM-HH:MM" (may cross midnight).
+
+    Unset means always on duty. Demo assumption: Alberta runs two 7-hour TLP
+    shifts per site, but the site's actual hours aren't known yet.
+    """
+    value = _get("RECHECK_TLP_HOURS")
+    if not value:
+        return None
+    start, _, end = value.partition("-")
+    return _clock(start), _clock(end)
+
+
+def shift_changes() -> list[time]:
+    """Local times nursing shifts change, for the handover window. Demo assumption: 07:00 and 19:00."""
+    value = _get("RECHECK_SHIFT_CHANGES") or "07:00,19:00"
+    return sorted(_clock(v) for v in value.split(","))
 
 
 def scheduler_seconds() -> float:
