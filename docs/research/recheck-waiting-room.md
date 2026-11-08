@@ -98,7 +98,7 @@ The prototype uses Python/Pydantic for its contract, FastAPI for the planned ser
 
 ### Current contract and persistence
 
-The [Pydantic contract](../../api/README.md) and [database schema](../../db/schema.sql) define the prototype model. The service, rule evaluator, question content, scheduler and dashboard transport still need implementation.
+The [Pydantic contract](../../api/README.md) and [database schema](../../db/schema.sql) define the prototype model. The API in [`api/`](../../api/README.md) implements the service, the rules, the question bank, the timers and the live dashboard updates.
 
 | Records | Current design |
 |---|---|

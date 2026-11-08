@@ -1,6 +1,6 @@
 # Demo deployment (AWS, hackathon only)
 
-One EC2 box in `us-west-2` runs `docker compose`. Caddy terminates HTTPS, nginx serves the React build and proxies `/api`, and FastAPI talks to the Tiger Cloud service, which is also in `us-west-2`. It is built to last the weekend, not as a pilot setup.
+One EC2 instance in `us-west-2` runs `docker compose`. Caddy terminates HTTPS. nginx serves the React build and sends `/api` to FastAPI. FastAPI connects to the Tiger Cloud service, which is also in `us-west-2`. This setup is for the event weekend. It is not a pilot setup.
 
 ```
 phone / staff browser ─HTTPS─► Caddy :443 ─► web (nginx) ─/api─► api (uvicorn) ─TLS─► Tiger Cloud
@@ -9,79 +9,84 @@ phone / staff browser ─HTTPS─► Caddy :443 ─► web (nginx) ─/api─►
 
 | File | Purpose |
 | --- | --- |
-| `api/Dockerfile` | FastAPI image, built from the repo root because the API reads `question-bank/` at runtime. The poller reuses it. |
-| `web/Dockerfile`, `web/nginx/default.conf` | Vite build with `VITE_USE_MOCKS=false`, served by nginx, `/api`, `/docs` proxied to the API |
-| `compose.yaml` | `api` and `web` always; `caddy` with the `https` profile; `poller` with the `poller` profile |
+| `api/Dockerfile` | FastAPI image. It builds from the repository root, because the API reads `question-bank/` at runtime. The poller uses the same image. |
+| `web/Dockerfile`, `web/nginx/default.conf` | Vite build with `VITE_USE_MOCKS=false`, served by nginx. nginx sends `/api` and `/docs` to the API. |
+| `compose.yaml` | `api` and `web` always run. `caddy` runs with the `https` profile. `poller` runs with the `poller` profile. |
 | `deploy/Caddyfile` | HTTPS for `SITE_ADDRESS` |
 | `infra/` | Terraform: key pair, security group (22, 80, 443), EC2 `t3.small` with Docker, Elastic IP |
-| `.github/workflows/deploy.yml` | On push to `deploy`: SSH in, write `.env`, check out the commit, `docker compose up -d --build` |
+| `.github/workflows/deploy.yml` | On a push to `deploy`: connects with SSH, writes `.env`, checks out the commit, runs `docker compose up -d --build` |
 
 ## Run it locally
 
-Put `RECHECK_DATABASE_URL` and `RECHECK_SECRET_KEY` (32+ characters) in the root `.env`, then:
+1. Put `RECHECK_DATABASE_URL` and `RECHECK_SECRET_KEY` (32+ characters) in the root `.env`.
+2. Run:
 
-```sh
-RECHECK_PUBLIC_URL=http://localhost:8080 docker compose up --build
-```
+   ```sh
+   RECHECK_PUBLIC_URL=http://localhost:8080 docker compose up --build
+   ```
 
-Open http://localhost:8080. Localhost counts as a secure origin, so no HTTPS is needed here.
+3. Open http://localhost:8080. Browsers treat localhost as a secure origin, so you do not need HTTPS here.
 
 ## One-time setup
 
-1. **Deploy key.** `ssh-keygen -t ed25519 -N '' -C recheck-deploy -f ~/.ssh/recheck-deploy`
-2. **Box.** With AWS credentials for the credits account:
+1. **Deploy key.** Run `ssh-keygen -t ed25519 -N '' -C recheck-deploy -f ~/.ssh/recheck-deploy`.
+2. **Instance.** Use AWS credentials for the credits account:
+
    ```sh
    cd infra
    cp terraform.tfvars.example terraform.tfvars   # paste ~/.ssh/recheck-deploy.pub
    terraform init && terraform apply
    ```
-   State stays in `infra/terraform.tfstate` on whoever ran it. Keep that machine handy to destroy it later.
-3. **GitHub** (Settings → Secrets and variables → Actions):
+
+   The state stays in `infra/terraform.tfstate` on the computer that ran `apply`. Keep that computer available, because you need it to destroy the instance.
+3. **GitHub.** Go to Settings → Secrets and variables → Actions, and add these values:
 
    | Kind | Name | Value |
    | --- | --- | --- |
    | Variable | `DEPLOY_HOST` | `terraform output -raw public_ip` |
-   | Variable | `SITE_ADDRESS` | Optional. Leave unset to use `<ip-with-dashes>.sslip.io`, or set your own domain with an A record pointing at `DEPLOY_HOST`. |
-   | Secret | `DEPLOY_SSH_KEY` | contents of `~/.ssh/recheck-deploy` (private key) |
+   | Variable | `SITE_ADDRESS` | Optional. If not set, the workflow uses `<ip-with-dashes>.sslip.io`. For your own domain, set it here and add an A record to `DEPLOY_HOST`. |
+   | Secret | `DEPLOY_SSH_KEY` | The private key `~/.ssh/recheck-deploy` |
    | Secret | `RECHECK_DATABASE_URL` | `postgres://recheck_api:...@...tsdb.cloud.timescale.com:.../tsdb?sslmode=require` |
-   | Secret | `RECHECK_SECRET_KEY` | 32+ random characters. Keep it the same for the whole event, or the desk can't re-show QRs and staff are signed out. |
+   | Secret | `RECHECK_SECRET_KEY` | 32+ random characters. Keep one value for the full event. If it changes, the desk cannot show QRs again and all staff are signed out. |
    | Secret | `RECHECK_POLLER_DATABASE_URL` | Optional. Set it to start the wait-time poller. |
-   | Variable | `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` | Staff sign-in (see `auth0/README.md`). |
+   | Variable | `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` | Staff sign-in (see `auth0/README.md`) |
    | Secret | `AUTH0_CLIENT_SECRET` | Staff sign-in |
-   | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. Defaults to `15`: this box runs the missed check-in and escalation timers. `0` turns them off. Keep them off on every other machine that uses the same database. |
-   | Variable | `RECHECK_DEMO_STAFF` | `true` keeps the demo role picker working. The front end needs it until it supports Auth0 sign-in. |
-   | Variable | `RECHECK_DEMO_CHECKINS` | Optional. Defaults to `true` on this box: a new visit's first check-in opens at enrolment instead of one CTAS interval later, and desk staff see "Open check-in now" on Visit management. `false` turns both off. |
-   | Secret | `RECHECK_VAPID_PRIVATE_KEY` | Optional. Turns on check-in reminders by Web Push. Generate with `cd api && uv run python -m recheck.push keygen`. Keep it for the whole event: a new key breaks every saved subscription. Apply `db/migrations/2026-11-08-push-reminders.sql` first. |
-   | Variable | `RECHECK_VAPID_SUBJECT` | Optional. A `mailto:` or `https://` contact for the push services. Defaults to `https://<SITE_ADDRESS>`. |
+   | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. The default is `15`, so this instance runs the missed check-in, escalation and reminder timers. `0` turns them off. Keep the timers off on all other computers that use the same database. |
+   | Variable | `RECHECK_DEMO_STAFF` | Optional. `true` shows the demo role picker next to Auth0 sign-in. |
+   | Variable | `RECHECK_DEMO_CHECKINS` | Optional. The default is `true` on this instance. The first check-in of a new visit then opens at enrolment, not one CTAS interval later, and desk staff see "Open check-in now" on Visit management. `false` turns off both. |
+   | Secret | `RECHECK_VAPID_PRIVATE_KEY` | Optional. Turns on check-in reminders by Web Push. To make a key, run `cd api && uv run python -m recheck.push keygen`. Keep one key for the full event, because a new key breaks all saved subscriptions. The database must have `db/migrations/2026-11-08-push-reminders.sql`. |
+   | Variable | `RECHECK_VAPID_SUBJECT` | Optional. A `mailto:` or `https://` contact for the push services. The default is `https://<SITE_ADDRESS>`. |
 
-   In the Auth0 application, allow `https://<SITE_ADDRESS>/api/staff/callback` as a callback URL and `https://<SITE_ADDRESS>/staff/sign-in` as a logout URL.
-
-   Avoid `$` in these values: compose treats it as a variable in `.env`.
-4. **Tiger.** If the service has an IP allow list, add the Elastic IP.
+   Do not use `$` in these values. Compose reads `$` in `.env` as a variable.
+4. **Auth0.** In the Auth0 application, add `https://<SITE_ADDRESS>/api/staff/callback` as a callback URL. Add `https://<SITE_ADDRESS>/staff/sign-in` as a logout URL.
+5. **Tiger Cloud.** If the service has an IP allow list, add the Elastic IP.
 
 ## Deploy
 
 ```sh
-git push origin main:deploy        # fast-forward deploy to main; the workflow does the rest
+git push origin main:deploy        # moves deploy to main. The workflow does the rest.
 ```
 
-You can also run **Deploy** by hand from the Actions tab. The first run waits for the box's first-boot setup. Builds take a few minutes on the box, and the smoke test checks `https://$SITE_ADDRESS/api/health`.
+You can also start **Deploy** manually from the Actions tab.
 
-Seed the synthetic cohort from your laptop as usual (`api/README.md`). It talks to Tiger directly, not through the box.
+- The first run waits for the first-boot setup of the instance.
+- Builds take a few minutes on the instance.
+- The smoke test checks `https://$SITE_ADDRESS/api/health`.
 
-## When it can go wrong
+Load the synthetic cohort from your computer as usual (see `api/README.md`). The loader connects to Tiger Cloud directly, not through the instance.
 
-- **The certificate doesn't issue.** sslip.io is shared, so Let's Encrypt rate limits can hit; Caddy then retries with ZeroSSL. If it still fails, point a real domain at the IP and set `SITE_ADDRESS`. Certificates live in the `caddy_data` volume, so redeploys don't request new ones.
-- **Phones fail over HTTP.** Browsers only provide `crypto.randomUUID()` on secure origins, and the session cookies are `Secure`. Always share the `https://` URL.
-- **The box runs out of memory during a build.** It has 2 GB of RAM plus 2 GB of swap. If a build is killed, set `instance_type = "t3.medium"` and re-apply.
-- **Some changes replace the box.** Editing `user-data.sh` or the key does. The Elastic IP moves to the new box, so the URL and `DEPLOY_HOST` stay the same, but the box comes back empty: rerun Deploy.
-- **Screens still on mocks.** With mocks off, any screen whose `/api/...` path in `web/src/api/endpoints.ts` isn't a FastAPI route yet will fail.
-- **Logs.** `ssh -i ~/.ssh/recheck-deploy ubuntu@$DEPLOY_HOST 'cd re-check && docker compose logs -f'`
+## Troubleshooting
+
+| Problem | Cause and fix |
+| --- | --- |
+| The certificate does not issue | sslip.io is shared, so Let's Encrypt rate limits can apply. Caddy then tries ZeroSSL. If this also fails, point a real domain at the IP and set `SITE_ADDRESS`. Certificates stay in the `caddy_data` volume, so a redeploy does not request new ones. |
+| Phones fail over HTTP | Browsers give `crypto.randomUUID()`, service workers and Web Push only on secure origins, and the session cookies are `Secure`. Always share the `https://` URL. |
+| A build stops because memory is low | The instance has 2 GB of RAM and 2 GB of swap. Set `instance_type = "t3.medium"` and apply again. |
+| The instance is empty after `terraform apply` | A change to `user-data.sh` or to the key replaces the instance. The Elastic IP moves to the new instance, so the URL and `DEPLOY_HOST` stay the same. Run **Deploy** again. |
+
+To see the logs, run `ssh -i ~/.ssh/recheck-deploy ubuntu@$DEPLOY_HOST 'cd re-check && docker compose logs -f'`.
 
 ## Tear down
 
-```sh
-cd infra && terraform destroy
-```
-
-Then delete the `deploy` branch and the deploy key.
+1. Run `cd infra && terraform destroy`.
+2. Delete the `deploy` branch and the deploy key.
