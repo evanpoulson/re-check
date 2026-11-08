@@ -178,6 +178,67 @@ class Pages(unittest.TestCase):
         ui.poll()
         self.assertIn("checked in", text(ui))
 
+    def test_discharge_clears_a_report_error_and_stops_beeping(self):
+        ui, api, io, _ = make()
+        ui.result(("Not sent",), ok=False)
+        ui.render()
+        self.assertEqual(io.leds_calls[-1][0], 1)
+        api.st = state(kind="unassigned")
+        ui.tick(queue.Queue())
+        self.assertIn("Not in use", text(ui))
+        self.assertEqual(io.leds_calls[-1][0], 0)
+
+    def test_reset_silences_a_call_until_the_pager_is_reassigned(self):
+        ui, api, io, clock = make(state(kind="called"))
+        events = queue.Queue()
+        events.put(4)
+        ui.tick(events)
+        self.assertIn("Connecting...", text(ui))
+        self.assertEqual(io.leds_calls[-1][0], 0)
+        ui.tick(events)
+        self.assertIn("Not in use", text(ui))
+        self.assertEqual(io.leds_calls[-1][0], 0)
+
+        api.st = state(checkin_open=True)
+        clock.t += pager.POLL_SECONDS
+        ui.tick(events)
+        self.assertIn("CHECK-IN TIME", text(ui))
+        self.assertEqual(io.leds_calls[-1][0], 2)
+
+        api.st = state(kind="called")
+        clock.t += pager.POLL_SECONDS
+        ui.tick(events)
+        self.assertIn("TRIAGE DESK NOW", text(ui))
+        self.assertEqual(io.leds_calls[-1][0], 2)
+
+    def test_reset_ignores_an_active_visit_and_an_idle_pager(self):
+        ui, api, _, _ = make(state(checkin_open=True))
+        ui.start_checkin()
+        flow = ui.flow
+        ui.handle(pager.RESET)
+        self.assertIs(ui.flow, flow)
+        self.assertEqual(api.posts, [])
+
+        ui, *_ = make(state(kind="unassigned"))
+        ui.handle(pager.RESET)
+        self.assertIn("Not in use", text(ui))
+
+    def test_reset_is_available_once_after_discharge(self):
+        ui, api, *_ = make()
+        api.st = state(kind="unassigned")
+        ui.poll()
+        ui.handle(pager.RESET)
+        self.assertIn("Connecting...", text(ui))
+        ui.poll()
+        ui.handle(pager.RESET)
+        self.assertIn("Not in use", text(ui))
+
+    def test_reset_rechecks_the_assignment_before_clearing_it(self):
+        ui, api, *_ = make(state(kind="called"))
+        api.st = state(checkin_open=True)
+        ui.handle(pager.RESET)
+        self.assertIn("CHECK-IN TIME", text(ui))
+
 
 class Checkin(unittest.TestCase):
     """The pager's check-in, in the phone's order. Question-level behaviour is in test_checkin.py."""
