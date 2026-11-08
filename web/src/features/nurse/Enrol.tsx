@@ -46,7 +46,7 @@ const TARGET: Record<Exclude<Field, 'conflict'>, string> = { ctas: 'ctas-2', ced
 /** The fields that had an error at the last submit. Their error lines keep their space until the next submit. */
 type Submitted = Partial<Record<Field, true>>
 
-export function Enrol() {
+export function Enrol({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation()
   const [form, setForm] = useState<EnrolForm>(emptyEnrol)
   const [errors, setErrors] = useState<EnrolErrors>({})
@@ -166,7 +166,7 @@ export function Enrol() {
     )
   }
 
-  if (done) return <Done done={done} heading={heading} onAnother={() => {
+  if (done) return <Done done={done} heading={heading} onClose={onClose} onAnother={() => {
     setDone(null)
     setForm(emptyEnrol)
     setErrors({})
@@ -347,10 +347,12 @@ export function Enrol() {
 function Done({
   done: { visit, pager },
   heading,
+  onClose,
   onAnother,
 }: {
   done: { visit: VisitEnrolled; pager: boolean }
   heading: React.RefObject<HTMLHeadingElement | null>
+  onClose: () => void
   onAnother: () => void
 }) {
   const { t } = useTranslation()
@@ -414,7 +416,7 @@ function Done({
       )}
 
       <div className="flex flex-wrap justify-center gap-3 no-print">
-        <Link to={`/staff/visits/${visit.visit_id}`} className={cn(LINK_BUTTON, 'border-transparent bg-brand-500 text-white hover:bg-brand-700')}>
+        <Link to={`/staff/visits/${visit.visit_id}`} state={{ from: '/staff/triage' }} className={cn(LINK_BUTTON, 'border-transparent bg-brand-500 text-white hover:bg-brand-700')}>
           {t('enrol.openVisit')}
           <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
         </Link>
@@ -431,6 +433,7 @@ function Done({
           </>
         )}
         <Button variant="ghost" onClick={onAnother}>{t('enrol.another')}</Button>
+        <Button variant="ghost" onClick={onClose}>{t('visit.back')}</Button>
       </div>
     </div>
   )

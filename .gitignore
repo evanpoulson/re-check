@@ -4,3 +4,4 @@ env
 .seed-tokens*.json
 .claude/
 .codex/
+node_modules/

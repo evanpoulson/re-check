@@ -1,5 +1,5 @@
 import { ArrowRight, ArrowUp, Clock } from 'lucide-react'
-import { Link } from 'react-router'
+import { Link, useLocation } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { bankItems, text } from '@/api/bank'
 import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
@@ -13,6 +13,7 @@ const LINK_BUTTON = 'inline-flex min-h-11 max-w-full items-center justify-center
 
 export function OverviewPage() {
   const { t } = useTranslation()
+  const { state } = useLocation()
   const { detail, stale, canAcknowledge, canAct, canFlag, isDesk, now } = useVisit()
   const task = detail.open_task
   const { visit } = detail
@@ -72,7 +73,7 @@ export function OverviewPage() {
                     <Divider />
                     <p className="text-small text-muted">{nextStep}</p>
                     {(canAct || isDesk) && (
-                      <Link to="assessment" className={cn(LINK_BUTTON, 'w-full')}>
+                      <Link to="assessment" state={state} className={cn(LINK_BUTTON, 'w-full')}>
                         <ArrowRight aria-hidden className="size-[1.125rem] rtl:-scale-x-100" />
                         {t('visitPage.overview.goAssessment')}
                       </Link>
@@ -158,6 +159,7 @@ function WhatChanged({ latest, previous, flagged, lastKnown, excluded }: {
 /** Every answer from the latest check-in. Missing answers keep their reason; "Not sure" is never "no". */
 function LatestAnswers({ entry }: { entry: CheckinEntry }) {
   const { t } = useTranslation()
+  const { state } = useLocation()
   const c = entry.report
   return (
     <SectionCard
@@ -182,7 +184,7 @@ function LatestAnswers({ entry }: { entry: CheckinEntry }) {
         ))}
         <Fact label={t('answers.attention')} value={attentionText(c.attention, t)} />
       </Facts>
-      <Link to="timeline" className={LINK_BUTTON}>
+      <Link to="timeline" state={state} className={LINK_BUTTON}>
         <ArrowRight aria-hidden className="size-[1.125rem] rtl:-scale-x-100" />
         {t('visitPage.overview.compare')}
       </Link>

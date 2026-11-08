@@ -1,6 +1,9 @@
 # Recheck web
 
-React, Vite, TypeScript and Tailwind front end for patient check-in and staff review. Current visual guidelines and verification notes: [`docs/design/review-flow.md`](../docs/design/review-flow.md). The older frontend document is provisional.
+The React, Vite, TypeScript and Tailwind front end for patient check-in and staff review.
+
+- [`docs/design/frontend.md`](../docs/design/frontend.md) has the frontend design.
+- [`docs/design/review-flow.md`](../docs/design/review-flow.md) has the current visual guidelines.
 
 ## Run it
 
@@ -9,54 +12,110 @@ npm install
 npm run dev
 ```
 
-Open the address Vite prints (usually http://localhost:5173). By default the app runs against typed in-memory mocks (`src/api/mocks`) built on the real question bank, so no backend is needed. State is saved in the browser, so a nurse tab and a patient tab on the same address see the same visits. Clear site data to reset the demo.
+Open the address that Vite shows, usually http://localhost:5173.
 
-### Try the loop
+By default, the app uses typed in-memory mocks (`src/api/mocks`) that use the real question bank. You do not need the API. The mocks keep their state in `localStorage`. Thus a nurse tab and a patient tab on the same address see the same visits. To reset the demo, clear the site data.
 
-1. Open `/`, which goes to `/staff/sign-in`, and choose **Triage nurse** from the demo roles. The mocks offer only the demo picker; with the real API, staff sign in with Auth0.
-2. **New visit**: pick a CTAS level and complaint, or type a CEDIS code (try `402`, `003` or `351`). A mapped code locks the complaint group, and an excluded complaint pre-selects "app not offered". Create it. One QR code appears, encoding a link such as `/v/<token>`, with **Copy link**, **Print**, **Save QR** (an SVG) and **Open visit**, plus when the first check-in and staff reassessment are due. Whoever scans it chooses patient or companion. The triage nurse or charge nurse can show the same QR again from the visit's **Visit management** tab.
-3. Open the QR link in a second tab, choose **Patient** (or scan it with a phone on the same network). Answer a check-in, play the circle check, or use any of the four always-visible buttons.
-4. Back on the **Triage board**, the flag appears as a level chip, with a coloured bar on the row's left edge. The place-in-line numeral on the left does not change: the queue stays in CTAS then arrival order.
-5. Click the patient row to open the visit page. On the **Assessment** tab, **Acknowledge**, then **Record assessment**. Acknowledging and assessing are separate steps. **Stop offering the app** (in the Danger zone on **Visit management**) signs the patient out.
+To use the real API, set `VITE_USE_MOCKS=false`. The mocks then do not load. Vite sends `/api` to FastAPI at `RECHECK_API_URL` (default `http://127.0.0.1:8000`). The Docker image always builds with the mocks off.
 
-The mocks seed a waiting room of 25 synthetic visits, timed relative to when the state is first created. Clear `localStorage` to reseed. These five are the demo cases. One device is signed in per visit; opening a link on a second device asks to take over.
+## Try the loop with the mocks
+
+1. Open `/`. It goes to `/staff/sign-in`. Choose **Triage nurse** from the demo roles. The mocks show only the demo picker. With the real API, staff sign in with Auth0.
+2. On the triage board, select **New visit**. It opens as a sheet over the board. Choose a CTAS level and a complaint, or type a CEDIS code (try `402`, `003` or `351`).
+   - A mapped code locks the complaint group.
+   - An excluded complaint selects "app not offered".
+3. Create the visit. One QR code appears. It encodes a link such as `/v/<token>`. The card has **Copy link**, **Print**, **Save QR** (an SVG) and **Open visit**. It also shows when the first check-in and the staff reassessment are due.
+4. Open the link in a second tab, or scan it with a phone on the same network. Choose **Patient**.
+5. Answer a check-in, do the circle check, or use one of the four buttons that are always visible.
+6. Go back to the **Triage board**. The flag shows as a level chip, with a coloured bar on the left edge of the row. The place-in-line number does not change, because the queue stays in CTAS order, then arrival order.
+7. Select the patient row to open the visit page. On the **Assessment** tab, select **Acknowledge**, then **Record assessment**. These are two separate steps.
+8. To sign the patient out, go to **Visit management** and select **Stop offering the app** in the Danger zone.
+
+The triage nurse or the charge nurse can show the same QR again from the **Visit management** tab.
+
+### Seeded visits
+
+The mocks make a waiting room of 25 synthetic visits. The times are relative to the time when the mocks first make their state. To make the visits again, clear `localStorage`.
+
+Only one device can be signed in for each visit. If you open a link on a second device, it asks to take over. These five visits are the demo cases:
 
 | Case | QR link (choose patient or companion) |
 | --- | --- |
-| Worsening chest pain, CTAS 2, already flagged red | `/v/demo-chest-token` |
+| Worsening chest pain, CTAS 2, red flag | `/v/demo-chest-token` |
 | Calm general visit, CTAS 3, no flag | `/v/demo-general-token` |
-| Head injury, CTAS 3, check-in missed (silent) | `/v/demo-head-token` |
-| Confused or drowsy, CTAS 3, companion-only check-in | `/v/demo-confused-token` |
+| Head injury, CTAS 3, missed check-in (silent) | `/v/demo-head-token` |
+| Confused or drowsy, CTAS 3, check-in by companion only | `/v/demo-confused-token` |
 | Child, CTAS 4, app not offered | no QR |
 
-The other 20 fill the board, worklist, Escalations and Handover. Each app visit has a QR link at `/v/demo-<case>-token`. Several already have a device signed in, so scanning asks to take over.
+For the "new speech change on an unrelated complaint" case, sign in as companion on the general visit. Then report "Speech is different or hard to understand".
+
+The other 20 visits fill the board, the worklist, Escalations and Handover. Each app visit has a QR link at `/v/demo-<case>-token`. Some of these visits already have a signed-in device, so a scan asks to take over.
 
 | Case | Level and state |
 | --- | --- |
-| `breathing`: CTAS 2, new trouble breathing, Tagalog | Red, acknowledged; reassessment overdue |
+| `breathing`: CTAS 2, new trouble breathing, Tagalog | Red, acknowledged. Reassessment overdue. |
 | `headache`: CTAS 2, headache, pager 214, Spanish | No task |
 | `droop`: CTAS 3, arm weakness, companion reports facial droop, Punjabi | Red, escalated to backup |
 | `backpain`: CTAS 3, back pain, "I need help now", Mandarin | Red, escalated to backup |
 | `flank`: CTAS 3, flank pain, phone went quiet, Arabic | Silent, acknowledged |
-| `vomiting`: CTAS 3, vomiting, pager 118, Vietnamese | Amber, acknowledged; check-in overdue |
+| `vomiting`: CTAS 3, vomiting, pager 118, Vietnamese | Amber, acknowledged. Check-in overdue. |
 | `sugar`: CTAS 3, hypoglycemia, companion is worried | Amber, open |
 | `cut`: CTAS 3, facial cut, says they are leaving | Leave risk, open |
-| `vertigo`: CTAS 3, circle count did not match, Korean | Overdue, open; reassessment overdue |
-| Self-harm, CTAS 3 | No task; app not offered |
-| Pregnancy over 20 weeks, CTAS 4, Hindi | Amber (flagged higher by staff), acknowledged; app not offered |
+| `vertigo`: CTAS 3, circle count did not match, Korean | Overdue, open. Reassessment overdue. |
+| Self-harm, CTAS 3 | No task. App not offered. |
+| Pregnancy over 20 weeks, CTAS 4, Hindi | Amber (flagged higher by staff), acknowledged. App not offered. |
 | `desk`: CTAS 4, back pain, question for the desk, Punjabi | Overdue, triage nurse only, open |
 | `wrist`: CTAS 4, question for the desk, pager 305, Cantonese | Overdue, triage nurse only, acknowledged |
 | `tingling`: CTAS 4, tingling hands, says they are leaving, French | Leave risk, acknowledged |
-| `neck`: CTAS 4, neck strain, pager 422 | Silent, open; reassessment overdue |
+| `neck`: CTAS 4, neck strain, pager 422 | Silent, open. Reassessment overdue. |
 | `ankle`: CTAS 4, triaged 5 minutes ago, pager 131, Spanish | No task |
-| `stable`: CTAS 4, assessed stable earlier | No open task; reassessment overdue |
-| `rash`: CTAS 5, waiting nearly 5 hours | No task |
-| `sore`: CTAS 5, pager 507, Polish | No task; check-in a few minutes overdue (turns silent soon) |
+| `stable`: CTAS 4, assessed stable before | No open task. Reassessment overdue. |
+| `rash`: CTAS 5, waiting almost 5 hours | No task |
+| `sore`: CTAS 5, pager 507, Polish | No task. Check-in a few minutes overdue (becomes silent soon). |
 | `migraine`: CTAS 5, headache much worse, Urdu | Amber, acknowledged |
 
-Companion on the general visit, then reporting "Speech is different or hard to understand", is the "new speech change on an unrelated complaint" case.
+### Physician worklist
 
-Set `VITE_USE_MOCKS=false` to call a real backend instead. The mocks then do not load.
+Choose **Physician** in the role picker. The home is `/staff/physician`. The worklist uses the rank from the server, which is independent of the triage board.
+
+1. Open a concern and acknowledge it.
+2. Choose an assessment outcome. The completed task goes off the worklist.
+
+Filters, search, refresh and retry work. The visit page of the physician has the Overview, Assessment and Timeline tabs. Vitals and Visit management are for the triage nurse and the charge nurse.
+
+### Charge nurse
+
+Choose **Charge nurse**. The home is `/staff/escalations`, with the **Escalations** and **Handover** tabs.
+
+- In the mocks, the seeded chest-pain task goes to the backup when its acknowledgement deadline passes.
+- On a visit, the charge nurse can acknowledge all tasks, and assess the tasks that go to the charge nurse. Escalated tasks go to the charge nurse.
+- The charge nurse can record vitals and use Visit management.
+- The charge nurse does not see **Flag higher**, because the API lets only the triage nurse flag.
+
+In the mocks, the selected role is only for demo navigation. The real app gets identity and permissions from the server session.
+
+## Routes
+
+| Route | Who |
+| --- | --- |
+| `/staff/sign-in` | anyone |
+| `/staff/escalations`, `/staff/escalations/handover` | charge nurse |
+| `/staff/physician` | physician, charge nurse |
+| `/staff/triage` (New visit opens with `?panel=new-visit`) | triage nurse, charge nurse |
+| `/staff/visits/new` | goes to the New visit sheet on the triage board |
+| `/staff/visits/:id` (tabs: overview, `assessment`, `timeline`, `manage`) | signed-in staff |
+| `/v/:token` | QR holder |
+| `/check-in` | signed-in device |
+
+`src/routes.tsx` is the source of truth. Each role has a home: `/staff/triage` for the triage nurse, `/staff/physician` for the physician, and `/staff/escalations` for the charge nurse.
+
+## Check-in reminders
+
+- **Turn on.** The patient home shows "Turn on reminders" when the API has a Web Push key (`GET /api/patient/push`).
+- **Service worker.** `public/sw.js` shows the reminder. A tap opens `/check-in`. The app registers the service worker only when a person turns on reminders.
+- **iPhone.** iPhones need the page on the Home Screen for reminders (iOS 16.4+). `public/manifest.webmanifest` permits this. In a Safari tab, an iPhone shows these steps instead.
+- **Mocks.** The app never registers `sw.js` with the mocks, because the mock service worker uses the same scope. The mock API reports reminders as off.
+- **Page open.** When a check-in becomes due on an open page, the page plays a chime (after the first tap). It also vibrates on Android and flashes the tab title (`src/lib/dueAlert.ts`).
 
 ## Checks
 
@@ -64,41 +123,30 @@ Set `VITE_USE_MOCKS=false` to call a real backend instead. The mocks then do not
 npm run typecheck && npm run lint && npm test && npm run build && npm run check:contract
 ```
 
-## Everything the backend owns is copied, not retyped
+## Generated files
 
-`npm run gen:contract` generates from the backend:
+`npm run gen:contract` copies from the back end everything that the back end owns:
 
-- `src/api/contract.d.ts` and `contract.schema.json`, from the Pydantic models in `api/src/recheck/contract` (needs [uv](https://docs.astral.sh/uv/)).
+- `src/api/contract.d.ts` and `contract.schema.json`, from the Pydantic models in `api/src/recheck/contract`. This step needs [uv](https://docs.astral.sh/uv/).
 - `src/api/bank/questionnaire.json` and `cedis-groups.json`, copies of `question-bank/`.
 
-Do not edit them. Commit the outputs; running it again must not change them. `npm run check:contract` fails if they are out of date. Mocks and screens are typed by these types, so a contract change fails the type check where it matters.
+Do not edit these files. Commit the output. A second run must not change them. If they are out of date, `npm run check:contract` fails. The mocks and the screens use these types, so a contract change fails the type check where it has an effect.
 
-- `src/api/bank.ts` reads question wording, companion wording, options, "Not sure" rules and circle-check settings from the bank.
-- `src/api/cedis.ts` lists the CEDIS codes and mirrors the backend's `check_enrolment()`.
-- `src/api/enableWhen.ts` mirrors the backend's branching. The mock server and tests use it; screens render what the API returns.
+These files mirror back-end logic by hand:
 
-The contract defines no HTTP paths. `src/api/endpoints.ts` holds proposed ones; confirm them against the FastAPI routes when they exist.
+| File | Mirrors |
+| --- | --- |
+| `src/api/bank.ts` | Question wording, companion wording, options, "Not sure" rules and circle-check settings, read from the bank |
+| `src/api/cedis.ts` | The CEDIS codes and `check_enrolment()` |
+| `src/api/enableWhen.ts` | The branching. Only the mocks and the tests use it. The screens show what the API returns. |
+| `src/lib/findings.ts` | The urgent findings in `rules.py` |
 
-## Routes
-
-`/staff/sign-in`, `/staff/escalations`, `/staff/escalations/handover`, `/staff/physician`, `/staff/triage`, `/staff/visits/new`, `/staff/visits/:id` (with `/assessment`, `/timeline` and `/manage` tabs), `/v/:token`, `/check-in`. They match `docs/recheck-project-plan.md`.
-
-Each role has a home: the triage nurse `/staff/triage`, the physician `/staff/physician` and the charge nurse `/staff/escalations`. The charge nurse can also open the triage board, New visit and the physician worklist.
+The contract has no HTTP paths. `src/api/endpoints.ts` holds them. Keep it the same as the FastAPI routes.
 
 ## Notes
 
-- Patient screens are translated into 14 languages besides English: interface strings in `src/i18n/<code>.json` and question wording in `question-bank/translations/`. They are unreviewed drafts, so patients see a notice. `src/i18n/keys.test.ts` fails if a key a patient screen uses is missing from any of the 15 languages, or has different placeholders or plural forms. Staff screens stay in English, and staff always see answers in English. Arabic and Urdu set the page to right to left.
-- Check-in reminders: the patient home offers "Turn on reminders" when the API has a Web Push key (`GET /api/patient/push`). `public/sw.js` shows the reminder and opens `/check-in` when tapped; `public/manifest.webmanifest` lets a patient add the page to the Home Screen, which iPhones need for reminders (iOS 16.4+), so an iPhone in a Safari tab gets those steps instead. The service worker is registered only when someone turns reminders on, and never in mock mode, where the mock service worker holds the same scope and the mock API reports reminders as off. With the page open, a check-in coming due also chimes (after the first tap), vibrates on Android and flashes the tab title (`src/lib/dueAlert.ts`).
-- The mocks are demo logic, not the rules engine. Task levels they assume where the contract is silent (a desk question, a wrong circle count) are listed in the design doc.
-- The app loads no web font. `--font-sans` in `src/index.css` is the system stack (SF Pro on Apple devices, Segoe UI on Windows, then `system-ui`), so it makes no font request. "Noto Sans Gurmukhi" is named in the stack but not shipped, so Punjabi uses whatever the device has.
-- Text sizes use one rem scale in `src/index.css`: `text-note`, `text-small`, `text-base`, `text-lead`, `text-title`, `text-heading` and `text-display` (13 to 40 px). Tailwind's default sizes are switched off.
-
-## Physician demo
-
-Choose **Physician** in the demo role picker, or open `/staff/physician` after choosing a role. The worklist ranks active review tasks using the supplied server rank, independently of the triage board. Open a concern, acknowledge it, then choose an assessment outcome. A completed task disappears from the worklist. Filters, search, refresh and retry are functional. The physician's visit page has Overview, Assessment and Timeline tabs. Vitals and Visit management are for the triage nurse and charge nurse.
-
-## Charge nurse demo
-
-Choose **Charge nurse**. The home is `/staff/escalations`, with **Escalations** and **Handover** tabs. In the mocks, the seeded chest-pain task is routed to the backup once its acknowledgement deadline passes. On a visit, the charge nurse can acknowledge any task, assess a task routed to the charge nurse (escalated tasks are), record vitals and use Visit management. Flag higher is not shown, because the API allows only the triage nurse to flag.
-
-The selected role is demo navigation only. Browser mocks attribute physician acknowledgements and assessments to that role; production must derive identity and permissions from the authenticated server session.
+- **Languages.** The patient screens have 14 languages in addition to English. The interface text is in `src/i18n/<code>.json`. The question wording is in `question-bank/translations/`. These are drafts that nobody has reviewed, so patients see a notice. Staff screens stay in English, and staff always see answers in English. Arabic and Urdu set the page to right to left.
+- **Translation test.** `src/i18n/keys.test.ts` fails if one of the 15 languages does not have a key that a patient screen uses. It also fails if the placeholders or plural forms are different.
+- **Mocks.** The mocks are demo logic, not the rules engine.
+- **Font.** The app loads no web font. `--font-sans` in `src/index.css` is the system stack: SF Pro on Apple devices, Segoe UI on Windows, then `system-ui`. The stack names "Noto Sans Gurmukhi", but the app does not include it. Punjabi uses the font of the device.
+- **Text sizes.** All sizes use one rem scale in `src/index.css`: `text-note`, `text-small`, `text-base`, `text-lead`, `text-title`, `text-heading` and `text-display` (13 to 40 px). The default Tailwind sizes are off.
