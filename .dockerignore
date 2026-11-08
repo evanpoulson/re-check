@@ -1,0 +1,14 @@
+# Context for api/Dockerfile (the repository root). Only api/ and question-bank/ are copied.
+.git
+.env
+.env.*
+.seed-tokens*.json
+*.pdf
+media
+docs
+infra
+web
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/.hypothesis
