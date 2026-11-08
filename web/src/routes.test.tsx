@@ -287,6 +287,19 @@ describe('triage nurse: enrolment and QR', () => {
     expect(task).toMatchObject({ status: 'acknowledged', acknowledged_by: { role: 'triage_nurse' } })
   })
 
+  it('demo: desk staff can open a patient check-in now without moving the staff timer', async () => {
+    signInAsNurse()
+    const visit = await demoVisit('general')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}/manage`)
+    await user.click(await screen.findByRole('button', { name: 'Open check-in now' }))
+    expect(await screen.findByText(/^Check-in opened at /)).toBeInTheDocument()
+    const after = await demoVisit('general')
+    expect(Date.parse(after.next_prompt_due_at!)).toBeLessThanOrEqual(Date.now())
+    expect(after.staff_reassess_due_at).toBe(visit.staff_reassess_due_at)
+    expect(await screen.findByRole('button', { name: 'Open check-in now' })).toBeDisabled()
+  })
+
   it('will not stop the app until a reason is chosen and the change is confirmed', async () => {
     signInAsNurse()
     const visit = await demoVisit('general')
@@ -781,10 +794,9 @@ describe('the loop and the backend rules', () => {
     // The desk can show the same code again.
     expect((await getVisitLink(enrolled.visit_id)).link).toBe(enrolled.link)
     await exchangeToken({ token: enrolled.link!.split('/v/')[1]!, role: 'patient' })
-    // A new visit's first check-in opens one CTAS interval after triage.
-    expect((await getPatientHome()).checkin_open).toBe(false)
-    makeCheckinDue(enrolled.visit_id)
+    // The mocks run as a demo (RECHECK_DEMO_CHECKINS), so the first check-in opens at enrolment.
     const home = await getPatientHome()
+    expect(home.checkin_open).toBe(true)
     expect(home.role).toBe('patient')
     expect(home.items.map((i) => i.key)).toEqual(['pain_moved', 'pain_sudden_worse'])
     expect(home.attention_prompt).not.toBeNull()

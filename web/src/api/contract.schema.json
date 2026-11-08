@@ -1200,6 +1200,23 @@
       "title": "MultiChoiceAnswered",
       "type": "object"
     },
+    "OpenCheckin": {
+      "additionalProperties": false,
+      "description": "Demo only: open the visit's next patient check-in now (RECHECK_DEMO_CHECKINS).\n\nMoves the patient prompt due time to now, never later. The staff timer doesn't move.",
+      "properties": {
+        "submission_id": {
+          "description": "Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.",
+          "format": "uuid",
+          "title": "Submission Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "submission_id"
+      ],
+      "title": "OpenCheckin",
+      "type": "object"
+    },
     "PainAnswered": {
       "additionalProperties": false,
       "properties": {
@@ -3257,6 +3274,9 @@
     },
     "MultiChoiceAnswered": {
       "$ref": "#/$defs/MultiChoiceAnswered"
+    },
+    "OpenCheckin": {
+      "$ref": "#/$defs/OpenCheckin"
     },
     "PainAnswered": {
       "$ref": "#/$defs/PainAnswered"

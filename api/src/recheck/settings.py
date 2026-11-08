@@ -111,6 +111,13 @@ def demo_staff_enabled() -> bool:
     return _flag("RECHECK_DEMO_STAFF")
 
 
+def demo_checkins_enabled() -> bool:
+    """Demo help for check-ins, off by default. New visits' first check-in opens at enrolment rather than one
+    CTAS interval later, and desk staff get "Open check-in now" (`POST /api/visits/{id}/open-checkin`).
+    """
+    return _flag("RECHECK_DEMO_CHECKINS")
+
+
 def _flag(name: str) -> bool:
     return (_get(name) or "false").lower() in ("1", "true", "yes")
 

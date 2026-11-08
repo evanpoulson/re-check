@@ -93,6 +93,7 @@ AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
 AUTH0_CALLBACK_URL=...                     # optional: defaults to {RECHECK_PUBLIC_URL}/api/staff/callback
 RECHECK_DEMO_STAFF=false                   # optional: true turns on the no-account demo role picker
+RECHECK_DEMO_CHECKINS=false                # optional: true opens a new visit's first check-in at enrolment and allows open-checkin
 RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when unset)
 RECHECK_SITE_TIMEZONE=America/Edmonton     # optional: local time for duty hours and shifts
 RECHECK_TLP_HOURS=08:00-22:00              # optional demo assumption: physician duty hours; unset = always on duty
@@ -147,6 +148,7 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/flag` | triage nurse | `FlagHigher` → `FlagRecord`; opens or raises an amber task (`staff_flag`) |
 | `POST /api/visits/{id}/status` | triage nurse, physician or charge nurse | `VisitStatusUpdate` → 204; closes the visit and signs out its device |
 | `POST /api/visits/{id}/exclusion` | triage or charge nurse | `VisitExclusionUpdate` → 204; stops patient prompts, staff timer keeps running |
+| `POST /api/visits/{id}/open-checkin` | triage or charge nurse | `OpenCheckin` → 204; demo only (403 unless `RECHECK_DEMO_CHECKINS`): the patient's check-in opens now, staff timer unchanged |
 | `GET /api/events` | any signed-in staff | Server-Sent Events: a `DashboardEvent` per change at the staff member's site |
 | `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, whether the next check-in is open (`checkin_open`), circle prompt (patient only, while a check-in is open; reused until answered), wait estimate or null, minutes waited |
 | `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true`; a scheduled check-in before its due time is 409 |

@@ -12,6 +12,7 @@ import type {
   SiteSettingsUpdate,
   StaffRole,
   VisitExclusionUpdate,
+  OpenCheckin,
   VisitStatusUpdate,
   VitalsCreate,
 } from '../types'
@@ -68,6 +69,10 @@ export const handlers = [
   http.post(withParam(endpoints.visitExclusion), async ({ request, params }) => {
     const body = (await request.json()) as VisitExclusionUpdate
     return reply(() => store.setExclusion(String(params.id), body.app_exclusion))
+  }),
+  http.post(withParam(endpoints.openCheckin), async ({ request, params }) => {
+    ;(await request.json()) as OpenCheckin
+    return reply(() => store.openCheckinNow(String(params.id)))
   }),
   http.post(withParam(endpoints.acknowledgeTask), async ({ request, params }) => {
     ;(await request.json()) as AcknowledgeTask

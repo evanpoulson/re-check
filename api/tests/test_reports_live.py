@@ -337,3 +337,49 @@ def test_enrolment_rejects_a_group_the_cedis_map_contradicts(live_client):
     r = live_client.post("/api/visits", json=body)
     assert r.status_code == 422
     assert "chest_back_pain" in r.json()["detail"]
+
+
+# --- demo: open a check-in now -------------------------------------------------
+
+
+def open_now(client, visit_id, submission_id=None):
+    client.post("/api/staff/session", json={"role": "triage_nurse"})
+    return client.post(f"/api/visits/{visit_id}/open-checkin", json={"submission_id": submission_id or sid()})
+
+
+def test_open_checkin_now_is_a_demo_setting(live_client, monkeypatch):
+    monkeypatch.delenv("RECHECK_DEMO_CHECKINS", raising=False)
+    visit = sign_in(live_client, due=False)
+    assert open_now(live_client, visit).status_code == 403
+    assert live_client.get("/api/staff/session").json()["demo_checkins"] is False
+
+
+def test_open_checkin_now_opens_it_without_moving_the_staff_timer(live_client, monkeypatch):
+    monkeypatch.setenv("RECHECK_DEMO_CHECKINS", "true")
+    visit = sign_in(live_client, due=False)
+    staff_due = query(live_client, "SELECT staff_reassess_due_at FROM visit WHERE id = %s", visit)[0]
+    retry = sid()
+    assert open_now(live_client, visit, retry).status_code == 204
+    assert open_now(live_client, visit, retry).status_code == 204  # a retry is harmless
+    assert live_client.get("/api/staff/session").json()["demo_checkins"] is True
+    open_, still = query(
+        live_client, "SELECT next_prompt_due_at <= now(), staff_reassess_due_at FROM visit WHERE id = %s", visit
+    )
+    assert open_ and still == staff_due
+    # Staff and patient cookies are separate, so the patient's phone can check in now.
+    assert live_client.get("/api/patient/home").json()["checkin_open"] is True
+    assert post(live_client, checkin()).status_code == 200
+
+
+def test_demo_enrolment_opens_the_first_checkin_at_once(live_client, monkeypatch):
+    monkeypatch.setenv("RECHECK_DEMO_CHECKINS", "true")
+    sign_in(live_client, due=False)
+    assert live_client.get("/api/patient/home").json()["checkin_open"] is True
+    assert post(live_client, checkin()).status_code == 200
+    assert live_client.post("/api/staff/session", json={"role": "triage_nurse"}).status_code == 200
+    body = {"submission_id": sid(), "ctas": 4, "complaint_group": "general", "cedis_code": "609",
+            "app_exclusion": "child", "language": "en"}
+    e = live_client.post("/api/visits", json=body)
+    assert e.status_code == 201, e.text
+    assert query(live_client, "SELECT next_prompt_due_at FROM visit WHERE id = %s", e.json()["visit_id"]) == (None,)
+    assert open_now(live_client, e.json()["visit_id"]).status_code == 409

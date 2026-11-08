@@ -9,6 +9,7 @@ import {
   postFlagHigher,
   postVitals,
   staffSignOut,
+  openCheckinNow,
   updateVisitExclusion,
   updateVisitStatus,
 } from '@/api/api'
@@ -632,6 +633,33 @@ export function StopAppCard({ visit, stale }: { visit: VisitSummary; stale: bool
       {problem && <ErrorText id="stop-error">{t(problem === 'reason' ? 'visitPage.manage.chooseReason' : 'visitPage.manage.tickConfirm')}</ErrorText>}
       <p className="text-small text-muted">{t('visitPage.manage.stopHelp')}</p>
       {exclude.error && <ErrorText>{exclude.error}</ErrorText>}
+    </SectionCard>
+  )
+}
+
+/** Demo only (RECHECK_DEMO_CHECKINS): open the patient's next check-in now instead of waiting for its due time. */
+export function OpenCheckinCard({ visit, stale }: { visit: VisitSummary; stale: boolean }) {
+  const { t } = useTranslation()
+  const [openedAt, setOpenedAt] = useState<string | null>(null)
+  const open = useAction(visit.visit_id, (_: null, submission_id) => openCheckinNow(visit.visit_id, { submission_id }), () =>
+    setOpenedAt(new Date().toISOString()),
+  )
+  const due = visit.next_prompt_due_at
+  const alreadyOpen = due !== null && Date.parse(due) <= Date.now()
+  return (
+    <SectionCard title={t('visitPage.manage.openCheckin')} lead={t('visitPage.manage.openCheckinLead')}>
+      <Button variant="secondary" disabled={stale || open.pending || alreadyOpen} onClick={() => open.run(null)}>
+        {open.pending ? t('actions.saving') : t('visitPage.manage.openCheckinButton')}
+      </Button>
+      {openedAt ? (
+        <p role="status" className="flex items-start gap-2 font-semibold">
+          <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0" />
+          {t('visitPage.manage.openCheckinDone', { time: clock(openedAt) })}
+        </p>
+      ) : (
+        alreadyOpen && <p className="text-small">{t('visitPage.manage.openCheckinAlready')}</p>
+      )}
+      {open.error && <ErrorText>{open.error}</ErrorText>}
     </SectionCard>
   )
 }

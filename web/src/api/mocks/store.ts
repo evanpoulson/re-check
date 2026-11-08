@@ -126,7 +126,8 @@ export function staffSession() {
   } catch { /* no storage: signed out */ }
   const known = STAFF_ROLES.find((r) => r === role)
   if (!known) throw new MockError(401, 'staff sign-in required')
-  return { user_id: `demo|${known}`, name: null, role: known, site_id: 'foothills-demo' }
+  // The mocks are a demo, so they behave as if RECHECK_DEMO_CHECKINS were on.
+  return { user_id: `demo|${known}`, name: null, role: known, site_id: 'foothills-demo', demo_checkins: true }
 }
 
 export function demoStaffSignIn(role: StaffRef['role']) {
@@ -797,7 +798,8 @@ export function enrol(body: VisitCreate): VisitEnrolled {
       status: 'waiting',
       triaged_at: iso(now),
       closed_at: null,
-      next_prompt_due_at: exclusion ? null : iso(now + interval * MIN),
+      // Demo check-ins (as with RECHECK_DEMO_CHECKINS): the first check-in opens at enrolment.
+      next_prompt_due_at: exclusion ? null : iso(now),
       staff_reassess_due_at: iso(now + interval * MIN),
       last_staff_check_at: null,
       signed_in_as: null,
@@ -853,6 +855,20 @@ export function makeCheckinDue(visitId: string) {
   r.visit = { ...r.visit, next_prompt_due_at: iso(Date.now() - 60_000) }
   save(s)
   notify(visitId, 'visit.changed')
+}
+
+/** Demo: desk staff open the patient's next check-in now. The due time only moves earlier; the staff timer stays. */
+export function openCheckinNow(visitId: string): undefined {
+  const s = load()
+  const r = findRec(s, visitId)
+  if (r.visit.status !== 'waiting' || r.visit.app_exclusion || !r.visit.next_prompt_due_at) {
+    throw new MockError(409, 'only a waiting visit that offers the app has check-ins')
+  }
+  const now = Date.now()
+  if (Date.parse(r.visit.next_prompt_due_at) > now) r.visit = { ...r.visit, next_prompt_due_at: iso(now) }
+  save(s)
+  notify(visitId, 'visit.changed')
+  return undefined
 }
 
 /** Staff stop offering the app. Irreversible: prompts stop, devices are signed out, the staff timer keeps running. */

@@ -192,6 +192,7 @@ LeavingReport?: LeavingReport
 Missing?: Missing
 MissingReason?: MissingReason
 MultiChoiceAnswered?: MultiChoiceAnswered
+OpenCheckin?: OpenCheckin
 PainAnswered?: PainAnswered
 PatientHome?: PatientHome
 PatientMessage?: PatientMessage
@@ -762,6 +763,20 @@ kind: "leaving"
  * For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch and the database checks it against the session. A signed-out device can't report, including reports it queued offline before it was signed out.
  */
 reporter: ("patient" | "companion")
+/**
+ * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
+ */
+submission_id: string
+}
+/**
+ * Demo only: open the visit's next patient check-in now (RECHECK_DEMO_CHECKINS).
+ * 
+ * Moves the patient prompt due time to now, never later. The staff timer doesn't move.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "OpenCheckin".
+ */
+export interface OpenCheckin {
 /**
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
  */
