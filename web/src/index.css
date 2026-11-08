@@ -265,13 +265,10 @@
   .staff-page {
     padding-block: 28px;
   }
-  /*
-    The triage board is a wide table: it starts at the same left edge as every other
-    page and the header, and only grows to the right (up to 1440px).
-  */
+  /* The triage board is a wide table (up to 1440px), centred on the page. */
   .staff-page-wide {
     max-width: 1440px;
-    margin-inline: max(0px, calc((100% - var(--staff-max)) / 2)) auto;
+    margin-inline: auto;
   }
   /*
     A table that scrolls sideways in its own box. Edge shadows show on whichever
