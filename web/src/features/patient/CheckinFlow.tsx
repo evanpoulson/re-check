@@ -153,7 +153,7 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 tabIndex={-1} id="q" className="text-[1.75rem] font-extrabold leading-tight tracking-tight">
+    <h1 tabIndex={-1} id="q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
       {children}
     </h1>
   )
@@ -165,7 +165,7 @@ function ScaleButtons({ value, onPick }: { value: number | 'unsure' | undefined;
     <div>
       <div className="grid grid-cols-6 gap-2">
         {Array.from({ length: 11 }, (_, n) => (
-          <AnswerButton key={n} selected={value === n} className="justify-center px-0 border-l" onClick={() => onPick(n)}>
+          <AnswerButton key={n} selected={value === n} className="justify-center px-0" onClick={() => onPick(n)}>
             {n}
           </AnswerButton>
         ))}

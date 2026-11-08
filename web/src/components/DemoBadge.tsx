@@ -1,10 +1,11 @@
 import { FlaskConical } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-export function DemoBadge({ onLight = false }: { onLight?: boolean }) {
+/** "Synthetic data, demo thresholds". Shown in every staff screen's chrome. */
+export function DemoBadge() {
   const { t } = useTranslation()
   return (
-    <span className={`inline-flex items-center gap-1 rounded-data border px-2 py-0.5 text-xs font-bold ${onLight ? 'border-ink text-ink' : 'border-white/60 text-white'}`}>
+    <span className="inline-flex items-center gap-1 rounded-full bg-level-overdue-bg px-2.5 py-0.5 text-xs font-semibold text-level-overdue">
       <FlaskConical aria-hidden className="size-3.5" />
       {t('demo.badge')}
     </span>

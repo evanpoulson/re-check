@@ -29,7 +29,7 @@ const DISPOSITIONS: Disposition[] = [
   'not_located',
 ]
 const EXCLUSIONS: AppExclusion[] = ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma']
-const FIELD = 'min-h-11 w-full rounded-data border border-ink bg-surface px-3 text-base'
+const FIELD = 'field'
 
 /** Reuse a submission ID for an unchanged retry, and rotate it after a deliberate edit. */
 function useAction<A>(
@@ -99,7 +99,7 @@ export function VisitTaskAction({ task, stale, onComplete }: { task: Task; stale
           }}
         >
           <div className="min-w-0 grow sm:max-w-xs">
-            <label htmlFor="disposition" className="mb-1 block text-sm font-semibold">
+            <label htmlFor="disposition" className="mb-1.5 block text-sm font-semibold">
               {t('actions.disposition')}
             </label>
             <select
@@ -181,11 +181,11 @@ export function VisitActions({ detail, stale }: { detail: VisitDetail; stale: bo
       <fieldset className="min-w-0 space-y-4" disabled={stale}>
         <Card>
           <form onSubmit={submitVitals} noValidate className="space-y-3">
-            <h3 className="font-semibold">{t('actions.vitals')}</h3>
+            <h3 className="text-lg font-semibold tracking-tight">{t('actions.vitals')}</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {(['sbp', 'dbp', 'hr', 'rr', 'spo2', 'temp_c'] as const).map((k) => (
                 <div key={k}>
-                  <label htmlFor={`v-${k}`} className="mb-1 block text-sm font-semibold">
+                  <label htmlFor={`v-${k}`} className="mb-1.5 block text-sm font-semibold">
                     {t(`vitals.${k}`)}
                   </label>
                   <input
@@ -201,7 +201,7 @@ export function VisitActions({ detail, stale }: { detail: VisitDetail; stale: bo
             </div>
             {vitals.length > 0 && (
               <div>
-                <label htmlFor="v-supersedes" className="mb-1 block text-sm font-semibold">
+                <label htmlFor="v-supersedes" className="mb-1.5 block text-sm font-semibold">
                   {t('vitals.supersedes')}
                 </label>
                 <select
@@ -244,7 +244,7 @@ export function VisitActions({ detail, stale }: { detail: VisitDetail; stale: bo
         {!visit.app_exclusion && visit.status === 'waiting' && <DeviceCard visit={visit} />}
 
         <Card className="space-y-3">
-          <h3 className="font-semibold">{t('actions.flagHigher')}</h3>
+          <h3 className="text-lg font-semibold tracking-tight">{t('actions.flagHigher')}</h3>
           <p className="text-sm text-muted">{t('actions.flagHelp')}</p>
           <label htmlFor="flag-note" className="block text-sm font-semibold">
             {t('actions.flagNote')}
@@ -274,7 +274,7 @@ export function VisitActions({ detail, stale }: { detail: VisitDetail; stale: bo
 
         {!visit.app_exclusion && (
           <Card className="space-y-3">
-            <h3 className="font-semibold">{t('actions.stopApp')}</h3>
+            <h3 className="text-lg font-semibold tracking-tight">{t('actions.stopApp')}</h3>
             <p className="text-sm text-muted">{t('actions.stopAppHelp')}</p>
             <label htmlFor="exclusion-reason" className="block text-sm font-semibold">
               {t('actions.stopAppReason')}
@@ -294,7 +294,7 @@ export function VisitActions({ detail, stale }: { detail: VisitDetail; stale: bo
             <label className="flex min-h-11 items-start gap-2 text-sm">
               <input
                 type="checkbox"
-                className="mt-1 size-4"
+                className="mt-0.5 size-4 accent-level-red"
                 checked={confirmExclusion}
                 onChange={(e) => setConfirmExclusion(e.target.checked)}
               />
@@ -316,7 +316,7 @@ export function VisitActions({ detail, stale }: { detail: VisitDetail; stale: bo
         )}
 
         <Card className="space-y-3">
-          <h3 className="font-semibold">{t('actions.visitStatus')}</h3>
+          <h3 className="text-lg font-semibold tracking-tight">{t('actions.visitStatus')}</h3>
           <div className="flex flex-wrap gap-3">
             {(['roomed', 'left', 'discharged'] as const).map((s) => (
               <Button key={s} variant="secondary" disabled={status.pending} onClick={() => status.run(s)}>
@@ -355,7 +355,7 @@ function DeviceCard({ visit }: { visit: VisitSummary }) {
 
   return (
     <Card className="space-y-3">
-      <h3 className="font-semibold">{t('actions.device')}</h3>
+      <h3 className="text-lg font-semibold tracking-tight">{t('actions.device')}</h3>
       <p>{signedInText(visit, t)}</p>
       <p className="text-sm text-muted">{t('actions.deviceHelp')}</p>
       <div className="flex flex-wrap gap-3">

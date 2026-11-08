@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import { Link, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
@@ -47,7 +47,7 @@ export function VisitDetailPage() {
   return (
     <main id="main-content" className="staff-page max-w-3xl">
       <Link to={back} className="back-link">
-        <ArrowLeft aria-hidden size={16} />
+        <ChevronLeft aria-hidden size={16} />
         {isNurse ? t('visit.back') : t('visit.backToReview')}
       </Link>
       {!data ? (
@@ -98,11 +98,11 @@ export function VisitDetailPage() {
 
             <dl className="flex flex-wrap gap-x-8 gap-y-3 border-b border-line pb-4">
               <div>
-                <dt className="text-sm text-muted">{t('visit.nextReassess')}</dt>
+                <dt className="eyebrow">{t('visit.nextReassess')}</dt>
                 <dd className="font-semibold"><CountdownChip due={data.visit.staff_reassess_due_at} now={now} /></dd>
               </div>
               <div>
-                <dt className="text-sm text-muted">{t('visit.nextPrompt')}</dt>
+                <dt className="eyebrow">{t('visit.nextPrompt')}</dt>
                 <dd>
                   {data.visit.app_exclusion
                     ? t('time.notApplicable')
@@ -140,8 +140,8 @@ export function VisitDetailPage() {
 function Field({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd>{value}</dd>
+      <dt className="eyebrow">{label}</dt>
+      <dd className="mt-0.5 text-[1.0625rem]">{value}</dd>
     </div>
   )
 }

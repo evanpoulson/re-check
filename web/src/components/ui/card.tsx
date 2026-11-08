@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
 
-/** A white reading surface. Separated by a rule and space, with no shadow. */
+/** A white reading surface on the grey canvas: large radius, a soft shadow and no border. */
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn('rounded-data border border-line bg-surface p-5', className)} {...props} />
+  return <div className={cn('rounded-card bg-surface p-6 shadow-card', className)} {...props} />
 }

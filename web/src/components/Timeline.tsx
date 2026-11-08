@@ -15,12 +15,12 @@ export function Timeline({ entries }: { entries: TimelineEntry[] }) {
   const { t } = useTranslation()
   if (entries.length === 0) return <p className="text-muted">{t('timeline.empty')}</p>
   return (
-    <ol className="space-y-3 border-l-4 border-ink pl-4">
+    <ol className="relative space-y-4 pl-6 before:absolute before:inset-y-1.5 before:left-[5px] before:w-px before:bg-line">
       {entries.map((e, i) => (
         <li key={i} className="relative">
-          <span aria-hidden className="absolute -left-[1.55rem] top-1.5 size-3 bg-ink" />
-          <div className="tabular text-sm text-muted">{clock(stamp(e))}</div>
-          <div>{describe(e, t)}</div>
+          <span aria-hidden className="absolute -left-6 top-1.5 size-[11px] rounded-full border-2 border-surface bg-brand-500 ring-1 ring-line" />
+          <div className="tabular text-xs font-medium text-muted">{clock(stamp(e))}</div>
+          <div className="text-[0.9375rem]">{describe(e, t)}</div>
         </li>
       ))}
     </ol>

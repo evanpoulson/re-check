@@ -1,39 +1,50 @@
 @import 'tailwindcss';
 
-/* Reusable review-flow tokens; see docs/design/review-flow.md. */
+/*
+  Design tokens, after apple.com: the system font (SF Pro on Apple devices), a quiet
+  grey canvas with white cards, near-black text, one blue for actions and links, and
+  translucent "glass" bars. Status is still shown by text, icon and shape as well as
+  colour, and there is no green for "fine": reassurance is never encoded as a colour.
+  Every text and background pair here passes 4.5:1.
+
+  Shape encodes meaning: pills are things you tap, 18px cards hold content, and the
+  small radius is for data chips.
+*/
 @theme {
-  --font-sans: 'Atkinson Hyperlegible Next Variable', 'Noto Sans Gurmukhi', system-ui, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Segoe UI', 'Noto Sans Gurmukhi', system-ui, sans-serif;
 
-  /* Signage navy: text and primary actions. */
-  --color-ink: #24343b;
-  /* Lane grey: secondary text (5.9:1 on the canvas). */
-  --color-muted: #59686c;
-  /* Chinook mist: the page. Pure white is kept for the panels people read and answer on. */
-  --color-canvas: #f5f6f4;
+  /* Near-black text (15:1 on the canvas). */
+  --color-ink: #1d1d1f;
+  /* Secondary text (4.7:1 on the canvas, 5.1:1 on white). */
+  --color-muted: #6e6e73;
+  /* The page. Pure white is kept for the cards people read and answer on. */
+  --color-canvas: #f5f5f7;
   --color-surface: #ffffff;
-  --color-line: #dce2df;
+  --color-line: #d2d2d7;
 
-  /* Signal blue: links, focus and the edge of a selected answer. */
-  --color-brand-50: #edf3f5;
-  --color-brand-100: #dae8ed;
-  --color-brand-500: #38748e;
-  --color-brand-600: #28627c;
-  --color-brand-700: #22546a;
+  /* Apple blue: actions, links, focus and the edge of a selected answer. */
+  --color-brand-50: #e8f1fc;
+  --color-brand-100: #d0e4fa;
+  --color-brand-500: #0071e3;
+  --color-brand-600: #0066cc;
+  --color-brand-700: #0058b0;
 
-  --color-level-red: #a61b14;
-  --color-level-red-bg: #fbefed;
-  --color-level-amber: #7a4f00;
-  --color-level-amber-bg: #faf2df;
-  --color-level-silent: #61616d;
-  --color-level-silent-bg: #f0f0f3;
-  --color-level-leave: #9a3a06;
-  --color-level-leave-bg: #faf0e8;
-  --color-level-overdue: #3d4c5c;
-  --color-level-overdue-bg: #edf0ef;
+  --color-level-red: #d70015;
+  --color-level-red-bg: #ffebee;
+  --color-level-amber: #8a5300;
+  --color-level-amber-bg: #fff4d6;
+  --color-level-silent: #6e3fc8;
+  --color-level-silent-bg: #f3edfc;
+  --color-level-leave: #b14300;
+  --color-level-leave-bg: #fff0e3;
+  --color-level-overdue: #48484a;
+  --color-level-overdue-bg: #ececf0;
 
-  /* Radius encodes meaning: small on data, large only on things you tap. */
   --radius-data: 8px;
-  --radius-tap: 8px;
+  --radius-card: 18px;
+  --radius-tap: 980px;
+
+  --shadow-card: 0 2px 12px rgb(0 0 0 / 0.06);
 }
 
 @layer base {
@@ -42,17 +53,62 @@
     color: var(--color-ink);
     background: var(--color-canvas);
     font-feature-settings: 'tnum' 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    letter-spacing: -0.01em;
   }
   body {
     margin: 0;
     min-height: 100dvh;
   }
+  h1,
+  h2 {
+    letter-spacing: -0.02em;
+  }
   :focus-visible {
-    outline: 3px solid var(--color-brand-600);
+    outline: 3px solid rgb(0 113 227 / 0.6);
     outline-offset: 2px;
   }
   .tabular {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  /* Translucent bar, as in apple.com's navigation. */
+  .glass {
+    background: rgb(251 251 253 / 0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+  }
+  /* A form field: white, hairline border, blue ring on focus. */
+  .field {
+    min-height: 2.75rem;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface);
+    padding-inline: 0.875rem;
+    font-size: 1rem;
+    transition: border-color 150ms, box-shadow 150ms;
+  }
+  .field:focus-visible {
+    outline: none;
+    border-color: var(--color-brand-500);
+    box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
+  }
+  /* "Lead phrase. Grey continuation." headings. */
+  .headline-split > em {
+    font-style: normal;
+    color: var(--color-muted);
+  }
+  /* Small uppercase eyebrow above a title, as in "NEW" on apple.com. */
+  .eyebrow {
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--color-muted);
   }
 }
 
@@ -68,7 +124,7 @@
     align-items: center;
     font-size: 25px;
     letter-spacing: -1px;
-    font-weight: 750;
+    font-weight: 600;
   }
   .brand-mark {
     display: grid;
@@ -83,14 +139,20 @@
   .brand-period {
     color: var(--color-brand-600);
   }
+  /* The redesign's sticky glass bar. */
   .staff-header {
-    min-height: 62px;
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    min-height: 56px;
     display: flex;
     gap: 22px;
     align-items: center;
-    padding: 8px 32px;
-    border-bottom: 1px solid var(--color-line);
-    background: white;
+    padding: 6px 32px;
+    border-bottom: 1px solid rgb(210 210 215 / 0.7);
+    background: rgb(251 251 253 / 0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
   }
   .staff-header nav {
     display: flex;
@@ -101,14 +163,13 @@
     gap: 8px;
     align-items: center;
     min-height: 44px;
-    padding: 8px 14px;
-    border-radius: 6px;
-    color: var(--color-muted);
-    font-size: 15px;
+    padding: 8px 12px;
+    color: rgb(29 29 31 / 0.8);
+    font-size: 0.875rem;
+    transition: color 150ms;
   }
   .staff-nav-link:hover,
   .staff-nav-link.is-active {
-    background: var(--color-brand-50);
     color: var(--color-ink);
   }
   .staff-nav-link.is-active {
@@ -138,16 +199,16 @@
     font-size: 34px;
     line-height: 1.15;
     letter-spacing: -0.9px;
-    font-weight: 650;
+    font-weight: 600;
   }
   .page-heading p {
     margin-top: 8px;
     color: var(--color-muted);
   }
   .review-surface {
-    background: white;
-    border: 1px solid var(--color-line);
-    border-radius: 10px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
     overflow: clip;
   }
   .list-toolbar {
@@ -162,20 +223,20 @@
     gap: 4px;
     padding: 3px;
     background: var(--color-canvas);
-    border-radius: 7px;
+    border-radius: var(--radius-tap);
   }
   .filter-group button {
     min-height: 44px;
     padding: 6px 12px;
     font-size: 14px;
-    border-radius: 5px;
+    border-radius: var(--radius-tap);
     cursor: pointer;
     white-space: nowrap;
   }
   .filter-group button[aria-pressed='true'] {
     background: white;
     color: var(--color-ink);
-    box-shadow: 0 1px 3px #24343b18;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
     font-weight: 600;
   }
   .search-field {
@@ -216,7 +277,7 @@
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    font-weight: 650;
+    font-weight: 600;
   }
   .task-label::before {
     content: '';
@@ -295,9 +356,13 @@
     gap: 8px;
     align-items: center;
     min-height: 44px;
-    font-size: 14px;
-    color: var(--color-muted);
+    font-size: 0.9375rem;
+    color: var(--color-brand-600);
     margin-bottom: 16px;
+  }
+  .back-link:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
   }
   .visit-heading {
     display: flex;
@@ -309,7 +374,7 @@
   .visit-heading h1 {
     font-size: 32px;
     line-height: 1.2;
-    font-weight: 650;
+    font-weight: 600;
     letter-spacing: -0.6px;
   }
   .visit-heading p {
@@ -318,9 +383,9 @@
   }
   .concern-panel {
     padding: 28px;
-    background: white;
-    border: 1px solid var(--color-line);
-    border-radius: 8px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
   }
   .concern-panel h2 {
     font-size: 28px;
@@ -353,27 +418,12 @@
     margin-bottom: 16px;
   }
   .patient-shell {
-    max-width: 496px;
     min-height: 100dvh;
-    margin: auto;
-    padding: 24px 24px 40px;
+    padding-bottom: 40px;
     font-size: 18px;
   }
   .patient-shell.has-dock {
     padding-bottom: calc(142px + env(safe-area-inset-bottom));
-  }
-  .patient-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 32px;
-  }
-  .patient-header select {
-    border: 0;
-    background: transparent;
-    font-size: 16px;
-    font-weight: 500;
   }
   .patient-context {
     color: var(--color-muted);
@@ -397,8 +447,11 @@
     letter-spacing: -0.6px;
   }
   .patient-checkin-card {
-    margin-top: 16px;
-    margin-top: 28px;
+    margin-top: 20px;
+    padding: 20px;
+    background: var(--color-surface);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
   }
   .patient-checkin-card h2 {
     font-size: 21px;
@@ -413,32 +466,36 @@
     display: flex;
     justify-content: space-between;
     gap: 12px;
-    padding-top: 20px;
-    margin-top: 24px;
+    padding-top: 16px;
+    margin-top: 16px;
     border-top: 1px solid var(--color-line);
     font-size: 15px;
     color: var(--color-muted);
   }
+  /* Compact version of the redesign's glass help bar. */
   .patient-dock {
     position: fixed;
     inset: auto 0 0;
     z-index: 10;
-    background: var(--color-canvas);
-    border-top: 1px solid var(--color-line);
-    padding: 6px 16px max(6px, env(safe-area-inset-bottom));
+    background: rgb(251 251 253 / 0.8);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    backdrop-filter: saturate(180%) blur(20px);
+    border-top: 1px solid rgb(210 210 215 / 0.7);
+    padding: 8px 16px max(8px, env(safe-area-inset-bottom));
   }
   .patient-dock-inner {
     max-width: 448px;
     margin: auto;
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 3px 8px;
+    gap: 6px 8px;
   }
   .patient-dock button {
     min-height: 44px;
-    padding: 5px 6px;
-    border-radius: 6px;
+    padding: 5px 10px;
+    border-radius: var(--radius-tap);
     font-size: 14px;
+    font-weight: 500;
     line-height: 1.2;
   }
   .patient-help {
@@ -446,18 +503,23 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    color: var(--color-level-red);
-    border: 1px solid var(--color-level-red);
-    font-weight: 650;
+    color: white;
+    background: var(--color-level-red);
+    font-weight: 600;
   }
   .patient-help:hover {
-    background: var(--color-level-red-bg);
+    background: color-mix(in srgb, var(--color-level-red), black 15%);
+  }
+  .patient-help-secondary {
+    color: var(--color-brand-600);
+    background: var(--color-surface);
+    border: 1px solid var(--color-brand-500);
   }
   .patient-help-secondary:hover {
     background: var(--color-brand-50);
   }
   .patient-dock button:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
   }
   .question-progress {
@@ -571,13 +633,6 @@
   .concern-panel {
     padding: 20px;
   }
-  .patient-shell {
-    padding-inline: 20px;
-    padding-top: 20px;
-  }
-  .patient-header {
-    margin-bottom: 24px;
-  }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -601,7 +656,7 @@ html:has(.patient-shell.has-dock) {
   border-radius: 4px;
 }
 .question-progress progress::-webkit-progress-value {
-  background: var(--color-brand-700);
+  background: var(--color-brand-500);
   border-radius: 4px;
 }
 .question-progress progress {

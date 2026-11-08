@@ -30,13 +30,13 @@ export function Sparkline({ trend, width = 96, height = 28 }: { trend: TrendPoin
     : t('sparkline.none')
 
   return (
-    <svg role="img" aria-label={label} width={width} height={height} className="text-brand-600">
+    <svg role="img" aria-label={label} width={width} height={height} className="text-brand-500">
       {segments.map((pts) => (
         <polyline key={pts} points={pts} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
       ))}
       {trend.map((p, i) =>
         p.pain === null ? (
-          <line key={i} x1={pad + i * step} x2={pad + i * step} y1={height - 8} y2={height - 3} stroke="#94a3b8" strokeWidth="2" strokeDasharray="1 2" />
+          <line key={i} x1={pad + i * step} x2={pad + i * step} y1={height - 8} y2={height - 3} stroke="var(--color-muted)" strokeWidth="2" strokeDasharray="1 2" />
         ) : (
           <circle key={i} cx={pad + i * step} cy={y(p.pain)} r="2.5" fill="currentColor" />
         ),

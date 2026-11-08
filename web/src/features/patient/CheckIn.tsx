@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, CircleAlert, CircleCheckBig, Clock, OctagonAlert } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
@@ -84,11 +84,11 @@ export function CheckIn() {
     const signedOut = error instanceof ApiError && error.status === 401
     return (
       <PatientLayout>
-        <Card role="alert" className="space-y-2">
-          <h1 className="text-[1.75rem] font-extrabold leading-tight">
+        <Card role="alert" className="space-y-2 text-center">
+          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
             {t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}
           </h1>
-          <p>{t(signedOut ? 'exchange.signedOut.help' : 'exchange.askDesk')}</p>
+          <p className="text-muted">{t(signedOut ? 'exchange.signedOut.help' : 'exchange.askDesk')}</p>
         </Card>
       </PatientLayout>
     )
@@ -175,7 +175,10 @@ export function CheckIn() {
       dock={urgentVisible ? undefined : { onConcern: concern, onLeaving: () => setView({ name: 'confirmLeave' }), disabled: sending }}
     >
       {urgent && (
-        <section className="space-y-4" aria-labelledby="urgent-heading">
+        <section className="space-y-4 rounded-card bg-surface p-6 text-center shadow-card ring-2 ring-level-red" aria-labelledby="urgent-heading">
+          <span aria-hidden className="mx-auto flex size-16 items-center justify-center rounded-full bg-level-red-bg text-level-red">
+            <OctagonAlert className="size-8" />
+          </span>
           <h1 ref={urgentHeading} tabIndex={-1} id="urgent-heading" className="text-level-red">
             {t('urgent.title')}
           </h1>
@@ -191,7 +194,7 @@ export function CheckIn() {
           )}
           {urgent.status !== 'sending' && (
             <div className="grid gap-2">
-              <Button size="lg" className="w-full" onClick={() => setUrgent(null)}>
+              <Button size="lg" variant="danger" className="w-full" onClick={() => setUrgent(null)}>
                 {t('urgent.telling')}
               </Button>
               {urgent.followUps.length > 0 && (
@@ -208,10 +211,8 @@ export function CheckIn() {
       )}
       <div ref={content} className="space-y-5" hidden={urgentVisible}>
         {failed && (
-          <p
-            role="alert"
-            className="rounded-data border-l-8 border-level-red bg-level-red-bg p-3 font-bold text-level-red"
-          >
+          <p role="alert" className="flex items-start gap-2 rounded-card bg-level-red-bg px-5 py-3 font-semibold text-level-red">
+            <CircleAlert aria-hidden className="mt-0.5 size-5 shrink-0" />
             {t('patient.sendFailed')}
           </p>
         )}
@@ -258,7 +259,7 @@ export function CheckIn() {
 
         {view.name === 'confirmLeave' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-extrabold leading-tight">{t('leaving.title')}</h1>
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
             <p>{t('leaving.info')}</p>
             <Button
               size="lg"
@@ -283,7 +284,7 @@ export function CheckIn() {
 
         {view.name === 'desk' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-extrabold leading-tight">
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
               {view.queued ? t('sent.queuedTitle') : t('desk.title')}
             </h1>
             <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
@@ -296,12 +297,23 @@ export function CheckIn() {
 
         {view.name === 'sent' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-extrabold leading-tight">
+            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
               {view.queued ? t('sent.queuedTitle') : t('sent.title')}
             </h1>
             <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
             {/* Never "all clear": staff still check on their own schedule. */}
             <p className="text-base text-muted">{t('sent.stillChecking')}</p>
+            {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
+            <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
+              <li className="flex items-center gap-2">
+                <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
+                {t('sent.reported')}
+              </li>
+              <li className={view.queued ? 'flex items-center gap-2 text-muted' : 'flex items-center gap-2'}>
+                {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />}
+                {view.queued ? t('sent.waiting') : t('sent.received')}
+              </li>
+            </ol>
             <Button size="lg" className="w-full" onClick={() => setView({ name: 'home' })}>
               {t('sent.back')}
             </Button>
@@ -317,7 +329,7 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
   return (
     <div>
       <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.title')}</h1>
-      {home.message !== 'none' && <p className="mt-3 text-base text-muted">{t(`message.${home.message}`)}</p>}
+      {home.message !== 'none' && <p className="mt-3 rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
       <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
         <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
           {t('patient.startCheckin')}
@@ -391,7 +403,7 @@ function ReportChange({
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
     <section aria-labelledby="change" className="space-y-4">
-      <h1 id="change" className="text-[1.75rem] font-extrabold leading-tight">
+      <h1 id="change" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
         {text('new_findings', home.role)}
       </h1>
       <div className="grid gap-3">

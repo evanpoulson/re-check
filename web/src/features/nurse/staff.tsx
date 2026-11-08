@@ -3,6 +3,7 @@ import { Navigate, NavLink, Outlet, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
+import { DemoBadge } from '@/components/DemoBadge'
 import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -86,7 +87,8 @@ export function StaffLayout() {
           )}
         </nav>
         <div className="staff-identity">
-          <span>{t('nav.synthetic')}</span>
+          <DemoBadge />
+          <span className="hidden sm:inline">{t(`role.${role}`)}</span>
           <Button variant="ghost" aria-label={t('nav.changeRole')} onClick={() => {
             signOut()
             navigate('/staff/sign-in')

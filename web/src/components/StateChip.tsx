@@ -23,7 +23,7 @@ export function StateChip({ condition }: { condition: Condition }) {
   const { icon: Icon, cls } = STYLE[condition]
   const label = condition === 'unknown' ? t('condition.unknown') : optionLabel('feeling_change', condition)
   return (
-    <span className={cn('inline-flex items-center gap-1 rounded-data px-2 py-0.5 text-sm font-bold', cls)}>
+    <span className={cn('inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[0.8125rem] font-semibold whitespace-nowrap', cls)}>
       <Icon aria-hidden className="size-4" />
       {label}
     </span>
