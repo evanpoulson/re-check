@@ -1,6 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import type { BoardRow, TriageBoard, Worklist, WorklistRow } from '@/api/types'
-import { appNotOffered, applyFilters, conditionOf, countByLevel, feelingNowOf, joinBoard, needsReview, sortQueue, sortRows } from './board'
+import {
+  NO_FILTERS,
+  activeColumns,
+  appNotOffered,
+  applyFilters,
+  columnValues,
+  conditionOf,
+  countByLevel,
+  countChoices,
+  feelingNowOf,
+  isFiltered,
+  joinBoard,
+  sortQueue,
+  sortRows,
+  toggleChoice,
+} from './board'
 
 const iso = (min: number) => new Date(Date.UTC(2026, 10, 7, 18, 0) - min * 60_000).toISOString()
 
@@ -104,13 +119,46 @@ describe('board', () => {
     expect(appNotOffered(excluded.work)).toBe(true)
   })
 
-  it('counts by level and filters', () => {
+  it('counts by level and filters by level', () => {
     const [b, w] = toApi([row('a', 2, 40, 'red'), row('b', 3, 30, 'amber'), row('c', 3, 20)])
     const items = sortQueue(joinBoard(b, w))
     expect(countByLevel(items)).toMatchObject({ red: 1, amber: 1, silent: 0 })
-    expect(applyFilters(items, { needsReview: true, ctas: null, complaint: null }).map((i) => i.board.visit_id)).toContain('a')
-    expect(applyFilters(items, { needsReview: false, ctas: 3, complaint: null })).toHaveLength(2)
-    expect(applyFilters(items, { needsReview: false, ctas: null, complaint: null, level: 'amber' }).map((i) => i.board.visit_id)).toEqual(['b'])
+    expect(applyFilters(items, NO_FILTERS)).toHaveLength(3)
+    expect(applyFilters(items, { ...NO_FILTERS, level: 'amber' }).map((i) => i.board.visit_id)).toEqual(['b'])
+  })
+
+  it('column filters are "any of" within a column and "and" across columns', () => {
+    const [b, w] = toApi([row('a', 2, 40, 'red'), row('b', 3, 30, 'amber'), row('c', 4, 20)])
+    b.rows[2]!.complaint_group = 'head_injury'
+    const items = sortQueue(joinBoard(b, w))
+    const ids = (f: Parameters<typeof applyFilters>[1]) => applyFilters(items, f).map((i) => i.board.visit_id)
+    let f = toggleChoice(NO_FILTERS, 'ctas', '2')
+    f = toggleChoice(f, 'ctas', '4')
+    expect(ids(f)).toEqual(['a', 'c'])
+    expect(ids(toggleChoice(f, 'complaint', 'general'))).toEqual(['a'])
+    // Turning a choice off again removes it; an empty column is not a filter.
+    expect(activeColumns(toggleChoice(toggleChoice(NO_FILTERS, 'ctas', '2'), 'ctas', '2'))).toEqual([])
+    expect(isFiltered(NO_FILTERS)).toBe(false)
+    expect(isFiltered(f)).toBe(true)
+    expect(isFiltered({ ...NO_FILTERS, level: 'red' })).toBe(true)
+  })
+
+  it('a row matches each flag its chips show, and "none" only when it shows none', () => {
+    const quiet = row('q', 3, 1)
+    const silent = row('s', 3, 1, null, { prompt_overdue: true, leave_risk: true })
+    const overdue = { ...row('o', 3, 1, 'amber'), board: { ...row('o', 3, 1, 'amber').board, reassess_overdue: true } }
+    const excluded = row('x', 3, 1, null, { silent: true })
+    excluded.work.visit.app_exclusion = 'child'
+    expect(columnValues('flags', quiet)).toEqual(['none'])
+    expect(columnValues('flags', silent).sort()).toEqual(['leave_risk', 'silent'])
+    expect(columnValues('flags', overdue).sort()).toEqual(['amber', 'overdue'])
+    // An excluded patient is watched by staff, never "No response".
+    expect(columnValues('flags', excluded)).toEqual(['app_not_offered'])
+    expect(columnValues('ref', excluded)).toEqual(['no_app'])
+    expect(columnValues('ref', quiet)).toEqual(['none'])
+    expect(columnValues('lastCheckin', quiet)).toEqual(['none'])
+    expect(columnValues('condition', quiet)).toEqual(['unknown'])
+    expect(countChoices([quiet, silent, excluded], 'flags')).toMatchObject({ none: 1, silent: 1, leave_risk: 1, app_not_offered: 1, red: 0 })
   })
 
   it('sorts manually without changing queue order', () => {
@@ -119,12 +167,5 @@ describe('board', () => {
     expect(sortRows(queue, 'place')).toBe(queue)
     expect(sortRows(queue, 'waiting').map((i) => i.board.visit_id)).toEqual(['b', 'c', 'a'])
     expect(queue.map((i) => i.board.visit_id)).toEqual(['a', 'b', 'c'])
-  })
-
-  it('needs review for an overdue prompt or reassessment even without a task', () => {
-    expect(needsReview(row('a', 3, 1, null, { prompt_overdue: true }))).toBe(true)
-    const calm = row('a', 3, 1)
-    expect(needsReview(calm)).toBe(false)
-    expect(needsReview({ board: { ...calm.board, reassess_overdue: true }, work: calm.work })).toBe(true)
   })
 })

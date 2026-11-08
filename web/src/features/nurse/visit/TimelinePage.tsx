@@ -171,9 +171,10 @@ function WhyFlagged({ task, entries }: { task: Task; entries: TimelineEntry[] })
           <div key={i} className="space-y-3">
             {i > 0 && <Divider />}
             {reports.map((r) => (
-              <div key={r.report_id} className={cn('space-y-1.5 rounded-data border-l-4 bg-canvas p-3.5', LEVEL_STYLE[reason.level].edge)}>
+              <div key={r.report_id} className={cn('space-y-1.5 rounded-data border border-l-4 p-3.5', LEVEL_STYLE[reason.level].tone)}>
                 <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small font-semibold">
-                  <LevelChip level={reason.level} />
+                  {/* On the level's tint the chip sits on white, so it still reads as a chip. */}
+                  <LevelChip level={reason.level} className="bg-surface" />
                   {t(`reporter.${r.report.reporter}`)} · {clock(r.received_at)}
                 </p>
                 <p className="font-semibold">{reportSummary(r.report, t)}</p>

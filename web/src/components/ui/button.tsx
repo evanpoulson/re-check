@@ -14,7 +14,7 @@ const button = cva(
         ghost: 'text-brand-600 hover:underline underline-offset-4',
       },
       size: {
-        md: 'min-h-11 px-5 text-lead',
+        md: 'min-h-11 px-5 text-button',
         lg: 'min-h-14 px-6 text-lead',
       },
     },

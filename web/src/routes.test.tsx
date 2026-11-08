@@ -24,6 +24,7 @@ import { translations } from './api/bank'
 import { ApiError, newSubmissionId } from './api/client'
 import { endpoints } from './api/endpoints'
 import { server } from './api/mocks/server'
+import { demoVisitId } from './api/mocks/store'
 import type { CheckinReport, PatientReport } from './api/types'
 import './i18n'
 import esUi from './i18n/es.json'
@@ -57,6 +58,10 @@ const common = (reporter: 'patient' | 'companion' = 'patient') => ({
 })
 const visitWhere = async (pred: (r: Awaited<ReturnType<typeof getWorklist>>['rows'][number]) => boolean) =>
   (await getWorklist()).rows.find(pred)!.visit
+/** A seeded demo visit by case name, as in `demo-<case>-token`. */
+const demoVisit = (ref: string) => visitWhere((r) => r.visit.visit_id === demoVisitId(ref))
+/** The board row showing this visit's reference. */
+const boardRow = (rows: HTMLElement[], visitId: string) => rows.find((r) => r.textContent?.includes(`P-${visitId.slice(0, 4)}`))!
 
 function checkin(over: Partial<CheckinReport> & Pick<CheckinReport, 'reporter'>, version: string): PatientReport {
   const companion = over.reporter === 'companion'
@@ -108,7 +113,8 @@ describe('staff sign-in', () => {
     renderApp('/staff/physician')
     const nav = await screen.findByRole('navigation', { name: 'Staff' })
     expect(within(nav).getByRole('link', { name: /Triage board/ })).toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /New visit/ })).toBeInTheDocument()
+    // New visit is a sheet opened from the board, not a page of its own.
+    expect(within(nav).queryByRole('link', { name: /New visit/ })).not.toBeInTheDocument()
     expect(within(nav).getByRole('link', { name: /Physician worklist/ })).toBeInTheDocument()
   })
 
@@ -178,7 +184,7 @@ describe('charge nurse', () => {
 
   it('may acknowledge, record vitals and manage the visit, but not flag higher (the API is triage nurse only)', async () => {
     signInAsCharge()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}/assessment`)
     expect(await screen.findByRole('link', { name: 'Back to escalations' })).toBeInTheDocument()
@@ -203,6 +209,9 @@ describe('triage nurse: enrolment and QR', () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
+    // The old address opens the board with the New visit sheet over it.
+    const sheet = await screen.findByRole('dialog', { name: 'New visit' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Triage board' })).toBeInTheDocument()
 
     // CTAS defaults to 2 (#56), so a pager with no number is the missing field here.
     await user.click(await screen.findByRole('radio', { name: 'Pager' }))
@@ -217,7 +226,8 @@ describe('triage nurse: enrolment and QR', () => {
     await user.click(screen.getByRole('radio', { name: '3' }))
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
 
-    expect(await screen.findByRole('heading', { name: 'Visit created' })).toBeInTheDocument()
+    expect(await within(sheet).findByRole('heading', { name: 'Visit created' })).toHaveFocus()
+    expect(screen.getByRole('dialog', { name: 'Visit created' })).toBe(sheet)
     expect(screen.getByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
     const links = screen.getAllByText(/\/v\//)
     expect(links).toHaveLength(1)
@@ -226,7 +236,7 @@ describe('triage nurse: enrolment and QR', () => {
 
   it('the visit shows who is signed in and can show the same QR again', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
+    const visit = await demoVisit('confused')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
     expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(1) // once, beside the sign-out action
@@ -243,7 +253,7 @@ describe('triage nurse: enrolment and QR', () => {
 
   it('splits the visit into four pages and keeps the concern and both clocks on each', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}`)
     const tabs = await screen.findByRole('navigation', { name: 'Visit pages' })
@@ -265,7 +275,7 @@ describe('triage nurse: enrolment and QR', () => {
 
   it('lets the triage nurse acknowledge an urgent report routed to the physician, from the overview', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     expect((await getVisitDetail(visit.visit_id)).open_task?.routed_to).not.toContain('triage_nurse')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}`)
@@ -277,7 +287,7 @@ describe('triage nurse: enrolment and QR', () => {
 
   it('will not stop the app until a reason is chosen and the change is confirmed', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
     const stop = await screen.findByRole('button', { name: 'Stop offering the app' })
@@ -353,22 +363,27 @@ describe('triage board', () => {
     renderApp('/staff/triage')
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
-    expect(rows).toHaveLength(5)
-    // CTAS 2 first, then CTAS 3 by arrival, then CTAS 4.
-    const order = ['Chest or back pain', 'Head injury', 'Other complaint', 'Confused or drowsy', 'Other complaint']
+    const order = await queue()
+    expect(rows).toHaveLength(order.length)
+    // CTAS first, then arrival: the numeral is the place in line, whatever the flags.
     rows.forEach((r, i) => {
-      expect(r).toHaveTextContent(order[i]!)
+      expect(r).toHaveTextContent(`P-${order[i]!.slice(0, 4)}`)
       expect(within(r).getByRole('rowheader')).toHaveTextContent(String(i + 1))
     })
+    const ctas = (await getTriageBoard()).rows.map((b) => [b.visit_id, b.ctas] as const)
+    const ctasInOrder = order.map((id) => ctas.find(([v]) => v === id)![1])
+    expect(ctasInOrder).toEqual([...ctasInOrder].sort((a, b) => a - b))
+    // The CTAS 2 chest pain visit arrived first, so it is first in line.
+    expect(rows[0]).toHaveTextContent('Chest or back pain')
     expect(rows[0]).toHaveTextContent('Red')
-    expect(rows[1]).toHaveTextContent('Silent')
+    expect(boardRow(rows, demoVisitId('head'))).toHaveTextContent('Silent')
   })
 
   it('an excluded patient shows "App not offered", not applicable for check-ins, and is never "No response"', async () => {
     signInAsNurse()
     renderApp('/staff/triage')
     const rows = within(await screen.findByRole('table')).getAllByRole('row').slice(1)
-    const child = rows[4]!
+    const child = boardRow(rows, demoVisitId('child'))
     expect(child).toHaveTextContent(/App not offered\s*Child/)
     expect(child).toHaveTextContent('Not applicable')
     expect(child).not.toHaveTextContent('No response')
@@ -377,15 +392,123 @@ describe('triage board', () => {
   it('a new flag shows a badge but never moves a row or its numeral', async () => {
     signInAsNurse()
     const before = await queue()
+    const general = demoVisitId('general')
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     await postReport({ kind: 'concern', concern: 'help_now', ...common() })
     expect(await queue()).toEqual(before)
 
     renderApp('/staff/triage')
     const rows = within(await screen.findByRole('table')).getAllByRole('row').slice(1)
-    expect(rows[2]).toHaveTextContent('Other complaint')
-    expect(rows[2]).toHaveTextContent('Red')
-    expect(within(rows[2]!).getByRole('rowheader')).toHaveTextContent('3')
+    const row = boardRow(rows, general)
+    expect(rows.indexOf(row)).toBe(before.indexOf(general))
+    expect(row).toHaveTextContent('Other complaint')
+    expect(row).toHaveTextContent('Red')
+    expect(within(row).getByRole('rowheader')).toHaveTextContent(String(before.indexOf(general) + 1))
+  })
+
+  it('filters by column from header menus, keeps place in line, and clears', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = await screen.findByRole('table')
+    const total = within(table).getAllByRole('row').length - 1
+    const order = await queue()
+
+    const complaint = within(table).getByRole('button', { name: 'Complaint' })
+    expect(complaint).toHaveAttribute('aria-haspopup', 'menu')
+    expect(complaint).toHaveAttribute('aria-expanded', 'false')
+    await user.click(complaint)
+    expect(complaint).toHaveAttribute('aria-expanded', 'true')
+    const menu = screen.getByRole('menu', { name: 'Filter by Complaint' })
+    // Focus starts on the first choice; arrows move, Space toggles and the menu stays open.
+    expect(within(menu).getAllByRole('menuitemcheckbox')[0]).toHaveFocus()
+    await user.keyboard('{ArrowDown}{ArrowDown}')
+    const head = within(menu).getByRole('menuitemcheckbox', { name: /Head injury/ })
+    expect(head).toHaveFocus()
+    await user.keyboard(' ')
+    expect(head).toHaveAttribute('aria-checked', 'true')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(complaint).toHaveFocus()
+    expect(complaint).toHaveAccessibleDescription('Filtered: 1 choice.')
+
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.length).toBeLessThan(total)
+    for (const r of rows) {
+      expect(r).toHaveTextContent('Head injury')
+      // The numeral is still the place in the whole queue.
+      const id = order.find((v) => r.textContent!.includes(`P-${v.slice(0, 4)}`))!
+      expect(within(r).getByRole('rowheader')).toHaveTextContent(String(order.indexOf(id) + 1))
+    }
+    expect(screen.getByText(`Showing ${rows.length} of ${total} patients`)).toBeInTheDocument()
+
+    // Filters in two columns combine; each active filter shows as a removable chip.
+    await user.click(within(table).getByRole('button', { name: 'CTAS' }))
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /CTAS 2/ }))
+    await user.keyboard('{Escape}')
+    const active = screen.getByRole('list', { name: 'Active filters' })
+    expect(within(active).getByRole('button', { name: 'Remove filter Complaint: Head injury' })).toBeInTheDocument()
+    await user.click(within(active).getByRole('button', { name: 'Remove filter CTAS 2' }))
+    expect(within(table).getAllByRole('row').slice(1)).toHaveLength(rows.length)
+
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(within(table).getAllByRole('row')).toHaveLength(total + 1)
+    expect(screen.queryByRole('list', { name: 'Active filters' })).not.toBeInTheDocument()
+  })
+
+  it('a level card filters by its level and explains it in a tooltip', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = await screen.findByRole('table')
+    const red = screen.getByRole('button', { name: /^Red \d+$/ })
+    await user.click(red)
+    expect(red).toHaveAttribute('aria-pressed', 'true')
+    for (const r of within(table).getAllByRole('row').slice(1)) expect(r).toHaveTextContent('Red')
+    expect(screen.getByRole('button', { name: 'About Red' })).toHaveAccessibleDescription(/Urgent review/)
+    await user.click(red)
+    expect(red).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('New visit opens a sheet over the board that traps focus, closes on Escape and returns focus', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    await screen.findByRole('table')
+    const open = screen.getByRole('button', { name: 'New visit' })
+    expect(open).toHaveAttribute('aria-expanded', 'false')
+    await user.click(open)
+
+    const sheet = await screen.findByRole('dialog', { name: 'New visit' })
+    expect(sheet).toHaveAttribute('aria-modal', 'true')
+    expect(within(sheet).getByRole('heading', { name: 'New visit' })).toHaveFocus()
+    expect(document.title).toBe('New visit – Recheck')
+    // Tab wraps inside the sheet at both ends.
+    const close = within(sheet).getByRole('button', { name: 'Close' })
+    const submit = within(sheet).getByRole('button', { name: 'Create visit and QR code' })
+    submit.focus()
+    await user.tab()
+    expect(close).toHaveFocus()
+    await user.tab({ shift: true })
+    expect(submit).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+    expect(document.title).toBe('Triage board – Recheck')
+
+    // The round close button does the same.
+    await user.click(open)
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+  })
+
+  it('the charge nurse can open New visit too', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+    renderApp('/staff/visits/new')
+    expect(await screen.findByRole('dialog', { name: 'New visit' })).toBeInTheDocument()
   })
 })
 
@@ -461,7 +584,7 @@ describe('patient and companion check-in', () => {
   })
 
   it('a code for a closed visit is no longer active', async () => {
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     await updateVisitStatus(visit.visit_id, { submission_id: newSubmissionId(), status: 'roomed' })
     await expect(exchangeToken({ token: 'demo-general-token', role: 'patient' })).rejects.toMatchObject({ status: 410 })
   })
@@ -476,7 +599,7 @@ describe('patient and companion check-in', () => {
     await user.click(screen.getByRole('button', { name: 'Use this phone instead' }))
     expect(await screen.findByRole('heading', { name: 'Waiting room check-ins' })).toBeInTheDocument()
 
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
+    const visit = await demoVisit('confused')
     expect(visit.signed_in_as).toBe('patient')
     const sessions = (await getVisitDetail(visit.visit_id)).timeline.filter((e) => 'session_id' in e)
     expect(sessions).toEqual([
@@ -513,7 +636,7 @@ describe('patient and companion check-in', () => {
     await expect(postReport({ kind: 'concern', concern: 'help_now', ...common() })).rejects.toMatchObject({ status: 401 })
 
     await exchangeToken({ token: 'demo-general-token', role: 'companion' })
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     await staffSignOut(visit.visit_id, { submission_id: newSubmissionId() })
     await expect(getPatientHome()).rejects.toMatchObject({ status: 401 })
     expect((await getVisitDetail(visit.visit_id)).visit.signed_in_as).toBeNull()
@@ -589,7 +712,7 @@ describe('patient and companion check-in', () => {
     expect(await screen.findByRole('heading', { name: 'Thank you, we have your answers' })).toBeInTheDocument()
 
     // Staff see "shown but not answered", which is not "not shown".
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     const detail = await getVisitDetail(visit.visit_id)
     const last = [...detail.timeline].reverse().find((e) => 'report_id' in e && e.report.kind === 'checkin') as { report: CheckinReport }
     expect(last.report.attention).toMatchObject({ kind: 'missing', reason: 'unable_to_respond', prompt_id: expect.any(String) })
@@ -683,7 +806,7 @@ describe('the loop and the backend rules', () => {
   it('a "better" answer never cancels or raises a task, and "much worse" while feeling very poor raises red', async () => {
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     const home = await getPatientHome()
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, home.questionnaire_version))
     expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
     // Same weighting as rules.py (#50): "much worse" alone is amber; with "very poor" it is red.
@@ -708,7 +831,7 @@ describe('the loop and the backend rules', () => {
       const home = await getPatientHome()
       const prompt = home.attention_prompt!
       const circles = prompt.steps.filter((s) => s.shape === 'circle').length
-      const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+      const visit = await demoVisit('general')
 
       const answered = checkin({ reporter: 'patient', attention: { kind: 'answered', prompt_id: prompt.prompt_id, count: circles + 1 } }, home.questionnaire_version)
       await postReport(answered)
@@ -728,7 +851,7 @@ describe('the loop and the backend rules', () => {
       const prompt = home.attention_prompt!
       const circles = prompt.steps.filter((s) => s.shape === 'circle').length
       await postReport(checkin({ reporter: 'patient', attention: { kind: 'answered', prompt_id: prompt.prompt_id, count: circles } }, home.questionnaire_version))
-      const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+      const visit = await demoVisit('general')
       expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
     })
 
@@ -746,9 +869,9 @@ describe('the loop and the backend rules', () => {
     it('a patient response never moves the staff timer', async () => {
       await exchangeToken({ token: 'demo-general-token', role: 'companion' })
       const v = (await getPatientHome()).questionnaire_version
-      const before = (await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)).staff_reassess_due_at
+      const before = (await demoVisit('general')).staff_reassess_due_at
       await postReport(checkin({ reporter: 'companion' }, v))
-      expect((await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)).staff_reassess_due_at).toBe(before)
+      expect((await demoVisit('general')).staff_reassess_due_at).toBe(before)
     })
   })
 
@@ -773,7 +896,7 @@ describe('the loop and the backend rules', () => {
     it('stopping the app after enrolment signs the patient out, cannot be undone, and keeps the staff timer', async () => {
       await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       await getPatientHome()
-      const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+      const visit = await demoVisit('general')
 
       await updateVisitExclusion(visit.visit_id, { submission_id: newSubmissionId(), app_exclusion: 'major_trauma' })
       const after = (await getVisitDetail(visit.visit_id)).visit
@@ -788,32 +911,41 @@ describe('the loop and the backend rules', () => {
 describe('physician review flow', () => {
   it('shows ranked active concerns and filters acknowledged tasks', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
+    const routed = (await getWorklist()).rows.filter((r) => r.open_task?.routed_to.includes('physician'))
+    const acknowledged = routed.filter((r) => r.open_task!.status === 'acknowledged')
     const user = userEvent.setup()
     renderApp('/staff/physician')
     expect(await screen.findByRole('heading', { name: 'Physician worklist' })).toBeInTheDocument()
     const list = await screen.findByRole('list', { name: 'Review tasks' })
-    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
-    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('New chest pain reported')
+    // Physician-routed tasks only: the desk questions stay with the triage nurse.
+    expect(within(list).getAllByRole('listitem')).toHaveLength(routed.length)
+    expect(routed.length).toBeLessThan((await getWorklist()).rows.filter((r) => r.open_task).length)
+    // Red first, the longest-waiting red on top.
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('Asked for help now')
     await user.click(screen.getByRole('button', { name: /To assess/ }))
-    expect(await screen.findByText('No acknowledged tasks')).toBeInTheDocument()
+    const toAssess = await screen.findByRole('list', { name: 'Review tasks' })
+    await waitFor(() => expect(within(toAssess).getAllByRole('listitem')).toHaveLength(acknowledged.length))
+    expect(acknowledged.length).toBeGreaterThan(0)
+    expect(within(toAssess).queryByText('Asked for help now')).not.toBeInTheDocument()
   })
 
   it('offers "Clear search" when a search finds nothing', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
+    const routed = (await getWorklist()).rows.filter((r) => r.open_task?.routed_to.includes('physician'))
     const user = userEvent.setup()
     renderApp('/staff/physician')
     await screen.findByRole('list', { name: 'Review tasks' })
     await user.type(screen.getByRole('searchbox', { name: 'Find a visit or concern' }), 'zzz')
     expect(await screen.findByText('No matching visits')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Clear search' }))
-    expect(within(await screen.findByRole('list', { name: 'Review tasks' })).getAllByRole('listitem')).toHaveLength(2)
+    expect(within(await screen.findByRole('list', { name: 'Review tasks' })).getAllByRole('listitem')).toHaveLength(routed.length)
     expect(screen.getByRole('searchbox', { name: 'Find a visit or concern' })).toHaveFocus()
   })
 
   it('requires acknowledgement and an explicit disposition before completing an assessment', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     const user = userEvent.setup()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     renderApp(`/staff/visits/${visit.visit_id}/assessment`)
     const save = await screen.findByRole('button', { name: 'Record assessment' })
     await user.click(screen.getByRole('radio', { name: 'Tests ordered' }))
@@ -831,7 +963,7 @@ describe('physician review flow', () => {
 
   it('keeps visit management to nurses and sends a physician back to the overview', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
     const tabs = await screen.findByRole('navigation', { name: 'Visit pages' })
     expect(within(tabs).queryByRole('link', { name: 'Visit management' })).not.toBeInTheDocument()
@@ -849,7 +981,8 @@ describe('physician review flow', () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     await postReport({ kind: 'concern', concern: 'desk_question', ...common() })
-    const visit = await visitWhere((row) => row.open_task?.routed_to.length === 1 && row.open_task.routed_to[0] === 'triage_nurse')
+    const visit = await demoVisit('general')
+    expect((await getVisitDetail(visit.visit_id)).open_task?.routed_to).toEqual(['triage_nurse'])
     renderApp('/staff/physician')
     const list = await screen.findByRole('list', { name: 'Review tasks' })
     expect(list.querySelector(`a[href="/staff/visits/${visit.visit_id}"]`)).toBeNull()
@@ -859,7 +992,7 @@ describe('physician review flow', () => {
 
   it('attributes mock physician actions to the chosen demo role', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     const task = (await getVisitDetail(visit.visit_id)).open_task!
     const acknowledged = await acknowledgeTask(task.task_id, { submission_id: newSubmissionId() })
     expect(acknowledged.acknowledged_by?.role).toBe('physician')
