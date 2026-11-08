@@ -45,14 +45,14 @@ uv run python -m recheck.synthetic.load --tokens-out ../.seed-tokens.json   # lo
 - **Database role.** The loader runs in one transaction as `recheck_app`, with `app.actor = 'seed|synthetic-cohort'`. It needs the current `db/schema.sql`.
 - **QR tokens.** Each load generates random QR tokens. `--tokens-out` writes the patient links to a git-ignored file. Until the API encrypts tokens, the desk can't re-show seeded QRs.
 - **Demo cases** (`scenario` in the JSON):
-  - `chest-worsening`: red task, not yet acknowledged
-  - `companion-speech-live`: a companion signed in for the live speech-change report
-  - `head-injury-unanswered`: missed check-in, with the staff reassessment also overdue
-  - `companion-speech-done`: full loop to rooming
-  - `leave-intent`
-  - `pager-silent`
-  - `confused-takeover`: a second device takes over
-  - `desk-question`
+  - `chest_worsening`: red task, not yet acknowledged
+  - `companion_speech_live`: a companion signed in for the live speech-change report
+  - `head_injury_unanswered`: missed check-in, with the staff reassessment also overdue
+  - `companion_speech_done`: full loop to rooming
+  - `leave_intent`
+  - `pager_silent`
+  - `confused_takeover`: a second device takes over
+  - `desk_question`
   - three visits where the app isn't offered
 - **Generated visits.** The other 29 are generated. About 7% leave without being seen. That target comes from Alberta's 4.1–4.8% and Ottawa's 9.1%. Relative effects of triage level, age, arrival hour and ambulance come from NHAMCS 2019–2022, and the crowding effect from Ottawa.
 - **Sources.** `calibration.py` lists every number with its source. Values marked "demo assumption" are for the site to replace. This is not a validated risk model.
@@ -119,6 +119,15 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/sign-out` | triage or charge nurse | `StaffSignOut` → 204 |
 | `POST /api/session` | QR holder | `TokenExchange` → `SessionInfo` + HttpOnly `recheck_session` cookie; 409 `SignInConflict`, 404 unknown QR, 410 closed visit |
 | `POST /api/session/sign-out` | signed-in device | `SignOut` → 204, clears the cookie |
+| `GET /api/worklist` | physician or charge nurse | `Worklist`: waiting visits ranked by open task level (red first), then longest wait |
+| `GET /api/triage-board` | triage or charge nurse | `TriageBoard`: task colour and staff reassessment timers, no reasons |
+| `GET /api/visits/{id}` | triage nurse, physician or charge nurse | `VisitDetail`: reports, vitals, flags, sign-ins and task events, oldest first |
+| `POST /api/tasks/{id}/acknowledge` | triage nurse, physician or charge nurse | `AcknowledgeTask` → `Task`; 409 if already acknowledged |
+| `POST /api/tasks/{id}/assess` | triage nurse, physician or charge nurse | `AssessTask` → `Task`; needs acknowledgement first; restarts the staff timer; roomed, treated and released, left or not located also close the visit |
+| `POST /api/visits/{id}/vitals` | triage or charge nurse | `VitalsCreate` → `VitalsRecord` (201; 200 on retry); a correction keeps the original |
+| `POST /api/visits/{id}/flag` | triage nurse | `FlagHigher` → `FlagRecord`; opens or raises an amber task (`staff_flag`) |
+| `POST /api/visits/{id}/status` | triage nurse, physician or charge nurse | `VisitStatusUpdate` → 204; closes the visit and signs out its device |
+| `POST /api/visits/{id}/exclusion` | triage or charge nurse | `VisitExclusionUpdate` → 204; stops patient prompts, staff timer keeps running |
 | `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only; reused until answered), wait estimate or null, minutes waited |
 | `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
 

@@ -40,7 +40,8 @@ class Fire:
 
     @property
     def rule_id(self) -> str:
-        return f"demo-{self.reason_code.replace('_', '-')}-v1"
+        # Same format as the synthetic cohort, and a valid contract Code (lowercase, digits, underscores).
+        return f"demo_{self.reason_code}_v1"
 
 
 Report = CheckinReport | ConcernReport | FindingReport | LeavingReport
@@ -83,6 +84,10 @@ def evaluate(report: Report, attention: AttentionResult | None = None) -> list[F
         fires.append(Fire(TaskLevel.OVERDUE, "attention_unanswered"))
 
     return fires
+
+
+STAFF_FLAG = Fire(TaskLevel.AMBER, "staff_flag")
+"""Triage nurse's one-tap "flag higher" (FR17): opens or raises an amber task for the physician."""
 
 
 def patient_message(report: Report, fires: list[Fire]) -> PatientMessage:

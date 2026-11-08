@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import uuid
 from datetime import UTC, datetime, timedelta
 
@@ -102,6 +103,16 @@ def test_invariants_hold_for_any_seed_and_load_time(seed, minutes):
     check_invariants(build_cohort(ANCHOR + timedelta(minutes=minutes), seed=seed, batch=f"t-{seed}"))
 
 
+def test_codes_match_the_contract(cohort):
+    """rule_id, reason_code and scenario names are contract codes: lowercase letters, digits, underscores."""
+    code = re.compile(r"^[a-z][a-z0-9_]{0,63}$")
+    for v in cohort.visits:
+        assert code.match(v.scenario), v.scenario
+        for t in v.tasks:
+            for r in t.reasons:
+                assert code.match(r.rule_id) and code.match(r.reason_code), r.rule_id
+
+
 def test_deterministic(cohort):
     again = build_cohort(ANCHOR)
     assert again.to_json() == cohort.to_json()
@@ -122,36 +133,36 @@ def test_calibrate_hits_target():
 
 
 def test_demo_cases(cohort):
-    chest = by_scenario(cohort, "chest-worsening")
+    chest = by_scenario(cohort, "chest_worsening")
     assert chest.open_task.level == "red" and chest.open_task.status == "open"
     assert [r.pain for r in chest.reports] == [6, 7, 9]
 
-    head = by_scenario(cohort, "head-injury-unanswered")
+    head = by_scenario(cohort, "head_injury_unanswered")
     assert not head.reports
     assert head.open_task.level == "silent"
     assert head.next_prompt_due_at < cohort.anchor and head.staff_reassess_due_at < cohort.anchor
 
-    live = by_scenario(cohort, "companion-speech-live")
+    live = by_scenario(cohort, "companion_speech_live")
     assert live.status == "waiting" and live.open_task is None
     assert [s.role for s in live.sessions] == ["companion"]
 
-    done = by_scenario(cohort, "companion-speech-done")
+    done = by_scenario(cohort, "companion_speech_done")
     assert done.status == "roomed"
     (task,) = done.tasks
     assert task.level == "red" and task.disposition == "roomed" and task.reasons[0].reason_code == "finding_speech_change"
     assert all(r.reporter == "companion" for r in done.reports)
 
-    leaving = by_scenario(cohort, "leave-intent")
+    leaving = by_scenario(cohort, "leave_intent")
     assert leaving.open_task.level == "leave_risk" and leaving.reports[-1].kind == "leaving"
 
-    takeover = by_scenario(cohort, "confused-takeover")
+    takeover = by_scenario(cohort, "confused_takeover")
     first, second = takeover.sessions
     assert first.revoked_reason == "takeover" and second.replaces == first.id and second.role == "companion"
 
-    desk = by_scenario(cohort, "desk-question")
+    desk = by_scenario(cohort, "desk_question")
     assert desk.tasks[0].routed_to == ["triage_nurse"] and desk.tasks[0].status == "completed"
 
-    for name in ("excluded-self-harm", "excluded-pregnancy", "excluded-trauma"):
+    for name in ("excluded_self_harm", "excluded_pregnancy", "excluded_trauma"):
         assert by_scenario(cohort, name).app_exclusion
 
 

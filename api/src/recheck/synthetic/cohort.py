@@ -611,7 +611,7 @@ class _Sim:
         routed = routed_to or ["physician"]
         reason = Reason(
             self.ids(),
-            f"demo-{reason_code.replace('_', '-')}-v1",
+            f"demo_{reason_code}_v1",
             RULE_VERSION,
             level,
             reason_code,
@@ -780,42 +780,42 @@ def _scripted(new_visit: Callable[..., Visit], anchor: datetime) -> list[Plan]:
 
     plans = [
         # Worsening chest pain: pain 6 -> 7 -> 9, red a minute before load, not yet acknowledged.
-        Plan(new_visit("chest-worsening", "Worsening chest pain, now between the shoulders", 2, "003", ago(48)),
+        Plan(new_visit("chest_worsening", "Worsening chest pain, now between the shoulders", 2, "003", ago(48)),
              random_prompts=False, staff_late=[3, 40],
              events=[(16, calm(6)), (31, chest_worsening), (47, chest_red)]),
         # Companion on a general visit, signed in and calm. The live demo reports the speech change.
-        Plan(new_visit("companion-speech-live", "Companion signed in on a general visit (live speech-change demo)", 3, None, ago(42)),
+        Plan(new_visit("companion_speech_live", "Companion signed in on a general visit (live speech-change demo)", 3, None, ago(42)),
              device_role="companion", random_prompts=False, events=[(31, calm(None))]),
         # Unanswered head-injury check: silent task open, staff reassessment overdue too.
-        Plan(new_visit("head-injury-unanswered", "Head injury, check-in missed", 3, "407", ago(52)),
+        Plan(new_visit("head_injury_unanswered", "Head injury, check-in missed", 3, "407", ago(52)),
              random_prompts=False, staff_late=[45],
              events=[(30 + cal.SILENT_AFTER_MINUTES, lambda s, t: s.missed_check(t))]),
         # Earlier the same evening: companion reported new speech difficulty; physician acknowledged,
         # assessed and roomed. Shows the full loop in the timeline.
-        Plan(new_visit("companion-speech-done", "Companion reported new speech difficulty; roomed", 3, None, ago(150)),
+        Plan(new_visit("companion_speech_done", "Companion reported new speech difficulty; roomed", 3, None, ago(150)),
              device_role="companion", random_prompts=False, red_disposition="roomed",
              events=[(28, calm(None)), (61, speech_change)]),
         # Intent to leave six minutes ago.
-        Plan(new_visit("leave-intent", "Said they are leaving after a long wait", 4, None, ago(165)),
+        Plan(new_visit("leave_intent", "Said they are leaving after a long wait", 4, None, ago(165)),
              random_prompts=False, staff_late=[8, 50],
              events=[(62, calm(4)), (125, calm(4)), (159, leaving)]),
         # Pager patient who stopped answering.
-        Plan(new_visit("pager-silent", "Pager visit, stopped answering", 3, None, ago(80), channel="pager"),
+        Plan(new_visit("pager_silent", "Pager visit, stopped answering", 3, None, ago(80), channel="pager"),
              random_prompts=False, staff_late=[6, 45],
              events=[(32, calm(None)), (62 + cal.SILENT_AFTER_MINUTES, lambda s, t: s.missed_check(t))]),
         # Patient handed over to a companion's phone (device takeover).
-        Plan(new_visit("confused-takeover", "Confused visit; companion took over the device", 3, "402", ago(70)),
+        Plan(new_visit("confused_takeover", "Confused visit; companion took over the device", 3, "402", ago(70)),
              random_prompts=False,
              events=[(26, calm(2)), (40, takeover), (56, companion_same)]),
         # Non-clinical question answered by the triage nurse.
-        Plan(new_visit("desk-question", "Asked the desk a question about their wait", 4, None, ago(95)),
+        Plan(new_visit("desk_question", "Asked the desk a question about their wait", 4, None, ago(95)),
              random_prompts=False, events=[(64, calm(3)), (72, desk)]),
         # Staff-watched visits without the app.
-        Plan(new_visit("excluded-self-harm", "Self-harm presentation; app not offered", 3, "351", ago(58),
+        Plan(new_visit("excluded_self_harm", "Self-harm presentation; app not offered", 3, "351", ago(58),
                        exclusion="self_harm_or_violence")),
-        Plan(new_visit("excluded-pregnancy", "Pregnancy over 20 weeks; app not offered; roomed", 3, "458", ago(120),
+        Plan(new_visit("excluded_pregnancy", "Pregnancy over 20 weeks; app not offered; roomed", 3, "458", ago(120),
                        exclusion="pregnancy_over_20_weeks"), room_at=ago(55)),
-        Plan(new_visit("excluded-trauma", "Major blunt trauma; app not offered; roomed", 2, "802", ago(200),
+        Plan(new_visit("excluded_trauma", "Major blunt trauma; app not offered; roomed", 2, "802", ago(200),
                        exclusion="major_trauma"), room_at=ago(186)),
     ]
     return plans
@@ -877,7 +877,7 @@ def build_cohort(
         cedis = rng.choice(cedis_by_group.get(group, GENERAL_CEDIS)) if group is not ComplaintGroup.GENERAL else None
         ctas = _pick(rng, cal.CTAS_MIX)
         triaged = anchor - timedelta(minutes=rng.uniform(8, 330))
-        v = new_visit(f"generated-{len(generated) + 1:02d}", "", ctas, cedis, triaged)
+        v = new_visit(f"generated_{len(generated) + 1:02d}", "", ctas, cedis, triaged)
         v.profile = _profile(rng, v)
         role = "companion" if (group is ComplaintGroup.CONFUSED_DROWSY and rng.random() < 0.6) or (
             rng.random() < cal.COMPANION_DEVICE_SHARE) else "patient"

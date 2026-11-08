@@ -1,11 +1,10 @@
-import { Activity } from 'lucide-react'
+// Cut from media/Rainbow Gradient Check Mark.png with its black background removed.
+import logo from '@/assets/logo.png'
 
 export function Brand() {
   return (
     <span className="brand">
-      <span className="brand-mark">
-        <Activity size={20} aria-hidden />
-      </span>
+      <img src={logo} alt="" className="brand-mark" />
       recheck<span className="brand-period">.</span>
     </span>
   )
