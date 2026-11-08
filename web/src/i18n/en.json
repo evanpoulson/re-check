@@ -395,6 +395,7 @@
     "signOutFailed": "This phone could not sign out. Try again.",
     "waitContext": "Waiting-room information",
     "contactStaff": "Contact staff",
+    "moreOptions": "More options",
     "updated": "Updated {{time}}.",
     "companionHint": "Tell us what you see or hear. Only they can tell us how they feel inside."
   },

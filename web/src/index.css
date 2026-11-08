@@ -545,25 +545,37 @@
     padding: 8px 16px max(8px, env(safe-area-inset-bottom));
   }
   .patient-dock-inner {
-    max-width: 448px;
+    max-width: 28rem;
     margin: auto;
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px 8px;
+    gap: 6px;
   }
+  /* "I need help now" is full width; the three quieter buttons share one row. */
+  .patient-dock-more {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .patient-dock.is-compact .patient-dock-more {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  /* A 12px radius, not a pill, so labels that wrap stay inside the button. */
   .patient-dock button {
-    min-height: 44px;
-    padding: 5px 10px;
-    border-radius: var(--radius-tap);
-    font-size: 1rem;
-    font-weight: 500;
-    line-height: 1.2;
-  }
-  .patient-help {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    min-height: 44px;
+    padding: 6px;
+    border-radius: 12px;
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.2;
+    text-align: center;
+    overflow-wrap: break-word;
+  }
+  .patient-dock .patient-help {
+    min-height: 48px;
     color: white;
     background: var(--color-level-red);
     font-weight: 600;
@@ -571,13 +583,18 @@
   .patient-help:hover {
     background: color-mix(in srgb, var(--color-level-red), black 15%);
   }
-  .patient-help-secondary {
+  .patient-dock .patient-help-secondary {
+    padding-inline: 4px;
+    font-size: 0.9375rem;
     color: var(--color-brand-600);
     background: var(--color-surface);
     border: 1px solid var(--color-brand-500);
   }
   .patient-help-secondary:hover {
     background: var(--color-brand-50);
+  }
+  .patient-help-more {
+    color: var(--color-brand-600);
   }
   .patient-dock button:disabled {
     opacity: 0.4;
