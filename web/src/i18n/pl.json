@@ -19,7 +19,8 @@
   "time": {
     "in": "za {{value}}",
     "overdue": "{{value}} po terminie",
-    "readyNow": "Już czas"
+    "readyNow": "Już czas",
+    "dueNow": "Teraz"
   },
   "patient": {
     "language": "Język",

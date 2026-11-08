@@ -19,7 +19,8 @@
   "time": {
     "in": "{{value}} 후",
     "overdue": "{{value}} 지남",
-    "readyNow": "지금 하시면 됩니다"
+    "readyNow": "지금 하시면 됩니다",
+    "dueNow": "지금 해야 함"
   },
   "patient": {
     "language": "언어",

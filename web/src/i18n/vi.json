@@ -19,7 +19,8 @@
   "time": {
     "in": "sau {{value}}",
     "overdue": "trễ {{value}}",
-    "readyNow": "Đến lúc rồi"
+    "readyNow": "Đến lúc rồi",
+    "dueNow": "Đến hạn ngay"
   },
   "patient": {
     "language": "Ngôn ngữ",

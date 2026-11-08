@@ -3,6 +3,7 @@ import { optionLabel } from '@/api/bank'
 import { entryKind, type TimelineEntry } from '@/api/types'
 import { attentionText, choiceText, concernText, findingsText, painText } from '@/lib/answers'
 import { clock } from '@/lib/time'
+import { vitalsText } from '@/lib/vitals'
 
 /** One line describing a timeline entry. Corrections are new entries, so nothing is rewritten. */
 export function describeEntry(e: TimelineEntry, t: TFunction): string {
@@ -26,14 +27,7 @@ export function describeEntry(e: TimelineEntry, t: TFunction): string {
     }
     case 'vitals': {
       const v = e as Extract<TimelineEntry, { vitals_id: string }>
-      const parts = [
-        v.sbp !== null && v.dbp !== null ? `BP ${v.sbp}/${v.dbp}` : null,
-        v.hr !== null ? `HR ${v.hr}` : null,
-        v.rr !== null ? `RR ${v.rr}` : null,
-        v.spo2 !== null ? `SpO2 ${v.spo2}%` : null,
-        v.temp_c !== null ? `${v.temp_c} °C` : null,
-      ].filter(Boolean)
-      return t('timeline.vitals', { values: parts.join(', '), role: t(`role.${v.entered_by.role}`) })
+      return t('timeline.vitals', { values: vitalsText(v, t), role: t(`role.${v.entered_by.role}`).toLocaleLowerCase() })
     }
     case 'flag': {
       const f = e as Extract<TimelineEntry, { flag_id: string }>

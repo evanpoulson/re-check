@@ -19,7 +19,8 @@
   "time": {
     "in": "dans {{value}}",
     "overdue": "{{value}} de retard",
-    "readyNow": "C'est maintenant"
+    "readyNow": "C'est maintenant",
+    "dueNow": "À faire maintenant"
   },
   "patient": {
     "language": "Langue",

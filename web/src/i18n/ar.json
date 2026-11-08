@@ -19,7 +19,8 @@
   "time": {
     "in": "بعد {{value}}",
     "overdue": "متأخر بمقدار {{value}}",
-    "readyNow": "حان الوقت الآن"
+    "readyNow": "حان الوقت الآن",
+    "dueNow": "مستحق الآن"
   },
   "patient": {
     "language": "اللغة",

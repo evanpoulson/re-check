@@ -19,7 +19,8 @@
   "time": {
     "in": "sa loob ng {{value}}",
     "overdue": "lampas nang {{value}}",
-    "readyNow": "Puwede na ngayon"
+    "readyNow": "Puwede na ngayon",
+    "dueNow": "Ngayon na"
   },
   "patient": {
     "language": "Wika",

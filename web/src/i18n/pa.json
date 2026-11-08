@@ -19,7 +19,8 @@
   "time": {
     "in": "{{value}} ਵਿੱਚ",
     "overdue": "{{value}} ਦੀ ਦੇਰੀ",
-    "readyNow": "ਹੁਣ ਸਮਾਂ ਹੋ ਗਿਆ ਹੈ"
+    "readyNow": "ਹੁਣ ਸਮਾਂ ਹੋ ਗਿਆ ਹੈ",
+    "dueNow": "ਹੁਣ ਬਕਾਇਆ"
   },
   "patient": {
     "language": "ਭਾਸ਼ਾ",

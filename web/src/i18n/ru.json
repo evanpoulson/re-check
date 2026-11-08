@@ -19,7 +19,8 @@
   "time": {
     "in": "через {{value}}",
     "overdue": "просрочено на {{value}}",
-    "readyNow": "Уже пора"
+    "readyNow": "Уже пора",
+    "dueNow": "Пора сейчас"
   },
   "patient": {
     "language": "Язык",

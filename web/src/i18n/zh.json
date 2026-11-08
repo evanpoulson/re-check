@@ -19,7 +19,8 @@
   "time": {
     "in": "{{value}}后",
     "overdue": "已超时{{value}}",
-    "readyNow": "现在就可以"
+    "readyNow": "现在就可以",
+    "dueNow": "现在到期"
   },
   "patient": {
     "language": "语言",

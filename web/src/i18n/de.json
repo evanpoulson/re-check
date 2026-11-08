@@ -19,7 +19,8 @@
   "time": {
     "in": "in {{value}}",
     "overdue": "{{value}} überfällig",
-    "readyNow": "Jetzt fällig"
+    "readyNow": "Jetzt fällig",
+    "dueNow": "Jetzt fällig"
   },
   "patient": {
     "language": "Sprache",
