@@ -50,6 +50,8 @@ Open http://localhost:8080. Localhost counts as a secure origin, so no HTTPS is 
    | Secret | `AUTH0_CLIENT_SECRET` | Staff sign-in |
    | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. Defaults to `15`: this box runs the missed check-in and escalation timers. `0` turns them off. Keep them off on every other machine that uses the same database. |
    | Variable | `RECHECK_DEMO_STAFF` | `true` keeps the demo role picker working. The front end needs it until it supports Auth0 sign-in. |
+   | Secret | `RECHECK_VAPID_PRIVATE_KEY` | Optional. Turns on check-in reminders by Web Push. Generate with `cd api && uv run python -m recheck.push keygen`. Keep it for the whole event: a new key breaks every saved subscription. Apply `db/migrations/2026-11-08-push-reminders.sql` first. |
+   | Variable | `RECHECK_VAPID_SUBJECT` | Optional. A `mailto:` or `https://` contact for the push services. Defaults to `https://<SITE_ADDRESS>`. |
 
    In the Auth0 application, allow `https://<SITE_ADDRESS>/api/staff/callback` as a callback URL and `https://<SITE_ADDRESS>/staff/sign-in` as a logout URL.
 

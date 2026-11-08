@@ -11,6 +11,7 @@ from pydantic.json_schema import models_json_schema
 
 from .events import DashboardEvent
 from .patient import PatientHome
+from .push import PushConfig, PushSubscriptionSave
 from .reports import PatientReport, ReportReceipt
 from .staff import (
     AcknowledgeTask,
@@ -48,6 +49,7 @@ REQUEST_MODELS = (
     AcknowledgeTask,
     AssessTask,
     SiteSettingsUpdate,
+    PushSubscriptionSave,
 )
 RESPONSE_MODELS = (
     VisitEnrolled,
@@ -66,6 +68,7 @@ RESPONSE_MODELS = (
     QualitySummary,
     DashboardEvent,
     SiteSettings,
+    PushConfig,
 )
 
 patient_report_adapter: TypeAdapter[PatientReport] = TypeAdapter(PatientReport)
@@ -91,6 +94,8 @@ __all__ = [
     "FlagHigher",
     "Handover",
     "PatientHome",
+    "PushConfig",
+    "PushSubscriptionSave",
     "QualitySummary",
     "ReportReceipt",
     "SessionInfo",

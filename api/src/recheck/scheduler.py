@@ -5,6 +5,9 @@
   time. The prompt timer isn't moved; the patient answering restarts it.
 - Escalation: a red task still unacknowledged past its deadline is marked
   escalated and routed to the charge nurse as backup.
+- Check-in reminders (push.py), when a Web Push key is configured: sent after
+  the timer round, in their own transactions, so a push problem never holds up
+  the missed check-in or escalation checks.
 
 Both match the synthetic cohort (synthetic/cohort.py missed_check, escalate).
 Escalate-only, like everything else: nothing here lowers a level, removes a
@@ -19,7 +22,7 @@ from dataclasses import dataclass
 from psycopg import AsyncConnection
 from psycopg_pool import AsyncConnectionPool
 
-from . import events, tasks
+from . import events, push, tasks
 from .contract.codes import DashboardEventType, TaskLevel
 from .db import write_tx
 from .rules import Fire
@@ -85,8 +88,11 @@ async def run_checks(conn: AsyncConnection) -> Round:
     return Round(ran=True, missed=len(missed), escalated=len(escalated))
 
 
-async def run_forever(pool: AsyncConnectionPool, every_seconds: float) -> None:
-    """Background loop started with the app. Errors are logged and the loop keeps going."""
+async def run_forever(pool: AsyncConnectionPool, every_seconds: float, sender: "push.Sender | None" = None) -> None:
+    """Background loop started with the app. Errors are logged and the loop keeps going.
+
+    `sender` sends check-in reminders; None (no Web Push key) skips them.
+    """
     while True:
         try:
             async with write_tx(pool, ACTOR) as conn:
@@ -97,4 +103,13 @@ async def run_forever(pool: AsyncConnectionPool, every_seconds: float) -> None:
             raise
         except Exception:
             log.exception("timer round failed")
+        if sender is not None:
+            try:
+                sent = await sender.run_round(pool)
+                if sent:
+                    log.info("reminders: %d sent", sent)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                log.exception("reminder round failed")
         await asyncio.sleep(every_seconds)

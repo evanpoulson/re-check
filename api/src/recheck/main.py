@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from psycopg import errors
 from psycopg_pool import AsyncConnectionPool
 
-from . import events, scheduler
+from . import events, push, scheduler
 from .contract.common import OutputModel
 from .db import make_pool
 from .routes import ROUTERS
@@ -33,6 +33,7 @@ HEALTH_TIMEOUT_SECONDS = 3.0
 CONSTRAINT_MESSAGES = {
     "visit_pager_waiting_uq": "that pager is already given to another waiting patient",
     "submission_pkey": "this submission is already being processed; retry with the same submission_id",
+    "push_subscription_one_open_uq": "reminders are already being saved for this device; try again",
 }
 
 
@@ -61,7 +62,11 @@ def create_app(pool: AsyncConnectionPool | None = None) -> FastAPI:
         await app.state.pool.open(wait=False)
         # Background work runs only in the real server; tests that bring their own pool drive it directly.
         every = scheduler_seconds() if pool is None else 0
-        timers = asyncio.create_task(scheduler.run_forever(app.state.pool, every)) if every > 0 else None
+        timers = (
+            asyncio.create_task(scheduler.run_forever(app.state.pool, every, push.Sender.configured()))
+            if every > 0
+            else None
+        )
         listener = asyncio.create_task(app.state.broker.listen(database_url())) if pool is None else None
         try:
             yield

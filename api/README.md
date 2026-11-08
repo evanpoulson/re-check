@@ -94,6 +94,8 @@ AUTH0_CLIENT_SECRET=...
 AUTH0_CALLBACK_URL=...                     # optional: defaults to {RECHECK_PUBLIC_URL}/api/staff/callback
 RECHECK_DEMO_STAFF=false                   # optional: true turns on the no-account demo role picker
 RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when unset)
+RECHECK_VAPID_PRIVATE_KEY=...              # optional: turns on check-in reminders by Web Push (`uv run python -m recheck.push keygen`)
+RECHECK_VAPID_SUBJECT=mailto:...           # optional: contact for push services; defaults to RECHECK_PUBLIC_URL, which must then be https
 RECHECK_SITE_TIMEZONE=America/Edmonton     # optional: local time for duty hours and shifts
 RECHECK_TLP_HOURS=08:00-22:00              # optional demo assumption: physician duty hours; unset = always on duty
 RECHECK_SHIFT_CHANGES=07:00,19:00          # optional demo assumption: nursing shift changes for handover
@@ -150,6 +152,9 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `GET /api/events` | any signed-in staff | Server-Sent Events: a `DashboardEvent` per change at the staff member's site |
 | `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only; reused until answered), wait estimate or null, minutes waited |
 | `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
+| `GET /api/patient/push` | signed-in device | `PushConfig`: whether check-in reminders are on, and the public key to subscribe with |
+| `PUT /api/patient/push/subscription` | signed-in device | `PushSubscriptionSave` → 204; the same subscription again changes nothing, a new one replaces it. Known push services only. |
+| `DELETE /api/patient/push/subscription` | signed-in device | 204; turns this device's reminders off (a retry is harmless) |
 
 ## Live updates
 
@@ -186,6 +191,7 @@ Timers (`recheck/scheduler.py`) run inside the API every `RECHECK_SCHEDULER_SECO
 
 - **Missed check-in.** A waiting app visit whose patient prompt is 5 minutes overdue gets a silent `missed_checkin` reason, once per due time.
 - **Escalation.** A red task still unacknowledged past its deadline (2 minutes) is marked escalated and routed to the charge nurse too. The timeline dates it at that deadline.
+- **Check-in reminders** (`recheck/push.py`), when `RECHECK_VAPID_PRIVATE_KEY` is set. A device that turned reminders on gets a Web Push at the patient prompt's due time, then every 5 minutes until it checks in or one CTAS interval has passed (3 reminders for CTAS 2, 24 for CTAS 5). Each (visit, due time, slot) is claimed in `push_send` before sending, so it goes out once; the push service's answer is recorded there, and a 404 or 410 ends the subscription. The message says only "It's time for your check-in." Reminders stop with the session (sign-out, takeover, visit closed). They are a courtesy: the missed check-in task above never depends on one arriving. Staff screens don't show reminder status.
 
 The timers write to whatever database `RECHECK_DATABASE_URL` points at, and those writes can't be undone, so leave them off while developing against the shared demo database. Turn them on only on the machine that runs the demo, by adding `RECHECK_SCHEDULER_SECONDS=15` to its `.env`.
 
