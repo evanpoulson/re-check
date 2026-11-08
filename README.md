@@ -36,9 +36,7 @@ staff browser ──Auth0 sign-in──► web (React, Vite) ──/api──►
 | [`auth0/`](auth0/README.md) | Auth0 tenant setup for staff sign-in |
 | [`infra/`](infra/README.md), [`deploy/`](deploy/README.md), `compose.yaml`, `.github/workflows/` | Demo deployment: Terraform, Docker Compose, Caddy, GitHub Actions |
 | [`docs/`](docs/README.md) | Project plan, research briefs, design notes |
-| `research_notes/` | Source notes for the patient view evidence brief |
-| `reports/` | A copy of [`docs/research/patient-view-evidence.md`](docs/research/patient-view-evidence.md) |
-| `media/` | Source logo. `web/src/components/Brand.tsx` uses it. |
+| `research_notes/` | Source notes for the patient view evidence brief || `media/` | Source logo. `web/src/components/Brand.tsx` uses it. |
 | `EXTERNAL RUNBOOK 2026.pdf` | The runbook from the hackathon organizers: schedule, prompts, judging |
 | [`AGENTS.md`](AGENTS.md) | Scope, stack and rules for all changes to the code |
 
