@@ -97,3 +97,24 @@ class AssessTask(InputModel):
 
     submission_id: SubmissionId
     disposition: Disposition
+
+
+class SiteSettings(OutputModel):
+    """Switches for the whole site, changed by the triage or charge nurse.
+
+    A site that has never saved settings gets the defaults.
+    """
+
+    show_triage_level: bool = Field(
+        description=(
+            "When true, patients and companions see the level set at triage, in plain words. Off by default: "
+            "no public AHS policy says whether staff share it (research brief §4a). Target times are never shown."
+        )
+    )
+    updated_at: Timestamp | None = Field(description="Last change, or null while the site uses the defaults.")
+
+
+class SiteSettingsUpdate(InputModel):
+    """Replace the site's settings. Sending the same body again changes nothing, so retries are safe."""
+
+    show_triage_level: bool

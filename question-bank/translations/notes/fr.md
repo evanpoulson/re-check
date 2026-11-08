@@ -6,3 +6,4 @@
 - **"Worst headache of my life"** is a new_findings option shared by patient and companion, so it is rendered neutrally as "Pire mal de tête jamais ressenti".
 - **Clinician and nurse.** "Clinician" → "un membre de l'équipe médicale". "Triage nurse" → "personnel infirmier du triage", which avoids the feminine "l'infirmière". "Health number" → "numéro d'assurance maladie". Check the local Alberta term.
 - **Typography.** No space before ? or !. Guillemets « » use non-breaking spaces inside. No colons are used.
+- **Triage card (`triageInfo`):** Level names follow the official French CTAS terms where possible ("Très urgent / Urgent / Moins urgent / Non urgent"). The companion heading uses "du patient ou de la patiente". Confirm the French ÉTG terms the site uses. No target times are shown on purpose; please keep it that way.

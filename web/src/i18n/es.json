@@ -142,5 +142,35 @@
   },
   "pages": {
     "patientEntry": "Abriendo su cuestionario"
+  },
+  "triageInfo": {
+    "title": "Cómo funciona el triaje",
+    "sickestFirst": "Urgencias atiende primero a las personas más graves. No se atiende por orden de llegada.",
+    "levels": "Cuando llega cada persona, el personal de enfermería de triaje evalúa qué tan urgentes son sus necesidades. En Canadá hay 5 niveles. El nivel 1 es el más urgente.",
+    "checkins": "Las respuestas del cuestionario ayudan al personal a notar cambios. Un profesional de la salud decide qué sigue.",
+    "worse": "Si se siente peor, avise al personal de inmediato.",
+    "leaving": "Por favor, avise al personal antes de irse.",
+    "level": {
+      "heading": "Su nivel de triaje",
+      "heading_companion": "Nivel de triaje de la persona atendida",
+      "label": "Nivel {{level}}: {{name}}",
+      "setAtTriage": "Este es el nivel que asignó el personal de enfermería de triaje a la llegada.",
+      "2": {
+        "name": "Muy urgente",
+        "body": "El personal de enfermería encontró señales que requieren atención muy pronto. El personal revisará con frecuencia."
+      },
+      "3": {
+        "name": "Urgente",
+        "body": "Se necesita atención pronto, pero por ahora no hay peligro para la vida. Las personas más graves pueden ser atendidas antes."
+      },
+      "4": {
+        "name": "Menos urgente",
+        "body": "Por ahora no es una emergencia. La espera puede ser larga. Está en el lugar correcto."
+      },
+      "5": {
+        "name": "No urgente",
+        "body": "Esto puede esperar sin riesgo. La espera puede ser larga. Está en el lugar correcto."
+      }
+    }
   }
 }

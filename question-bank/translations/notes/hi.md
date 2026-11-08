@@ -11,3 +11,4 @@
 9. **"I'm not sure"** is "मुझे पक्का नहीं पता" ("I don't know for sure"). It is meant to read as unknown, not as a no.
 10. **Triage** is kept as "ट्राइएज (triage)" because Canadian ED signage uses the English word. **Health number** became "हेल्थ कार्ड नंबर" to match Alberta usage. **Synthetic data** is "नमूना (सिंथेटिक) डेटा".
 11. **Option labels** (feeling, symptoms) use feminine agreement to match तबीयत/तकलीफ़ें. The headache options use masculine agreement to match सिरदर्द. Check that they still make sense if the UI shows them alone.
+- **Triage card (`triageInfo`):** Level names: "बहुत ज़रूरी / ज़रूरी / कम ज़रूरी / ज़रूरी नहीं". The nurse sentences use "द्वारा" (passive) to avoid gender. Check that "ज़रूरी नहीं" doesn't read as "care not needed". No target times are shown on purpose; please keep it that way.

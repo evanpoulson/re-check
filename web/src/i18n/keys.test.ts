@@ -2,6 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import en from './en.json'
+import i18n, { LANGUAGES } from './index'
 
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((f) => {
@@ -39,10 +40,35 @@ describe('translations', () => {
       'signedIn.short': ['patient', 'companion', 'none'],
       'exchange.role': ['patient', 'companion'],
       'exchange.signedInAs': ['patient', 'companion'],
+      'triageInfo.level': ['2', '3', '4', '5'].flatMap((n) => [`${n}.name`, `${n}.body`]),
     }
     const missing = Object.entries(groups).flatMap(([g, codes]) =>
       codes.filter((c) => !has(`${g}.${c}`)).map((c) => `${g}.${c}`),
     )
     expect(missing).toEqual([])
   })
+
+  it('the triage explainer never gives a target time', () => {
+    const strings = (o: unknown): string[] =>
+      typeof o === 'string' ? [o] : Object.values(o as Record<string, unknown>).flatMap(strings)
+    const timed = strings(en.triageInfo).filter((s) => /\d+\s*(min|minute|hour|h)\b|within|minutes|hours/i.test(s))
+    expect(timed).toEqual([])
+  })
+
+  it('every patient language translates the whole triage card, keeping its placeholders', () => {
+    const leaves = (o: unknown, p = ''): [string, string][] =>
+      typeof o === 'string' ? [[p, o]] : Object.entries(o as Record<string, unknown>).flatMap(([k, v]) => leaves(v, p ? `${p}.${k}` : k))
+    const english = leaves(en.triageInfo)
+    const problems: string[] = []
+    for (const lng of LANGUAGES.filter((l) => l !== 'en')) {
+      const theirs = Object.fromEntries(leaves((i18n.getResourceBundle(lng, 'translation') as { triageInfo?: unknown }).triageInfo ?? {}))
+      for (const [key, text] of english) {
+        const own = theirs[key]
+        if (own === undefined) problems.push(`${lng}: missing ${key}`)
+        else for (const ph of text.match(/{{\w+}}/g) ?? []) if (!own.includes(ph)) problems.push(`${lng}: ${key} lacks ${ph}`)
+      }
+    }
+    expect(problems).toEqual([])
+  })
 })
+

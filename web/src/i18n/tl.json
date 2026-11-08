@@ -142,5 +142,35 @@
   },
   "pages": {
     "patientEntry": "Binubuksan ang inyong check-in"
+  },
+  "triageInfo": {
+    "title": "Paano gumagana ang triage",
+    "sickestFirst": "Inuuna ng emergency department ang may pinakamalubhang kalagayan. Hindi ito batay sa kung sino ang unang dumating.",
+    "levels": "Pagdating ng bawat tao, sinusuri ng triage nurse kung gaano kaapurahan ang kanilang pangangailangan. Gumagamit ang Canada ng 5 level. Ang Level 1 ang pinakaapurahan.",
+    "checkins": "Tinutulungan ng mga sagot sa check-in ang staff na mapansin ang mga pagbabago. Isang doktor o nurse ang magpapasya kung ano ang susunod.",
+    "worse": "Kung lumala ang pakiramdam ninyo, sabihan agad ang staff.",
+    "leaving": "Pakisabihan po ang staff bago kayo umalis.",
+    "level": {
+      "heading": "Ang inyong triage level",
+      "heading_companion": "Ang triage level ng pasyente",
+      "label": "Level {{level}}: {{name}}",
+      "setAtTriage": "Ito ang level na itinakda ng triage nurse sa pagdating.",
+      "2": {
+        "name": "Napakaapurahan",
+        "body": "May nakitang palatandaan ang nurse na kailangang matingnan sa lalong madaling panahon. Madalas na titingin ang staff."
+      },
+      "3": {
+        "name": "Apurahan",
+        "body": "Kailangang matingnan sa lalong madaling panahon, pero hindi ito delikado sa buhay sa ngayon. Maaaring maunang matingnan ang mga mas malubha ang kalagayan."
+      },
+      "4": {
+        "name": "Hindi gaanong apurahan",
+        "body": "Hindi ito emergency sa ngayon. Maaaring matagal ang paghihintay. Nasa tamang lugar kayo."
+      },
+      "5": {
+        "name": "Hindi apurahan",
+        "body": "Maaari itong maghintay nang ligtas. Maaaring matagal ang paghihintay. Nasa tamang lugar kayo."
+      }
+    }
   }
 }
