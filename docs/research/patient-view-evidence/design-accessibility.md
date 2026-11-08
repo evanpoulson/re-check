@@ -25,7 +25,7 @@ Aim for grade 6 or lower (reading age 9–11) on every patient string, with sent
 
 ### Gaps
 - I did not retrieve the primary AMA or NIH documents that set the grade-6 target. The figure comes from secondary readability studies.
-- I found no Alberta Health Services patient-material reading-level standard. See the companion `alberta_ahs.md` notes if they cover it.
+- I found no Alberta Health Services patient-material reading-level standard. See the companion [Alberta and AHS notes](alberta-ahs.md) if they cover it.
 - I found no validated digital teach-back method for acute-care triage apps. The recommendation above is inferred from the CDC and GOV.UK patterns.
 
 ## Accessibility: WCAG 2.2 AA, older adults, low vision, tremor, pain and stress, screen readers, GOV.UK/NHS question patterns

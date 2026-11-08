@@ -77,7 +77,7 @@ The Pydantic models are the shared contract. Agree on synthetic fixtures. Tell t
 | Optional team tooling | **MLH: Entire** | Use it only if it fits the development workflow of the team and the eligibility rules of the event. It adds no page. |
 | Out of scope | **MLH: Solana. Voltex: real-world energy data** | The demo has no feature for these tracks. Voltex needs real published or measured energy data. |
 
-The runbook gives Arduino units, AWS credits, n8n credits and Keenable credits to participants. A pager can use the report endpoint. Hardware and extra services are stretch work. Check sponsor eligibility and opt-in on the submission form. List only the integrations that the team used and can show.
+The [runbook](external-runbook-2026.pdf) gives Arduino units, AWS credits, n8n credits and Keenable credits to participants. A pager can use the report endpoint. Hardware and extra services are stretch work. Check sponsor eligibility and opt-in on the submission form. List only the integrations that the team used and can show.
 
 ## Demo and submission
 
