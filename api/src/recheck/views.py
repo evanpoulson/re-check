@@ -116,7 +116,9 @@ async def tasks_for(conn: AsyncConnection, visit_ids: list[UUID], *, open_only: 
 def task_events(task: Task) -> list[TaskEvent]:
     """Timeline events derived from a task and its reasons.
 
-    Escalation has no stored timestamp yet, so it shows only on the task itself.
+    Escalation happens when an unacknowledged red passes its acknowledgement
+    deadline (scheduler.run_checks, and the synthetic cohort), so it is dated at
+    `ack_due_at`; the scheduler acts within a few seconds of that.
     """
     events: list[TaskEvent] = []
     top = None
@@ -130,6 +132,7 @@ def task_events(task: Task) -> list[TaskEvent]:
         top = reason.level if top is None or LEVEL_ORDER.index(reason.level) > LEVEL_ORDER.index(top) else top
         events.append(TaskEvent(task_id=task.task_id, event=kind, at=reason.fired_at, level=top, by=None))
     for kind, at, by in (
+        (TaskEventType.ESCALATED, task.ack_due_at if task.escalated else None, None),
         (TaskEventType.DELIVERED, task.delivered_at, None),
         (TaskEventType.ACKNOWLEDGED, task.acknowledged_at, task.acknowledged_by),
         (TaskEventType.ASSESSED, task.assessed_at, task.assessed_by),
