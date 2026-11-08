@@ -305,7 +305,9 @@
   },
   "patient": {
     "language": "Language",
-    "wait": "Estimated wait: {{low}} to {{high}} minutes.",
+    "departmentWait": "The department's current estimate for new arrivals is about {{estimate}}.",
+    "waitUnavailable": "Estimate unavailable.",
+    "waited": "You've been waiting {{waited}}.",
     "placeInLine": "Your answers never change your place in line.",
     "title": "You are checked in",
     "titleCompanion": "You are helping with a check-in",

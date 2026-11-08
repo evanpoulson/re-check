@@ -389,7 +389,62 @@ $$;
 
 RESET ROLE;
 
+-- Wait estimates. An admin maps a site; the change is audited.
+INSERT INTO wait_site (site_id, ahs_city, ahs_name) VALUES ('wait-check', 'Calgary', 'Foothills Medical Centre');
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT FROM audit_log WHERE event = 'wait_site.insert' AND payload ->> 'site_id' = 'wait-check') THEN
+        RAISE EXCEPTION 'wait_site insert was not audited';
+    END IF;
+END
+$$;
+
+SET LOCAL ROLE recheck_poller;
+
+-- The poller stores every attempt; minutes are present only when ok.
+INSERT INTO wait_snapshot (site_id, fetched_at, status, minutes, raw_text)
+VALUES ('wait-check', now() - interval '10 minutes', 'ok', 287, '4 hr 47 min');
+INSERT INTO wait_snapshot (site_id, fetched_at, status, detail)
+VALUES ('wait-check', now() - interval '5 minutes', 'fetch_failed', 'URLError: timed out');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO wait_snapshot (site_id, status) VALUES ('wait-check', 'ok')$q$,
+    'wait_snapshot_minutes_iff_ok');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO wait_snapshot (site_id, status, minutes) VALUES ('wait-check', 'unavailable', 30)$q$,
+    'wait_snapshot_minutes_iff_ok');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO wait_snapshot (site_id, status, minutes) VALUES ('not-mapped', 'ok', 30)$q$,
+    'foreign key');
+
+-- The poller can't change the map, rewrite snapshots or touch clinical data.
+SELECT pg_temp.expect_error($q$INSERT INTO wait_site (site_id, ahs_city, ahs_name) VALUES ('x', 'Calgary', 'X')$q$, 'permission denied');
+SELECT pg_temp.expect_error($q$UPDATE wait_snapshot SET minutes = 1$q$, 'permission denied');
+SELECT pg_temp.expect_error($q$DELETE FROM wait_snapshot$q$, 'permission denied');
+SELECT pg_temp.expect_error($q$SELECT count(*) FROM visit$q$, 'permission denied');
+SELECT pg_temp.expect_error($q$SELECT count(*) FROM audit_log$q$, 'permission denied');
+
+RESET ROLE;
+SET LOCAL ROLE recheck_app;
+
+-- The API reads estimates but can't write them.
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM wait_snapshot WHERE site_id = 'wait-check') <> 2 THEN
+        RAISE EXCEPTION 'recheck_app cannot read wait snapshots';
+    END IF;
+END
+$$;
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO wait_snapshot (site_id, status, minutes) VALUES ('wait-check', 'ok', 30)$q$,
+    'permission denied');
+SELECT pg_temp.expect_error($q$UPDATE wait_site SET ahs_name = 'X'$q$, 'permission denied');
+
+RESET ROLE;
+
 -- Append-only triggers hold even for the table owner.
+SELECT pg_temp.expect_error($q$UPDATE wait_snapshot SET minutes = 1$q$, 'append-only');
+SELECT pg_temp.expect_error($q$DELETE FROM wait_site$q$, 'append-only');
+SELECT pg_temp.expect_error($q$TRUNCATE wait_snapshot$q$, 'append-only');
 SELECT pg_temp.expect_error($q$DELETE FROM report$q$, 'append-only');
 SELECT pg_temp.expect_error($q$TRUNCATE audit_log$q$, 'append-only');
 

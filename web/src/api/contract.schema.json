@@ -1201,7 +1201,7 @@
       "type": "object"
     },
     "PatientHome": {
-      "description": "Every screen shows the wait range and \"Your answers never change your place in line.\" (FR8).",
+      "description": "Every screen shows the wait estimate, the time waited and \"Your answers never change your place in line.\" (FR8).",
       "properties": {
         "attention_prompt": {
           "anyOf": [
@@ -1253,21 +1253,29 @@
           "title": "Role",
           "type": "string"
         },
-        "wait_range": {
+        "wait_estimate": {
           "anyOf": [
             {
-              "$ref": "#/$defs/WaitRange"
+              "$ref": "#/$defs/WaitEstimate"
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "description": "Null when no fresh estimate exists; the screen shows \"Estimate unavailable\"."
+        },
+        "waited_minutes": {
+          "description": "Whole minutes since triage, computed by the server on each fetch.",
+          "minimum": 0,
+          "title": "Waited Minutes",
+          "type": "integer"
         }
       },
       "required": [
         "role",
         "language",
-        "wait_range",
+        "wait_estimate",
+        "waited_minutes",
         "next_checkin_due_at",
         "questionnaire_version",
         "items",
@@ -2898,21 +2906,18 @@
       "title": "VitalsRecord",
       "type": "object"
     },
-    "WaitRange": {
+    "WaitEstimate": {
+      "description": "The department's current wait estimate for new arrivals, as the source publishes it.\n\nFor AHS this is one facility-wide figure: triage to first physician for a\nmid-acuity patient arriving now. It is not this patient's remaining wait.",
       "properties": {
         "as_of": {
+          "description": "When Recheck fetched the value. The AHS feed carries no timestamp.",
           "format": "date-time",
           "title": "As Of",
           "type": "string"
         },
-        "high_minutes": {
+        "minutes": {
           "minimum": 0,
-          "title": "High Minutes",
-          "type": "integer"
-        },
-        "low_minutes": {
-          "minimum": 0,
-          "title": "Low Minutes",
+          "title": "Minutes",
           "type": "integer"
         },
         "source": {
@@ -2920,12 +2925,11 @@
         }
       },
       "required": [
-        "low_minutes",
-        "high_minutes",
+        "minutes",
         "source",
         "as_of"
       ],
-      "title": "WaitRange",
+      "title": "WaitEstimate",
       "type": "object"
     },
     "WaitSource": {
@@ -3282,8 +3286,8 @@
     "VitalsRecord": {
       "$ref": "#/$defs/VitalsRecord"
     },
-    "WaitRange": {
-      "$ref": "#/$defs/WaitRange"
+    "WaitEstimate": {
+      "$ref": "#/$defs/WaitEstimate"
     },
     "WaitSource": {
       "$ref": "#/$defs/WaitSource"
