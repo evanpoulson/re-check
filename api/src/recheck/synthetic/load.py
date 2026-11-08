@@ -25,6 +25,7 @@ import secrets
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
+from collections.abc import Callable
 from typing import Any
 
 from .cohort import SITE_ID, Cohort, Report, Visit, build_cohort
@@ -71,7 +72,7 @@ def _insert_report(cur: Any, v: Visit, r: Report) -> None:
     )
 
 
-def _insert_visit(cur: Any, v: Visit, token: str | None) -> None:
+def _insert_visit(cur: Any, v: Visit, token: str | None, ciphertext: bytes | None = None) -> None:
     from psycopg.types.json import Jsonb
 
     app = v.app_exclusion is None
@@ -88,7 +89,7 @@ def _insert_visit(cur: Any, v: Visit, token: str | None) -> None:
         (
             v.id, SITE_ID, v.ctas, v.complaint_group, v.cedis_code, v.language, v.app_exclusion, v.channel, v.pager_no,
             hashlib.sha256(token.encode()).digest() if app and token else None,
-            os.urandom(48) if app else None,
+            (ciphertext or os.urandom(48)) if app else None,
             v.triaged_at, v.next_prompt_due_at if app else None, v.staff_reassess_due_at, v.last_staff_check_at,
         ),
     )
@@ -168,19 +169,28 @@ def load(cohort: Cohort, database_url: str) -> dict[str, str]:
     """Insert the cohort in one transaction. Returns the raw QR token for each app visit, by scenario."""
     import psycopg
 
-    tokens = {v.scenario: secrets.token_urlsafe(32) for v in cohort.visits if v.app_exclusion is None}
     with psycopg.connect(database_url) as conn, conn.cursor() as cur:
         cur.execute("SET LOCAL ROLE recheck_app")
         cur.execute("SELECT set_config('app.actor', %s, true)", (ACTOR,))
-        cur.execute("SELECT count(*) FROM visit WHERE id = ANY(%s)", ([v.id for v in cohort.visits],))
-        (existing,) = cur.fetchone()
-        if existing:
-            raise SystemExit(
-                f"batch {cohort.batch!r} is already loaded ({existing} visits). Rows can't be deleted;"
-                " load a new batch name, such as --batch demo-2."
-            )
-        for v in cohort.visits:
-            _insert_visit(cur, v, tokens.get(v.scenario))
+        return insert_cohort(cur, cohort)
+
+
+def insert_cohort(cur: Any, cohort: Cohort, encrypt: Callable[[str], bytes] | None = None) -> dict[str, str]:
+    """Insert the cohort with an open cursor (role and app.actor already set). Returns raw QR tokens by scenario.
+
+    `encrypt` stores a real token ciphertext, so the desk can re-show the QR; without it, a placeholder.
+    """
+    tokens = {v.scenario: secrets.token_urlsafe(32) for v in cohort.visits if v.app_exclusion is None}
+    cur.execute("SELECT count(*) FROM visit WHERE id = ANY(%s)", ([v.id for v in cohort.visits],))
+    (existing,) = cur.fetchone()
+    if existing:
+        raise SystemExit(
+            f"batch {cohort.batch!r} is already loaded ({existing} visits). Rows can't be deleted;"
+            " load a new batch name, such as --batch demo-2."
+        )
+    for v in cohort.visits:
+        token = tokens.get(v.scenario)
+        _insert_visit(cur, v, token, encrypt(token) if encrypt and token else None)
     return tokens
 
 

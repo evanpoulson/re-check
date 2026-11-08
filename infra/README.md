@@ -54,6 +54,7 @@ phone / staff browser ─HTTPS─► Caddy :443 ─► web (nginx) ─/api─►
    | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. The default is `15`, so this instance runs the missed check-in, escalation and reminder timers. `0` turns them off. Keep the timers off on all other computers that use the same database. |
    | Variable | `RECHECK_DEMO_STAFF` | Optional. `true` shows the demo role picker next to Auth0 sign-in. |
    | Variable | `RECHECK_DEMO_CHECKINS` | Optional. The default is `true` on this instance. The first check-in of a new visit then opens at enrolment, not one CTAS interval later, and desk staff see "Open check-in now" on Visit management. `false` turns off both. |
+   | Variable | `RECHECK_DEMO_PACE` | Optional. The default is `4` on this instance. Staff get four times more time to acknowledge a task (8 minutes for red), and a check-in can be 20 minutes overdue before the visit is silent. `1` uses the demo rule times. The CTAS intervals do not change. |
    | Secret | `RECHECK_VAPID_PRIVATE_KEY` | Optional. Turns on check-in reminders by Web Push. To make a key, run `cd api && uv run python -m recheck.push keygen`. Keep one key for the full event, because a new key breaks all saved subscriptions. The database must have `db/migrations/2026-11-08-push-reminders.sql`. |
    | Variable | `RECHECK_VAPID_SUBJECT` | Optional. A `mailto:` or `https://` contact for the push services. The default is `https://<SITE_ADDRESS>`. |
 

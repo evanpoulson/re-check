@@ -1,7 +1,7 @@
 """Server-side timers, run every few seconds inside the API process.
 
 - Missed check-in: a waiting app visit whose patient prompt is SILENT_AFTER
-  overdue gets a "silent" reason (`missed_checkin`) on its task, once per due
+  overdue (times RECHECK_DEMO_PACE) gets a "silent" reason (`missed_checkin`) on its task, once per due
   time. The prompt timer isn't moved; the patient answering restarts it.
 - Escalation: a red task still unacknowledged past its deadline is marked
   escalated and routed to the charge nurse as backup.
@@ -26,7 +26,7 @@ from . import events, push, tasks
 from .contract.codes import DashboardEventType, TaskLevel
 from .db import write_tx
 from .rules import Fire
-from .views import SILENT_AFTER
+from .views import silent_after
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ async def run_checks(conn: AsyncConnection) -> Round:
           )
         FOR UPDATE OF v SKIP LOCKED
         """,
-        [SILENT_AFTER, MISSED_CHECKIN.reason_code],
+        [silent_after(), MISSED_CHECKIN.reason_code],
     )
     missed = await cur.fetchall()
     for visit_id, last_report in missed:

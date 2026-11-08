@@ -13,6 +13,7 @@ from uuid import UUID
 from psycopg import AsyncConnection
 from pydantic import TypeAdapter
 
+from . import settings
 from .contract.codes import TaskEventType
 from .contract.reports import PatientReport
 from .contract.staff import FlagRecord, StaffRef, VitalsRecord
@@ -23,6 +24,11 @@ from .rules import LEVEL_ORDER
 
 # A prompt this long overdue counts as silent (synthetic/calibration.py SILENT_AFTER_MINUTES, web mock).
 SILENT_AFTER = timedelta(minutes=5)
+
+
+def silent_after() -> timedelta:
+    """SILENT_AFTER stretched by the demo pace (RECHECK_DEMO_PACE)."""
+    return SILENT_AFTER * settings.demo_pace()
 
 _report_adapter = TypeAdapter(PatientReport)
 
@@ -279,7 +285,7 @@ def worklist_rows(visits: list[VisitSummary], tasks: list[Task], reports: list[d
         unranked.append(dict(
             visit=v,
             open_task=task_by_visit.get(v.visit_id),
-            silent=due is not None and now - due >= SILENT_AFTER,
+            silent=due is not None and now - due >= silent_after(),
             leave_risk=last is not None and last.kind == "leaving",
             prompt_overdue=due is not None and now > due,
             reassess_overdue=v.staff_reassess_due_at is not None and now > v.staff_reassess_due_at,

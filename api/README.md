@@ -19,6 +19,7 @@ AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
 AUTH0_CALLBACK_URL=...                     # optional: default is {RECHECK_PUBLIC_URL}/api/staff/callback
 RECHECK_DEMO_STAFF=false                   # optional: true turns on the demo role picker
+RECHECK_DEMO_PACE=1                        # optional: 4 gives staff 4x more time to acknowledge, and check-ins 4x more time before silent
 RECHECK_DEMO_CHECKINS=false                # optional: true opens the first check-in of a new visit at enrolment, and permits open-checkin
 RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when not set)
 RECHECK_VAPID_PRIVATE_KEY=...              # optional: turns on check-in reminders by Web Push (uv run python -m recheck.push keygen)
@@ -221,6 +222,7 @@ uv run python -m recheck.synthetic.load --tokens-out ../.seed-tokens.json   # lo
 - **One load for each batch.** You cannot delete rows, so each batch name loads one time. To refresh the demo, use a new name, for example `--batch demo-2`.
 - **Database role.** The loader runs in one transaction as `recheck_app`, with `app.actor = 'seed|synthetic-cohort'`. It needs the current `db/schema.sql`.
 - **QR tokens.** Each load makes random QR tokens. `--tokens-out` writes the patient links to a file that Git ignores. Seeded visits store a placeholder ciphertext, so the desk cannot show their QR again (409).
+- **Between demos.** Run `uv run python -m recheck.synthetic.reseed`. It discharges all waiting visits and loads a new board of nine visits with a new batch name: the scripted demo cases, one visit without the app and two quiet generated visits. Check-ins and staff reassessments are due one to three hours later, so only `head_injury_unanswered` and `pager_silent` start silent. Open tasks get a minimum of 15 minutes to acknowledge. The command encrypts the QR tokens with `RECHECK_SECRET_KEY`, so the desk can show them again when the key is the same as the API key. `--dry-run` shows the board and does not load it.
 - **Tests.** `tests/synthetic` checks schema invariants across many seeds. To also run the load test, set `RECHECK_TEST_DATABASE_URL` to a scratch database.
 
 Demo cases (`scenario` in the JSON):
