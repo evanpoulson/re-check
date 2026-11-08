@@ -3,13 +3,14 @@ import { useTranslation } from 'react-i18next'
 import { bankItems, text } from '@/api/bank'
 import type { Task, TimelineEntry } from '@/api/types'
 import { LevelChip } from '@/components/LevelChip'
+import { LEVEL_STYLE } from '@/components/levelStyle'
 import { describeEntry } from '@/lib/timelineText'
 import { attentionText, choiceText, findingsText, itemAnswerText, painText } from '@/lib/answers'
 import { clock } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { AcknowledgeAction } from '../VisitActions'
 import { Divider, Fact, Facts, PageHeading, Safeguard, SectionCard } from './parts'
-import { LEVEL_TONE, entryTime, isCheckin, isReport, reasonText, reportSummary, type CheckinEntry, useVisit } from './model'
+import { entryTime, isCheckin, isReport, reasonText, reportSummary, type CheckinEntry, useVisit } from './model'
 
 export function TimelinePage() {
   const { t } = useTranslation()
@@ -79,7 +80,7 @@ function source(entry: TimelineEntry, t: ReturnType<typeof useTranslation>['t'])
 
 /** A small icon for the kind of entry. Reports get their own card instead. */
 function EntryIcon({ entry }: { entry: TimelineEntry }) {
-  const props = { 'aria-hidden': true, size: 20, className: 'shrink-0 text-muted' } as const
+  const props = { 'aria-hidden': true, className: 'size-5 shrink-0 text-muted' } as const
   if (isReport(entry)) return <TriangleAlert {...props} />
   if ('vitals_id' in entry) return <HeartPulse {...props} />
   if ('flag_id' in entry) return <Flag {...props} />
@@ -170,8 +171,9 @@ function WhyFlagged({ task, entries }: { task: Task; entries: TimelineEntry[] })
           <div key={i} className="space-y-3">
             {i > 0 && <Divider />}
             {reports.map((r) => (
-              <div key={r.report_id} className={cn('space-y-1 rounded-data p-3.5', LEVEL_TONE[reason.level])}>
-                <p className="text-small font-bold">
+              <div key={r.report_id} className={cn('space-y-1.5 rounded-data border-l-4 bg-canvas p-3.5', LEVEL_STYLE[reason.level].edge)}>
+                <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small font-semibold">
+                  <LevelChip level={reason.level} />
                   {t(`reporter.${r.report.reporter}`)} · {clock(r.received_at)}
                 </p>
                 <p className="font-semibold">{reportSummary(r.report, t)}</p>
