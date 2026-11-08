@@ -116,24 +116,25 @@ export function StaffLayout() {
       <header className="staff-header no-print">
         <NavLink to={home} aria-label={t('nav.home')}><Brand /></NavLink>
         <nav aria-label={t('nav.label')}>
-          {SEES_WORKLIST.includes(role) && (
-            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
-          )}
+          {/* Same order for every role, so each role's home comes first. */}
           {SEES_TRIAGE.includes(role) && (
             <>
               <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>
               <NavLink to="/staff/visits/new" className={link}><Plus size={18} aria-hidden />{t('nav.enrol')}</NavLink>
             </>
           )}
+          {SEES_WORKLIST.includes(role) && (
+            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
+          )}
         </nav>
         <div className="staff-identity">
-          <DemoBadge />
-          <span className="hidden sm:inline">
+          <DemoBadge compact />
+          <span className="staff-who">
             {staff.name ? t('signIn.signedInAs', { name: staff.name, role: t(`role.${role}`) }) : t(`role.${role}`)}
           </span>
-          <Button variant="ghost" aria-label={t('nav.signOut')} onClick={() => {
+          <Button variant="ghost" title={t('nav.signOut')} className="staff-sign-out" onClick={() => {
             void signOut().then(() => navigate('/staff/sign-in'))
-          }}><LogOut size={18} aria-hidden /></Button>
+          }}><LogOut size={18} aria-hidden /><span className="staff-sign-out-label">{t('nav.signOut')}</span></Button>
         </div>
       </header>
       <Outlet />
