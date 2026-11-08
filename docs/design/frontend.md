@@ -16,7 +16,7 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
 - A calm identity after apple.com's design language: the system font (SF Pro on Apple devices, Segoe UI on Windows), a light grey canvas with white cards, near-black text, one blue for actions and links, translucent "glass" bars, and no green for "fine". Shape encodes meaning: pills are things you tap, 18px cards hold content, and the small radius is for data chips.
-- Desktop-first staff UI, 15 languages (English, French and the 13 most common other mother tongues in Canada). Question wording is English only until the bank's translations exist.
+- Desktop-first staff UI, the 15 most common mother tongues in Alberta. Question wording is English only until the bank's translations exist.
 - **The question bank is the source of every wording.** `question-bank/` is copied into `web/src/api/bank/` by `npm run gen:contract` and read by `bank.ts`, `cedis.ts` and `enableWhen.ts`. Nothing the bank owns is retyped in the UI.
 
 ## Routes

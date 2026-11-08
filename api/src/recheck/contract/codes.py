@@ -8,8 +8,8 @@ from enum import StrEnum
 
 
 class Language(StrEnum):
-    """The patient's language: English, French and the 13 most common other
-    mother tongues in Canada (2021 Census, Statistics Canada table 98-10-0175).
+    """The patient's language: the 15 most common mother tongues in Alberta
+    (2021 Census, Statistics Canada table 98-10-0175), in that order.
 
     Codes are ISO 639 so staff can book the right interpreter. Mandarin and
     Cantonese are separate spoken languages; Mandarin text uses simplified
@@ -18,20 +18,20 @@ class Language(StrEnum):
     """
 
     EN = "en"
-    FR = "fr"
-    ZH = "zh"  # Mandarin
+    TL = "tl"  # Tagalog
     PA = "pa"  # Punjabi (Gurmukhi script)
-    YUE = "yue"  # Cantonese
+    FR = "fr"
     ES = "es"
-    AR = "ar"
-    TL = "tl"
-    IT = "it"
     DE = "de"
-    PT = "pt"
+    YUE = "yue"  # Cantonese
+    ZH = "zh"  # Mandarin
+    AR = "ar"
     UR = "ur"
-    RU = "ru"
-    FA = "fa"  # Persian
     VI = "vi"
+    KO = "ko"
+    HI = "hi"
+    RU = "ru"
+    PL = "pl"
 
 
 class ComplaintGroup(StrEnum):

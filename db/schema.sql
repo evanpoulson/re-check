@@ -146,8 +146,8 @@ CREATE TABLE visit (
     cedis_code               text             CHECK (cedis_code ~ '^[0-9]{3}$'),
     -- Matches the contract's Language codes (api/src/recheck/contract/codes.py).
     language                 text             NOT NULL CHECK (language IN (
-                                 'en', 'fr', 'zh', 'pa', 'yue', 'es', 'ar', 'tl',
-                                 'it', 'de', 'pt', 'ur', 'ru', 'fa', 'vi')),
+                                 'en', 'tl', 'pa', 'fr', 'es', 'de', 'yue', 'zh',
+                                 'ar', 'ur', 'vi', 'ko', 'hi', 'ru', 'pl')),
     -- Set when the app is not offered: no channel, no QR, no prompts. The
     -- visit stays on the staff list and the staff timer still runs.
     app_exclusion            app_exclusion,

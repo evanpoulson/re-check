@@ -60,7 +60,7 @@ The contract defines no HTTP paths. `src/api/endpoints.ts` holds proposed ones; 
 
 ## Notes
 
-- The question bank is English only. The other 14 languages show a notice and fall back to English until translations are supplied. Arabic, Urdu and Persian set the page to right to left.
+- The question bank is English only. The other 14 languages show a notice and fall back to English until translations are supplied. Arabic and Urdu set the page to right to left.
 - The mocks are demo logic, not the rules engine. Task levels they assume where the contract is silent (a desk question, a wrong circle count) are listed in the design doc.
 - The font (Atkinson Hyperlegible Next) is self-hosted through `@fontsource-variable`, so the app works offline and makes no third-party request.
 

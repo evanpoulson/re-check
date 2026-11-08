@@ -101,8 +101,8 @@ export type DashboardEventType = ("report.received" | "vitals.recorded" | "task.
  */
 export type Reporter = ("patient" | "companion" | "staff")
 /**
- * The patient's language: English, French and the 13 most common other
- * mother tongues in Canada (2021 Census, Statistics Canada table 98-10-0175).
+ * The patient's language: the 15 most common mother tongues in Alberta
+ * (2021 Census, Statistics Canada table 98-10-0175), in that order.
  * 
  * Codes are ISO 639 so staff can book the right interpreter. Mandarin and
  * Cantonese are separate spoken languages; Mandarin text uses simplified
@@ -112,7 +112,7 @@ export type Reporter = ("patient" | "companion" | "staff")
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "Language".
  */
-export type Language = ("en" | "fr" | "zh" | "pa" | "yue" | "es" | "ar" | "tl" | "it" | "de" | "pt" | "ur" | "ru" | "fa" | "vi")
+export type Language = ("en" | "tl" | "pa" | "fr" | "es" | "de" | "yue" | "zh" | "ar" | "ur" | "vi" | "ko" | "hi" | "ru" | "pl")
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "VisitStatus".
