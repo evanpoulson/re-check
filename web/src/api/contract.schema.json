@@ -1031,10 +1031,23 @@
       "type": "string"
     },
     "Language": {
+      "description": "The patient's language: English, French and the 13 most common other\nmother tongues in Canada (2021 Census, Statistics Canada table 98-10-0175).\n\nCodes are ISO 639 so staff can book the right interpreter. Mandarin and\nCantonese are separate spoken languages; Mandarin text uses simplified\ncharacters and Cantonese text uses traditional characters. Keep in step with\nthe CHECK on visit.language in db/schema.sql.",
       "enum": [
         "en",
+        "fr",
+        "zh",
         "pa",
-        "tl"
+        "yue",
+        "es",
+        "ar",
+        "tl",
+        "it",
+        "de",
+        "pt",
+        "ur",
+        "ru",
+        "fa",
+        "vi"
       ],
       "title": "Language",
       "type": "string"

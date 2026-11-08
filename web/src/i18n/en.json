@@ -48,8 +48,37 @@
   },
   "language": {
     "en": "English",
+    "fr": "Français",
+    "zh": "中文（普通话）",
     "pa": "ਪੰਜਾਬੀ",
-    "tl": "Tagalog"
+    "yue": "廣東話",
+    "es": "Español",
+    "ar": "العربية",
+    "tl": "Tagalog",
+    "it": "Italiano",
+    "de": "Deutsch",
+    "pt": "Português",
+    "ur": "اردو",
+    "ru": "Русский",
+    "fa": "فارسی",
+    "vi": "Tiếng Việt"
+  },
+  "languageName": {
+    "en": "English",
+    "fr": "French",
+    "zh": "Mandarin",
+    "pa": "Punjabi",
+    "yue": "Cantonese",
+    "es": "Spanish",
+    "ar": "Arabic",
+    "tl": "Tagalog",
+    "it": "Italian",
+    "de": "German",
+    "pt": "Portuguese",
+    "ur": "Urdu",
+    "ru": "Russian",
+    "fa": "Persian",
+    "vi": "Vietnamese"
   },
   "channel": {
     "phone": "Phone",

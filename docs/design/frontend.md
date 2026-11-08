@@ -16,7 +16,7 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
 - A calm identity after apple.com's design language: the system font (SF Pro on Apple devices, Segoe UI on Windows), a light grey canvas with white cards, near-black text, one blue for actions and links, translucent "glass" bars, and no green for "fine". Shape encodes meaning: pills are things you tap, 18px cards hold content, and the small radius is for data chips.
-- Desktop-first staff UI, languages `en`, `pa`, `tl`. Question wording is English only until the bank's translations exist.
+- Desktop-first staff UI, 15 languages (English, French and the 13 most common other mother tongues in Canada). Question wording is English only until the bank's translations exist.
 - **The question bank is the source of every wording.** `question-bank/` is copied into `web/src/api/bank/` by `npm run gen:contract` and read by `bank.ts`, `cedis.ts` and `enableWhen.ts`. Nothing the bank owns is retyped in the UI.
 
 ## Routes
@@ -58,7 +58,7 @@ Fields exactly as the contract and schema:
 - `complaint_group`: `chest_back_pain`, `neuro_change`, `head_injury`, `confused_drowsy` or `general`. With a CEDIS code, the server rejects a group the [CEDIS map](../../question-bank/cedis-groups.json) contradicts.
 - `app_exclusion` (optional): child, pregnancy over 20 weeks, self-harm or violence, or major trauma. An excluded visit gets no channel and no QR, and stays on the staff list.
 - Optional 3-digit `cedis_code`, picked from the backend's CEDIS map. A mapped code locks the group and suggests an exclusion; the form mirrors `check_enrolment()` and shows the backend's message for a contradiction.
-- `language`: `en`, `pa` or `tl`.
+- `language`: one of the contract's 15 `Language` codes.
 - `channel`: phone or pager. `pager_no` (1 to 6 digits) appears only for pager. A pager already bound to a waiting patient is rejected by the schema, so show the server error inline.
 - A client `submission_id` is generated once and reused on retry.
 
@@ -155,7 +155,7 @@ Every screen shows "Your answers never change your place in line.", the departme
 5. **Sent and status.** A patient-safe timeline: Reported, Received. It says staff will still check on their own schedule, and never implies "all clear". Task level and reasons never reach the patient.
 6. **Leaving.** `LeavingReport` with `leaving_info` ("tell staff before you go").
 7. **Offline, saved and pending.** Answers queue locally and retry with the same `submission_id`. A clear "Saved, will send when connected" state looks different from "no problem".
-8. **Language.** For `pa` and `tl` a plain notice says questions are shown in English for now.
+8. **Language.** For any language other than English, a plain notice says questions are shown in English for now.
 
 ```
  +----------------------------+     +----------------------------+
@@ -201,7 +201,7 @@ web/src/
   components/         LevelChip StateChip MissedChip CountdownChip Sparkline Timeline QrCard HelpBar AnswerButton PrivacyPanel
   features/nurse/     SignIn Enrol Triage VisitSheet Vitals Actions
   features/patient/   Exchange Home Checkin Urgent Status Leaving
-  i18n/               en.json pa.json tl.json
+  i18n/               en.json plus one file per language
 ```
 
 ## Visual references

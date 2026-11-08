@@ -8,9 +8,30 @@ from enum import StrEnum
 
 
 class Language(StrEnum):
+    """The patient's language: English, French and the 13 most common other
+    mother tongues in Canada (2021 Census, Statistics Canada table 98-10-0175).
+
+    Codes are ISO 639 so staff can book the right interpreter. Mandarin and
+    Cantonese are separate spoken languages; Mandarin text uses simplified
+    characters and Cantonese text uses traditional characters. Keep in step with
+    the CHECK on visit.language in db/schema.sql.
+    """
+
     EN = "en"
-    PA = "pa"
+    FR = "fr"
+    ZH = "zh"  # Mandarin
+    PA = "pa"  # Punjabi (Gurmukhi script)
+    YUE = "yue"  # Cantonese
+    ES = "es"
+    AR = "ar"
     TL = "tl"
+    IT = "it"
+    DE = "de"
+    PT = "pt"
+    UR = "ur"
+    RU = "ru"
+    FA = "fa"  # Persian
+    VI = "vi"
 
 
 class ComplaintGroup(StrEnum):

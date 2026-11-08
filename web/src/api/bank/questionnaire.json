@@ -17,11 +17,59 @@
   "extension": [
     {
       "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "fr"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "zh"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
       "valueCode": "pa"
     },
     {
       "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "yue"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "es"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "ar"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
       "valueCode": "tl"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "it"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "de"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "pt"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "ur"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "ru"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "fa"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "vi"
     },
     {
       "url": "urn:recheck:fhir:cedis-map",

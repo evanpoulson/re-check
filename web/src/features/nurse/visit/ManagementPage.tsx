@@ -19,7 +19,7 @@ export function ManagementPage() {
         <div className="min-w-0 space-y-5">
           <SectionCard title={t('visit.details')}>
             <Facts>
-              <Fact label={t('visit.language')} value={t(`language.${visit.language}`)} />
+              <Fact label={t('visit.language')} value={t(`languageName.${visit.language}`)} />
               <Fact label={t('visit.channel')} value={visit.channel ? t(`channel.${visit.channel}`) : t('common.none')} />
               <Fact
                 label={t('visit.app')}
