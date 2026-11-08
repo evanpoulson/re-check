@@ -1,0 +1,1422 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "recheck-waiting-room-checkin",
+  "url": "urn:recheck:questionnaire:waiting-room-checkin",
+  "version": "2026-11-07.1",
+  "name": "RecheckWaitingRoomCheckin",
+  "title": "Recheck waiting-room check-in",
+  "status": "draft",
+  "experimental": true,
+  "date": "2026-11-07",
+  "publisher": "Recheck prototype",
+  "description": "Demo content for synthetic visits only. Not clinically approved. Wording, groups and options need review by the site's clinical team before any real use. Base questions follow the Martha's Rule patient wellness question; follow-ups depend on the visit's complaint group. See question-bank/SOURCES.md.",
+  "language": "en",
+  "subjectType": [
+    "Patient"
+  ],
+  "extension": [
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "pa"
+    },
+    {
+      "url": "urn:recheck:fhir:translation-pending",
+      "valueCode": "tl"
+    },
+    {
+      "url": "urn:recheck:fhir:cedis-map",
+      "valueCanonical": "urn:recheck:conceptmap:cedis-to-group"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "visit_context",
+      "text": "Visit context, filled from triage",
+      "type": "group",
+      "readOnly": true,
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+          "valueBoolean": true
+        }
+      ],
+      "item": [
+        {
+          "linkId": "complaint_group",
+          "text": "Complaint group",
+          "type": "choice",
+          "readOnly": true,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "visit.complaint_group"
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "chest_back_pain",
+                "display": "Chest or back pain"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "neuro_change",
+                "display": "Stroke-like or neurological change"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "head_injury",
+                "display": "Head injury"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "confused_drowsy",
+                "display": "Confused or drowsy"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "general",
+                "display": "General"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "cedis_code",
+          "text": "CEDIS presenting complaint code",
+          "type": "string",
+          "readOnly": true,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "visit.cedis_code"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "always_visible",
+      "text": "Buttons on every screen",
+      "type": "group",
+      "extension": [
+        {
+          "url": "urn:recheck:fhir:note",
+          "valueString": "Each button sends a report of its own kind, not a questionnaire answer."
+        }
+      ],
+      "item": [
+        {
+          "linkId": "help_now",
+          "type": "display",
+          "text": "I need help now",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:concern-code",
+              "valueCode": "help_now"
+            },
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "They need help now"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "marthas_rule"
+            }
+          ]
+        },
+        {
+          "linkId": "worried",
+          "type": "display",
+          "text": "I'm worried I'm getting worse",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:concern-code",
+              "valueCode": "worried"
+            },
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "I'm worried they're getting worse"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "marthas_rule"
+            }
+          ]
+        },
+        {
+          "linkId": "desk_question",
+          "type": "display",
+          "text": "Question about my wait or care",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:concern-code",
+              "valueCode": "desk_question"
+            },
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Question about their wait or care"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "marthas_rule_calls"
+            }
+          ]
+        },
+        {
+          "linkId": "leaving",
+          "type": "display",
+          "text": "I'm leaving",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:report-kind",
+              "valueCode": "leaving"
+            },
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "The patient is leaving"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "base",
+      "text": "Check-in",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "answerer",
+          "text": "Who is answering?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "reporter"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": false
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:reporter",
+                "code": "patient",
+                "display": "Me, the patient"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:reporter",
+                "code": "companion",
+                "display": "Someone with the patient"
+              }
+            }
+          ],
+          "required": true
+        },
+        {
+          "linkId": "feeling_now",
+          "text": "How are you feeling right now?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "How do they seem right now?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "feeling_now"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "pwq"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "marthas_rule"
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-now",
+                "code": "very_good",
+                "display": "Very good"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-now",
+                "code": "good",
+                "display": "Good"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-now",
+                "code": "ok",
+                "display": "OK"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-now",
+                "code": "poor",
+                "display": "Poor"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-now",
+                "code": "very_poor",
+                "display": "Very poor"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "feeling_change",
+          "text": "Compared with when staff last checked on you, how do you feel?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Compared with when staff last checked on them, how do they seem?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "feeling_change"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "pwq"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "marthas_rule"
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-change",
+                "code": "much_better",
+                "display": "Much better"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-change",
+                "code": "better",
+                "display": "Better"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-change",
+                "code": "same",
+                "display": "About the same"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-change",
+                "code": "worse",
+                "display": "Worse"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:feeling-change",
+                "code": "much_worse",
+                "display": "Much worse"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "pain",
+          "text": "How bad is your pain right now? 0 is no pain, 10 is the worst pain you can imagine.",
+          "type": "integer",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "pain"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "ahs_hcs_181_01"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+              "valueInteger": 0
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+              "valueInteger": 10
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "answerer",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:reporter",
+                "code": "patient"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "new_findings",
+          "text": "Since you arrived, has any of this started or got worse? Tick all that apply.",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Since they arrived, have you noticed any of this start or get worse? Tick all that apply."
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "new_findings"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "ahrq_misdiagnosis"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "tia_bystander"
+            },
+            {
+              "url": "urn:recheck:fhir:none-option",
+              "valueString": "None of these"
+            }
+          ],
+          "repeats": true,
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "speech_change",
+                "display": "Speech is different or hard to understand"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "facial_droop",
+                "display": "Face looks droopy on one side"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "new_weakness_numbness",
+                "display": "New weakness or numbness on one side"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "trouble_breathing",
+                "display": "Harder to breathe"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "fainting",
+                "display": "Fainted or nearly fainted"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "new_confusion",
+                "display": "More confused"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "drowsiness",
+                "display": "Hard to stay awake"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "worst_headache",
+                "display": "Worst headache of my life"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "vomiting",
+                "display": "Vomiting"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "vision_change",
+                "display": "New problem seeing"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "balance_change",
+                "display": "New problem with balance or walking"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "chest_pain",
+                "display": "New or worse chest pain"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "heavy_bleeding",
+                "display": "Heavy bleeding"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "circle_count",
+          "text": "Count the circles. Ignore the squares. How many circles did you see?",
+          "type": "integer",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "attention"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "delapp"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "edtb"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+              "valueInteger": 0
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+              "valueInteger": 20
+            },
+            {
+              "url": "urn:recheck:fhir:attention-task",
+              "valueString": "circle_count"
+            },
+            {
+              "url": "urn:recheck:fhir:attention-circles-min",
+              "valueInteger": 4
+            },
+            {
+              "url": "urn:recheck:fhir:attention-circles-max",
+              "valueInteger": 8
+            },
+            {
+              "url": "urn:recheck:fhir:attention-squares-min",
+              "valueInteger": 2
+            },
+            {
+              "url": "urn:recheck:fhir:attention-squares-max",
+              "valueInteger": 4
+            },
+            {
+              "url": "urn:recheck:fhir:attention-show-ms",
+              "valueInteger": 1000
+            },
+            {
+              "url": "urn:recheck:fhir:attention-gap-ms",
+              "valueInteger": 500
+            },
+            {
+              "url": "urn:recheck:fhir:attention-expires-minutes",
+              "valueInteger": 15
+            },
+            {
+              "url": "urn:recheck:fhir:note",
+              "valueString": "Own design inspired by DelApp; unvalidated for self-use. A wrong or missing count asks staff to check in person. Not a clinical test."
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "answerer",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:reporter",
+                "code": "patient"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "follow_up",
+      "text": "Questions for this complaint",
+      "type": "group",
+      "item": [
+        {
+          "linkId": "pain_moved",
+          "text": "Has the pain moved or spread somewhere new?",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Have they said the pain has moved or spread somewhere new?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.pain_moved"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "aas_guideline"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "aas_misdiagnosis"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "chest_back_pain"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "pain_new_location",
+          "text": "Where has it moved or spread to? Tick all that apply.",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Where have they said it moved or spread to? Tick all that apply."
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.pain_new_location"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "aas_guideline"
+            }
+          ],
+          "repeats": true,
+          "enableWhen": [
+            {
+              "question": "pain_moved",
+              "operator": "=",
+              "answerBoolean": true
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "chest",
+                "display": "Chest"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "between_shoulders",
+                "display": "Between the shoulder blades"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "lower_back",
+                "display": "Lower back"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "belly",
+                "display": "Belly"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "neck_jaw",
+                "display": "Neck or jaw"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "arm",
+                "display": "Arm"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:pain-location",
+                "code": "leg",
+                "display": "Leg"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "pain_sudden_worse",
+          "text": "Did the pain suddenly get much worse?",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Have they said the pain suddenly got much worse?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.pain_sudden_worse"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "aas_guideline"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "chest_back_pain"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "change_started",
+          "text": "When did this change start?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "When did this change start?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.change_started"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:ask-after-routing",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "pain_moved",
+              "operator": "=",
+              "answerBoolean": true
+            },
+            {
+              "question": "pain_sudden_worse",
+              "operator": "=",
+              "answerBoolean": true
+            }
+          ],
+          "enableBehavior": "any",
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "under_15_min",
+                "display": "Less than 15 minutes ago"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "from_15_to_60_min",
+                "display": "15 to 60 minutes ago"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "over_1_hr",
+                "display": "More than an hour ago"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "symptoms_change",
+          "text": "Are the symptoms you came in with better, the same, or worse?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Are the symptoms they came in with better, the same, or worse?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.symptoms_change"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "ahrq_misdiagnosis"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "neuro_change"
+              }
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:change",
+                "code": "better",
+                "display": "Better"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:change",
+                "code": "same",
+                "display": "The same"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:change",
+                "code": "worse",
+                "display": "Worse"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "headache_sudden_worse",
+          "text": "Has your headache suddenly become much worse?",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Have they said their headache suddenly became much worse?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.headache_sudden_worse"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "neuro_change"
+              }
+            },
+            {
+              "question": "cedis_code",
+              "operator": "=",
+              "answerString": "404"
+            }
+          ],
+          "enableBehavior": "all"
+        },
+        {
+          "linkId": "last_known_well",
+          "text": "When were you last speaking and moving as usual?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "When were they last speaking and moving as usual?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.last_known_well"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:ask-after-routing",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "csbp_ed"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "new_findings",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "speech_change"
+              }
+            },
+            {
+              "question": "new_findings",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "facial_droop"
+              }
+            },
+            {
+              "question": "new_findings",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:finding",
+                "code": "new_weakness_numbness"
+              }
+            }
+          ],
+          "enableBehavior": "any",
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "under_1_hr",
+                "display": "Less than 1 hour ago"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "from_1_to_3_hr",
+                "display": "1 to 3 hours ago"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "from_3_to_6_hr",
+                "display": "3 to 6 hours ago"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:time-since",
+                "code": "over_6_hr",
+                "display": "More than 6 hours ago"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "harder_to_wake",
+          "text": "Is it harder to stay awake than before?",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Are they harder to wake or keep awake than before?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.harder_to_wake"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "nice_ng232"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "head_injury"
+              }
+            },
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "confused_drowsy"
+              }
+            }
+          ],
+          "enableBehavior": "any"
+        },
+        {
+          "linkId": "vomit_count",
+          "text": "How many times have you vomited since arriving?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "How many times have they vomited since arriving?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.vomit_count"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "nice_ng232"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "head_injury"
+              }
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:count",
+                "code": "zero",
+                "display": "None"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:count",
+                "code": "one",
+                "display": "Once"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:count",
+                "code": "two_plus",
+                "display": "Twice or more"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "headache_change",
+          "text": "Compared with the last check, is your headache better, the same, or worse?",
+          "type": "choice",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Compared with the last check, have they said their headache is better, the same, or worse?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.headache_change"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "nice_ng232"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "head_injury"
+              }
+            }
+          ],
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:change",
+                "code": "better",
+                "display": "Better"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:change",
+                "code": "same",
+                "display": "The same"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "urn:recheck:codes:change",
+                "code": "worse",
+                "display": "Worse"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "seizure",
+          "text": "Have you had a seizure (fit) since arriving?",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Have they had a seizure (fit) since arriving?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.seizure"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "nice_ng232"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "head_injury"
+              }
+            },
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "confused_drowsy"
+              }
+            }
+          ],
+          "enableBehavior": "any"
+        },
+        {
+          "linkId": "more_confused",
+          "text": "Do you feel more muddled or confused than when staff last checked?",
+          "type": "boolean",
+          "extension": [
+            {
+              "url": "urn:recheck:fhir:companion-text",
+              "valueString": "Are they more confused than when staff last checked?"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "patient"
+            },
+            {
+              "url": "urn:recheck:fhir:reporter",
+              "valueCode": "companion"
+            },
+            {
+              "url": "urn:recheck:fhir:contract-field",
+              "valueString": "items.more_confused"
+            },
+            {
+              "url": "urn:recheck:fhir:allow-unsure",
+              "valueBoolean": true
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "brief_s4"
+            },
+            {
+              "url": "urn:recheck:fhir:evidence",
+              "valueString": "tia_bystander"
+            }
+          ],
+          "enableWhen": [
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "head_injury"
+              }
+            },
+            {
+              "question": "complaint_group",
+              "operator": "=",
+              "answerCoding": {
+                "system": "urn:recheck:codes:complaint-group",
+                "code": "confused_drowsy"
+              }
+            }
+          ],
+          "enableBehavior": "any"
+        }
+      ]
+    }
+  ]
+}

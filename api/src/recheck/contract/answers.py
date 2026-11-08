@@ -5,10 +5,11 @@ sure", "couldn't answer" and "never asked" can't be confused.
 """
 
 from typing import Annotated, Literal
+from uuid import UUID
 
 from pydantic import Field, StrictBool
 
-from .codes import FindingCode, MissingReason, Overall
+from .codes import FeelingChange, FeelingNow, FindingCode, MissingReason
 from .common import Code, InputModel, Pain, unique_list
 
 
@@ -17,9 +18,22 @@ class Missing(InputModel):
     reason: MissingReason
 
 
-class OverallAnswered(InputModel):
+class FeelingNowAnswered(InputModel):
     kind: Literal["answered"]
-    value: Overall
+    value: FeelingNow
+
+
+class FeelingChangeAnswered(InputModel):
+    kind: Literal["answered"]
+    value: FeelingChange
+
+
+class AttentionAnswered(InputModel):
+    """The patient's count for a circle-counting prompt. The server scores it against what it issued."""
+
+    kind: Literal["answered"]
+    prompt_id: UUID = Field(description="The attention prompt the server issued for this check-in.")
+    count: int = Field(strict=True, ge=0, le=20)
 
 
 class PainAnswered(InputModel):
@@ -34,7 +48,18 @@ class FindingsAnswered(InputModel):
     value: unique_list(FindingCode)
 
 
-OverallAnswer = Annotated[OverallAnswered | Missing, Field(discriminator="kind")]
+FeelingNowAnswer = Annotated[FeelingNowAnswered | Missing, Field(discriminator="kind")]
+FeelingChangeAnswer = Annotated[FeelingChangeAnswered | Missing, Field(discriminator="kind")]
+class AttentionMissing(InputModel):
+    """No count. Carries the prompt ID when one was shown, so staff can tell "shown but not answered"
+    from "never shown" (a companion check-in, for example)."""
+
+    kind: Literal["missing"]
+    reason: MissingReason
+    prompt_id: UUID | None = None
+
+
+AttentionAnswer = Annotated[AttentionAnswered | AttentionMissing, Field(discriminator="kind")]
 PainAnswer = Annotated[PainAnswered | Missing, Field(discriminator="kind")]
 FindingsAnswer = Annotated[FindingsAnswered | Missing, Field(discriminator="kind")]
 

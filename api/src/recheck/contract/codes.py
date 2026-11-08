@@ -14,12 +14,22 @@ class Language(StrEnum):
 
 
 class ComplaintGroup(StrEnum):
-    """Pathway selected from the triage complaint (research brief, section 2)."""
+    """Pathway selected from the triage CEDIS complaint (question-bank/cedis-groups.json)."""
 
     CHEST_BACK_PAIN = "chest_back_pain"
     NEURO_CHANGE = "neuro_change"
     HEAD_INJURY = "head_injury"
+    CONFUSED_DROWSY = "confused_drowsy"
     GENERAL = "general"
+
+
+class AppExclusion(StrEnum):
+    """Why the patient app was not offered. Staff watch these patients directly."""
+
+    CHILD = "child"
+    PREGNANCY_OVER_20_WEEKS = "pregnancy_over_20_weeks"
+    SELF_HARM_OR_VIOLENCE = "self_harm_or_violence"
+    MAJOR_TRAUMA = "major_trauma"
 
 
 class VisitStatus(StrEnum):
@@ -52,12 +62,27 @@ class StaffRole(StrEnum):
     QUALITY = "quality"
 
 
-class Overall(StrEnum):
-    """Better, same or worse than at triage. "Not sure" is a missing reason."""
+class FeelingNow(StrEnum):
+    """Wellness question 1, adapted from the Patient Wellness Questionnaire (Martha's Rule).
 
+    "Not sure" is a missing reason.
+    """
+
+    VERY_GOOD = "very_good"
+    GOOD = "good"
+    OK = "ok"
+    POOR = "poor"
+    VERY_POOR = "very_poor"
+
+
+class FeelingChange(StrEnum):
+    """Wellness question 2: compared with when staff last checked. "Not sure" is a missing reason."""
+
+    MUCH_BETTER = "much_better"
     BETTER = "better"
     SAME = "same"
     WORSE = "worse"
+    MUCH_WORSE = "much_worse"
 
 
 class MissingReason(StrEnum):
@@ -88,8 +113,11 @@ class FindingCode(StrEnum):
 
 
 class ConcernCode(StrEnum):
+    """Always-visible buttons. `desk_question` is non-clinical and goes to the triage nurse only."""
+
     WORRIED = "worried"
     HELP_NOW = "help_now"
+    DESK_QUESTION = "desk_question"
 
 
 class ReportKind(StrEnum):

@@ -53,7 +53,8 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 Fields exactly as the contract and schema:
 
 - `ctas` 2 to 5 as a segmented control. CTAS 1 is disabled with "never in the waiting room".
-- `complaint_group`: `chest_back_pain`, `neuro_change`, `head_injury` or `general`.
+- `complaint_group`: `chest_back_pain`, `neuro_change`, `head_injury`, `confused_drowsy` or `general`. With a CEDIS code, the server rejects a group the [CEDIS map](../../question-bank/cedis-groups.json) contradicts.
+- `app_exclusion` (optional): child, pregnancy over 20 weeks, self-harm or violence, or major trauma. An excluded visit gets no channel and no QR, and stays on the staff list.
 - Optional 3-digit `cedis_code`.
 - `language`: `en`, `pa` or `tl`.
 - `channel`: phone or pager. `pager_no` (1 to 6 digits) appears only for pager. A pager already bound to a waiting patient is rejected by the schema, so show the server error inline.
@@ -85,7 +86,7 @@ Columns:
 
 - Visit ref (pager number or short ref), CTAS, complaint group, language and channel.
 - **Waiting time** since `triaged_at`.
-- **Condition** (`StateChip`): the last check-in `overall` (better, same, worse or unknown) plus the latest findings.
+- **Condition** (`StateChip`): the last check-in `feeling_change` (much better to much worse, or unknown) plus the latest findings.
 - **Flags:** `LevelChip` for the open task level, `MissedChip` ("No response" from `silent` or `prompt_overdue`), `leave_risk`, prompt overdue and reassessment overdue.
 - **Time since last check-in**, with who answered (patient or companion) and the channel.
 - **Next check-in due** and **staff reassessment due** as two separate countdowns.
@@ -134,7 +135,7 @@ Every screen shows the wait range when present, "Your answers never change your 
 
 1. **Home and waiting.** Next check-in countdown, "Report a change", "I'm leaving" and the latest `PatientMessage`.
 2. **Check-in.** One question per screen, with a progress bar and Back.
-   - Overall: better, same or worse, plus "Not sure" (`missing: unsure`).
+   - Wellness: `feeling_now` (very good to very poor) and `feeling_change` (much better to much worse), each with "Not sure" (`missing: unsure`). See the [question bank](../../question-bank/README.md).
    - Pain from 0 to 10 on a slider with word labels, plus "Not sure". **Hidden for a companion** and sent as missing, because the schema forbids companion pain.
    - New warning signs: multi-select over the 13 `FindingCode`s with an explicit "None of these". Companion wording becomes "Are they...".
    - Complaint items from `PatientHome.items` by `input_type` (`yes_no`, `choice`, `multi_choice`, `scale`), each with "Not sure" or "Can't tell".
@@ -165,7 +166,7 @@ The frontend uses the contract exactly. Types are generated from `contract_json_
 
 - **Board data.** The board joins `TriageBoard.rows` (`BoardRow`) with `Worklist.rows` (`WorklistRow`) on `visit_id`. Together they carry the last report, trend, `silent`, `leave_risk`, prompt and reassessment due and overdue, and the open task.
 - **Queue order.** The board sorts on the client by `visit.ctas`, then `visit.triaged_at`, and ignores the severity `rank`. Flags never reorder rows.
-- **Condition.** Derived from the latest `trend` point's `overall` and the open task level. No new field.
+- **Condition.** Derived from the latest `trend` point's `feeling_change` and the open task level. No new field.
 - **Missed check-ins.** Shown as "No response" from `silent` and `prompt_overdue`. The contract has no missed count.
 - **Connection state.** Not shown. `VisitSummary` does not expose whether a QR was scanned.
 - **Staff identity.** The contract defines only `StaffRef`, so the demo role picker is local-only until a staff session exists.

@@ -65,19 +65,127 @@ BEGIN
 END
 $$;
 
--- A valid check-in, and shapes that must be rejected.
-INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, overall, pain, findings)
-VALUES ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000001', now(),
-        'checkin', 'patient', 'phone', 'demo-1', 'worse', 7, '{}');
+-- A visit without the app: no channel, no QR, no patient prompts, staff timer still runs.
+INSERT INTO visit (id, site_id, ctas, complaint_group, cedis_code, language, app_exclusion)
+VALUES ('00000000-0000-0000-0000-000000000002', 'demo', 3, 'general', '458', 'en', 'pregnancy_over_20_weeks');
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM visit
+        WHERE id = '00000000-0000-0000-0000-000000000002'
+          AND next_prompt_due_at IS NULL
+          AND staff_reassess_due_at = triaged_at + interval '30 minutes'
+    ) THEN
+        RAISE EXCEPTION 'visit without the app should have only the staff timer';
+    END IF;
+END
+$$;
 
 SELECT pg_temp.expect_error(
-    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, overall, overall_missing, pain, findings)
-       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'patient', 'phone', 'demo-1', 'worse', 'unsure', 7, '{}')$q$,
+    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, app_exclusion, channel, patient_token_hash, companion_token_hash, tokens_expire_at)
+       VALUES ('demo', 3, 'general', 'en', 'child', 'phone', sha256('e'), sha256('f'), now() + interval '1 day')$q$,
+    'no channel, pager or QR tokens');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO visit (site_id, ctas, complaint_group, language)
+       VALUES ('demo', 3, 'confused_drowsy', 'en')$q$,
+    'visit_app_offer');
+
+-- The circle-counting prompt the server issued for the first check-in.
+INSERT INTO attention_prompt (id, visit_id, questionnaire_version, expires_at, steps, show_ms, gap_ms, expected_count)
+VALUES ('00000000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-000000000001', 'demo-1',
+        now() + interval '15 minutes',
+        '[{"shape": "circle", "x": 0.2, "y": 0.3}, {"shape": "square", "x": 0.7, "y": 0.6}]', 1000, 500, 1);
+
+SELECT pg_temp.expect_error($q$UPDATE attention_prompt SET expected_count = 2$q$, 'permission denied|append-only');
+
+-- A prompt issued to the visit without the app, used to test cross-visit references.
+INSERT INTO attention_prompt (id, visit_id, questionnaire_version, expires_at, steps, show_ms, gap_ms, expected_count)
+VALUES ('00000000-0000-0000-0000-0000000000c2', '00000000-0000-0000-0000-000000000002', 'demo-1',
+        now() + interval '15 minutes', '[{"shape": "circle", "x": 0.5, "y": 0.5}]', 1000, 500, 1);
+
+-- A valid check-in, and shapes that must be rejected.
+INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version,
+                    feeling_now, feeling_change, pain, findings, attention_prompt_id, attention_count)
+VALUES ('00000000-0000-0000-0000-0000000000a1', '00000000-0000-0000-0000-000000000001', now(),
+        'checkin', 'patient', 'phone', 'demo-1', 'poor', 'worse', 7, '{}', '00000000-0000-0000-0000-0000000000c1', 1);
+
+-- A companion check-in: pain and the attention check are sent as missing.
+INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version,
+                    feeling_now, feeling_change_missing, pain_missing, findings, attention_missing)
+VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(),
+        'checkin', 'companion', 'phone', 'demo-1', 'poor', 'unsure', 'not_asked', '{drowsiness}', 'not_asked');
+
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, feeling_now, feeling_now_missing, feeling_change, pain, findings, attention_missing)
+       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'patient', 'phone', 'demo-1', 'poor', 'unsure', 'worse', 7, '{}', 'not_reached')$q$,
     'report_checkin_shape');
 SELECT pg_temp.expect_error(
-    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, overall_missing, pain, findings)
-       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'companion', 'phone', 'demo-1', 'not_asked', 5, '{}')$q$,
+    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, feeling_now, feeling_change, pain_missing, findings, attention_prompt_id, attention_count)
+       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'companion', 'phone', 'demo-1', 'poor', 'worse', 'not_asked', '{}', '00000000-0000-0000-0000-0000000000c1', 1)$q$,
     'report_checkin_shape');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, feeling_now, feeling_change, pain, findings, attention_count)
+       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'patient', 'phone', 'demo-1', 'poor', 'worse', 7, '{}', 1)$q$,
+    'report_checkin_shape');
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, feeling_now_missing, feeling_change, pain, findings, attention_missing)
+       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'companion', 'phone', 'demo-1', 'not_asked', 'same', 5, '{}', 'not_asked')$q$,
+    'report_checkin_shape');
+
+INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, concern)
+VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'concern', 'patient', 'phone', 'desk_question');
+
+-- A prompt shown but not answered keeps its ID.
+INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version,
+                    feeling_now, feeling_change, pain, findings, attention_prompt_id, attention_missing)
+VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(),
+        'checkin', 'patient', 'phone', 'demo-1', 'ok', 'same', 3, '{}', '00000000-0000-0000-0000-0000000000c1', 'unsure');
+
+-- A report can't use another visit's prompt.
+SELECT pg_temp.expect_error(
+    $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel, questionnaire_version, feeling_now, feeling_change, pain, findings, attention_prompt_id, attention_count)
+       VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'checkin', 'patient', 'phone', 'demo-1', 'ok', 'same', 3, '{}', '00000000-0000-0000-0000-0000000000c2', 1)$q$,
+    'report_attention_prompt_fk');
+
+-- Excluding a visit after enrolment stops prompts, signs out its devices and keeps token history.
+INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, patient_token_hash, companion_token_hash, tokens_expire_at, patient_token_used_at)
+VALUES ('00000000-0000-0000-0000-000000000003', 'demo', 4, 'general', 'en', 'phone',
+        sha256('late-patient'), sha256('late-companion'), now() + interval '1 day', now());
+INSERT INTO visit_session (visit_id, role, session_hash, expires_at)
+VALUES ('00000000-0000-0000-0000-000000000003', 'patient', sha256('late-session'), now() + interval '1 day');
+
+UPDATE visit SET app_exclusion = 'self_harm_or_violence' WHERE id = '00000000-0000-0000-0000-000000000003';
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT FROM visit
+        WHERE id = '00000000-0000-0000-0000-000000000003'
+          AND next_prompt_due_at IS NULL
+          AND staff_reassess_due_at IS NOT NULL
+          AND patient_token_used_at IS NOT NULL
+    ) THEN
+        RAISE EXCEPTION 'late exclusion should stop prompts and keep the staff timer and token history';
+    END IF;
+    IF EXISTS (SELECT FROM visit_session WHERE visit_id = '00000000-0000-0000-0000-000000000003' AND revoked_at IS NULL) THEN
+        RAISE EXCEPTION 'late exclusion should revoke the visit''s sessions';
+    END IF;
+END
+$$;
+
+SELECT pg_temp.expect_error(
+    $q$UPDATE visit SET app_exclusion = NULL WHERE id = '00000000-0000-0000-0000-000000000003'$q$,
+    'cannot be removed or changed');
+-- A visit without the app can't be given a patient prompt.
+UPDATE visit SET next_prompt_due_at = now() WHERE id = '00000000-0000-0000-0000-000000000002';
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM visit WHERE id = '00000000-0000-0000-0000-000000000002' AND next_prompt_due_at IS NOT NULL) THEN
+        RAISE EXCEPTION 'a visit without the app was given a patient prompt';
+    END IF;
+END
+$$;
 SELECT pg_temp.expect_error(
     $q$INSERT INTO report (id, visit_id, captured_at, kind, reporter, channel)
        VALUES (gen_random_uuid(), '00000000-0000-0000-0000-000000000001', now(), 'finding', 'companion', 'phone')$q$,
