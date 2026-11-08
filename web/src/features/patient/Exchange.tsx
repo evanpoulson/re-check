@@ -7,7 +7,7 @@ import type { Role, SignInConflict } from '@/api/types'
 import { AnswerButton } from '@/components/AnswerButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { clock } from '@/lib/time'
+import { clock, isolate } from '@/lib/time'
 import { PatientLayout } from './PatientLayout'
 
 type State =
@@ -71,7 +71,7 @@ export function Exchange() {
           <p>
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
-              time: clock(conflict.signed_in_since),
+              time: isolate(clock(conflict.signed_in_since, i18n.language)),
             })}
           </p>
           <div className="grid gap-3">
