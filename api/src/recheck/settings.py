@@ -57,6 +57,11 @@ def site_id() -> str:
     return _get("RECHECK_SITE_ID") or "foothills-demo"
 
 
+def scheduler_seconds() -> float:
+    """How often the timer checks run (missed check-ins, escalation). 0 turns them off."""
+    return float(_get("RECHECK_SCHEDULER_SECONDS") or "15")
+
+
 def cookie_secure() -> bool:
     """Send cookies only over HTTPS. Off by default so local http:// works."""
     return (_get("RECHECK_COOKIE_SECURE") or "false").lower() in ("1", "true", "yes")
