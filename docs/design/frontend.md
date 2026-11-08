@@ -11,7 +11,8 @@ Sources: [`AGENTS.md`](../../AGENTS.md), the [project plan](../recheck-project-p
 
 ## Decisions
 
-- The patient is in the queue from **enrolment**. Scanning the QR binds a device; the nurse sees Connected or Not connected yet.
+- The patient is in the queue from **enrolment**. Scanning the QR binds a device to the visit.
+- The frontend is built to the **backend contract as it stands** (`api/src/recheck/contract/`). It adds no fields and assumes no contract changes.
 - The dashboard keeps **fixed queue order**. Flags are badges and never move a row.
 - Staff use a clearly labelled **demo role picker** until sign-in is ready. Auth0 is optional later.
 - Calm clinical light theme, desktop-first staff UI, shadcn/ui with Radix, languages `en`, `pa`, `tl`.
@@ -43,7 +44,7 @@ These match the routes proposed in the [project plan](../recheck-project-plan.md
 - **Tokens** (CSS variables in the Tailwind theme): neutral slate surfaces and one calm teal-blue primary. Task-level colours map 1:1 to `TaskLevel`: `red`, `amber`, `silent` (violet with a clock icon), `leave_risk` (orange with a door icon) and `overdue` (blue-grey with an hourglass). There is no bright green for "fine"; baseline is muted grey.
 - **Type:** Inter or system. Patient body text 18px or larger and answer buttons 20px. The nurse table uses 14px with tabular numerals for timers.
 - **shadcn/ui and Radix:** Button, Card, Badge, Table, Sheet, Dialog, Tabs, Toast, Tooltip, Progress, RadioGroup, Select, Slider, Skeleton.
-- **Custom components:** `AnswerButton`, `HelpBar`, `LevelChip`, `StateChip` (condition), `MissedChip`, `LinkChip` (Connected or Not connected yet), `CountdownChip`, `Sparkline`, `Timeline`, `QrCard`, `PrivacyPanel`.
+- **Custom components:** `AnswerButton`, `HelpBar`, `LevelChip`, `StateChip` (condition), `MissedChip` ("No response"), `CountdownChip`, `Sparkline`, `Timeline`, `QrCard`, `PrivacyPanel`.
 
 ## Triage nurse side
 
@@ -85,7 +86,7 @@ Columns:
 - Visit ref (pager number or short ref), CTAS, complaint group, language and channel.
 - **Waiting time** since `triaged_at`.
 - **Condition** (`StateChip`): the last check-in `overall` (better, same, worse or unknown) plus the latest findings.
-- **Flags:** `LevelChip` for the open task level, `MissedChip` ("Missed 1" or "Missed 2+"), prompt overdue, reassessment overdue and `LinkChip`.
+- **Flags:** `LevelChip` for the open task level, `MissedChip` ("No response" from `silent` or `prompt_overdue`), `leave_risk`, prompt overdue and reassessment overdue.
 - **Time since last check-in**, with who answered (patient or companion) and the channel.
 - **Next check-in due** and **staff reassessment due** as two separate countdowns.
 - **Symptoms:** the latest pain and reported findings, plus a `Sparkline` of the trend. An unanswered point is a gap, never a zero.
@@ -97,8 +98,8 @@ Columns:
 |---------------------------------------------------------------------------------|
 | Ref   CTAS Complaint   Wait  Condition  Flags          Last chk  Next | Reassess |
 | P-21   2   Chest/back  0:42  WORSE      RED  !         3m (pt)   12m  | 0:03     |
-| P-14   3   Head injury 1:10  Same       SILENT Missed2 48m (--)  due  | 0:20     |
-| P-09   3   General     0:55  Better     Not connected  --        --   | 0:35     |
+| P-14   3   Head injury 1:10  Same       SILENT No resp 48m (--)  due  | 0:20     |
+| P-09   3   General     0:55  Better     --             9m (pt)   21m  | 0:35     |
 +---------------------------------------------------------------------------------+
    row click opens the detail sheet
 ```
@@ -158,25 +159,30 @@ Every screen shows the wait range when present, "Your answers never change your 
  +----------------------------+
 ```
 
-## Contract gaps to settle with the backend
+## Built to the contract as it is
 
-1. **The triage board row is too thin.** `BoardRow` has only CTAS, complaint, `triaged_at`, level and the reassessment due and overdue fields. The project plan already says to extend it. The dashboard needs the last report (time, who, channel), `trend`, latest findings, prompt due and overdue, `silent`, `leave_risk`, a missed-check count and queue-order data. Recommendation: extend `BoardRow` with these fields from `WorklistRow` instead of sorting the severity-ranked `Worklist` on the client.
-2. **No missed-check count.** Rows carry only booleans. Add `missed_checkins: int`.
-3. **No connected state.** The schema has `patient_token_used_at` and `companion_token_used_at`, but `VisitSummary` does not expose them. Add `patient_linked` and `companion_linked`.
-4. **"Condition" is not a field.** It is derived from the last `overall`, the findings and the task level. Confirm the rule.
-5. **Staff identity** for acknowledge and assess is defined only as `StaffRef`. The demo role picker covers the hackathon.
-6. **The FastAPI routes do not exist yet.** The frontend works against generated types (`@hey-api/openapi-ts`) and MSW mocks.
-7. **Translated question text** for `pa` and `tl` must come from the question bank.
+The frontend uses the contract exactly. Types are generated from `contract_json_schema()` in `api/src/recheck/contract/__init__.py`, so a contract change breaks the type check instead of drifting silently.
+
+- **Board data.** The board joins `TriageBoard.rows` (`BoardRow`) with `Worklist.rows` (`WorklistRow`) on `visit_id`. Together they carry the last report, trend, `silent`, `leave_risk`, prompt and reassessment due and overdue, and the open task.
+- **Queue order.** The board sorts on the client by `visit.ctas`, then `visit.triaged_at`, and ignores the severity `rank`. Flags never reorder rows.
+- **Condition.** Derived from the latest `trend` point's `overall` and the open task level. No new field.
+- **Missed check-ins.** Shown as "No response" from `silent` and `prompt_overdue`. The contract has no missed count.
+- **Connection state.** Not shown. `VisitSummary` does not expose whether a QR was scanned.
+- **Staff identity.** The contract defines only `StaffRef`, so the demo role picker is local-only until a staff session exists.
+- **Routes and transport.** The contract defines no HTTP paths and no realtime transport. Paths live in one file, `web/src/api/endpoints.ts`, and the frontend runs against typed MSW mocks until the FastAPI routes exist.
+- **Translations.** Question text for `pa` and `tl` comes from the question bank.
+
+Possible later contract improvements, only if the backend chooses to add them: a missed-check count, patient and companion linked flags, and a richer `BoardRow`.
 
 ## Frontend structure (`web/`, sibling of `api/`)
 
-Vite, React, TypeScript, Tailwind and shadcn/ui, with React Router, TanStack Query and i18n for `en`, `pa` and `tl`. The client is generated from the FastAPI OpenAPI spec. MSW handlers are seeded with the three synthetic cases: worsening chest pain, a companion reporting sudden speech change, and an unanswered head-injury check.
+Vite, React, TypeScript, Tailwind and shadcn/ui, with React Router, TanStack Query and i18n for `en`, `pa` and `tl`. Types are generated from the backend contract's JSON Schema. MSW handlers are seeded with the three synthetic cases: worsening chest pain, a companion reporting sudden speech change, and an unanswered head-injury check.
 
 ```
 web/src/
   api/                generated client and MSW mocks
   components/ui/      shadcn
-  components/         LevelChip StateChip MissedChip LinkChip CountdownChip Sparkline Timeline QrCard HelpBar AnswerButton PrivacyPanel
+  components/         LevelChip StateChip MissedChip CountdownChip Sparkline Timeline QrCard HelpBar AnswerButton PrivacyPanel
   features/nurse/     SignIn Enrol Triage VisitSheet Vitals Actions
   features/patient/   Exchange Home Checkin Urgent Status Leaving
   i18n/               en.json pa.json tl.json
@@ -226,5 +232,4 @@ Each step is its own small branch and pull request.
 ## Open items
 
 - The frontend directory name `web/` is assumed.
-- Agree the `BoardRow` extension and the missed-count and linked fields with the backend before step 5.
 - The Voltex energy-data and Solana tracks are out of scope.
