@@ -122,6 +122,12 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `GET /api/worklist` | physician or charge nurse | `Worklist`: waiting visits ranked by open task level (red first), then longest wait |
 | `GET /api/triage-board` | triage or charge nurse | `TriageBoard`: task colour and staff reassessment timers, no reasons |
 | `GET /api/visits/{id}` | triage nurse, physician or charge nurse | `VisitDetail`: reports, vitals, flags, sign-ins and task events, oldest first |
+| `POST /api/tasks/{id}/acknowledge` | triage nurse, physician or charge nurse | `AcknowledgeTask` → `Task`; 409 if already acknowledged |
+| `POST /api/tasks/{id}/assess` | triage nurse, physician or charge nurse | `AssessTask` → `Task`; needs acknowledgement first; restarts the staff timer; roomed, treated and released, left or not located also close the visit |
+| `POST /api/visits/{id}/vitals` | triage or charge nurse | `VitalsCreate` → `VitalsRecord` (201; 200 on retry); a correction keeps the original |
+| `POST /api/visits/{id}/flag` | triage nurse | `FlagHigher` → `FlagRecord`; opens or raises an amber task (`staff_flag`) |
+| `POST /api/visits/{id}/status` | triage nurse, physician or charge nurse | `VisitStatusUpdate` → 204; closes the visit and signs out its device |
+| `POST /api/visits/{id}/exclusion` | triage or charge nurse | `VisitExclusionUpdate` → 204; stops patient prompts, staff timer keeps running |
 | `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only; reused until answered), wait estimate or null, minutes waited |
 | `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`; retry gives `duplicate: true` |
 
