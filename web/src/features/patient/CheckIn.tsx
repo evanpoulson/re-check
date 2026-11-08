@@ -81,14 +81,14 @@ export function CheckIn() {
     return (
       <PatientLayout>
         <Card role="alert" className="space-y-3">
-          <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+          <h1 className="text-heading font-semibold leading-tight tracking-tight">
             {t(signedOut ? 'exchange.signedOut.title' : 'exchange.invalid.title')}
           </h1>
           <p>{t(signedOut ? 'exchange.signedOut.helpNow' : 'exchange.askDesk')}</p>
           {/* There is no scanner in the page: the way back in is the phone's camera on the visit's QR. */}
           {signedOut && (
-            <p className="flex items-start gap-3 rounded-card bg-brand-50 px-5 py-3 font-semibold">
-              <QrCode aria-hidden className="mt-0.5 size-6 shrink-0 text-brand-600" />
+            <p className="flex items-start gap-3 rounded-card bg-canvas px-5 py-3 font-semibold">
+              <QrCode aria-hidden className="mt-0.5 size-6 shrink-0" />
               {t('exchange.signedOut.scanAgain')}
             </p>
           )}
@@ -203,7 +203,7 @@ export function CheckIn() {
 
         {view.name === 'confirmLeave' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('leaving.title')}</h1>
             <p>{t('leaving.info')}</p>
             <Button
               size="lg"
@@ -227,7 +227,7 @@ export function CheckIn() {
 
         {view.name === 'confirmDesk' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">{t('desk.confirmTitle')}</h1>
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">{t('desk.confirmTitle')}</h1>
             <p>{t('desk.confirmBody', { context: home.role === 'companion' ? 'companion' : undefined })}</p>
             <Button size="lg" className="w-full" disabled={sending} onClick={sendDeskQuestion}>
               {t('desk.confirm')}
@@ -240,7 +240,7 @@ export function CheckIn() {
 
         {view.name === 'desk' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">
               {view.queued ? t('sent.queuedTitle') : t('desk.title')}
             </h1>
             <p>{view.queued ? t('sent.queuedBody') : t('desk.body')}</p>
@@ -253,7 +253,7 @@ export function CheckIn() {
 
         {view.name === 'sent' && (
           <Card className="space-y-3">
-            <h1 className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+            <h1 className="text-heading font-semibold leading-tight tracking-tight">
               {view.queued ? t('sent.queuedTitle') : t('sent.title')}
             </h1>
             {/* The status is the point of this screen: bold, with an icon, not muted. */}
@@ -261,13 +261,13 @@ export function CheckIn() {
               className={
                 view.queued
                   ? 'flex items-start gap-3 rounded-card bg-level-amber-bg px-5 py-3 font-semibold text-level-amber'
-                  : 'flex items-start gap-3 rounded-card bg-brand-50 px-5 py-3 font-semibold'
+                  : 'flex items-start gap-3 rounded-card bg-canvas px-5 py-3 font-semibold'
               }
             >
               {view.queued ? (
                 <CloudOff aria-hidden className="mt-0.5 size-6 shrink-0" />
               ) : (
-                <CircleCheckBig aria-hidden className="mt-0.5 size-6 shrink-0 text-brand-600" />
+                <CircleCheckBig aria-hidden className="mt-0.5 size-6 shrink-0" />
               )}
               {view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}
             </p>
@@ -278,11 +278,11 @@ export function CheckIn() {
             {/* Patient-safe timeline only: no task level or reasons ever reach this screen. */}
             <ol className="space-y-2 rounded-2xl bg-canvas p-4 text-base">
               <li className="flex items-center gap-2">
-                <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />
+                <CircleCheckBig aria-hidden className="size-5 shrink-0" />
                 {t('sent.reported')}
               </li>
               <li className={view.queued ? 'flex items-center gap-2 text-muted' : 'flex items-center gap-2'}>
-                {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0 text-brand-500" />}
+                {view.queued ? <Clock aria-hidden className="size-5 shrink-0" /> : <CircleCheckBig aria-hidden className="size-5 shrink-0" />}
                 {view.queued ? t('sent.waiting') : t('sent.received')}
               </li>
             </ol>
@@ -307,11 +307,11 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
     <div>
       <h1>{t(home.role === 'companion' ? 'patient.titleCompanion' : 'patient.homeTitle')}</h1>
       {home.role === 'companion' && <p className="mt-2 text-base text-muted">{t('patient.companionHint')}</p>}
-      {home.message !== 'none' && <p className="mt-3 rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
+      {home.message !== 'none' && <p className="mt-3 rounded-card border border-line bg-surface px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
       <section className="patient-checkin-card" aria-label={t('patient.nextCheckin')}>
         <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
           {t('patient.startCheckin')}
-          <ArrowRight size={20} aria-hidden />
+          <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
         </Button>
         <div className="patient-next">
           <span>{t('patient.nextCheckin')}</span>
@@ -384,10 +384,10 @@ function ReportChange({
   return (
     <section aria-labelledby="change" className="space-y-4">
       <button type="button" className="back-link mb-0!" onClick={onCancel}>
-        <ChevronLeft aria-hidden size={16} className="rtl:rotate-180" />
+        <ChevronLeft aria-hidden className="size-4 rtl:rotate-180" />
         {t('flow.back')}
       </button>
-      <h1 id="change" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+      <h1 id="change" className="text-heading font-semibold leading-tight tracking-tight">
         {text('new_findings', home.role)}
       </h1>
       <div role="group" aria-labelledby="change" className="answer-list">

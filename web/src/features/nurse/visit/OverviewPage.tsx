@@ -9,7 +9,7 @@ import { AcknowledgeAction, FlagHigherCard } from '../VisitActions'
 import { Divider, Fact, Facts, PageHeading, Safeguard, SectionCard } from './parts'
 import { isCheckin, lastReport, rolesText, type CheckinEntry, useVisit } from './model'
 
-const LINK_BUTTON = 'inline-flex min-h-11 items-center justify-center gap-2 rounded-tap border border-brand-500 bg-surface px-5 font-medium text-brand-600 transition-colors hover:bg-brand-50'
+const LINK_BUTTON = 'inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-tap border border-brand-500 bg-surface px-5 text-center font-medium [overflow-wrap:anywhere] text-brand-600 transition-colors hover:bg-brand-50'
 
 export function OverviewPage() {
   const { t } = useTranslation()
@@ -73,7 +73,7 @@ export function OverviewPage() {
                     <p className="text-small text-muted">{nextStep}</p>
                     {(canAct || isDesk) && (
                       <Link to="assessment" className={cn(LINK_BUTTON, 'w-full')}>
-                        <ArrowRight aria-hidden size={18} />
+                        <ArrowRight aria-hidden className="size-[1.125rem] rtl:-scale-x-100" />
                         {t('visitPage.overview.goAssessment')}
                       </Link>
                     )}
@@ -183,7 +183,7 @@ function LatestAnswers({ entry }: { entry: CheckinEntry }) {
         <Fact label={t('answers.attention')} value={attentionText(c.attention, t)} />
       </Facts>
       <Link to="timeline" className={LINK_BUTTON}>
-        <ArrowRight aria-hidden size={18} />
+        <ArrowRight aria-hidden className="size-[1.125rem] rtl:-scale-x-100" />
         {t('visitPage.overview.compare')}
       </Link>
     </SectionCard>

@@ -1,19 +1,21 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CircleAlert, CircleCheck, Smartphone } from 'lucide-react'
+import { ArrowLeft, CircleCheck, Hourglass, Smartphone } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getVisitDetail } from '@/api/api'
 import type { Task } from '@/api/types'
 import { CountdownChip } from '@/components/CountdownChip'
+import { LevelChip } from '@/components/LevelChip'
+import { LEVEL_STYLE } from '@/components/levelStyle'
 import { PageState } from '@/components/PageState'
 import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
-import { clock, isOverdue, untilMs, useNow } from '@/lib/time'
+import { clock, formatMinutes, isOverdue, untilMs, useNow } from '@/lib/time'
 import { cn } from '@/lib/utils'
 import { useStaff } from '../staff'
 import { useDashboardEvents } from '../useDashboardEvents'
-import { LEVEL_TONE, lastAssessed, reasonText, type VisitContext } from './model'
+import { lastAssessed, reasonText, type VisitContext } from './model'
 
 /** /staff/visits/:id and its four pages. Owns the visit query and everything that stays on screen between pages. */
 export function VisitLayout() {
@@ -56,7 +58,7 @@ export function VisitLayout() {
     : role === 'charge_nurse' ? ['/staff/escalations', t('visit.backToEscalations')] : ['/staff/triage', t('visit.back')]
   const back = (
     <Link to={backTo} className="back-link mb-0!">
-      <ArrowLeft aria-hidden size={18} />
+      <ArrowLeft aria-hidden className="size-[1.2em] rtl:-scale-x-100" />
       {backLabel}
     </Link>
   )
@@ -100,7 +102,7 @@ export function VisitLayout() {
   return (
     <main id="main-content">
       <section className="border-b border-line bg-surface" aria-labelledby="visit-title">
-        <div className="mx-auto max-w-[1280px] px-4 pt-3 pb-5 sm:px-8">
+        <div className="staff-container pt-3 pb-5">
           {back}
           <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
             <h1 id="visit-title" className="text-heading font-semibold">
@@ -116,8 +118,8 @@ export function VisitLayout() {
               )}
             </p>
             {visit.app_exclusion && (
-              <span className="inline-flex items-center gap-1.5 rounded-data bg-level-overdue-bg px-2.5 py-1 text-small font-semibold text-level-overdue">
-                <Smartphone aria-hidden className="size-4" />
+              <span className="inline-flex items-center gap-1.5 rounded-data border border-answer px-2.5 py-1 text-small font-semibold">
+                <Smartphone aria-hidden className="size-[1.2em] shrink-0" />
                 {t('visitPage.appNotOffered', { reason: t(`exclusion.${visit.app_exclusion}`) })}
               </span>
             )}
@@ -126,21 +128,22 @@ export function VisitLayout() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-[1280px] px-4 sm:px-8">
+      {/* A size container, so the clocks stack when large text leaves too little room for two (rem here follows the text size). */}
+      <div className="staff-container @container">
         {isError && (
           <p role="status" className="mt-4 rounded-data border border-line bg-surface p-3">{t('visit.stale')}</p>
         )}
 
         {/*
           Below desktop width the two clocks share a row under the concern, so the tabs stay
-          near the top. Desktop: concern and both clocks on one row.
+          near the top, unless large text leaves no room for two. Desktop: concern and both clocks on one row.
         */}
-        <div className="grid grid-cols-2 gap-3 py-4 sm:gap-4 [&>:first-child]:col-span-2 lg:grid-cols-[minmax(0,1fr)_16.5rem_15.5rem] lg:[&>:first-child]:col-span-1">
+        <div className="grid grid-cols-1 gap-3 py-4 sm:gap-4 @min-[18rem]:grid-cols-2 @min-[18rem]:[&>:first-child]:col-span-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,16.5rem)_minmax(0,15.5rem)] lg:[&>:first-child]:col-span-1">
           {task ? (
             <ConcernBanner task={task} />
           ) : (
             <section aria-live="polite" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-data border border-line bg-surface p-4">
-              <CircleCheck aria-hidden size={20} className="shrink-0" />
+              <CircleCheck aria-hidden className="size-5 shrink-0" />
               <h2 ref={completedTitle} tabIndex={-1} className="min-w-0 flex-1 text-lead font-semibold">
                 <AssessedSummary detail={data} completed={completed} />
               </h2>
@@ -166,7 +169,7 @@ export function VisitLayout() {
           />
         </div>
 
-        <nav aria-label={t('visitTabs.label')} className="-mx-4 overflow-x-auto border-b border-line px-4 sm:mx-0 sm:px-0">
+        <nav aria-label={t('visitTabs.label')} className="overflow-x-auto border-b border-line">
           <ul className="flex gap-2">
             {tabs.map((tab) => (
               <li key={tab.to} className="shrink-0">
@@ -184,7 +187,7 @@ export function VisitLayout() {
       </div>
 
       <footer className="border-t border-line">
-        <div className="mx-auto flex max-w-[1280px] flex-wrap justify-between gap-x-6 gap-y-1 px-4 py-5 text-note text-muted sm:px-8">
+        <div className="staff-container flex flex-wrap justify-between gap-x-6 gap-y-1 py-5 text-note text-muted">
           <p>{t('visitPage.boundaryRecord')}</p>
           <p>{t('visitPage.boundaryScope')}</p>
         </div>
@@ -198,29 +201,27 @@ function ConcernBanner({ task }: { task: Task }) {
   const { t } = useTranslation()
   const reason = getPrimaryTaskReason(task)
   return (
-    <section aria-labelledby="active-concern" className={cn('flex items-center gap-3 rounded-data border border-l-4 p-3 sm:p-4', LEVEL_TONE[task.level])}>
-      <CircleAlert aria-hidden size={20} className="shrink-0" />
-      <div className="min-w-0 space-y-1">
-        <p className="text-small font-bold">
-          {t('visitPage.unresolved', { level: t(`taskLevel.${task.level}`) })}
-        </p>
-        <h2 id="active-concern" className="text-title font-semibold text-ink">
-          {reason ? reasonText(reason.reason_code, t) : t('actions.task')}
-        </h2>
-        <p className="text-note sm:text-small">
+    <section aria-labelledby="active-concern" className={cn('min-w-0 space-y-1 rounded-data border border-line border-l-4 bg-surface p-3 sm:p-4', LEVEL_STYLE[task.level].edge)}>
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-small font-semibold">
+        <LevelChip level={task.level} />
+        {t('visitPage.unresolvedShort')}
+      </p>
+      <h2 id="active-concern" className="text-title font-semibold">
+        {reason ? reasonText(reason.reason_code, t) : t('actions.task')}
+      </h2>
+      <p className="text-note text-muted sm:text-small">
           {task.status === 'open' ? t('visitPage.ackPending') : t('visitPage.ackDone', { time: clock(task.acknowledged_at ?? task.created_at) })}
           {' · '}
           {t('visitPage.assessPending')}
           {task.escalated && <> · {t('visit.routedToBackup')}</>}
-        </p>
-      </div>
+      </p>
     </section>
   )
 }
 
 /**
  * One of the two independent clocks. Overdue gets the overdue style, its hourglass and a
- * warm edge. The staff clock keeps a blue edge only while it is not overdue.
+ * warm edge. The staff clock keeps a darker edge (not blue: blue means "press me") while it is not overdue.
  */
 function Clock({ label, due, now, empty, note, noteWide, highlight }: {
   label: string
@@ -233,17 +234,24 @@ function Clock({ label, due, now, empty, note, noteWide, highlight }: {
   noteWide?: boolean
   highlight?: boolean
 }) {
+  const { t } = useTranslation()
   const overdue = !empty && isOverdue(untilMs(due, now))
   return (
     <div
       className={cn(
         'min-w-0 rounded-data border bg-surface px-3 py-2.5 sm:px-4',
-        overdue ? 'border-level-amber' : highlight ? 'border-brand-500' : 'border-line',
+        overdue ? 'border-level-amber' : highlight ? 'border-ink/40' : 'border-line',
       )}
     >
       <p className="text-small font-semibold">{label}</p>
       <p className="text-lead font-bold sm:text-title">
-        {empty ?? <CountdownChip due={due} now={now} className="whitespace-normal" />}
+        {empty ?? (overdue ? (
+          // In a clock the amber edge and hourglass carry "overdue"; big bold text that can wrap, not a small chip.
+          <span className="tabular inline-flex items-start gap-1.5">
+            <Hourglass aria-hidden className="mt-[0.2em] size-[0.9em] shrink-0 text-level-overdue" />
+            {t('time.overdue', { value: formatMinutes(untilMs(due, now) ?? 0) })}
+          </span>
+        ) : <CountdownChip due={due} now={now} className="whitespace-normal" />)}
       </p>
       <p className={cn('text-note text-muted sm:text-small', noteWide && 'hidden sm:block')}>{note}</p>
     </div>

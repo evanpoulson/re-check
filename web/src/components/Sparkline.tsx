@@ -21,7 +21,7 @@ export function Sparkline({ trend, width = 96, height = 28 }: { trend: TrendPoin
   if (answered.length === 1) {
     return (
       <span className="inline-flex items-center gap-1.5" aria-label={t('sparkline.label', { values: answered[0]!.pain })} role="img">
-        <span aria-hidden className="size-2 rounded-full bg-brand-500" />
+        <span aria-hidden className="size-2 rounded-full bg-ink" />
         <span aria-hidden className="tabular font-semibold">{answered[0]!.pain}</span>
       </span>
     )
@@ -45,7 +45,7 @@ export function Sparkline({ trend, width = 96, height = 28 }: { trend: TrendPoin
   const label = t('sparkline.label', { values: answered.map((p) => p.pain).join(', ') })
 
   return (
-    <svg role="img" aria-label={label} width={width} height={height} className="text-brand-500">
+    <svg role="img" aria-label={label} width={width} height={height} className="text-ink">
       {segments.map((pts) => (
         <polyline key={pts} points={pts} fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
       ))}

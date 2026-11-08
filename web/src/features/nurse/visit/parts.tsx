@@ -28,7 +28,7 @@ export function SectionCard({ title, lead, className, children }: {
   children: ReactNode
 }) {
   return (
-    <Card className={cn('min-w-0 space-y-4', className)}>
+    <Card className={cn('min-w-0 space-y-4 p-4 sm:p-6', className)}>
       <div>
         <h3 className="text-title font-semibold">{title}</h3>
         {lead && <p className="mt-1 text-small text-muted">{lead}</p>}
@@ -69,10 +69,13 @@ export function Facts({ children, className, rows }: { children: ReactNode; clas
 
 export const Divider = () => <hr className="border-line" />
 
-/** A quiet tinted note. Never a colour that reads as "all clear". */
+/**
+ * A quiet note. Info is outlined and neutral is grey; neither is blue (blue means "press
+ * me") nor a colour that reads as "all clear".
+ */
 export function Note({ children, tone = 'info' }: { children: ReactNode; tone?: 'info' | 'neutral' }) {
   return (
-    <div className={cn('space-y-1 rounded-data p-4 text-small', tone === 'info' ? 'bg-brand-50' : 'bg-canvas')}>
+    <div className={cn('space-y-1 rounded-data p-4 text-small', tone === 'info' ? 'border border-line bg-surface' : 'bg-canvas')}>
       {children}
     </div>
   )
@@ -83,7 +86,7 @@ export function Safeguard() {
   const { t } = useTranslation()
   return (
     <p className="flex items-start gap-2 rounded-data border border-line p-3 text-small">
-      <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-muted" />
+      <ShieldCheck aria-hidden className="mt-[0.15em] size-[1.2em] shrink-0 text-muted" />
       {t('visitPage.safeguard')}
     </p>
   )

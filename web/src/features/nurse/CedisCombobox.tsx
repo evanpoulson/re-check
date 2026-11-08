@@ -121,14 +121,14 @@ export function CedisCombobox({
                 choose(entry)
               }}
               onMouseMove={() => setActive(i)}
-              className={cn('flex min-h-11 cursor-pointer items-center gap-3 px-3.5 py-2 text-[0.9375rem]', i === active && 'bg-brand-50')}
+              className={cn('flex min-h-11 cursor-pointer items-center gap-3 px-3.5 py-2 text-small', i === active && 'bg-brand-50')}
             >
               <span className="tabular w-9 shrink-0 font-semibold">{entry.code}</span>
               <span className="min-w-0">{entry.name}</span>
             </li>
           ))}
         </ul>
-        {options.length === 0 && <p className="px-3.5 py-3 text-[0.9375rem] text-muted">{t('enrol.cedisNoMatch')}</p>}
+        {options.length === 0 && <p className="px-3.5 py-3 text-small text-muted">{t('enrol.cedisNoMatch')}</p>}
       </div>
     </div>
   )

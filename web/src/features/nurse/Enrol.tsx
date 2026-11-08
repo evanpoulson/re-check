@@ -19,14 +19,14 @@ import { CedisCombobox } from './CedisCombobox'
 
 const EXCLUSIONS: AppExclusion[] = ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma']
 const FIELD = 'field'
-const LABEL = 'mb-1.5 block text-[0.9375rem] font-semibold'
+const LABEL = 'mb-1.5 block text-small font-semibold'
 // Apple-style segmented control. The radio stays in the tab order; the selected
 // segment is the blue selection fill with heavier text, so it never relies on hue alone.
 const SEGMENT =
-  'relative flex min-h-11 min-w-10 flex-1 cursor-pointer items-center justify-center gap-2 rounded-tap px-2 sm:px-4 text-[0.9375rem] font-medium transition-colors has-[:checked]:bg-brand-500 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500/60'
-const ERROR = 'mt-1.5 text-[0.9375rem] font-semibold text-level-red'
+  'relative flex min-h-11 min-w-0 flex-1 cursor-pointer items-center justify-center gap-2 rounded-tap px-1 sm:px-4 text-small font-medium transition-colors has-[:checked]:bg-brand-500 has-[:checked]:font-semibold has-[:checked]:text-white has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-brand-500/60'
+const ERROR = 'mt-1.5 text-small font-semibold text-level-red'
 const LINK_BUTTON =
-  'inline-flex min-h-11 items-center justify-center gap-2 rounded-tap border border-brand-500 bg-surface px-5 text-[1.0625rem] font-medium tracking-[-0.01em] text-brand-600 transition-colors hover:bg-brand-50'
+  'inline-flex min-h-11 items-center justify-center gap-2 rounded-tap border border-brand-500 bg-surface px-5 text-lead font-medium tracking-[-0.01em] text-brand-600 transition-colors hover:bg-brand-50'
 const QR_SVG_ID = 'enrol-qr'
 
 type Field = 'ctas' | 'cedis_code' | 'pager_no' | 'conflict'
@@ -174,159 +174,163 @@ export function Enrol() {
   const conflictOn = (f: 'complaint' | 'exclusion') => !!errors.conflict && (errors.conflictField ?? 'complaint') === f
 
   return (
-    <main id="main-content" className="mx-auto max-w-2xl px-4 py-12 sm:px-6">
-      <h1 ref={heading} className="mb-8 text-center text-4xl font-semibold tracking-tight sm:text-5xl">{t('pages.enrol')}</h1>
-      {summary && summaryItems.length > 0 && (
-        <div
-          ref={summaryRef}
-          tabIndex={-1}
-          role="alert"
-          aria-labelledby="error-summary-title"
-          className="mb-6 rounded-card border-2 border-level-red bg-surface p-5 focus-visible:outline-3 focus:outline-3 focus:outline-offset-2 focus:outline-brand-500/60 sm:p-6"
-        >
-          <h2 id="error-summary-title" className="text-xl font-semibold">{t('enrol.errorSummary')}</h2>
-          <ul className="mt-3 space-y-2">
-            {summaryItems.map((item) => (
-              <li key={item.target + item.text}>
-                <a href={`#${item.target}`} onClick={(e) => jump(e, item.target)} className="font-semibold text-level-red underline underline-offset-4">
-                  {item.text}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      <Card className="p-5 sm:p-10">
-        <form onSubmit={submit} noValidate className="space-y-7">
-          <fieldset aria-describedby={cn('ctas-help', submitted.ctas && 'ctas-error')}>
-            <legend className={LABEL}>{t('enrol.ctas')}</legend>
-            <div className={cn('flex gap-1 rounded-tap bg-canvas p-1', errors.ctas && 'ring-2 ring-level-red')}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <label key={n} className={cn(SEGMENT, n === 1 ? 'cursor-not-allowed text-muted/60' : 'hover:not-has-checked:bg-surface')}>
-                  <input
-                    type="radio"
-                    id={`ctas-${n}`}
-                    name="ctas"
-                    value={n}
-                    disabled={n === 1}
-                    checked={form.ctas === n}
-                    onChange={() => set('ctas', n, 'ctas')}
-                    className="sr-only"
-                  />
-                  {n}
-                </label>
+    <main id="main-content" className="staff-page">
+      <div className="max-w-2xl">
+        <header className="page-heading">
+          <h1 ref={heading}>{t('pages.enrol')}</h1>
+        </header>
+        {summary && summaryItems.length > 0 && (
+          <div
+            ref={summaryRef}
+            tabIndex={-1}
+            role="alert"
+            aria-labelledby="error-summary-title"
+            className="mb-6 rounded-card border-2 border-level-red bg-surface p-5 focus-visible:outline-3 focus:outline-3 focus:outline-offset-2 focus:outline-brand-500/60 sm:p-6"
+          >
+            <h2 id="error-summary-title" className="text-title font-semibold">{t('enrol.errorSummary')}</h2>
+            <ul className="mt-3 space-y-2">
+              {summaryItems.map((item) => (
+                <li key={item.target + item.text}>
+                  <a href={`#${item.target}`} onClick={(e) => jump(e, item.target)} className="font-semibold text-level-red underline underline-offset-4">
+                    {item.text}
+                  </a>
+                </li>
               ))}
-            </div>
-            <p id="ctas-help" className="mt-1.5 text-sm text-muted">{t('enrol.ctas1')}</p>
-            {errorLine('ctas', 'ctas-error', t('enrol.errors.ctas'))}
-          </fieldset>
-
-          <div>
-            <label htmlFor="cedis" className={LABEL}>{t('enrol.cedis')}</label>
-            <CedisCombobox
-              id="cedis"
-              value={form.cedis_code}
-              onChange={changeCedis}
-              invalid={!!errors.cedis_code}
-              describedBy={cn('cedis-help', submitted.cedis_code && 'cedis-error')}
-            />
-            <p id="cedis-help" className="mt-1.5 text-sm text-muted">
-              {mapped ? `${mapped.code}: ${mapped.name}` : t('enrol.cedisHelp')}
-            </p>
-            {errorLine('cedis_code', 'cedis-error', t('enrol.errors.cedis'))}
+            </ul>
           </div>
+        )}
+        <Card className="p-5 sm:p-10">
+          <form onSubmit={submit} noValidate className="space-y-7">
+            <fieldset aria-describedby={cn('ctas-help', submitted.ctas && 'ctas-error')}>
+              <legend className={LABEL}>{t('enrol.ctas')}</legend>
+              <div className={cn('flex gap-1 rounded-tap bg-canvas p-1', errors.ctas && 'ring-2 ring-level-red')}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <label key={n} className={cn(SEGMENT, n === 1 ? 'cursor-not-allowed text-muted/60' : 'hover:not-has-checked:bg-surface')}>
+                    <input
+                      type="radio"
+                      id={`ctas-${n}`}
+                      name="ctas"
+                      value={n}
+                      disabled={n === 1}
+                      checked={form.ctas === n}
+                      onChange={() => set('ctas', n, 'ctas')}
+                      className="sr-only"
+                    />
+                    {n}
+                  </label>
+                ))}
+              </div>
+              <p id="ctas-help" className="mt-1.5 text-small text-muted">{t('enrol.ctas1')}</p>
+              {errorLine('ctas', 'ctas-error', t('enrol.errors.ctas'))}
+            </fieldset>
 
-          <div>
-            <label htmlFor="complaint" className={LABEL}>{t('enrol.complaint')}</label>
-            <select
-              id="complaint"
-              className={cn(FIELD, 'select')}
-              value={form.complaint_group}
-              disabled={groupLocked}
-              aria-invalid={conflictOn('complaint')}
-              aria-describedby={cn(groupLocked && 'complaint-locked', submitted.conflict && conflictAt === 'complaint' && 'conflict-error') || undefined}
-              onChange={(e) => set('complaint_group', e.target.value as ComplaintGroup, 'conflict')}
-            >
-              {COMPLAINTS.map((c) => (
-                <option key={c} value={c}>{t(`complaint.${c}`)}</option>
-              ))}
-            </select>
-            {conflictAt === 'complaint' && errorLine('conflict', 'conflict-error', errors.conflict)}
-            {groupLocked && (
-              <p id="complaint-locked" className="mt-1.5 flex items-center gap-1.5 text-sm text-muted">
-                <Lock aria-hidden className="size-3.5 shrink-0" />
-                {t('enrol.groupLocked')}
+            <div>
+              <label htmlFor="cedis" className={LABEL}>{t('enrol.cedis')}</label>
+              <CedisCombobox
+                id="cedis"
+                value={form.cedis_code}
+                onChange={changeCedis}
+                invalid={!!errors.cedis_code}
+                describedBy={cn('cedis-help', submitted.cedis_code && 'cedis-error')}
+              />
+              <p id="cedis-help" className="mt-1.5 text-small text-muted">
+                {mapped ? `${mapped.code}: ${mapped.name}` : t('enrol.cedisHelp')}
               </p>
-            )}
-          </div>
+              {errorLine('cedis_code', 'cedis-error', t('enrol.errors.cedis'))}
+            </div>
 
-          <div>
-            <label htmlFor="exclusion" className={LABEL}>{t('enrol.exclusion')}</label>
-            <select
-              id="exclusion"
-              className={cn(FIELD, 'select')}
-              value={form.app_exclusion ?? ''}
-              aria-invalid={conflictOn('exclusion')}
-              aria-describedby={submitted.conflict && conflictAt === 'exclusion' ? 'conflict-error' : undefined}
-              onChange={(e) => set('app_exclusion', (e.target.value || null) as AppExclusion | null, 'conflict')}
-            >
-              <option value="">{t('enrol.appOffered')}</option>
-              {EXCLUSIONS.map((x) => (
-                <option key={x} value={x}>{t('enrol.notOffered', { reason: t(`exclusion.${x}`) })}</option>
-              ))}
-            </select>
-            {form.app_exclusion && <p className="mt-1.5 text-sm text-muted">{t('enrol.exclusionHelp')}</p>}
-            {conflictAt === 'exclusion' && errorLine('conflict', 'conflict-error', errors.conflict)}
-          </div>
-
-          <div>
-            <label htmlFor="language" className={LABEL}>{t('enrol.language')}</label>
-            <select id="language" className={cn(FIELD, 'select')} value={form.language} onChange={(e) => set('language', e.target.value as Language)}>
-              {LANGUAGES.map((l) => (
-                <option key={l} value={l}>{t(`languageName.${l}`)}</option>
-              ))}
-            </select>
-          </div>
-
-          {form.app_exclusion === null && (
-            <>
-              <fieldset>
-                <legend className={LABEL}>{t('enrol.channel')}</legend>
-                <div className="flex gap-1 rounded-tap bg-canvas p-1">
-                  {(['phone', 'pager'] as const).map((c) => (
-                    <label key={c} className={`${SEGMENT} hover:not-has-checked:bg-surface`}>
-                      <input type="radio" name="channel" checked={form.channel === c} onChange={() => set('channel', c, 'pager_no')} className="sr-only" />
-                      {t(`channel.${c}`)}
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              {form.channel === 'pager' && (
-                <div>
-                  <label htmlFor="pager" className={LABEL}>{t('enrol.pagerNo')}</label>
-                  <input
-                    id="pager"
-                    inputMode="numeric"
-                    maxLength={6}
-                    className={FIELD}
-                    value={form.pager_no}
-                    onChange={(e) => set('pager_no', e.target.value, 'pager_no')}
-                    aria-invalid={!!errors.pager_no}
-                    aria-describedby={submitted.pager_no ? 'pager-error' : undefined}
-                  />
-                  {errorLine('pager_no', 'pager-error', t('enrol.errors.pagerRequired'))}
-                </div>
+            <div>
+              <label htmlFor="complaint" className={LABEL}>{t('enrol.complaint')}</label>
+              <select
+                id="complaint"
+                className={cn(FIELD, 'select')}
+                value={form.complaint_group}
+                disabled={groupLocked}
+                aria-invalid={conflictOn('complaint')}
+                aria-describedby={cn(groupLocked && 'complaint-locked', submitted.conflict && conflictAt === 'complaint' && 'conflict-error') || undefined}
+                onChange={(e) => set('complaint_group', e.target.value as ComplaintGroup, 'conflict')}
+              >
+                {COMPLAINTS.map((c) => (
+                  <option key={c} value={c}>{t(`complaint.${c}`)}</option>
+                ))}
+              </select>
+              {conflictAt === 'complaint' && errorLine('conflict', 'conflict-error', errors.conflict)}
+              {groupLocked && (
+                <p id="complaint-locked" className="mt-1.5 flex items-center gap-1.5 text-small text-muted">
+                  <Lock aria-hidden className="size-3.5 shrink-0" />
+                  {t('enrol.groupLocked')}
+                </p>
               )}
-            </>
-          )}
+            </div>
 
-          {serverError && <p role="alert" className={ERROR}>{serverError}</p>}
-          <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
-            {mutation.isPending ? t('common.sending') : form.app_exclusion ? t('enrol.submitNoQr') : t('enrol.submit')}
-          </Button>
-        </form>
-      </Card>
+            <div>
+              <label htmlFor="exclusion" className={LABEL}>{t('enrol.exclusion')}</label>
+              <select
+                id="exclusion"
+                className={cn(FIELD, 'select')}
+                value={form.app_exclusion ?? ''}
+                aria-invalid={conflictOn('exclusion')}
+                aria-describedby={submitted.conflict && conflictAt === 'exclusion' ? 'conflict-error' : undefined}
+                onChange={(e) => set('app_exclusion', (e.target.value || null) as AppExclusion | null, 'conflict')}
+              >
+                <option value="">{t('enrol.appOffered')}</option>
+                {EXCLUSIONS.map((x) => (
+                  <option key={x} value={x}>{t('enrol.notOffered', { reason: t(`exclusion.${x}`) })}</option>
+                ))}
+              </select>
+              {form.app_exclusion && <p className="mt-1.5 text-small text-muted">{t('enrol.exclusionHelp')}</p>}
+              {conflictAt === 'exclusion' && errorLine('conflict', 'conflict-error', errors.conflict)}
+            </div>
+
+            <div>
+              <label htmlFor="language" className={LABEL}>{t('enrol.language')}</label>
+              <select id="language" className={cn(FIELD, 'select')} value={form.language} onChange={(e) => set('language', e.target.value as Language)}>
+                {LANGUAGES.map((l) => (
+                  <option key={l} value={l}>{t(`languageName.${l}`)}</option>
+                ))}
+              </select>
+            </div>
+
+            {form.app_exclusion === null && (
+              <>
+                <fieldset>
+                  <legend className={LABEL}>{t('enrol.channel')}</legend>
+                  <div className="flex gap-1 rounded-tap bg-canvas p-1">
+                    {(['phone', 'pager'] as const).map((c) => (
+                      <label key={c} className={`${SEGMENT} hover:not-has-checked:bg-surface`}>
+                        <input type="radio" name="channel" checked={form.channel === c} onChange={() => set('channel', c, 'pager_no')} className="sr-only" />
+                        {t(`channel.${c}`)}
+                      </label>
+                    ))}
+                  </div>
+                </fieldset>
+
+                {form.channel === 'pager' && (
+                  <div>
+                    <label htmlFor="pager" className={LABEL}>{t('enrol.pagerNo')}</label>
+                    <input
+                      id="pager"
+                      inputMode="numeric"
+                      maxLength={6}
+                      className={FIELD}
+                      value={form.pager_no}
+                      onChange={(e) => set('pager_no', e.target.value, 'pager_no')}
+                      aria-invalid={!!errors.pager_no}
+                      aria-describedby={submitted.pager_no ? 'pager-error' : undefined}
+                    />
+                    {errorLine('pager_no', 'pager-error', t('enrol.errors.pagerRequired'))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {serverError && <p role="alert" className={ERROR}>{serverError}</p>}
+            <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
+              {mutation.isPending ? t('common.sending') : form.app_exclusion ? t('enrol.submitNoQr') : t('enrol.submit')}
+            </Button>
+          </form>
+        </Card>
+      </div>
     </main>
   )
 }
@@ -368,55 +372,61 @@ function Done({
   }
 
   return (
-    <main id="main-content" className="mx-auto max-w-xl space-y-6 px-4 py-12 sm:px-6">
-      <h1 ref={heading} className="text-center text-4xl font-semibold tracking-tight sm:text-5xl">{t('enrol.doneTitle')}</h1>
-      <p className="text-center text-lg text-muted">{t('enrol.doneRef', { ref })}</p>
-      <dl className="no-print mx-auto grid max-w-sm gap-x-4 gap-y-2 rounded-card bg-surface p-5 text-[0.9375rem] shadow-card sm:grid-cols-[auto_1fr]">
-        {!excluded && (
-          <>
-            <dt className="font-semibold">{t('enrol.firstPrompt')}</dt>
-            <dd className="tabular text-muted sm:text-end">{summary ? due(summary.next_prompt_due_at) ?? t('common.none') : t('common.loading')}</dd>
-          </>
+    <main id="main-content" className="staff-page">
+      <div className="max-w-xl space-y-6">
+        <header className="page-heading mb-0!">
+          <div>
+            <h1 ref={heading}>{t('enrol.doneTitle')}</h1>
+            <p>{t('enrol.doneRef', { ref })}</p>
+          </div>
+        </header>
+        <dl className="no-print mx-auto grid max-w-sm gap-x-4 gap-y-2 rounded-card bg-surface p-5 text-small shadow-card sm:grid-cols-[auto_1fr]">
+          {!excluded && (
+            <>
+              <dt className="font-semibold">{t('enrol.firstPrompt')}</dt>
+              <dd className="tabular text-muted sm:text-end">{summary ? due(summary.next_prompt_due_at) ?? t('common.none') : t('common.loading')}</dd>
+            </>
+          )}
+          <dt className="font-semibold">{t('enrol.staffReassess')}</dt>
+          <dd className="tabular text-muted sm:text-end">{summary ? due(summary.staff_reassess_due_at) ?? t('common.none') : t('common.loading')}</dd>
+        </dl>
+        {excluded ? (
+          <Card className="space-y-3 text-center">
+            <span aria-hidden className="mx-auto flex size-14 items-center justify-center rounded-full bg-canvas text-ink">
+              <UserRoundCheck className="size-7" />
+            </span>
+            <p className="text-title font-semibold">{t('enrol.noQr', { reason: t(`exclusion.${excluded}`) })}</p>
+            <p className="text-muted">{t('enrol.excludedHelp')}</p>
+          </Card>
+        ) : (
+          <div className="mx-auto max-w-sm space-y-3">
+            {visit.link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={visit.link} heading="h2" svgId={QR_SVG_ID} />}
+            <p className="text-center text-muted">
+              {t('enrol.showAgain')}
+              {pager ? ` ${t('enrol.pagerFallback', { pager: visit.pager_no ?? '' })}` : ''}
+            </p>
+          </div>
         )}
-        <dt className="font-semibold">{t('enrol.staffReassess')}</dt>
-        <dd className="tabular text-muted sm:text-end">{summary ? due(summary.staff_reassess_due_at) ?? t('common.none') : t('common.loading')}</dd>
-      </dl>
-      {excluded ? (
-        <Card className="space-y-3 text-center">
-          <span aria-hidden className="mx-auto flex size-14 items-center justify-center rounded-full bg-brand-50 text-brand-600">
-            <UserRoundCheck className="size-7" />
-          </span>
-          <p className="text-xl font-semibold">{t('enrol.noQr', { reason: t(`exclusion.${excluded}`) })}</p>
-          <p className="text-muted">{t('enrol.excludedHelp')}</p>
-        </Card>
-      ) : (
-        <div className="mx-auto max-w-sm space-y-3">
-          {visit.link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={visit.link} heading="h2" svgId={QR_SVG_ID} />}
-          <p className="text-center text-muted">
-            {t('enrol.showAgain')}
-            {pager ? ` ${t('enrol.pagerFallback', { pager: visit.pager_no ?? '' })}` : ''}
-          </p>
-        </div>
-      )}
 
-      <div className="flex flex-wrap justify-center gap-3 no-print">
-        <Link to={`/staff/visits/${visit.visit_id}`} className={cn(LINK_BUTTON, 'border-transparent bg-brand-500 text-white hover:bg-brand-700')}>
-          {t('enrol.openVisit')}
-          <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
-        </Link>
-        {!excluded && (
-          <>
-            <Button variant="secondary" onClick={() => window.print()}>
-              <Printer aria-hidden className="size-5" />
-              {t('enrol.print')}
-            </Button>
-            <Button variant="secondary" onClick={save}>
-              <Download aria-hidden className="size-5" />
-              {t('enrol.save')}
-            </Button>
-          </>
-        )}
-        <Button variant="ghost" onClick={onAnother}>{t('enrol.another')}</Button>
+        <div className="flex flex-wrap justify-center gap-3 no-print">
+          <Link to={`/staff/visits/${visit.visit_id}`} className={cn(LINK_BUTTON, 'border-transparent bg-brand-500 text-white hover:bg-brand-700')}>
+            {t('enrol.openVisit')}
+            <ArrowRight aria-hidden className="size-5 rtl:-scale-x-100" />
+          </Link>
+          {!excluded && (
+            <>
+              <Button variant="secondary" onClick={() => window.print()}>
+                <Printer aria-hidden className="size-5" />
+                {t('enrol.print')}
+              </Button>
+              <Button variant="secondary" onClick={save}>
+                <Download aria-hidden className="size-5" />
+                {t('enrol.save')}
+              </Button>
+            </>
+          )}
+          <Button variant="ghost" onClick={onAnother}>{t('enrol.another')}</Button>
+        </div>
       </div>
     </main>
   )

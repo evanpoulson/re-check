@@ -317,16 +317,16 @@ export function VitalsCard({ detail, stale }: { detail: VisitDetail; stale: bool
       <form onSubmit={submit} noValidate className="space-y-4">
         <fieldset className="min-w-0">
           <legend className="mb-2 font-semibold">{t('visitPage.assessment.bp')}</legend>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-3">
             <VitalsInput field="sbp" value={form.sbp} disabled={disabled} error={fieldError('sbp')} onChange={set('sbp')} />
             <VitalsInput field="dbp" value={form.dbp} disabled={disabled} error={fieldError('dbp')} onChange={set('dbp')} />
           </div>
         </fieldset>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-3">
           <VitalsInput field="hr" value={form.hr} disabled={disabled} error={fieldError('hr')} onChange={set('hr')} />
           <VitalsInput field="rr" value={form.rr} disabled={disabled} error={fieldError('rr')} onChange={set('rr')} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-3">
           <VitalsInput field="spo2" value={form.spo2} disabled={disabled} error={fieldError('spo2')} onChange={set('spo2')} />
           <VitalsInput field="temp_c" value={form.temp_c} disabled={disabled} error={fieldError('temp_c')} onChange={set('temp_c')} />
         </div>
@@ -399,7 +399,7 @@ export function FlagHigherCard({ visit, stale }: { visit: VisitSummary; stale: b
         <p id="flag-count" className="tabular text-note text-muted">{t('visitPage.flagCount', { count: note.length, max: NOTE_MAX })}</p>
       </div>
       <Button variant="secondary" className="w-full" disabled={stale || flag.pending} onClick={() => flag.run(note.trim())}>
-        <Flag aria-hidden size={18} />
+        <Flag aria-hidden className="size-[1.125rem]" />
         {flag.pending ? t('actions.saving') : t('actions.flagHigher')}
       </Button>
       {flag.saved && !note && <p role="status" className="text-small text-muted">{t('actions.flagSaved')}</p>}
@@ -442,12 +442,12 @@ export function VisitQrCard({ visit, stale }: { visit: VisitSummary; stale: bool
               disabled={stale || show.isPending}
               onClick={() => (link ? setLink(null) : show.mutate())}
             >
-              <ScanLine aria-hidden size={18} />
+              <ScanLine aria-hidden className="size-[1.125rem]" />
               {t('visitPage.manage.showQr')}
             </Button>
             {link && (
               <Button variant="secondary" onClick={() => window.print()}>
-                <Printer aria-hidden size={18} />
+                <Printer aria-hidden className="size-[1.125rem]" />
                 {t('enrol.print')}
               </Button>
             )}
@@ -456,7 +456,7 @@ export function VisitQrCard({ visit, stale }: { visit: VisitSummary; stale: bool
                 {t('actions.signOutDevice')}
               </Button>
             )}
-            <p className="min-w-48 flex-1 text-small text-muted">{t('visitPage.manage.qrReused')}</p>
+            <p className="min-w-[min(12rem,100%)] flex-1 text-small text-muted">{t('visitPage.manage.qrReused')}</p>
           </div>
           {/* Flat inside this section: no second card shadow. Printing prints only this. */}
           <div id="visit-qr" className={cn(link && 'print-qr', '[&>div]:bg-transparent! [&>div]:p-2! [&>div]:shadow-none!')}>

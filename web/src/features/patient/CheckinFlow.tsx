@@ -137,7 +137,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
         <div className="question-progress-row">
           {index > 0 && !playing ? (
             <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
-              <ChevronLeft aria-hidden size={16} className="rtl:rotate-180" />
+              <ChevronLeft aria-hidden className="size-4 rtl:rotate-180" />
               {t('flow.back')}
             </button>
           ) : <span />}
@@ -178,7 +178,7 @@ interface ViewProps {
 
 function Question({ children }: { children: string }) {
   return (
-    <h1 tabIndex={-1} id="q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+    <h1 tabIndex={-1} id="q" className="text-heading font-semibold leading-tight tracking-tight">
       {children}
     </h1>
   )

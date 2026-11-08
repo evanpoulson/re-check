@@ -72,11 +72,11 @@ export function PatientLayout({ home, dock, about = false, children }: Props) {
       <header className="glass sticky top-0 z-20 border-b border-line/70">
         <div className="patient-header mx-auto max-w-md px-4 py-1">
         <Brand />
-        <label className="flex items-center gap-1.5 text-[0.9375rem]">
+        <label className="flex items-center gap-1.5 text-small">
           <Languages aria-hidden className="size-5 shrink-0 text-muted" />
           <span className="sr-only">{t('patient.language')}</span>
           <select
-            className="min-h-11 rounded-tap bg-transparent px-2 font-medium text-brand-600"
+            className="min-h-11 rounded-tap border border-answer bg-surface px-3 font-medium text-brand-600"
             value={lang}
             onChange={(e) => void i18n.changeLanguage(e.target.value)}
           >
@@ -93,7 +93,7 @@ export function PatientLayout({ home, dock, about = false, children }: Props) {
 
       {/* Unreviewed translations say so; a language with none says questions are in English. */}
       {lang !== 'en' && translations[lang]?.status !== 'reviewed' && (
-        <p role="note" className="rounded-card bg-brand-50 px-5 py-3 text-base">
+        <p role="note" className="rounded-card border border-line bg-surface px-5 py-3 text-base">
           {t(translations[lang] ? 'patient.languageNotice' : 'patient.languageMissing')}
         </p>
       )}

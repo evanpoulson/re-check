@@ -199,7 +199,9 @@
   "flags": {
     "noResponse": "No response",
     "reassessOverdue": "Reassessment overdue",
-    "appNotOffered": "App not offered: {{reason}}"
+    "appNotOffered": "App not offered: {{reason}}",
+    "appNotOfferedShort": "App not offered",
+    "reassessOverdueShort": "Reassess overdue"
   },
   "sparkline": {
     "label": "Pain over time: {{values}}",
@@ -605,22 +607,24 @@
     "failed": "Worklist unavailable",
     "noMatch": "No matching visits",
     "tasks": "Review tasks",
-    "urgent": "Urgent review",
     "backup": "Routed to backup",
     "dueIn": "due in {{time}}",
     "overdueBy": "{{time}} overdue",
     "staffDue": "Staff reassessment {{timing}}",
     "filters": {
-      "all": "All tasks",
-      "open": "Needs acknowledgement",
-      "acknowledged": "Needs assessment"
+      "all": "All",
+      "open": "To acknowledge",
+      "acknowledged": "To assess"
     },
     "empty": {
       "all": "No active review tasks",
       "open": "No tasks need acknowledgement",
       "acknowledged": "No acknowledged tasks"
     },
-    "dueNow": "due now"
+    "dueNow": "due now",
+    "ackDueIn": "Due in {{time}}",
+    "ackOverdue": "{{time}} overdue",
+    "clearSearch": "Clear search"
   },
   "taskLevel": {
     "red": "Urgent review",
@@ -745,7 +749,8 @@
       "statusDoneNoPhone": "Visit marked {{status}} at {{time}}."
     },
     "appNotOffered": "App not offered: {{reason}}",
-    "safeguard": "Patient answers never reset the staff clock or clear an open concern."
+    "safeguard": "Patient answers never reset the staff clock or clear an open concern.",
+    "unresolvedShort": "Unresolved"
   },
   "waitWords": {
     "short": "under 15 minutes",

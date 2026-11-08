@@ -119,16 +119,16 @@ export function StaffLayout() {
         <nav aria-label={t('nav.label')}>
           {/* Same order for every role, so each role's home comes first. */}
           {role === 'charge_nurse' && (
-            <NavLink to="/staff/escalations" className={link}><BellRing size={18} aria-hidden />{t('nav.escalations')}</NavLink>
+            <NavLink to="/staff/escalations" className={link}><BellRing aria-hidden className="size-[1.125rem]" />{t('nav.escalations')}</NavLink>
           )}
           {SEES_TRIAGE.includes(role) && (
             <>
-              <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>
-              <NavLink to="/staff/visits/new" className={link}><Plus size={18} aria-hidden />{t('nav.enrol')}</NavLink>
+              <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
+              <NavLink to="/staff/visits/new" className={link}><Plus aria-hidden className="size-[1.125rem]" />{t('nav.enrol')}</NavLink>
             </>
           )}
           {SEES_WORKLIST.includes(role) && (
-            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
+            <NavLink to="/staff/physician" className={link}><ClipboardList aria-hidden className="size-[1.125rem]" />{t('review.title')}</NavLink>
           )}
         </nav>
         <div className="staff-identity">
@@ -138,7 +138,7 @@ export function StaffLayout() {
           </span>
           <Button variant="ghost" title={t('nav.signOut')} className="staff-sign-out" onClick={() => {
             void signOut().then(() => navigate('/staff/sign-in'))
-          }}><LogOut size={18} aria-hidden /><span className="staff-sign-out-label">{t('nav.signOut')}</span></Button>
+          }}><LogOut aria-hidden className="size-[1.125rem]" /><span className="staff-sign-out-label">{t('nav.signOut')}</span></Button>
         </div>
       </header>
       <Outlet />

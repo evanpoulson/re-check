@@ -101,13 +101,13 @@ export function CircleCheck({ prompt, role, onDone, onExpired, onPlayingChange }
   return (
     <section aria-labelledby="circle-q" className="space-y-4">
       {/* The question is asked only once there is something to count. */}
-      <h1 ref={heading} tabIndex={-1} id="circle-q" className="text-[1.75rem] font-semibold leading-tight tracking-tight">
+      <h1 ref={heading} tabIndex={-1} id="circle-q" className="text-heading font-semibold leading-tight tracking-tight">
         {phase === 'count' ? text('circle_count', role) : t('circle.title')}
       </h1>
 
       {phase === 'intro' && (
         <>
-          <p className="text-lg">{t('circle.intro')}</p>
+          <p className="text-lead">{t('circle.intro')}</p>
           <p className="text-base text-muted">{t('circle.once')}</p>
           <p className="text-base text-muted">{t('circle.notTest')}</p>
           <Button size="lg" className="w-full" onClick={start}>
@@ -121,7 +121,7 @@ export function CircleCheck({ prompt, role, onDone, onExpired, onPlayingChange }
 
       {phase === 'playing' && (
         <>
-          <p role="status" className="text-lg font-semibold">
+          <p role="status" className="text-lead font-semibold">
             {t('circle.watch')}
           </p>
           <div
@@ -160,7 +160,7 @@ export function CircleCheck({ prompt, role, onDone, onExpired, onPlayingChange }
             >
               <Minus aria-hidden className="size-6" />
             </Button>
-            <output aria-live="polite" className="tabular min-w-20 text-center text-7xl font-semibold tracking-tight">
+            <output aria-live="polite" className="tabular min-w-20 text-center text-display font-semibold tracking-tight">
               {count ?? '\u2013'}
             </output>
             <Button

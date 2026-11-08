@@ -21,7 +21,7 @@ export function TriageCard({ level, role }: { level: number | null | undefined; 
           <h2 id={headingId} className="text-base font-medium text-muted">
             {t('triageInfo.level.heading', { context: role === 'companion' ? 'companion' : undefined })}
           </h2>
-          <p className="text-xl font-semibold">
+          <p className="text-title font-semibold">
             {t('triageInfo.level.label', { level, name: t(`triageInfo.level.${level}.name`) })}
           </p>
           <p className="text-base">{t(`triageInfo.level.${level}.body`)}</p>

@@ -33,7 +33,7 @@ export function AnswerButton({
       type="button"
       {...state}
       className={cn(
-        'flex min-h-13 w-full items-center justify-between gap-3 rounded-card border bg-surface px-5 py-2.5 text-left text-xl transition-[border-color,box-shadow,background-color]',
+        'flex min-h-13 w-full items-center justify-between gap-3 rounded-card border bg-surface px-5 py-2.5 text-left text-title transition-[border-color,box-shadow,background-color]',
         selected
           ? 'border-brand-500 font-semibold shadow-[0_0_0_1px_var(--color-brand-500)]'
           : 'border-answer font-normal hover:border-muted',

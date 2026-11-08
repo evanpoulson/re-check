@@ -14,8 +14,8 @@ const button = cva(
         ghost: 'text-brand-600 hover:underline underline-offset-4',
       },
       size: {
-        md: 'min-h-11 px-5 text-[1.0625rem]',
-        lg: 'min-h-14 px-6 text-[1.1875rem]',
+        md: 'min-h-11 px-5 text-lead',
+        lg: 'min-h-14 px-6 text-lead',
       },
     },
     defaultVariants: { variant: 'primary', size: 'md' },
