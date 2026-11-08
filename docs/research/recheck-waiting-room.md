@@ -83,16 +83,21 @@ Companions are optional. The patient answers their own check-in when able, and a
 
 ## 5. Deterministic rules and data model
 
-Use FastAPI/Python for a small deterministic evaluator, Postgres for state and event history, and React for forms and worklists. Keep three concerns separate: **branch selection** chooses what to ask, **clinical signal detection** creates a review task, and **operational routing** handles deadlines, ownership and delivery. Every rule release should identify its evidence, approval, site, effective dates and patient population. Use a bounded typed condition format with allowlisted fields and operators. No executable expressions in database content.
+The prototype uses Python/Pydantic for its contract, FastAPI for the planned service, PostgreSQL with Tiger Data/TimescaleDB, and React for the planned UI. Keep **question selection**, **clinical signal detection**, and **operational routing** separate. Version question banks and rules and link clinical releases to evidence, approval, population, site and effective dates. Use a bounded condition format with allowlisted fields and operators.
 
-| Record | Minimum fields |
+### Current contract and persistence
+
+The [Pydantic contract](../../api/README.md) and [database schema](../../db/schema.sql) define the prototype model. The service, rule evaluator, question content, scheduler and dashboard transport still need implementation.
+
+| Records | Current design |
 |---|---|
-| Encounter | Local and optional approved EHR encounter IDs, site, care phase, original CTAS, original and current staff-entered complaint, baseline observations with source and time. |
-| Questionnaire version / item | Stable item key, translations and version, input type, permitted observer roles, enable condition and evidence reference. |
-| Rule version / rule | Stable ID, event type, condition, precedence, action, rationale, source and approval record. Keep questionnaire and rule versions used at evaluation time. |
-| Prompt / answer / observation | Due, delivery and receipt status. Item ID, coded answer or explicit missing reason, observer, capture and receipt time. Clinical measurements also have units, method and verification status. Distinguish symptom onset from report time. |
-| Review task / delivery | Encounter, linked evidence IDs, rule/version, reason, urgency, named role or assignee, deadline, escalation policy, delivery state, acknowledgement, in-person assessment and disposition. |
-| Event ledger | Encounter, actor or system, event time and recorded time, object IDs, reason and correlation ID. Append corrections with links to superseded events. Restrict audit access and use aggregates for service review. |
+| `visit`, `visit_session` | Site, initial CTAS 2–5, complaint group, optional CEDIS code, language, channel, visit status and separate patient and staff due fields. Patient and companion QR credentials are distinct, expiring and single-use by design. Store hashes and usage timestamps; the planned API exchanges the token for an HttpOnly session cookie and enforces expiry and revocation. The schema carries no patient name, health number or EHR encounter ID. |
+| `submission`, `report` | Client submission UUID and fingerprint support retry deduplication. Reports retain capture and receipt times, distinguish reporter from channel, and cover check-ins, concerns, findings, intent to leave and staff flags. A check-in pins the question bank version. An answer has a value or a coded reason for being missing. Pain is self-reported; companion pain must be missing. |
+| `vitals` | Staff-entered measurements with measured and received times, staff identity and a reference to the original record when correcting it. |
+| `task`, `task_reason` | One active task per visit, with multiple routing roles in one row and versioned reasons linked to evidence. Severity can rise, recipients can be added, and an existing acknowledgement deadline cannot move later. First delivery, acknowledgement and completed assessment have distinct fields. Completion requires acknowledgement and a disposition. |
+| `audit_log` | Append-only audit trail. Write transactions require an explicit actor. Audit payloads omit credential hashes. Reports, vitals, and audit records are TimescaleDB hypertables; submission IDs use a separate regular table for uniqueness across time partitions. |
+
+The schema initializes both visit deadlines from demo CTAS defaults. The runtime must enforce independent advancement of those clocks. Separate prompt delivery attempts, per-recipient delivery tracking, assessment deadlines, named ownership transfers and linked EHR encounter IDs are potential extensions. The current task has one acknowledgement deadline, one first-delivery timestamp and routing by role. The handover response lists open work; it does not implement ownership transfer. The dashboard event contract carries change notices and leaves transport open.
 
 Illustrative decision table for synthetic cases. The local clinical team sets real triggers and deadlines.
 
@@ -102,10 +107,10 @@ Illustrative decision table for synthetic cases. The local clinical team sets re
 | Any complaint; observer reports new facial droop or speech difficulty | Create urgent review immediately and display the direct-to-staff instruction. Offer last-known-well as optional after routing. |
 | Head injury; companion reports increasing drowsiness | Create urgent staff assessment task. A conflicting “same” from the patient remains visible and cannot cancel the task. |
 | Check-in deadline; no usable report, still waiting | Open or update a missed-check task. Independently evaluate the staff reassessment deadline. |
-| Urgent task reaches delivery, acknowledgement or assessment deadline | Use the configured backup and log what failed. Receipt by the server, appearance on the dashboard, staff acknowledgement and reassessment are different events. |
-| Shift ends or visit moves | Require handoff or disposition by the responsible team. Confirm new ownership before removing an open item from the previous team's view. |
+| Urgent task passes its acknowledgement deadline | Add the configured backup role and log the escalation. Server receipt, dashboard delivery, acknowledgement and assessment remain distinct. Delivery and assessment deadlines beyond acknowledgement are pilot design work. |
+| Shift ends or visit moves | Surface unresolved tasks and their routing roles in handover. Confirm named transfer before removing a task from a prior owner's view once that workflow is implemented. |
 
-An example ruleset fixture for synthetic replay. The first rule changes the form. The second fires even if the original complaint is unrelated and the form is still incomplete.
+An illustrative rule format for synthetic replay. The example is design pseudocode, separate from the checked-in Pydantic report and receipt models. A finding report already denotes a new finding, and the service should map rule outputs to the contract. The first rule changes the form. The second fires even if the original complaint is unrelated and the form is still incomplete.
 
 ```json
 [
@@ -133,7 +138,7 @@ An example ruleset fixture for synthetic replay. The first rule changes the form
 
 An unknown baseline should stay unknown and have its own disposition when staff review is needed. Evaluate all matching urgent rules before selecting more questions. Attach reasons to a single active task and preserve the earliest actionable deadline. Review clinical content and translations as a versioned package. Replay historical fixtures before publication, pin the version on every decision and keep a rollback path.
 
-Apply urgent rules to each explicit submitted finding, including incomplete forms. Make report intake, rule results, task update and a delivery outbox atomic. Use submission IDs and a unique active-task key to deduplicate retries while retaining distinct reports. Run deadline checks on the server and reconcile after outages. Recheck encounter state before routing a late offline submission and retain both timestamps. State tests should cover duplicate reports, positive signal followed by a negative answer, missing data, disconnected devices, simultaneous staff actions, disconnected dashboards, no assigned clinician, and handoff. Measure both acknowledgement and bedside assessment. Staff closure needs a disposition and evidence or a reference to the clinical record.
+Apply urgent rules to each explicit submitted finding, including incomplete forms. Persist report intake, rule reasons and task changes in one transaction. Choose and implement recoverable delivery separately; an outbox is an option if durable delivery is required. Use submission IDs and a unique active-task key to deduplicate retries while retaining distinct reports. Run deadline checks on the server and reconcile after outages. Recheck encounter state before routing a late offline submission and retain both timestamps. State tests should cover duplicate reports, positive signal followed by a negative answer, missing data, disconnected devices, simultaneous staff actions, disconnected dashboards, no assigned clinician, and handoff. Measure both acknowledgement and bedside assessment. Staff closure needs a disposition and evidence or a reference to the clinical record.
 
 ## 6. Pilot and Connect Care integration
 
