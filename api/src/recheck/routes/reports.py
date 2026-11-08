@@ -89,15 +89,16 @@ def _answer(value_and_missing, answer) -> tuple:
     return value_and_missing(answer), None
 
 
-def report_row(report: PatientReport, session: VisitSession) -> dict:
+def report_row(report: PatientReport, visit_id: UUID, session_id: UUID | None) -> dict:
+    """Columns for one report. Phone reports carry their session; pager reports have none."""
     row = {
         "id": report.submission_id,
-        "visit_id": session.visit_id,
+        "visit_id": visit_id,
         "captured_at": report.captured_at,
         "kind": report.kind,
         "reporter": report.reporter.value,
         "channel": report.channel.value,
-        "session_id": session.session_id,
+        "session_id": session_id,
         "questionnaire_version": None,
         "feeling_now": None, "feeling_now_missing": None,
         "feeling_change": None, "feeling_change_missing": None,
@@ -194,24 +195,37 @@ async def post_report(
         raise _unprocessable("reporter must match the role chosen at sign-in")
     if report.channel is not Channel.PHONE:
         raise _unprocessable("reports come from the signed-in phone (channel: phone)")
+    return await store_report(
+        pool, report, visit_id=session.visit_id, session_id=session.session_id, actor=session.actor, endpoint=ENDPOINT
+    )
+
+
+async def store_report(
+    pool, report: PatientReport, *, visit_id: UUID, session_id: UUID | None, actor: str, endpoint: str
+) -> ReportReceipt:
+    """Store a report for a visit, route anything urgent, and say what to show and ask next.
+
+    Shared by the phone route (with its session) and the pager route (no session). The caller has
+    already checked who may report for this visit and on which channel.
+    """
     bank = default_bank()
     if isinstance(report, CheckinReport):
         check_items(bank, report)
 
     fp = submissions.fingerprint(report)
-    async with write_tx(pool, session.actor) as conn:
+    async with write_tx(pool, actor) as conn:
         # One report at a time per visit, so two can't both open a task.
         cur = await conn.execute(
             "SELECT complaint_group, cedis_code, app_exclusion FROM visit WHERE id = %s FOR UPDATE",
-            [session.visit_id],
+            [visit_id],
         )
         complaint_group, cedis_code, app_exclusion = await cur.fetchone()
         visit = {"complaint_group": complaint_group, "cedis_code": cedis_code}
 
-        previous = await submissions.find(conn, report.submission_id, actor=session.actor, endpoint=ENDPOINT, fp=fp)
+        previous = await submissions.find(conn, report.submission_id, actor=actor, endpoint=endpoint, fp=fp)
         if previous is not None:
             cur = await conn.execute(
-                "SELECT received_at FROM report WHERE id = %s AND visit_id = %s", [report.submission_id, session.visit_id]
+                "SELECT received_at FROM report WHERE id = %s AND visit_id = %s", [report.submission_id, visit_id]
             )
             (received_at,) = await cur.fetchone()
             return _receipt(report, received_at, bank, visit, attention=None, duplicate=True)
@@ -221,31 +235,31 @@ async def post_report(
             # A scheduled check-in opens when the patient prompt is due. Help, worry, new signs,
             # leaving and follow-up answers are accepted at any time.
             cur = await conn.execute(
-                "SELECT coalesce(next_prompt_due_at <= now(), false) FROM visit WHERE id = %s", [session.visit_id]
+                "SELECT coalesce(next_prompt_due_at <= now(), false) FROM visit WHERE id = %s", [visit_id]
             )
             if not (await cur.fetchone())[0]:
                 raise HTTPException(status.HTTP_409_CONFLICT, CHECKIN_NOT_DUE)
 
-        attention = await score_attention(conn, session.visit_id, report) if isinstance(report, CheckinReport) else None
+        attention = await score_attention(conn, visit_id, report) if isinstance(report, CheckinReport) else None
 
-        cur = await conn.execute(INSERT_REPORT, report_row(report, session))
+        cur = await conn.execute(INSERT_REPORT, report_row(report, visit_id, session_id))
         (received_at,) = await cur.fetchone()
         await submissions.record(
-            conn, report.submission_id, actor=session.actor, endpoint=ENDPOINT, fp=fp, visit_id=session.visit_id
+            conn, report.submission_id, actor=actor, endpoint=endpoint, fp=fp, visit_id=visit_id
         )
         if scheduled and app_exclusion is None:
             # The patient prompt timer restarts. Follow-ups never move it, and the staff
             # reassessment timer never moves for a report.
             await conn.execute(
-                "UPDATE visit SET next_prompt_due_at = now() + ctas_interval(ctas) WHERE id = %s", [session.visit_id]
+                "UPDATE visit SET next_prompt_due_at = now() + ctas_interval(ctas) WHERE id = %s", [visit_id]
             )
         fires = rules.evaluate(report, attention, _group(complaint_group))
         task_id = await tasks.raise_task(
-            conn, session.visit_id, fires, [{"kind": "report", "id": str(report.submission_id)}]
+            conn, visit_id, fires, [{"kind": "report", "id": str(report.submission_id)}]
         )
-        await events.notify(conn, DashboardEventType.REPORT_RECEIVED, session.visit_id)
+        await events.notify(conn, DashboardEventType.REPORT_RECEIVED, visit_id)
         if task_id is not None:
-            await events.notify(conn, DashboardEventType.TASK_CHANGED, session.visit_id, task_id)
+            await events.notify(conn, DashboardEventType.TASK_CHANGED, visit_id, task_id)
     return _receipt(report, received_at, bank, visit, attention=attention, duplicate=False)
 
 

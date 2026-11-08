@@ -146,6 +146,16 @@ def demo_checkins_enabled() -> bool:
     return _flag("RECHECK_DEMO_CHECKINS")
 
 
+def pager_key() -> str | None:
+    """Shared key the site's hardware pagers send as `X-Pager-Key`.
+
+    Unset, or shorter than 16 characters, turns the pager routes off. Generate one with
+    `uv run python -c "import secrets; print(secrets.token_urlsafe(24))"`.
+    """
+    key = _get("RECHECK_PAGER_KEY")
+    return key if key and len(key) >= 16 else None
+
+
 def _flag(name: str) -> bool:
     return (_get(name) or "false").lower() in ("1", "true", "yes")
 
