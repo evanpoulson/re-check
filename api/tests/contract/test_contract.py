@@ -54,6 +54,32 @@ def checkin(**overrides):
 # --- reports ---------------------------------------------------------------
 
 
+NOT_ASKED = {"kind": "missing", "reason": "not_asked"}
+FOLLOWUP_FIXED = {k: NOT_ASKED for k in ("feeling_now", "feeling_change", "pain", "new_findings", "attention")}
+
+
+def test_checkin_is_scheduled_unless_it_says_followup():
+    assert patient_report_adapter.validate_python(checkin()).purpose == "scheduled"
+    followup = patient_report_adapter.validate_python(
+        checkin(purpose="followup", **FOLLOWUP_FIXED, items={"pain_moved": {"kind": "yes_no", "value": True}})
+    )
+    assert followup.purpose == "followup"
+
+
+@pytest.mark.parametrize(
+    "field, value",
+    [
+        ("feeling_change", {"kind": "answered", "value": "same"}),
+        ("pain", {"kind": "missing", "reason": "unsure"}),
+        ("new_findings", {"kind": "answered", "value": []}),
+        ("attention", {"kind": "missing", "reason": "not_asked", "prompt_id": str(uuid4())}),
+    ],
+)
+def test_followup_carries_only_items(field, value):
+    with pytest.raises(ValidationError):
+        patient_report_adapter.validate_python(checkin(purpose="followup", **{**FOLLOWUP_FIXED, field: value}))
+
+
 def test_checkin_parses_from_json():
     report = patient_report_adapter.validate_json(json.dumps(checkin()))
     assert isinstance(report, CheckinReport)
@@ -215,18 +241,6 @@ def visit(**overrides):
 def test_enrolment_rejects_ctas_outside_waiting_room(ctas):
     with pytest.raises(ValidationError):
         VisitCreate.model_validate(visit(ctas=ctas))
-
-
-def test_enrolment_accepts_optional_detail_only_for_other_complaints():
-    body = visit(complaint_group="general")
-    assert "complaint_detail" not in VisitCreate.model_validate(body).model_dump()
-    detail = VisitCreate.model_validate({**body, "complaint_detail": "  Ankle swelling  "})
-    assert detail.model_dump()["complaint_detail"] == "Ankle swelling"
-    for invalid in (" ", "x" * 201, "ankle\x00"):
-        with pytest.raises(ValidationError):
-            VisitCreate.model_validate({**body, "complaint_detail": invalid})
-    with pytest.raises(ValidationError):
-        VisitCreate.model_validate(visit(complaint_detail="Ankle swelling"))
 
 
 def test_app_exclusion_means_no_channel():
@@ -414,3 +428,26 @@ def test_database_allows_exactly_the_contract_languages():
     check = re.search(r"language\s+text\s+NOT NULL CHECK \(language IN \(([^)]*)\)\)", schema)
     assert check, "visit.language CHECK not found in db/schema.sql"
     assert set(re.findall(r"'([a-z]+)'", check.group(1))) == {lang.value for lang in Language}
+
+
+# --- check-in reminders ------------------------------------------------------
+
+
+def test_push_subscription_is_endpoint_and_keys_only():
+    from recheck.contract import PushSubscriptionSave
+
+    keys = {"p256dh": "B" + "A" * 86, "auth": "A" * 22}
+    saved = PushSubscriptionSave.model_validate({"endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": keys})
+    assert saved.keys.auth == "A" * 22
+    with pytest.raises(ValidationError):
+        PushSubscriptionSave.model_validate({"endpoint": "http://fcm.googleapis.com/x", "keys": keys})
+    with pytest.raises(ValidationError):
+        # The browser's toJSON() adds expirationTime; the client sends only endpoint and keys.
+        PushSubscriptionSave.model_validate(
+            {"endpoint": "https://fcm.googleapis.com/fcm/send/x", "keys": keys, "expirationTime": None}
+        )
+
+
+def test_push_config_never_carries_visit_details():
+    schema = contract_json_schema()["$defs"]
+    assert set(schema["PushConfig"]["properties"]) == {"enabled", "public_key"}

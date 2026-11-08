@@ -12,6 +12,7 @@ import type {
   SiteSettingsUpdate,
   StaffRole,
   VisitExclusionUpdate,
+  OpenCheckin,
   VisitStatusUpdate,
   VitalsCreate,
 } from '../types'
@@ -50,6 +51,8 @@ export const handlers = [
     return reply(() => store.updateSiteSettings(body))
   }),
   http.get(endpoints.worklist(), () => reply(() => store.worklist())),
+  http.get(endpoints.escalations(), () => reply(() => store.escalations())),
+  http.get(endpoints.handover(), () => reply(() => store.handover())),
   http.get(withParam(endpoints.visitDetail), ({ params }) => reply(() => store.visitDetail(String(params.id)))),
   http.post(withParam(endpoints.vitals), async ({ request }) => {
     const body = (await request.json()) as VitalsCreate
@@ -66,6 +69,10 @@ export const handlers = [
   http.post(withParam(endpoints.visitExclusion), async ({ request, params }) => {
     const body = (await request.json()) as VisitExclusionUpdate
     return reply(() => store.setExclusion(String(params.id), body.app_exclusion))
+  }),
+  http.post(withParam(endpoints.openCheckin), async ({ request, params }) => {
+    ;(await request.json()) as OpenCheckin
+    return reply(() => store.openCheckinNow(String(params.id)))
   }),
   http.post(withParam(endpoints.acknowledgeTask), async ({ request, params }) => {
     ;(await request.json()) as AcknowledgeTask
@@ -93,4 +100,7 @@ export const handlers = [
     const body = (await request.json()) as PatientReport
     return reply(() => store.submitReport(body), 201)
   }),
+  http.get(endpoints.pushConfig(), () => reply(() => store.pushConfig())),
+  http.put(endpoints.pushSubscription(), () => reply(() => store.savePushSubscription())),
+  http.delete(endpoints.pushSubscription(), () => reply(() => store.endPushSubscription())),
 ]

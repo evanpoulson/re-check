@@ -90,12 +90,40 @@ def shift_changes() -> list[time]:
 
 
 def scheduler_seconds() -> float:
-    """How often the timer checks run (missed check-ins, escalation), in seconds.
+    """How often the timer checks run (missed check-ins, escalation, check-in reminders), in seconds.
 
     Off (0) unless set: the timers make permanent changes to the shared demo
     database, so only the demo machine turns them on (RECHECK_SCHEDULER_SECONDS=15).
     """
     return float(_get("RECHECK_SCHEDULER_SECONDS") or "0")
+
+
+@dataclass(frozen=True)
+class Vapid:
+    """The server's Web Push signing key (VAPID) and the contact push services see."""
+
+    private_key: str
+    subject: str
+
+
+def vapid() -> Vapid | None:
+    """Web Push settings, or None when check-in reminders are off.
+
+    RECHECK_VAPID_PRIVATE_KEY is the raw P-256 private key, base64url (generate
+    one with `uv run python -m recheck.push keygen`). The public key is derived
+    from it. RECHECK_VAPID_SUBJECT is a mailto: or https: contact for the push
+    services; it defaults to the public URL, which must then be https.
+    """
+    key = _get("RECHECK_VAPID_PRIVATE_KEY")
+    if not key:
+        return None
+    subject = _get("RECHECK_VAPID_SUBJECT") or public_url()
+    if not subject.startswith(("mailto:", "https://")):
+        raise RuntimeError(
+            "RECHECK_VAPID_SUBJECT must be a mailto: or https:// contact "
+            f"(it defaults to RECHECK_PUBLIC_URL, which is {public_url()})"
+        )
+    return Vapid(private_key=key, subject=subject)
 
 
 def cookie_secure() -> bool:
@@ -109,6 +137,13 @@ def demo_staff_enabled() -> bool:
     Turn it on for local work, tests, or as a fallback if Auth0 is unreachable on demo day.
     """
     return _flag("RECHECK_DEMO_STAFF")
+
+
+def demo_checkins_enabled() -> bool:
+    """Demo help for check-ins, off by default. New visits' first check-in opens at enrolment rather than one
+    CTAS interval later, and desk staff get "Open check-in now" (`POST /api/visits/{id}/open-checkin`).
+    """
+    return _flag("RECHECK_DEMO_CHECKINS")
 
 
 def _flag(name: str) -> bool:

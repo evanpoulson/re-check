@@ -3,10 +3,14 @@ import { endpoints } from './endpoints'
 import type {
   AcknowledgeTask,
   AssessTask,
+  ChargeNurseView,
   FlagHigher,
   FlagRecord,
+  Handover,
   PatientHome,
   PatientReport,
+  PushConfig,
+  PushSubscriptionSave,
   ReportReceipt,
   SessionInfo,
   SignOut,
@@ -20,6 +24,7 @@ import type {
   VisitDetail,
   VisitEnrolled,
   VisitExclusionUpdate,
+  OpenCheckin,
   VisitLink,
   VisitStatusUpdate,
   VitalsCreate,
@@ -34,8 +39,11 @@ export interface StaffSessionInfo {
   /** Auth0 user ID, or `demo|<role>` from the demo role picker. */
   user_id: string
   name: string | null
+  email?: string | null
   role: StaffRole
   site_id: string
+  /** Demo setting (RECHECK_DEMO_CHECKINS): desk staff can open a patient's check-in now. */
+  demo_checkins: boolean
 }
 export interface SignInOptions {
   auth0: boolean
@@ -54,6 +62,10 @@ export const getSiteSettings = () => request<SiteSettings>('GET', endpoints.site
 export const updateSiteSettings = (body: SiteSettingsUpdate) =>
   request<SiteSettings>('PUT', endpoints.siteSettings(), body)
 export const getWorklist = () => request<Worklist>('GET', endpoints.worklist())
+
+// Charge nurse
+export const getEscalations = () => request<ChargeNurseView>('GET', endpoints.escalations())
+export const getHandover = () => request<Handover>('GET', endpoints.handover())
 export const getVisitDetail = (id: string) => request<VisitDetail>('GET', endpoints.visitDetail(id))
 export const postVitals = (body: VitalsCreate) => request<VitalsRecord>('POST', endpoints.vitals(body.visit_id), body)
 export const postFlagHigher = (body: FlagHigher) => request<FlagRecord>('POST', endpoints.flagHigher(body.visit_id), body)
@@ -65,6 +77,9 @@ export const updateVisitStatus = (visitId: string, body: VisitStatusUpdate) =>
 
 export const updateVisitExclusion = (visitId: string, body: VisitExclusionUpdate) =>
   request<undefined>('POST', endpoints.visitExclusion(visitId), body)
+/** Demo only: open the patient's next check-in now. */
+export const openCheckinNow = (visitId: string, body: OpenCheckin) =>
+  request<undefined>('POST', endpoints.openCheckin(visitId), body)
 export const getVisitLink = (visitId: string) => request<VisitLink>('GET', endpoints.visitLink(visitId))
 export const staffSignOut = (visitId: string, body: StaffSignOut) =>
   request<undefined>('POST', endpoints.staffSignOut(visitId), body)
@@ -74,3 +89,9 @@ export const exchangeToken = (body: TokenExchange) => request<SessionInfo>('POST
 export const getPatientHome = () => request<PatientHome>('GET', endpoints.patientHome())
 export const postReport = (body: PatientReport) => request<ReportReceipt>('POST', endpoints.postReport(), body)
 export const signOut = (body: SignOut) => request<undefined>('POST', endpoints.signOut(), body)
+
+// Check-in reminders by Web Push
+export const getPushConfig = () => request<PushConfig>('GET', endpoints.pushConfig())
+export const savePushSubscription = (body: PushSubscriptionSave) =>
+  request<undefined>('PUT', endpoints.pushSubscription(), body)
+export const endPushSubscription = () => request<undefined>('DELETE', endpoints.pushSubscription())

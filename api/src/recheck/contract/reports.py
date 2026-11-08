@@ -17,7 +17,7 @@ from .answers import (
     Missing,
     PainAnswer,
 )
-from .codes import Channel, ConcernCode, FindingCode, PatientMessage, Reporter
+from .codes import Channel, ConcernCode, FindingCode, MissingReason, PatientMessage, Reporter
 from .common import Code, InputModel, OutputModel, SubmissionId, Timestamp, Version, unique_list
 
 
@@ -37,12 +37,21 @@ class _ReportBase(InputModel):
 
 
 class CheckinReport(_ReportBase):
-    """A scheduled check-in (FR5, FR6). May be partial: unreached questions are `not_reached`.
+    """A scheduled check-in (FR5, FR6), or follow-up answers after an urgent report.
 
+    A scheduled check-in may be partial: unreached questions are `not_reached`.
     Urgent findings are routed as soon as this is received, even if partial.
     """
 
     kind: Literal["checkin"]
+    purpose: Literal["scheduled", "followup"] = Field(
+        default="scheduled",
+        description=(
+            "`scheduled` is accepted only once the patient prompt is due and restarts the prompt timer. "
+            "`followup` answers only question bank items (every fixed question `not_asked`), is accepted "
+            "at any time and never moves a timer."
+        ),
+    )
     questionnaire_version: Version
     feeling_now: FeelingNowAnswer
     feeling_change: FeelingChangeAnswer
@@ -64,6 +73,17 @@ class CheckinReport(_ReportBase):
                 raise ValueError(
                     "the attention check is done by the patient; a companion sends it as missing with no prompt"
                 )
+        return self
+
+    @model_validator(mode="after")
+    def _followup_answers_items_only(self) -> Self:
+        # A follow-up can be sent before the check-in is due, so it must not carry a check-in's answers.
+        if self.purpose == "followup":
+            fixed = (self.feeling_now, self.feeling_change, self.pain, self.new_findings, self.attention)
+            if any(a.kind != "missing" or a.reason is not MissingReason.NOT_ASKED for a in fixed):
+                raise ValueError("a follow-up sends every fixed question as missing: not_asked")
+            if self.attention.prompt_id is not None:
+                raise ValueError("a follow-up never names an attention prompt")
         return self
 
 

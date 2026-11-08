@@ -1,26 +1,38 @@
 import { useTranslation } from 'react-i18next'
-import { durationWords, formatMinutes, untilMs } from '@/lib/time'
+import { durationWords, formatMinutes, isDueNow, isOverdue, untilMs } from '@/lib/time'
 import { cn } from '@/lib/utils'
+import { LevelChip } from './LevelChip'
 
 /**
- * "in 12 min" or "12 min overdue". `null` renders a dash. The patient view says
- * "Ready now" instead of "overdue" and spells out units, so nobody feels blamed.
+ * "in 12 min", "Due now" or "12 min overdue". `null` renders a dash. The patient view
+ * says "Ready now" instead of "overdue" and spells out units, so nobody feels blamed.
  */
-export function CountdownChip({ due, now, patient = false }: { due: string | null; now: number; patient?: boolean }) {
+export function CountdownChip({ due, now, patient = false, className }: {
+  due: string | null
+  now: number
+  patient?: boolean
+  className?: string
+}) {
   const { t } = useTranslation()
   const ms = untilMs(due, now)
   if (ms === null) return <span className="text-muted">{t('common.none')}</span>
-  const overdue = ms < 0
   if (patient) {
     return (
-      <span className="tabular whitespace-nowrap text-ink">
-        {overdue ? t('time.readyNow') : t('duration.inTime', { value: durationWords(ms / 60_000, t) })}
+      <span dir="auto" className="tabular whitespace-nowrap text-ink">
+        {ms < 0 ? t('time.readyNow') : t('duration.inTime', { value: durationWords(ms / 60_000, t) })}
       </span>
     )
   }
+  // Overdue uses the overdue chip (colour, icon and text), like every other status.
+  if (isOverdue(ms)) {
+    return (
+      <LevelChip level="overdue" label={t('time.overdue', { value: formatMinutes(ms) })} className={cn('tabular', className)} />
+    )
+  }
+  // Within a minute either side of the deadline: "Due now", never "in 0 min" or "0 min overdue".
   return (
-    <span className={cn('tabular whitespace-nowrap', overdue ? 'font-semibold text-level-overdue' : 'text-ink')}>
-      {overdue ? t('time.overdue', { value: formatMinutes(ms) }) : t('time.in', { value: formatMinutes(ms) })}
+    <span className={cn('tabular whitespace-nowrap text-ink', isDueNow(ms) && 'font-semibold', className)}>
+      {isDueNow(ms) ? t('time.dueNow') : t('time.in', { value: formatMinutes(ms) })}
     </span>
   )
 }

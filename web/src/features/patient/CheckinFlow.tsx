@@ -126,12 +126,12 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
   return (
     <section ref={section} aria-labelledby={stepKey === 'circle_count' ? 'circle-q' : 'q'} className="space-y-6">
       <div className="flow-head">
-        {index > 0 ? (
-          <button type="button" className="back-link" disabled={sending} onClick={() => setIndex(index - 1)}>
-            <ChevronLeft aria-hidden size={18} />
+        {index > 0 || !anyAnswered ? (
+          <button type="button" className="back-link" disabled={sending} onClick={() => index > 0 ? setIndex(index - 1) : onCancel()}>
+            <ChevronLeft aria-hidden size={18} className="rtl:rotate-180" />
             {t('flow.back')}
           </button>
-        ) : <span />}
+        ) : <span className="min-h-11" />}
         <span className="count">{t('flow.progress', { n: index + 1, total: steps.length })}</span>
         <progress aria-label={t('flow.progressLabel')} value={index + 1} max={steps.length} />
       </div>
@@ -148,10 +148,14 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
             </Button>
             {/* Below the button, so the button does not move under the help dock. */}
             {needAnswerFor === stepKey && !answered(step, draft) && <p ref={(el) => el?.scrollIntoView?.({ block: 'nearest' })} role="alert" className="text-base font-medium text-level-red">{t('flow.chooseAnswer')}</p>}
-            <Button variant="ghost" disabled={sending} onClick={() => (anyAnswered ? send(draft) : onCancel())}>
-              {anyAnswered ? t('flow.finishLater') : t('flow.stopEmpty')}
-            </Button>
-            {anyAnswered && <p className="text-center text-base text-muted">{t('flow.finishLaterHelp')}</p>}
+            {anyAnswered && (
+              <>
+                <Button variant="ghost" disabled={sending} onClick={() => send(draft)}>
+                  {t('flow.finishLater')}
+                </Button>
+                <p className="text-center text-base text-muted">{t('flow.finishLaterHelp')}</p>
+              </>
+            )}
           </div>
         </>
       )}

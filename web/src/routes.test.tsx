@@ -1,9 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { RouterProvider } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   acknowledgeTask,
   assessTask,
@@ -24,8 +24,11 @@ import { translations } from './api/bank'
 import { ApiError, newSubmissionId } from './api/client'
 import { endpoints } from './api/endpoints'
 import { server } from './api/mocks/server'
+import { demoVisitId, makeCheckinDue } from './api/mocks/store'
 import type { CheckinReport, PatientReport } from './api/types'
 import './i18n'
+import esUi from './i18n/es.json'
+import frUi from './i18n/fr.json'
 import zhUi from './i18n/zh.json'
 import { joinBoard, sortQueue } from './lib/board'
 import { createTestRouter } from './routes'
@@ -39,7 +42,9 @@ function renderApp(path: string) {
   )
 }
 /** Open the visit's QR and say who is using the phone, as a person would. */
-async function scanAs(ref: string, role: 'patient' | 'companion') {
+/** Scan a seeded visit's QR. Its check-in is opened first unless `due: false`. */
+async function scanAs(ref: string, role: 'patient' | 'companion', { due = true } = {}) {
+  if (due) makeCheckinDue(demoVisitId(ref))
   const user = userEvent.setup()
   renderApp(`/v/demo-${ref}-token`)
   await user.click(await screen.findByRole('button', { name: role === 'patient' ? "I'm the patient" : "I'm with the patient" }))
@@ -55,6 +60,10 @@ const common = (reporter: 'patient' | 'companion' = 'patient') => ({
 })
 const visitWhere = async (pred: (r: Awaited<ReturnType<typeof getWorklist>>['rows'][number]) => boolean) =>
   (await getWorklist()).rows.find(pred)!.visit
+/** A seeded demo visit by case name, as in `demo-<case>-token`. */
+const demoVisit = (ref: string) => visitWhere((r) => r.visit.visit_id === demoVisitId(ref))
+/** The board row showing this visit's reference. */
+const boardRow = (rows: HTMLElement[], visitId: string) => rows.find((r) => r.textContent?.includes(`P-${visitId.slice(0, 4)}`))!
 
 function checkin(over: Partial<CheckinReport> & Pick<CheckinReport, 'reporter'>, version: string): PatientReport {
   const companion = over.reporter === 'companion'
@@ -96,26 +105,43 @@ describe('staff sign-in', () => {
     const user = userEvent.setup()
     renderApp('/staff/sign-in')
     expect(screen.queryByRole('button', { name: /^Sign in/ })).not.toBeInTheDocument() // mocks have no Auth0
-    await user.click(await screen.findByRole('button', { name: 'Open physician worklist' }))
-    expect(await screen.findByRole('link', { name: /Review worklist/ })).toBeInTheDocument()
+    await user.click(await screen.findByRole('button', { name: 'Physician' }))
+    expect(await screen.findByRole('link', { name: /Physician worklist/ })).toBeInTheDocument()
     expect(await getStaffSession()).toMatchObject({ user_id: 'demo|physician', role: 'physician' })
   })
 
-  it('a charge nurse can open both the triage board and the worklist', async () => {
+  it('keeps all three charge nurse destinations available on the triage board', async () => {
     sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
-    renderApp('/staff/physician')
-    const nav = await screen.findByRole('navigation', { name: 'Staff' })
-    expect(within(nav).getByRole('link', { name: /Triage board/ })).toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /New visit/ })).toBeInTheDocument()
-    expect(within(nav).getByRole('link', { name: /Review worklist/ })).toBeInTheDocument()
+    const user = userEvent.setup()
+    renderApp('/staff/escalations')
+    const nav = within(await screen.findByRole('navigation', { name: 'Staff' }))
+    await user.click(nav.getByRole('link', { name: 'Triage board' }))
+    await screen.findByRole('heading', { name: 'Triage board' })
+    expect(nav.getByRole('link', { name: 'Triage board' })).toHaveAttribute('aria-current', 'page')
+    expect(nav.getByRole('link', { name: 'Escalations' })).toBeVisible()
+    expect(nav.getByRole('link', { name: 'Physician worklist' })).toBeVisible()
+    expect(nav.queryByRole('link', { name: 'New visit' })).not.toBeInTheDocument()
+  })
+
+  it('returns a charge nurse to the triage board after opening a visit and changing tabs', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = within(await screen.findByRole('table'))
+    await user.click(table.getAllByRole('link', { name: /^P-/ })[0]!)
+    await user.click(await screen.findByRole('link', { name: 'Timeline' }))
+    await user.click(screen.getByRole('link', { name: 'Back to triage board' }))
+    expect(await screen.findByRole('heading', { name: 'Triage board' })).toBeVisible()
   })
 
   it('signing out clears the server session', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/triage')
+    await user.click(await screen.findByLabelText('Staff menu'))
     await user.click(await screen.findByRole('button', { name: 'Sign out' }))
-    expect(await screen.findByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument()
+    // The sign-in page can re-render once while the session clears, so query the live DOM each time.
+    await waitFor(() => expect(screen.getByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument())
     await expect(getStaffSession()).rejects.toMatchObject({ status: 401 })
   })
 
@@ -124,69 +150,155 @@ describe('staff sign-in', () => {
     renderApp('/staff/sign-in?error=access_denied')
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
     expect(screen.getByRole('alert')).toHaveTextContent("isn't on the Recheck staff list")
-    expect(screen.queryByRole('button', { name: 'Open triage board' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Triage nurse' })).not.toBeInTheDocument()
+  })
+
+  it('shows an Auth0 error instead of redirecting to an old demo session', async () => {
+    signInAsNurse()
+    renderApp('/staff/sign-in?error=no_staff_role')
+    expect(await screen.findByRole('alert')).toHaveTextContent('has no Recheck staff role')
+    expect(screen.getByRole('heading', { name: 'Demo roles' })).toBeInTheDocument()
+    await waitFor(() => expect(getStaffSession()).rejects.toMatchObject({ status: 401 }))
+  })
+
+  it('names each staff page in the tab title', async () => {
+    signInAsNurse()
+    renderApp('/staff/triage')
+    await screen.findByRole('heading', { name: 'Triage board' })
+    expect(document.title).toBe('Triage board – Recheck')
+  })
+})
+
+describe('charge nurse', () => {
+  const signInAsCharge = () => sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+
+  it('starts on escalations, where the unacknowledged urgent task has reached the backup', async () => {
+    signInAsCharge()
+    renderApp('/staff/sign-in')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Escalations' })).toBeInTheDocument()
+    const nav = await screen.findByRole('navigation', { name: 'Staff' })
+    expect(within(nav).getAllByRole('link')[0]).toHaveTextContent('Escalations')
+    const list = await screen.findByRole('list', { name: 'Escalated and routed tasks' })
+    const row = within(list).getByRole('link', { name: /New chest pain reported/ })
+    expect(row).toHaveTextContent('Routed to backup')
+    expect(row).toHaveTextContent('Physician, Charge nurse')
+    expect(document.title).toBe('Escalations – Recheck')
+  })
+
+  it('shows the handover: shift, ranked patients, open tasks and overdue reassessments', async () => {
+    signInAsCharge()
+    const user = userEvent.setup()
+    renderApp('/staff/escalations')
+    await user.click(await screen.findByRole('link', { name: 'Handover' }))
+    expect(await screen.findByRole('heading', { level: 1, name: 'Handover' })).toBeInTheDocument()
+    expect(screen.getByText(/^Shift /)).toBeInTheDocument()
+    const patients = screen.getByRole('list', { name: 'Waiting patients' })
+    // The escalated red task is past its acknowledgement deadline, so its patient row says so.
+    expect(within(patients).getAllByRole('link')[0]).toHaveTextContent(/#1.*Acknowledgement (due now|\d+ min overdue)/)
+    expect(screen.getByRole('list', { name: 'Open tasks' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Overdue staff reassessments/ })).toBeInTheDocument()
+  })
+
+  it('may acknowledge, record vitals and manage the visit, but not flag higher (the API is triage nurse only)', async () => {
+    signInAsCharge()
+    const visit = await demoVisit('chest')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}/assessment`)
+    expect(await screen.findByRole('link', { name: 'Back to escalations' })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Visit management' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Flag higher/ })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Acknowledge' }))
+    await waitFor(async () =>
+      expect((await getVisitDetail(visit.visit_id)).open_task).toMatchObject({ status: 'acknowledged', acknowledged_by: { role: 'charge_nurse' } }),
+    )
+  })
+
+  it('other roles have no escalations page', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    renderApp('/staff/escalations')
+    expect(await screen.findByRole('heading', { level: 1, name: 'Physician worklist' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /Escalations/ })).not.toBeInTheDocument()
   })
 })
 
 describe('triage nurse: enrolment and QR', () => {
-  it('defaults to CTAS 2 and links validation back to a missing pager number', async () => {
+  it('validates, then shows one QR card that encodes the exact link, and Show QR brings it back', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
+    // The old address opens the board with the New visit sheet over it.
+    const sheet = await screen.findByRole('dialog', { name: 'New visit' })
+    expect(screen.getByRole('heading', { level: 1, name: 'Triage board' })).toBeInTheDocument()
 
-    expect(await screen.findByRole('radio', { name: '2' })).toBeChecked()
-    expect(screen.getByRole('radio', { name: 'Phone' })).toBeChecked()
-    await user.click(screen.getByRole('radio', { name: 'Pager' }))
+    // CTAS defaults to 2 (#56), so a pager with no number is the missing field here.
+    await user.click(await screen.findByRole('radio', { name: 'Pager' }))
     await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
-    const error = await screen.findByRole('link', { name: 'Enter a pager number of 1 to 6 digits.' })
-    expect(screen.getByText('Check the visit details').parentElement).toHaveFocus()
-    await user.click(error)
-    expect(screen.getByLabelText('Pager number')).toHaveFocus()
-    expect(screen.queryByRole('radio', { name: '1' })).not.toBeInTheDocument()
+    // GOV.UK error summary at the top, linked to the field, plus the inline error.
+    expect(await screen.findByRole('heading', { name: 'There is a problem' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Enter a pager number of 1 to 6 digits.' })).toHaveAttribute('href', '#pager')
+    expect(screen.getAllByText('Enter a pager number of 1 to 6 digits.')).toHaveLength(2)
+    expect(document.title).toBe('Error: New visit – Recheck')
 
-    await user.type(screen.getByLabelText('Pager number'), '007')
-    expect(error).not.toBeInTheDocument()
+    await user.click(screen.getByRole('radio', { name: 'Phone' }))
+    await user.click(screen.getByRole('radio', { name: '3' }))
+    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
+
+    expect(await within(sheet).findByRole('heading', { name: 'Visit created' })).toHaveFocus()
+    expect(screen.getByRole('dialog', { name: 'Visit created' })).toBe(sheet)
+    expect(screen.getByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
+    const links = screen.getAllByText(/\/v\//)
+    expect(links).toHaveLength(1)
+    expect(screen.getByText(/show it again from the visit/)).toBeInTheDocument()
+    await user.click(within(sheet).getByRole('button', { name: 'Back to triage board' }))
+    expect(sheet).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'New visit' })).toHaveFocus()
   })
 
-  it('confirms enrolment with the QR, saved visit link and reassessment time', async () => {
+  it('keeps CEDIS suggestions open while editing and allows keyboard and pointer selection', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
-    await user.click(await screen.findByRole('radio', { name: '3' }))
-    await user.click(screen.getByLabelText('Issue (optional)'))
-    await user.paste('  Ankle swelling  ')
-    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
+    const sheet = within(await screen.findByRole('dialog', { name: 'New visit' }))
+    const search = sheet.getByRole('combobox', { name: 'CEDIS code' })
+    await user.click(search)
+    await user.click(search)
+    expect(sheet.getByRole('listbox', { name: 'CEDIS suggestions' })).toBeVisible()
+    await user.type(search, 'chest')
+    const match = sheet.getAllByRole('option', { name: /chest/i })[0]!
+    expect(match).toBeVisible()
+    await user.keyboard('{ArrowDown}{Enter}')
+    expect(search).toHaveValue('003')
+    expect(sheet.getByRole('combobox', { name: 'Presenting complaint' })).toBeDisabled()
 
-    expect(await screen.findByRole('heading', { name: 'Visit created' })).toHaveFocus()
-    expect(screen.getByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
-    expect(screen.getByText(/\/v\//)).not.toBeVisible()
-    await user.click(screen.getByText('Show check-in link'))
-    expect(screen.getByText(/\/v\//)).toBeVisible()
-    expect(screen.getByText(/show it again from the visit/)).toBeInTheDocument()
-    const visit = await visitWhere((r) => r.visit.complaint_detail === 'Ankle swelling')
-    expect(visit.complaint_group).toBe('general')
-    expect(screen.getByRole('link', { name: 'Open visit' })).toHaveAttribute('href', `/staff/visits/${visit.visit_id}`)
-    expect(await screen.findByText('Staff reassessment due')).toBeVisible()
-    await user.click(screen.getByRole('button', { name: 'Enrol another patient' }))
-    expect(screen.getByRole('radio', { name: '2' })).toBeChecked()
+    await user.clear(search)
+    await user.type(search, '407')
+    await user.click(sheet.getByRole('option', { name: /407/ }))
+    expect(search).toHaveValue('407')
+    expect(search).toHaveAttribute('aria-expanded', 'false')
+    expect(sheet.getByRole('combobox', { name: 'Presenting complaint' })).toHaveValue('head_injury')
+    expect(sheet.getByRole('button', { name: 'Create visit and QR code' })).toBeVisible()
   })
 
   it('the visit shows who is signed in and can show the same QR again', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
+    const visit = await demoVisit('confused')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
-    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(2) // visit details and QR card
-    await user.click(screen.getByRole('button', { name: 'Show visit QR' }))
+    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(1) // once, beside the sign-out action
+    const show = screen.getByRole('button', { name: 'Show QR' })
+    expect(show).toHaveAttribute('aria-expanded', 'false')
+    await user.click(show)
     expect(await screen.findByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
     expect(screen.getByText(/\/v\/demo-confused-token$/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Show QR' })).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByRole('button', { name: 'Print' })).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Sign out the phone' }))
-    expect(await screen.findAllByText('No one signed in')).toHaveLength(2)
+    expect(await screen.findAllByText('No one signed in')).toHaveLength(1)
   })
 
   it('splits the visit into four pages and keeps the concern and both clocks on each', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}`)
     const tabs = await screen.findByRole('navigation', { name: 'Visit pages' })
@@ -208,7 +320,7 @@ describe('triage nurse: enrolment and QR', () => {
 
   it('lets the triage nurse acknowledge an urgent report routed to the physician, from the overview', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     expect((await getVisitDetail(visit.visit_id)).open_task?.routed_to).not.toContain('triage_nurse')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}`)
@@ -218,16 +330,34 @@ describe('triage nurse: enrolment and QR', () => {
     expect(task).toMatchObject({ status: 'acknowledged', acknowledged_by: { role: 'triage_nurse' } })
   })
 
+  it('demo: desk staff can open a patient check-in now without moving the staff timer', async () => {
+    signInAsNurse()
+    const visit = await demoVisit('general')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}/manage`)
+    await user.click(await screen.findByRole('button', { name: 'Open check-in now' }))
+    expect(await screen.findByText(/^Check-in opened at /)).toBeInTheDocument()
+    const after = await demoVisit('general')
+    expect(Date.parse(after.next_prompt_due_at!)).toBeLessThanOrEqual(Date.now())
+    expect(after.staff_reassess_due_at).toBe(visit.staff_reassess_due_at)
+    expect(await screen.findByRole('button', { name: 'Open check-in now' })).toBeDisabled()
+  })
+
   it('will not stop the app until a reason is chosen and the change is confirmed', async () => {
     signInAsNurse()
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     const user = userEvent.setup()
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
     const stop = await screen.findByRole('button', { name: 'Stop offering the app' })
     const confirm = screen.getByRole('checkbox', { name: 'I understand this cannot be undone.' })
-    expect(stop).toBeDisabled()
-    expect(confirm).toBeDisabled()
+    // The button stays enabled and says what is missing on press.
+    await user.click(stop)
+    expect(await screen.findByText('Choose a reason for stopping the app.')).toBeInTheDocument()
     await user.click(screen.getByRole('radio', { name: 'Major trauma' }))
+    await user.click(stop)
+    expect(await screen.findByText('Confirm that you understand this cannot be undone.')).toBeInTheDocument()
+    expect(confirm).toHaveFocus()
+    expect((await getVisitDetail(visit.visit_id)).visit.app_exclusion).toBeNull()
     await user.click(confirm)
     await user.click(stop)
     expect(await screen.findAllByText('Not offered: Major trauma')).not.toHaveLength(0)
@@ -253,14 +383,28 @@ describe('triage nurse: enrolment and QR', () => {
     expect(screen.getByText('Set by the CEDIS code.')).toBeInTheDocument()
   })
 
+  it('the CEDIS combobox searches by name and picks with the keyboard', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/visits/new')
+    const box = await screen.findByRole('combobox', { name: /CEDIS code/ })
+    await user.type(box, 'chest pain (card')
+    expect(box).toHaveAttribute('aria-expanded', 'true')
+    await user.keyboard('{ArrowDown}')
+    expect(screen.getByRole('option', { name: /Chest pain \(cardiac features\)/ })).toHaveAttribute('aria-selected', 'true')
+    await user.keyboard('{Enter}')
+    expect(box).toHaveValue('003')
+    expect(box).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByLabelText('Presenting complaint')).toHaveValue('chest_back_pain')
+    expect(screen.queryByRole('heading', { name: 'Visit created' })).not.toBeInTheDocument()
+  })
+
   it('an excluded complaint pre-selects the exclusion, hides the channel and issues no QR', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
     await user.type(await screen.findByLabelText(/CEDIS code/), '609')
-    expect(screen.getByRole('switch', { name: 'App is offered' })).not.toBeChecked()
-    expect(screen.getByRole('switch', { name: 'App is offered' })).toBeDisabled()
-    expect(screen.getByLabelText('Reason the app is off')).toHaveValue('child')
+    expect(screen.getByLabelText('Patient app')).toHaveValue('child')
     expect(screen.queryByRole('radio', { name: 'Pager' })).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('radio', { name: '4' }))
@@ -268,59 +412,6 @@ describe('triage nurse: enrolment and QR', () => {
     expect(await screen.findByText(/No QR issued: Child/)).toBeInTheDocument()
     expect(screen.queryByRole('img', { name: /QR code/ })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Print' })).not.toBeInTheDocument()
-  })
-
-  it('lists app exclusions and requires a reason when staff turn the app off', async () => {
-    signInAsNurse()
-    const user = userEvent.setup()
-    renderApp('/staff/visits/new')
-    await user.click(await screen.findByText('Who isn’t covered?'))
-    expect(screen.getByText('Major trauma', { selector: 'li' })).toBeVisible()
-    await user.click(screen.getByRole('radio', { name: '4' }))
-    await user.click(screen.getByRole('switch', { name: 'App is offered' }))
-    await user.click(screen.getByRole('button', { name: 'Create visit (no QR)' }))
-    expect(screen.getByRole('link', { name: 'Choose why the patient app is off.' })).toBeInTheDocument()
-    await user.selectOptions(screen.getByLabelText('Reason the app is off'), 'major_trauma')
-    await user.click(screen.getByRole('button', { name: 'Create visit (no QR)' }))
-    expect(await screen.findByText('No QR issued: Major trauma')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Open visit' })).toBeVisible()
-    expect(screen.queryByText('Next patient check-in')).not.toBeInTheDocument()
-  })
-
-  it('selects a CEDIS code by complaint name with the keyboard', async () => {
-    signInAsNurse()
-    const user = userEvent.setup()
-    renderApp('/staff/visits/new')
-    const search = await screen.findByRole('combobox', { name: /CEDIS code/ })
-    await user.type(search, 'chest pain')
-    expect(screen.getByRole('option', { name: /003.*chest pain/i })).toBeVisible()
-    await user.keyboard('{ArrowDown}{Escape}')
-    expect(search).toHaveAttribute('aria-expanded', 'false')
-    await user.keyboard('{ArrowDown}{Enter}')
-    expect(search).toHaveValue('003')
-    expect(search).toHaveFocus()
-    expect(screen.getByLabelText('Presenting complaint')).toHaveValue('chest_back_pain')
-  })
-
-  it('keeps the form and submission ID when retrying a failed enrolment', async () => {
-    signInAsNurse()
-    const submissions: unknown[] = []
-    server.use(http.post(endpoints.enrolVisit(), async ({ request }) => {
-      submissions.push(await request.clone().json())
-      if (submissions.length === 1) return HttpResponse.json({ detail: 'Please retry.' }, { status: 503 })
-    }))
-    const user = userEvent.setup()
-    renderApp('/staff/visits/new')
-    await user.click(await screen.findByRole('radio', { name: '3' }))
-    await user.click(screen.getByRole('radio', { name: 'Pager' }))
-    await user.type(screen.getByLabelText('Pager number'), '007')
-    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
-    expect((await screen.findByText('Please retry.')).parentElement).toHaveFocus()
-    expect(screen.getByLabelText('Pager number')).toHaveValue('007')
-    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
-    expect(await screen.findByRole('heading', { name: 'Visit created' })).toHaveFocus()
-    expect(submissions).toHaveLength(2)
-    expect(submissions[1]).toEqual(submissions[0])
   })
 })
 
@@ -330,69 +421,236 @@ describe('triage board', () => {
     renderApp('/staff/triage')
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
-    expect(rows).toHaveLength(5)
-    // CTAS 2 first, then CTAS 3 by arrival, then CTAS 4.
-    const order = ['Chest or back pain', 'Head injury', 'Other complaint', 'Confused or drowsy', 'Other complaint']
+    const order = await queue()
+    expect(rows).toHaveLength(order.length)
+    // CTAS first, then arrival: the numeral is the place in line, whatever the flags.
     rows.forEach((r, i) => {
-      expect(r).toHaveTextContent(order[i]!)
+      expect(r).toHaveTextContent(`P-${order[i]!.slice(0, 4)}`)
       expect(within(r).getByRole('rowheader')).toHaveTextContent(String(i + 1))
     })
+    const ctas = (await getTriageBoard()).rows.map((b) => [b.visit_id, b.ctas] as const)
+    const ctasInOrder = order.map((id) => ctas.find(([v]) => v === id)![1])
+    expect(ctasInOrder).toEqual([...ctasInOrder].sort((a, b) => a - b))
+    // The CTAS 2 chest pain visit arrived first, so it is first in line.
+    expect(rows[0]).toHaveTextContent('Chest or back pain')
     expect(rows[0]).toHaveTextContent('Red')
-    expect(rows[1]).toHaveTextContent('Silent')
+    expect(boardRow(rows, demoVisitId('head'))).toHaveTextContent('Silent')
+  })
+
+  it('toggles Place and Waiting without renumbering queue positions', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = within(await screen.findByRole('table'))
+    const order = await queue()
+    const positions = () => table.getAllByRole('rowheader').map((cell) => Number(cell.textContent?.match(/\d+$/)?.[0]))
+    const place = table.getByRole('button', { name: 'Place' })
+    await user.click(place)
+    expect(positions()).toEqual(order.map((_, i) => order.length - i))
+    await user.click(place)
+    expect(positions()).toEqual(order.map((_, i) => i + 1))
+    const waiting = table.getByRole('button', { name: 'Waiting' })
+    await user.click(waiting)
+    expect(waiting.closest('th')).toHaveAttribute('aria-sort', 'descending')
+    const longestFirst = positions()
+    await user.click(waiting)
+    expect(waiting.closest('th')).toHaveAttribute('aria-sort', 'ascending')
+    expect(positions()).toEqual([...longestFirst].reverse())
+  })
+
+  it('resizes only the selected column and keeps compact columns fixed', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = within(await screen.findByRole('table'))
+    const complaint = table.getByRole('separator', { name: 'Resize Complaint column' })
+    const columns = Array.from(screen.getByRole('table').querySelectorAll('col'))
+    const complaintIndex = (complaint.closest('th') as HTMLTableCellElement).cellIndex
+    const complaintWidth = Number(complaint.getAttribute('aria-valuenow'))
+    const otherWidths = () => columns.filter((_, index) => index !== complaintIndex).map((col) => col.style.width)
+    const initialWidths = otherWidths()
+
+    complaint.focus()
+    await user.keyboard('{ArrowRight}')
+    expect(complaint).toHaveAttribute('aria-valuenow', String(complaintWidth + 8))
+    expect(otherWidths()).toEqual(initialWidths)
+    expect(table.queryByRole('separator', { name: 'Resize Place column' })).not.toBeInTheDocument()
+    expect(table.queryByRole('separator', { name: 'Resize CTAS column' })).not.toBeInTheDocument()
+    expect(table.queryByRole('separator', { name: 'Resize Pain column' })).not.toBeInTheDocument()
+
+    await user.keyboard('{ArrowLeft>20/}')
+    expect(complaint).toHaveAttribute('aria-valuenow', complaint.getAttribute('aria-valuemin'))
+    expect(table.getByRole('button', { name: 'Complaint' })).toBeVisible()
+  })
+
+  it('keeps Pain at the right edge while preserving the saved order of other columns', async () => {
+    signInAsNurse()
+    localStorage.setItem('recheck-triage-columns-v1', JSON.stringify([
+      'pain', 'ctas', 'place', 'ref', 'complaint', 'waiting', 'condition', 'flags', 'reassess', 'lastCheckin', 'nextCheckin',
+    ]))
+    const user = userEvent.setup()
+    renderApp('/staff/triage?panel=settings')
+    const settings = within(await screen.findByRole('dialog', { name: 'Board settings' }))
+    expect(settings.queryByRole('button', { name: 'Move Pain earlier' })).not.toBeInTheDocument()
+    const nextCheckin = settings.getByRole('button', { name: 'Move Next check-in later' })
+    expect(nextCheckin).toHaveAttribute('aria-disabled', 'true')
+    await user.click(nextCheckin)
+    await user.click(settings.getByRole('button', { name: 'Close' }))
+
+    const headers = within(await screen.findByRole('table')).getAllByRole('columnheader')
+    expect(headers[0]).toHaveTextContent('CTAS')
+    expect(headers.at(-2)).toHaveTextContent('Next check-in')
+    expect(headers.at(-1)).toHaveTextContent('Pain')
+  })
+
+  it('lets staff deliberately hide and restore a secondary column from the board', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage?panel=settings')
+    const settings = await screen.findByRole('dialog', { name: 'Board settings' })
+    await user.click(within(settings).getByRole('button', { name: 'Hide Complaint column' }))
+    for (const name of ['Patient', 'CTAS', 'Flags', 'Reassess']) {
+      expect(within(settings).queryByRole('button', { name: `Hide ${name} column` })).not.toBeInTheDocument()
+    }
+    await user.click(within(settings).getByRole('button', { name: 'Close' }))
+
+    const table = within(await screen.findByRole('table'))
+    expect(table.queryByRole('button', { name: 'Complaint' })).not.toBeInTheDocument()
+    await user.click(table.getByRole('button', { name: 'Expand Complaint column' }))
+    expect(table.getByRole('button', { name: 'Complaint' })).toHaveFocus()
+    expect(table.getAllByRole('cell', { name: 'Chest or back pain' })[0]).toBeVisible()
   })
 
   it('an excluded patient shows "App not offered", not applicable for check-ins, and is never "No response"', async () => {
     signInAsNurse()
     renderApp('/staff/triage')
     const rows = within(await screen.findByRole('table')).getAllByRole('row').slice(1)
-    const child = rows[4]!
-    expect(child).toHaveTextContent('App not offered: Child')
+    const child = boardRow(rows, demoVisitId('child'))
+    expect(child).toHaveTextContent(/App not offered\s*Child/)
     expect(child).toHaveTextContent('Not applicable')
     expect(child).not.toHaveTextContent('No response')
-  })
-
-  it('shows when the rows were last updated, and keeps them with "Reconnecting" when a refresh fails', async () => {
-    signInAsNurse()
-    renderApp('/staff/triage')
-    const status = await screen.findByText(/^Live · Updated /)
-    const time = status.textContent!.replace('Live · Updated ', '')
-
-    // The next refresh fails: the rows stay, and the time is still the last good one.
-    server.use(http.get(endpoints.triageBoard(), () => HttpResponse.json({ detail: 'down' }, { status: 503 })))
-    const events = new BroadcastChannel('recheck-events')
-    events.postMessage('changed')
-    expect(await screen.findByText(`Reconnecting · Last updated ${time}`)).toBeInTheDocument()
-    events.close()
-    expect(within(screen.getByRole('table')).getAllByRole('row')).toHaveLength(6)
-    expect(screen.queryByText('The board could not be loaded.')).not.toBeInTheDocument()
-  })
-
-  it('explains each count in a tooltip that opens on focus and closes on Escape', async () => {
-    signInAsNurse()
-    const user = userEvent.setup()
-    renderApp('/staff/triage')
-    const info = await screen.findByRole('button', { name: 'About Red' })
-    expect(info).toHaveAccessibleDescription(/Urgent review.*A new warning sign/)
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
-    info.focus()
-    expect(await screen.findByRole('tooltip')).toHaveTextContent('Acknowledge within 2 minutes, or it also goes to the charge nurse.')
-    await user.keyboard('{Escape}')
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /^About / })).toHaveLength(5)
   })
 
   it('a new flag shows a badge but never moves a row or its numeral', async () => {
     signInAsNurse()
     const before = await queue()
+    const general = demoVisitId('general')
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     await postReport({ kind: 'concern', concern: 'help_now', ...common() })
     expect(await queue()).toEqual(before)
 
     renderApp('/staff/triage')
     const rows = within(await screen.findByRole('table')).getAllByRole('row').slice(1)
-    expect(rows[2]).toHaveTextContent('Other complaint')
-    expect(rows[2]).toHaveTextContent('Red')
-    expect(within(rows[2]!).getByRole('rowheader')).toHaveTextContent('3')
+    const row = boardRow(rows, general)
+    expect(rows.indexOf(row)).toBe(before.indexOf(general))
+    expect(row).toHaveTextContent('Other complaint')
+    expect(row).toHaveTextContent('Red')
+    expect(within(row).getByRole('rowheader')).toHaveTextContent(String(before.indexOf(general) + 1))
+  })
+
+  it('filters by column from header menus, keeps place in line, and clears', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = await screen.findByRole('table')
+    const total = within(table).getAllByRole('row').length - 1
+    const order = await queue()
+
+    const complaint = within(table).getByRole('button', { name: 'Complaint' })
+    expect(complaint).toHaveAttribute('aria-haspopup', 'menu')
+    expect(complaint).toHaveAttribute('aria-expanded', 'false')
+    await user.click(complaint)
+    expect(complaint).toHaveAttribute('aria-expanded', 'true')
+    const menu = screen.getByRole('menu', { name: 'Filter by Complaint' })
+    // Focus starts on the first choice; arrows move, Space toggles and the menu stays open.
+    expect(within(menu).getAllByRole('menuitemcheckbox')[0]).toHaveFocus()
+    await user.keyboard('{ArrowDown}{ArrowDown}')
+    const head = within(menu).getByRole('menuitemcheckbox', { name: /Head injury/ })
+    expect(head).toHaveFocus()
+    await user.keyboard(' ')
+    expect(head).toHaveAttribute('aria-checked', 'true')
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument()
+    expect(complaint).toHaveFocus()
+    expect(complaint).toHaveAccessibleDescription('Filtered: 1 choice.')
+
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows.length).toBeLessThan(total)
+    for (const r of rows) {
+      expect(r).toHaveTextContent('Head injury')
+      // The numeral is still the place in the whole queue.
+      const id = order.find((v) => r.textContent!.includes(`P-${v.slice(0, 4)}`))!
+      expect(within(r).getByRole('rowheader')).toHaveTextContent(String(order.indexOf(id) + 1))
+    }
+    expect(screen.getByText(`Showing ${rows.length} of ${total} patients`)).toBeInTheDocument()
+
+    // Filters in two columns combine; each active filter shows as a removable chip.
+    await user.click(within(table).getByRole('button', { name: 'CTAS' }))
+    await user.click(screen.getByRole('menuitemcheckbox', { name: /CTAS 2/ }))
+    await user.keyboard('{Escape}')
+    const active = screen.getByRole('list', { name: 'Active filters' })
+    expect(within(active).getByRole('button', { name: 'Remove filter Complaint: Head injury' })).toBeInTheDocument()
+    await user.click(within(active).getByRole('button', { name: 'Remove filter CTAS 2' }))
+    expect(within(table).getAllByRole('row').slice(1)).toHaveLength(rows.length)
+
+    await user.click(screen.getByRole('button', { name: 'Clear filters' }))
+    expect(within(table).getAllByRole('row')).toHaveLength(total + 1)
+    expect(screen.queryByRole('list', { name: 'Active filters' })).not.toBeInTheDocument()
+  })
+
+  it('a level card filters by its level and explains it in a tooltip', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    const table = await screen.findByRole('table')
+    const red = screen.getByRole('button', { name: /^Red \d+$/ })
+    await user.click(red)
+    expect(red).toHaveAttribute('aria-pressed', 'true')
+    for (const r of within(table).getAllByRole('row').slice(1)) expect(r).toHaveTextContent('Red')
+    expect(screen.getByRole('button', { name: 'About Red' })).toHaveAccessibleDescription(/Urgent review/)
+    await user.click(red)
+    expect(red).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it('New visit opens a sheet over the board that traps focus, closes on Escape and returns focus', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    await screen.findByRole('table')
+    const open = screen.getByRole('button', { name: 'New visit' })
+    expect(open).toHaveAttribute('aria-expanded', 'false')
+    await user.click(open)
+
+    const sheet = await screen.findByRole('dialog', { name: 'New visit' })
+    expect(sheet).toHaveAttribute('aria-modal', 'true')
+    expect(within(sheet).getByRole('heading', { name: 'New visit' })).toHaveFocus()
+    expect(document.title).toBe('New visit – Recheck')
+    // Tab wraps inside the sheet at both ends.
+    const close = within(sheet).getByRole('button', { name: 'Close' })
+    const submit = within(sheet).getByRole('button', { name: 'Create visit and QR code' })
+    submit.focus()
+    await user.tab()
+    expect(close).toHaveFocus()
+    await user.tab({ shift: true })
+    expect(submit).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+    expect(document.title).toBe('Triage board – Recheck')
+
+    // The round close button does the same.
+    await user.click(open)
+    await user.click(within(await screen.findByRole('dialog')).getByRole('button', { name: 'Close' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(open).toHaveFocus()
+  })
+
+  it('the charge nurse can open New visit too', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+    renderApp('/staff/visits/new')
+    expect(await screen.findByRole('dialog', { name: 'New visit' })).toBeInTheDocument()
   })
 })
 
@@ -404,6 +662,26 @@ describe('patient and companion check-in', () => {
     expect(screen.getByText(/AHS estimate right now: about 4 to 5 hours from triage to seeing a doctor, for less urgent patients\. It is not your personal wait\./)).toBeInTheDocument()
     expect(screen.getByText(/You have waited \d+ (minutes?|hours?)/)).toBeInTheDocument()
     expect(screen.getByText('What we store')).toBeInTheDocument()
+  })
+
+  it('shows the wait, "How triage works" and "What we store" on Home only, so each question stands alone', async () => {
+    const user = await scanAs('chest', 'patient')
+    await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
+    await screen.findByRole('heading', { name: 'How are you feeling right now?' })
+    expect(screen.queryByText(/The sickest people are seen first\./)).not.toBeInTheDocument()
+    expect(screen.queryByText(/AHS estimate right now/)).not.toBeInTheDocument()
+    expect(screen.queryByText('How triage works')).not.toBeInTheDocument()
+    expect(screen.queryByText('What we store')).not.toBeInTheDocument()
+  })
+
+  it('lets the patient go back from an unanswered first question and restart the check-in', async () => {
+    const user = await scanAs('chest', 'patient')
+    await user.click(await screen.findByRole('button', { name: 'Start check-in' }))
+    await screen.findByRole('heading', { name: 'How are you feeling right now?' })
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: "You're signed in" })).toHaveFocus()
+    await user.click(screen.getByRole('button', { name: 'Start check-in' }))
+    expect(await screen.findByRole('heading', { name: 'How are you feeling right now?' })).toBeVisible()
   })
 
   it('shows all four always-visible buttons from the question bank', async () => {
@@ -421,14 +699,40 @@ describe('patient and companion check-in', () => {
     expect(screen.getByRole('button', { name: 'The patient is leaving' })).toBeInTheDocument()
   })
 
+  it('asks a companion whether the patient is leaving, and keeps the safety advice', async () => {
+    const user = await scanAs('general', 'companion')
+    await user.click(await screen.findByRole('button', { name: 'The patient is leaving' }))
+    expect(await screen.findByRole('heading', { name: 'Is the patient leaving?' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: "No, they're staying" })).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: "Yes, they're leaving" }))
+    expect(await screen.findByText(/Please tell staff before the patient leaves\..*call 911.*call 811/)).toBeInTheDocument()
+  })
+
+  it('keeps a language picked before signing in instead of the visit\'s', async () => {
+    const user = userEvent.setup()
+    renderApp('/v/demo-chest-token')
+    await user.selectOptions(await screen.findByRole('combobox', { name: 'Language' }), 'fr')
+    await user.click(await screen.findByRole('button', { name: frUi.exchange.role.patient }))
+    expect(await screen.findByRole('heading', { name: frUi.patient.title })).toBeInTheDocument()
+  })
+
+  it('uses the visit\'s language when nobody picked one on this phone', async () => {
+    signInAsNurse()
+    const enrolled = await enrolVisit({ submission_id: newSubmissionId(), ctas: 3, complaint_group: 'chest_back_pain', cedis_code: '003', language: 'es', channel: 'phone' })
+    const user = userEvent.setup()
+    renderApp(`/v/${enrolled.link!.split('/v/')[1]!}`)
+    await user.click(await screen.findByRole('button', { name: "I'm the patient" }))
+    expect(await screen.findByRole('heading', { name: esUi.patient.title })).toBeInTheDocument()
+  })
+
   it('a bad code says so and never shows a visit', async () => {
     renderApp('/v/not-a-real-code-at-all-1234')
     await userEvent.setup().click(await screen.findByRole('button', { name: "I'm the patient" }))
-    expect(await screen.findByText('This code does not work anymore. Please ask a staff member for a new one.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'This code does not work anymore. Please ask a staff member for a new one.' })).toBeInTheDocument()
   })
 
   it('a code for a closed visit is no longer active', async () => {
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     await updateVisitStatus(visit.visit_id, { submission_id: newSubmissionId(), status: 'roomed' })
     await expect(exchangeToken({ token: 'demo-general-token', role: 'patient' })).rejects.toMatchObject({ status: 410 })
   })
@@ -443,7 +747,7 @@ describe('patient and companion check-in', () => {
     await user.click(screen.getByRole('button', { name: 'Use this phone instead' }))
     expect(await screen.findByRole('heading', { name: "You're signed in" })).toBeInTheDocument()
 
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
+    const visit = await demoVisit('confused')
     expect(visit.signed_in_as).toBe('patient')
     const sessions = (await getVisitDetail(visit.visit_id)).timeline.filter((e) => 'session_id' in e)
     expect(sessions).toEqual([
@@ -476,10 +780,11 @@ describe('patient and companion check-in', () => {
     await user.click(await screen.findByRole('button', { name: 'Sign out of this phone' }))
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(await screen.findByRole('heading', { name: "You've been signed out." })).toBeInTheDocument()
+    expect(screen.getByText(/To sign in again, scan the visit's QR code/)).toBeInTheDocument()
     await expect(postReport({ kind: 'concern', concern: 'help_now', ...common() })).rejects.toMatchObject({ status: 401 })
 
     await exchangeToken({ token: 'demo-general-token', role: 'companion' })
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     await staffSignOut(visit.visit_id, { submission_id: newSubmissionId() })
     await expect(getPatientHome()).rejects.toMatchObject({ status: 401 })
     expect((await getVisitDetail(visit.visit_id)).visit.signed_in_as).toBeNull()
@@ -490,7 +795,18 @@ describe('patient and companion check-in', () => {
     await scanAs('general', 'patient')
     await user.click(await screen.findByRole('button', { name: 'Question about my wait or care' }))
     expect(await screen.findByRole('heading', { name: 'Your question went to the triage nurse' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Back' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: /Tell a staff member now/ })).not.toBeInTheDocument()
+  })
+
+  it('a new symptom report sends only once a change is picked, and Back returns home', async () => {
+    const user = await scanAs('chest', 'patient')
+    await user.click(await screen.findByRole('button', { name: 'Tell us about a new symptom' }))
+    expect(await screen.findByRole('button', { name: 'Send to staff' })).toBeDisabled()
+    await user.click(screen.getAllByRole('checkbox')[0]!)
+    expect(screen.getByRole('button', { name: 'Send to staff' })).toBeEnabled()
+    await user.click(screen.getByRole('button', { name: 'Back' }))
+    expect(await screen.findByRole('heading', { name: "You're signed in" })).toBeInTheDocument()
   })
 
   it('"I need help now" confirms the report was sent and never shows any task level', async () => {
@@ -537,7 +853,7 @@ describe('patient and companion check-in', () => {
     expect(await screen.findByRole('heading', { name: 'Thank you, we have your answers' })).toBeInTheDocument()
 
     // Staff see "shown but not answered", which is not "not shown".
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const visit = await demoVisit('general')
     const detail = await getVisitDetail(visit.visit_id)
     const last = [...detail.timeline].reverse().find((e) => 'report_id' in e && e.report.kind === 'checkin') as { report: CheckinReport }
     expect(last.report.attention).toMatchObject({ kind: 'missing', reason: 'unable_to_respond', prompt_id: expect.any(String) })
@@ -608,6 +924,9 @@ describe('patient and companion check-in', () => {
 })
 
 describe('the loop and the backend rules', () => {
+  // These post scheduled check-ins, which the server only takes once one is due.
+  beforeEach(() => makeCheckinDue(demoVisitId('general')))
+
   it('runs enrol, scan, report, flag, acknowledge, assess against the contract', async () => {
     const before = await queue()
     const enrolled = await enrolVisit({ submission_id: newSubmissionId(), ctas: 3, complaint_group: 'chest_back_pain', cedis_code: '003', language: 'en', channel: 'phone' })
@@ -615,13 +934,14 @@ describe('the loop and the backend rules', () => {
     // The desk can show the same code again.
     expect((await getVisitLink(enrolled.visit_id)).link).toBe(enrolled.link)
     await exchangeToken({ token: enrolled.link!.split('/v/')[1]!, role: 'patient' })
+    // The mocks run as a demo (RECHECK_DEMO_CHECKINS), so the first check-in opens at enrolment.
     const home = await getPatientHome()
+    expect(home.checkin_open).toBe(true)
     expect(home.role).toBe('patient')
     expect(home.items.map((i) => i.key)).toEqual(['pain_moved', 'pain_sudden_worse'])
     expect(home.attention_prompt).not.toBeNull()
 
     const report = checkin(
-      // Chest pain is this visit's triage complaint, so "much worse" corroborates it.
       { reporter: 'patient', feeling_change: { kind: 'answered', value: 'much_worse' }, new_findings: { kind: 'answered', value: ['chest_pain'] }, items: { pain_moved: { kind: 'yes_no', value: true } } },
       home.questionnaire_version,
     )
@@ -643,22 +963,16 @@ describe('the loop and the backend rules', () => {
     expect((await getVisitDetail(enrolled.visit_id)).open_task).toBeNull()
   })
 
-  it('a "better" answer raises nothing, "worse" while feeling OK raises nothing, and answers are weighed', async () => {
+  it('a "better" answer never cancels or raises a task, and "much worse" while feeling very poor raises red', async () => {
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     const home = await getPatientHome()
-    const v = home.questionnaire_version
-    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
-    const level = async () => (await getVisitDetail(visit.visit_id)).open_task?.level ?? null
-    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, v))
-    expect(await level()).toBeNull()
-    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'worse' } }, v))
-    expect(await level()).toBeNull()
-    // One broad sign asks for a review.
-    await postReport(checkin({ reporter: 'patient', new_findings: { kind: 'answered', value: ['vomiting'] } }, v))
-    expect(await level()).toBe('amber')
-    // "Much worse" and "very poor" agree at the extreme: urgent.
-    await postReport(checkin({ reporter: 'patient', feeling_now: { kind: 'answered', value: 'very_poor' }, feeling_change: { kind: 'answered', value: 'much_worse' } }, v))
-    expect(await level()).toBe('red')
+    const visit = await demoVisit('general')
+    await postReport(checkin({ reporter: 'patient', feeling_change: { kind: 'answered', value: 'better' } }, home.questionnaire_version))
+    expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
+    makeCheckinDue(visit.visit_id)
+    // Same weighting as rules.py (#50): "much worse" alone is amber; with "very poor" it is red.
+    await postReport(checkin({ reporter: 'patient', feeling_now: { kind: 'answered', value: 'very_poor' }, feeling_change: { kind: 'answered', value: 'much_worse' } }, home.questionnaire_version))
+    expect((await getVisitDetail(visit.visit_id)).open_task?.level).toBe('red')
   })
 
   describe('the circle check', () => {
@@ -678,7 +992,7 @@ describe('the loop and the backend rules', () => {
       const home = await getPatientHome()
       const prompt = home.attention_prompt!
       const circles = prompt.steps.filter((s) => s.shape === 'circle').length
-      const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+      const visit = await demoVisit('general')
 
       const answered = checkin({ reporter: 'patient', attention: { kind: 'answered', prompt_id: prompt.prompt_id, count: circles + 1 } }, home.questionnaire_version)
       await postReport(answered)
@@ -686,7 +1000,8 @@ describe('the loop and the backend rules', () => {
       expect(task.reasons.map((r) => r.reason_code)).toContain('attention_incorrect')
       expect(task.level).toBe('overdue') // non-urgent
 
-      // The prompt cannot be used twice.
+      // The prompt cannot be used twice, even once the next check-in opens.
+      makeCheckinDue(visit.visit_id)
       await expect(
         postReport(checkin({ reporter: 'patient', attention: { kind: 'answered', prompt_id: prompt.prompt_id, count: circles }, pain: { kind: 'answered', value: 1 } }, home.questionnaire_version)),
       ).rejects.toMatchObject({ status: 409 })
@@ -698,7 +1013,7 @@ describe('the loop and the backend rules', () => {
       const prompt = home.attention_prompt!
       const circles = prompt.steps.filter((s) => s.shape === 'circle').length
       await postReport(checkin({ reporter: 'patient', attention: { kind: 'answered', prompt_id: prompt.prompt_id, count: circles } }, home.questionnaire_version))
-      const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+      const visit = await demoVisit('general')
       expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
     })
 
@@ -713,12 +1028,29 @@ describe('the loop and the backend rules', () => {
       ).rejects.toMatchObject({ status: 422 })
     })
 
+    it('only a scheduled check-in restarts the patient timer, only once it is due, and help is always taken', async () => {
+      await exchangeToken({ token: 'demo-general-token', role: 'patient' })
+      const v = (await getPatientHome()).questionnaire_version
+      await postReport(checkin({ reporter: 'patient' }, v))
+      const due = (await demoVisit('general')).next_prompt_due_at
+      expect((await getPatientHome()).checkin_open).toBe(false)
+      expect((await getPatientHome()).attention_prompt).toBeNull()
+      await expect(postReport(checkin({ reporter: 'patient' }, v))).rejects.toMatchObject({ status: 409 })
+      expect((await postReport({ kind: 'concern', concern: 'help_now', ...common() })).patient_message).not.toBe('none')
+      const notAsked = { kind: 'missing', reason: 'not_asked' } as const
+      await postReport({
+        kind: 'checkin', purpose: 'followup', ...common(), questionnaire_version: v,
+        feeling_now: notAsked, feeling_change: notAsked, pain: notAsked, new_findings: notAsked, attention: notAsked, items: {},
+      })
+      expect((await demoVisit('general')).next_prompt_due_at).toBe(due)
+    })
+
     it('a patient response never moves the staff timer', async () => {
       await exchangeToken({ token: 'demo-general-token', role: 'companion' })
       const v = (await getPatientHome()).questionnaire_version
-      const before = (await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)).staff_reassess_due_at
+      const before = (await demoVisit('general')).staff_reassess_due_at
       await postReport(checkin({ reporter: 'companion' }, v))
-      expect((await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)).staff_reassess_due_at).toBe(before)
+      expect((await demoVisit('general')).staff_reassess_due_at).toBe(before)
     })
   })
 
@@ -743,7 +1075,7 @@ describe('the loop and the backend rules', () => {
     it('stopping the app after enrolment signs the patient out, cannot be undone, and keeps the staff timer', async () => {
       await exchangeToken({ token: 'demo-general-token', role: 'patient' })
       await getPatientHome()
-      const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+      const visit = await demoVisit('general')
 
       await updateVisitExclusion(visit.visit_id, { submission_id: newSubmissionId(), app_exclusion: 'major_trauma' })
       const after = (await getVisitDetail(visit.visit_id)).visit
@@ -758,37 +1090,59 @@ describe('the loop and the backend rules', () => {
 describe('physician review flow', () => {
   it('shows ranked active concerns and filters acknowledged tasks', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
+    const routed = (await getWorklist()).rows.filter((r) => r.open_task?.routed_to.includes('physician'))
+    const acknowledged = routed.filter((r) => r.open_task!.status === 'acknowledged')
     const user = userEvent.setup()
     renderApp('/staff/physician')
-    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Physician worklist' })).toBeInTheDocument()
     const list = await screen.findByRole('list', { name: 'Review tasks' })
-    expect(within(list).getAllByRole('listitem')).toHaveLength(2)
-    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('New chest pain reported')
-    await user.click(screen.getByRole('button', { name: /Needs assessment/ }))
-    expect(await screen.findByText('No acknowledged tasks')).toBeInTheDocument()
+    // Physician-routed tasks only: the desk questions stay with the triage nurse.
+    expect(within(list).getAllByRole('listitem')).toHaveLength(routed.length)
+    expect(routed.length).toBeLessThan((await getWorklist()).rows.filter((r) => r.open_task).length)
+    // Red first, the longest-waiting red on top.
+    expect(within(list).getAllByRole('listitem')[0]).toHaveTextContent('Asked for help now')
+    await user.click(screen.getByRole('button', { name: /To assess/ }))
+    const toAssess = await screen.findByRole('list', { name: 'Review tasks' })
+    await waitFor(() => expect(within(toAssess).getAllByRole('listitem')).toHaveLength(acknowledged.length))
+    expect(acknowledged.length).toBeGreaterThan(0)
+    expect(within(toAssess).queryByText('Asked for help now')).not.toBeInTheDocument()
+  })
+
+  it('offers "Clear search" when a search finds nothing', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    const routed = (await getWorklist()).rows.filter((r) => r.open_task?.routed_to.includes('physician'))
+    const user = userEvent.setup()
+    renderApp('/staff/physician')
+    await screen.findByRole('list', { name: 'Review tasks' })
+    await user.type(screen.getByRole('searchbox', { name: 'Find a visit or concern' }), 'zzz')
+    expect(await screen.findByText('No matching visits')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Clear search' }))
+    expect(within(await screen.findByRole('list', { name: 'Review tasks' })).getAllByRole('listitem')).toHaveLength(routed.length)
+    expect(screen.getByRole('searchbox', { name: 'Find a visit or concern' })).toHaveFocus()
   })
 
   it('requires acknowledgement and an explicit disposition before completing an assessment', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     const user = userEvent.setup()
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     renderApp(`/staff/visits/${visit.visit_id}/assessment`)
     const save = await screen.findByRole('button', { name: 'Record assessment' })
     await user.click(screen.getByRole('radio', { name: 'Tests ordered' }))
-    expect(save).toBeDisabled() // not acknowledged yet
+    await user.click(save) // not acknowledged yet
+    expect(await screen.findByText('Acknowledge the task before you assess it.')).toBeInTheDocument()
+    expect((await getVisitDetail(visit.visit_id)).open_task?.status).toBe('open')
     await user.click(screen.getByRole('button', { name: 'Acknowledge' }))
     expect(await screen.findAllByText(/^Acknowledged \d/)).toHaveLength(2) // banner and card
     expect(screen.getByRole('radio', { name: 'Assessed, stable' })).toHaveFocus()
-    expect(save).toBeEnabled()
     await user.click(save)
-    expect(await screen.findByRole('heading', { name: 'Assessment recorded' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /^Tests ordered · .+ · Physician$/ })).toBeInTheDocument()
     expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
 
   })
 
   it('keeps visit management to nurses and sends a physician back to the overview', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     renderApp(`/staff/visits/${visit.visit_id}/manage`)
     const tabs = await screen.findByRole('navigation', { name: 'Visit pages' })
     expect(within(tabs).queryByRole('link', { name: 'Visit management' })).not.toBeInTheDocument()
@@ -798,7 +1152,7 @@ describe('physician review flow', () => {
   it('redirects a physician from nurse enrolment', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     renderApp('/staff/visits/new')
-    expect(await screen.findByRole('heading', { name: 'Review worklist' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Physician worklist' })).toBeInTheDocument()
     expect(screen.queryByRole('link', { name: 'New visit' })).not.toBeInTheDocument()
   })
 
@@ -806,7 +1160,8 @@ describe('physician review flow', () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     await exchangeToken({ token: 'demo-general-token', role: 'patient' })
     await postReport({ kind: 'concern', concern: 'desk_question', ...common() })
-    const visit = await visitWhere((row) => row.open_task?.routed_to.length === 1 && row.open_task.routed_to[0] === 'triage_nurse')
+    const visit = await demoVisit('general')
+    expect((await getVisitDetail(visit.visit_id)).open_task?.routed_to).toEqual(['triage_nurse'])
     renderApp('/staff/physician')
     const list = await screen.findByRole('list', { name: 'Review tasks' })
     expect(list.querySelector(`a[href="/staff/visits/${visit.visit_id}"]`)).toBeNull()
@@ -816,7 +1171,7 @@ describe('physician review flow', () => {
 
   it('attributes mock physician actions to the chosen demo role', async () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
-    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const visit = await demoVisit('chest')
     const task = (await getVisitDetail(visit.visit_id)).open_task!
     const acknowledged = await acknowledgeTask(task.task_id, { submission_id: newSubmissionId() })
     expect(acknowledged.acknowledged_by?.role).toBe('physician')

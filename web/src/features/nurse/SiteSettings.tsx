@@ -3,7 +3,6 @@ import { useId } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getSiteSettings, updateSiteSettings } from '@/api/api'
 import type { SiteSettings } from '@/api/types'
-import { Card } from '@/components/ui/card'
 
 /**
  * Site-wide switch for showing patients the level set at triage. Off by default
@@ -22,9 +21,9 @@ export function SiteSettingsCard() {
   const on = save.isPending ? save.variables : settings.data.show_triage_level
 
   return (
-    <Card className="space-y-2 p-5">
-      <h2 className="eyebrow text-muted">{t('siteSettings.title')}</h2>
-      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-[0.9375rem] font-medium">
+    <section className="space-y-2 border-t border-line pt-4" aria-label={t('siteSettings.title')}>
+      <h3 className="text-title font-semibold">{t('siteSettings.title')}</h3>
+      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-small font-medium">
         <input
           type="checkbox"
           role="switch"
@@ -37,9 +36,8 @@ export function SiteSettingsCard() {
         {t('siteSettings.showLevel')}
         {save.isPending && <span className="text-muted">{t('siteSettings.saving')}</span>}
       </label>
-      {/* Indented to start under the label, not the switch. */}
-      <p id={helpId} className="pl-8 text-sm text-muted">{t('siteSettings.showLevelHelp')}</p>
-      {save.isError && <p role="alert" className="pl-8 text-sm font-semibold text-level-red">{t('siteSettings.failed')}</p>}
-    </Card>
+      <p id={helpId} className="text-small text-muted">{t('siteSettings.showLevelHelp')}</p>
+      {save.isError && <p role="alert" className="text-small font-semibold text-level-red">{t('siteSettings.failed')}</p>}
+    </section>
   )
 }

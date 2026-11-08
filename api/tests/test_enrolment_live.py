@@ -67,18 +67,6 @@ def test_enrol_returns_link_and_stores_only_hash_and_ciphertext(live_client):
                    "prompt_due": True, "staff_due": True}
 
 
-def test_other_complaint_detail_is_saved_and_returned_to_staff(live_client):
-    as_staff(live_client)
-    res, body = enrol(live_client, complaint_group="general", complaint_detail="  Ankle swelling  ")
-    assert res.status_code == 201, res.text
-    visit_id = res.json()["visit_id"]
-    detail = live_client.get(f"/api/staff/visits/{visit_id}")
-    assert detail.status_code == 200, detail.text
-    assert detail.json()["visit"]["complaint_detail"] == "Ankle swelling"
-    retry = live_client.post("/api/visits", json=body)
-    assert retry.status_code == 200, retry.text
-    assert retry.json()["visit_id"] == visit_id
-
 
 @pytest.mark.parametrize("language", ["ko", "ar", "yue"])
 def test_enrol_and_sign_in_in_a_newer_language(live_client, language):

@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react'
-import { Navigate, NavLink, Outlet, useNavigate } from 'react-router'
+import { Navigate, Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { clearStaffSession, demoStaffSignIn, getStaffSession, type StaffSessionInfo } from '@/api/api'
 import { ApiError } from '@/api/client'
@@ -8,7 +8,7 @@ import { endpoints } from '@/api/endpoints'
 import type { StaffRole } from '@/api/types'
 import { Brand } from '@/components/Brand'
 import { PageState } from '@/components/PageState'
-import { ClipboardList, LayoutList, Plus, LogOut } from 'lucide-react'
+import { BellRing, ClipboardList, LayoutList, LogOut, Menu, Settings, UserRound } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
@@ -74,10 +74,11 @@ export function useStaff(): StaffContext {
 
 const link = ({ isActive }: { isActive: boolean }) => cn('staff-nav-link', isActive && 'is-active')
 
-/** Where each role starts. The charge nurse starts on the triage board and can also open the worklist. */
+/** Where each role starts. The charge nurse starts on escalations and can also open the triage board and worklist. */
 export function staffHome(role: StaffRole): string | null {
   if (role === 'physician') return '/staff/physician'
-  if (role === 'triage_nurse' || role === 'charge_nurse') return '/staff/triage'
+  if (role === 'triage_nurse') return '/staff/triage'
+  if (role === 'charge_nurse') return '/staff/escalations'
   return null
 }
 
@@ -106,6 +107,7 @@ export function StaffLayout() {
   const { t } = useTranslation()
   const { staff, role, loading, signOut } = useStaff()
   const navigate = useNavigate()
+  const onTriage = useLocation().pathname === '/staff/triage'
   if (loading) return <StaffLoading />
   if (!staff || !role) return <Navigate to="/staff/sign-in" replace />
   const home = staffHome(role) ?? '/staff/sign-in'
@@ -115,23 +117,48 @@ export function StaffLayout() {
       <header className="staff-header no-print">
         <NavLink to={home} aria-label={t('nav.home')}><Brand /></NavLink>
         <nav aria-label={t('nav.label')}>
-          {SEES_WORKLIST.includes(role) && (
-            <NavLink to="/staff/physician" className={link}><ClipboardList size={18} aria-hidden />{t('review.title')}</NavLink>
+          {/* Same order for every role, so each role's home comes first. */}
+          {role === 'charge_nurse' && (
+            <NavLink to="/staff/escalations" className={link}><BellRing aria-hidden className="size-[1.125rem]" />{t('nav.escalations')}</NavLink>
           )}
-          {SEES_TRIAGE.includes(role) && (
-            <>
-              <NavLink to="/staff/triage" className={link}><LayoutList size={18} aria-hidden />{t('nav.triage')}</NavLink>
-              <NavLink to="/staff/visits/new" className={link}><Plus size={18} aria-hidden />{t('nav.enrol')}</NavLink>
-            </>
+          {SEES_TRIAGE.includes(role) && (role === 'charge_nurse' || !onTriage) && (
+            // New visit opens as a sheet from the board's own button.
+            <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
+          )}
+          {SEES_WORKLIST.includes(role) && (
+            <NavLink to="/staff/physician" className={link}><ClipboardList aria-hidden className="size-[1.125rem]" />{t('review.title')}</NavLink>
           )}
         </nav>
         <div className="staff-identity">
-          <span className="hidden sm:inline">
-            {staff.name ? t('signIn.signedInAs', { name: staff.name, role: t(`role.${role}`) }) : t(`role.${role}`)}
-          </span>
-          <Button variant="ghost" aria-label={t('nav.signOut')} onClick={() => {
-            void signOut().then(() => navigate('/staff/sign-in'))
-          }}><LogOut size={18} aria-hidden /></Button>
+          <details className="staff-menu" onBlur={(event) => {
+            if (!event.currentTarget.contains(event.relatedTarget)) event.currentTarget.open = false
+          }} onKeyDown={(event) => {
+            if (event.key !== 'Escape' || !event.currentTarget.open) return
+            event.currentTarget.open = false
+            event.currentTarget.querySelector('summary')?.focus()
+          }}>
+            <summary id="staff-menu-button" aria-label={t('nav.menu')} title={t('nav.menu')}>
+              <Menu aria-hidden className="size-5" />
+            </summary>
+            <div className="staff-menu-panel">
+              <div className="staff-menu-profile">
+                <UserRound aria-hidden className="size-5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="font-semibold">{staff.name ?? t('nav.staffProfile')}</p>
+                  {staff.email && <p className="break-all text-muted">{staff.email}</p>}
+                  <p className="text-muted">{t(`role.${role}`)}</p>
+                </div>
+              </div>
+              {onTriage && SEES_TRIAGE.includes(role) && (
+                <Link to="?panel=settings" preventScrollReset onClick={(event) => {
+                  event.currentTarget.closest('details')!.open = false
+                }}><Settings aria-hidden className="size-4" />{t('triage.settings')}</Link>
+              )}
+              <Button variant="ghost" onClick={() => {
+                void signOut().then(() => navigate('/staff/sign-in'))
+              }}><LogOut aria-hidden className="size-4" />{t('nav.signOut')}</Button>
+            </div>
+          </details>
         </div>
       </header>
       <Outlet />

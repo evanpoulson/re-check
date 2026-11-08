@@ -7,9 +7,10 @@ import { Brand } from '@/components/Brand'
 import { HelpBar } from '@/components/HelpBar'
 import { TriageInfo, TriageLevel } from '@/components/TriageCard'
 import { PrivacyPanel } from '@/components/PrivacyPanel'
-import { LANGUAGES } from '@/i18n'
+import { chooseLanguage, LANGUAGES } from '@/i18n'
+import { useDueAlert } from '@/lib/dueAlert'
 import { flushOutbox, pendingCount } from '@/lib/outbox'
-import { clock, durationWords, waitWords } from '@/lib/time'
+import { clock, durationWords, isolate, waitWords } from '@/lib/time'
 
 /** Says plainly that saved reports have not reached staff yet. Retries on reconnect and on a timer. */
 function OutboxBanner() {
@@ -57,6 +58,13 @@ export function PatientLayout({ home, dock, context = true, children }: Props) {
   const { t, i18n } = useTranslation()
   const estimate = home?.wait_estimate
   const lang = LANGUAGES.includes(i18n.language as never) ? i18n.language : 'en'
+  // A chime, buzz and flashing title when a check-in comes due with the page open.
+  const dueNow = useDueAlert(home?.next_checkin_due_at, t('reminders.dueNow'))
+  // A language change re-renders the heading but not the step, so retitle here too.
+  useEffect(() => {
+    const heading = document.querySelector('.patient-shell main h1')
+    if (heading?.textContent) document.title = `${heading.textContent} · Recheck`
+  }, [i18n.language])
   return (
     <div className={`patient-shell ${dock ? 'has-dock' : ''}`}>
       <header className="glass sticky top-0 z-20 border-b border-line/70">
@@ -69,7 +77,7 @@ export function PatientLayout({ home, dock, context = true, children }: Props) {
             <select
               className="min-h-11 cursor-pointer appearance-none rounded-tap bg-transparent pe-6 ps-1 [field-sizing:content]"
               value={lang}
-              onChange={(e) => void i18n.changeLanguage(e.target.value)}
+              onChange={(e) => void chooseLanguage(e.target.value)}
             >
               {LANGUAGES.map((l) => (
                 <option key={l} value={l}>
@@ -90,6 +98,7 @@ export function PatientLayout({ home, dock, context = true, children }: Props) {
         )}
 
         <OutboxBanner />
+        <p role="status" className="sr-only">{dueNow ? t('reminders.dueNow') : ''}</p>
         <main className="space-y-6">{children}</main>
         {context && (
           <>
@@ -99,7 +108,7 @@ export function PatientLayout({ home, dock, context = true, children }: Props) {
                   <p className="lead">{t('patient.waited', { waited: durationWords(home.waited_minutes, t) })}</p>
                   <p>
                     {estimate
-                      ? `${t('patient.departmentWait', { estimate: waitWords(estimate.minutes, t) })} ${t('patient.updated', { time: clock(estimate.as_of) })}`
+                      ? `${t('patient.departmentWait', { estimate: waitWords(estimate.minutes, t) })} ${t('patient.updated', { time: isolate(clock(estimate.as_of, lang)) })}`
                       : t('patient.waitUnavailable')}
                   </p>
                 </>

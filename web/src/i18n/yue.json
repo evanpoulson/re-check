@@ -2,30 +2,49 @@
   "app": {
     "name": "Recheck"
   },
+  "demo": {
+    "badge": "模擬數據，示範用閾值"
+  },
   "common": {
     "loading": "載入中…",
     "none": "沒有",
     "yes": "是",
     "no": "否",
-    "sending": "正在傳送…"
+    "sending": "正在傳送…",
+    "retry": "再試一次"
+  },
+  "pages": {
+    "patientEntry": "正在開啟你的情況回報"
+  },
+  "time": {
+    "in": "{{value}}後",
+    "overdue": "已超時{{value}}",
+    "readyNow": "現在就可以",
+    "dueNow": "而家到期"
   },
   "patient": {
     "language": "語言",
-    "waitUnavailable": "暫時未能估計輪候時間。",
-    "title": "你已完成登記",
-    "titleCompanion": "你正在協助病人登記",
+    "waitUnavailable": "暫時未能提供 AHS 輪候時間估計。",
+    "placeInLine": "病情最嚴重的人會先獲診治。診治次序由職員決定，不是由這個應用程式決定。",
+    "titleCompanion": "你正在代陪同的人回答",
     "nextCheckin": "下次情況回報",
     "startCheckin": "開始情況回報",
-    "reportChange": "報告病情變化",
-    "leaving": "我要離開",
+    "checkinNotOpen": "仲未開放。如果之前有任何變化，請用下面嘅按鈕。",
+    "reportChange": "話我們知新的症狀",
     "sendFailed": "未能傳送。請再試一次，或告訴職員。",
     "languageNotice": "此翻譯為初稿，尚未經醫學翻譯員審閱。如有任何不清楚的地方，請向職員查詢。",
+    "languageMissing": "問題暫時是英文的。請向任何一位職員要求傳譯員。",
     "signOut": "在這部手機登出",
-    "signOutHelp": "這部手機將停止傳送情況回報。病人的輪候次序不變，任何人掃描QR碼即可再次登入。",
+    "signOutHelp": "這部手機將停止傳送情況回報。你的輪候次序不變。如要再次登入，請掃描QR碼。",
     "signOutConfirm": "登出",
     "signOutFailed": "這部手機未能登出。請再試一次。",
     "waitContext": "候診室資訊",
-    "contactStaff": "聯絡職員"
+    "contactStaff": "聯絡職員",
+    "companionHint": "請話我們知你看到或聽到的情況。只有病人自己才能說出身體裏面的感覺。",
+    "departmentWait": "AHS 現時估計：對於較不緊急的病人，由分流到見醫生約需{{estimate}}。這不是你個人的輪候時間。",
+    "title": "你已登入",
+    "updated": "更新於 {{time}}。",
+    "waited": "分流後你已輪候{{waited}}。"
   },
   "pain": {
     "low": "不痛",
@@ -41,39 +60,50 @@
     "title": "你要離開嗎？",
     "info": "離開前請告訴職員。如果感到更不適，請立即返回分流站。",
     "confirm": "是，我要離開",
-    "cancel": "不，我會留下"
+    "cancel": "不，我會留下",
+    "after": "如果離開後情況轉差，請致電 911 或前往最近的急症室。任何時間需要健康建議，請致電 811。",
+    "title_companion": "病人要離開嗎？",
+    "info_companion": "病人離開前請告訴職員。如果病人看來更不適，請立即帶佢返回分流站。",
+    "confirm_companion": "是，病人要離開",
+    "cancel_companion": "不，病人會留下",
+    "after_companion": "如果病人離開後情況轉差，請致電 911 或帶佢去最近的急症室。任何時間需要健康建議，請致電 811。"
   },
   "sent": {
     "title": "謝謝，我們已收到你的回答",
+    "queuedTitle": "尚未傳送",
+    "queuedBody": "尚未傳送。我們會繼續嘗試。如果感到更不適，請告訴職員。",
     "reported": "已報告",
     "received": "醫護團隊已收到",
     "waiting": "等待傳送",
-    "back": "返回",
-    "stillChecking": "職員仍會按他們自己的安排來查看你的情況。"
+    "stillChecking": "職員會繼續查看你的情況。如果感到更不適，請按「我現在需要幫助」或前往分流站。",
+    "followup_other": "再回答 {{count}} 條問題",
+    "back": "返回"
   },
   "message": {
     "none": "職員會看到你的回答。",
-    "clinician_will_check": "醫護人員會來查看你的情況。",
-    "clinician_told": "已通知醫護人員。",
-    "leaving_info": "離開前請告訴職員。如果感到更不適，請立即返回分流站。"
+    "clinician_will_check": "醫生或護士會來查看你的情況。",
+    "clinician_told": "我們已通知醫生或護士。",
+    "leaving_info": "離開前請告訴職員。如果離開後情況轉差，請致電 911 或前往最近的急症室。任何時間需要健康建議，請致電 811。",
+    "leaving_info_companion": "病人離開前請告訴職員。如果離開後情況轉差，請致電 911 或帶佢去最近的急症室。任何時間需要健康建議，請致電 811。"
   },
-  "outbox": {},
+  "outbox": {
+    "saved": "尚未傳送。我們會繼續嘗試。如果感到更不適，請立即告訴職員。"
+  },
   "exchange": {
     "invalid": {
       "title": "這個QR碼未能使用"
     },
-    "askDesk": "請向分流站索取新的QR碼。",
+    "askDesk": "請向職員索取新的QR碼。",
     "who": "誰在使用這部手機？",
     "role": {
       "patient": "我是病人",
       "companion": "我是病人的陪同者"
     },
-    "inactive": "這個QR碼已失效。請向分流站職員查詢。",
-    "failed": "未能完成。請再試一次，或向分流站職員查詢。",
+    "failed": "未能成功。請再試一次，或詢問職員。",
     "takeover": {
-      "title": "這會令另一部裝置登出",
-      "who": "{{who}}自{{time}}起已在另一部手機登入。同一時間只可以有一部手機登入。",
-      "confirm": "登出另一部手機並繼續",
+      "title": "已有另一部手機登入",
+      "who": "{{who}}已於 {{time}} 在另一部手機登入。只可以使用一部手機。如果繼續，那部手機會被登出。",
+      "confirm": "改用這部手機",
       "cancel": "取消"
     },
     "signedInAs": {
@@ -82,42 +112,61 @@
     },
     "signedOut": {
       "title": "你已登出。",
-      "help": "如現在需要協助，請告訴職員。如要再次登入，請掃描今次求診的QR碼。"
-    }
+      "help": "如果現在需要幫助，請告訴職員。如要再次登入，請掃描今次求診的QR碼。"
+    },
+    "intro": "輪候期間如果情況有變，可以用這個頁面告訴急症室職員。這不能代替與職員交談。",
+    "help": "感到差了很多？請立即告訴職員。",
+    "companionHint": "代病人回答的家人或朋友",
+    "inactive": "這個QR碼已失效。請向職員索取新的QR碼。"
   },
   "privacy": {
     "title": "我們儲存甚麼資料",
     "stored1": "你的回答及回答時間。",
-    "stored2": "你的分流級別及主要病徵類別。",
+    "stored2": "護士評定的求診緊急程度，以及你求診的主要原因。",
     "stored3": "職員作出了甚麼跟進。",
     "notStored": "我們絕不會儲存你的姓名或醫療保健號碼。",
-    "synthetic": "此示範只使用模擬數據。"
+    "synthetic": "此示範只使用模擬數據。",
+    "seen": "急症室職員會看到你的回答。這不是你的病歷。",
+    "shared": "任何拿着這部手機的人都可以看到這個頁面。借給別人之前請先登出。",
+    "code": "請不要把你的QR碼給別人看。"
   },
   "circle": {
-    "intro": "屏幕上會逐一出現不同圖形。請數圓形，不用理會方形。",
+    "intro": "屏幕上會逐一出現不同圖形。每個圖形只會出現一次。",
     "start": "開始",
     "watch": "請留意屏幕，數一數有多少個圓形。",
     "cantDo": "我做不到",
     "countLabel": "圓形數目",
     "fewer": "減一個",
     "more": "加一個",
-    "confirm": "這是我數到的數目"
+    "confirm": "完成",
+    "notTest": "這不是醫學檢查。如果覺得困難，請按「我做不到」，職員會來查看你的情況。"
   },
   "desk": {
-    "title": "你的問題已轉交分流護士"
+    "title": "你的問題已轉交分流護士",
+    "body": "分流護士會收到你的問題，有空時就會過來。如果感到更不適，請到分流站。",
+    "notClinical": "如果感到更不適，請按「我擔心自己的情況正在轉差」。如果即時需要幫助，請按「我現在需要幫助」或前往分流站。"
   },
   "flow": {
     "progress": "第{{n}}題，共{{total}}題",
     "next": "下一步",
-    "send": "傳送",
+    "send": "傳送給職員",
     "back": "返回",
-    "finishLater": "稍後完成",
+    "finishLater": "停下並傳送已答內容",
     "finishLaterHelp": "如果你中途停止，我們會傳送你已作答的內容。",
-    "sendNow": "立即傳送危險徵狀",
-    "progressLabel": "情況回報進度"
+    "sendNow": "現在傳送給職員",
+    "progressLabel": "情況回報進度",
+    "stopEmpty": "暫時停在這裏",
+    "chooseAnswer": "請選擇一個答案，或選擇「我不確定」。"
   },
-  "pages": {
-    "patientEntry": "正在開啟你的情況回報"
+  "waitWords": {
+    "short": "少於 15 分鐘",
+    "minutes": "約 {{n}} 分鐘",
+    "hours": "約 {{lo}} 至 {{hi}} 小時"
+  },
+  "duration": {
+    "hours_other": "{{count}} 小時",
+    "minutes_other": "{{count}} 分鐘",
+    "inTime": "{{value}}後"
   },
   "triageInfo": {
     "title": "分流點樣運作",
@@ -127,10 +176,6 @@
     "worse": "如果感到更不適，請立即告訴職員。",
     "leaving": "離開前請告訴職員。",
     "level": {
-      "heading": "你的分流級別",
-      "heading_companion": "病人的分流級別",
-      "label": "第 {{level}} 級：{{name}}",
-      "setAtTriage": "呢個係分流護士喺到達時評定嘅級別。",
       "2": {
         "name": "非常緊急",
         "body": "護士發現有需要盡快處理嘅徵狀。職員會經常查看情況。"
@@ -146,7 +191,28 @@
       "5": {
         "name": "非緊急",
         "body": "可以安全咁等候。輪候時間可能好長。你嚟啱地方。"
-      }
+      },
+      "heading": "你的分流級別",
+      "heading_companion": "病人的分流級別",
+      "label": "第 {{level}} 級：{{name}}",
+      "setAtTriage": "呢個係分流護士喺到達時評定嘅級別。"
     }
+  },
+  "reminders": {
+    "title": "情況回報提示",
+    "hint": "到時間做情況回報時，你部手機可以震動提示你。",
+    "turnOn": "開啟提示",
+    "turnOff": "關閉提示",
+    "on": "提示已開啟。到時間做情況回報時，你部手機會震動。",
+    "courtesy": "就算收唔到提示，職員都會繼續照顧你。",
+    "blocked": "呢個網站嘅通知已被封鎖。如要收到提示，請喺手機設定入面允許通知。",
+    "failed": "未能開啟提示。請再試一次。",
+    "homeScreenTitle": "喺 iPhone 收情況回報提示",
+    "homeScreen1": "喺 Safari 撳「分享」按鈕。",
+    "homeScreen2": "揀「加至主畫面」。",
+    "homeScreen3": "喺主畫面打開 Recheck，然後開啟提示。",
+    "notificationTitle": "Recheck",
+    "notificationBody": "係時候做情況回報喇。",
+    "dueNow": "係時候做情況回報喇。"
   }
 }

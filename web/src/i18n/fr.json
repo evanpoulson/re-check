@@ -2,30 +2,49 @@
   "app": {
     "name": "Recheck"
   },
+  "demo": {
+    "badge": "Données fictives, seuils de démonstration"
+  },
   "common": {
     "loading": "Chargement…",
     "none": "Aucun",
     "yes": "Oui",
     "no": "Non",
-    "sending": "Envoi…"
+    "sending": "Envoi…",
+    "retry": "Réessayer"
+  },
+  "pages": {
+    "patientEntry": "Ouverture de votre questionnaire"
+  },
+  "time": {
+    "in": "dans {{value}}",
+    "overdue": "{{value}} de retard",
+    "readyNow": "C'est maintenant",
+    "dueNow": "À faire maintenant"
   },
   "patient": {
     "language": "Langue",
-    "waitUnavailable": "Estimation non disponible.",
-    "title": "Votre arrivée est enregistrée",
-    "titleCompanion": "Vous aidez une personne à répondre au questionnaire",
+    "waitUnavailable": "L'estimation d'attente d'AHS n'est pas disponible pour le moment.",
+    "placeInLine": "Les personnes les plus malades passent en premier. C'est le personnel qui décide de l'ordre des soins, pas cette application.",
+    "titleCompanion": "Vous répondez pour une personne que vous accompagnez",
     "nextCheckin": "Prochain questionnaire",
     "startCheckin": "Commencer le questionnaire",
-    "reportChange": "Signaler un changement",
-    "leaving": "Je pars",
+    "checkinNotOpen": "Pas encore ouvert. Si quelque chose change d’ici là, utilisez les boutons ci-dessous.",
+    "reportChange": "Signaler un nouveau symptôme",
     "sendFailed": "L'envoi n'a pas fonctionné. Veuillez réessayer ou avertir un membre du personnel.",
     "languageNotice": "Cette traduction est une ébauche. Elle n'a pas encore été vérifiée par un traducteur médical. Si quelque chose n'est pas clair, demandez à un membre du personnel.",
+    "languageMissing": "Les questions sont en anglais pour le moment. Demandez un interprète à un membre du personnel.",
     "signOut": "Déconnecter ce téléphone",
-    "signOutHelp": "Ce téléphone n'enverra plus de questionnaires. La place dans la file d'attente est conservée, et n'importe qui peut se reconnecter en scannant le code QR.",
+    "signOutHelp": "Ce téléphone n'enverra plus de questionnaires. Vous gardez votre place dans la file d'attente. Pour vous reconnecter, scannez le code.",
     "signOutConfirm": "Se déconnecter",
     "signOutFailed": "Impossible de déconnecter ce téléphone. Réessayez.",
     "waitContext": "Renseignements sur la salle d'attente",
-    "contactStaff": "Contacter le personnel"
+    "contactStaff": "Contacter le personnel",
+    "companionHint": "Dites-nous ce que vous voyez ou entendez. Seule la personne peut dire comment elle se sent à l'intérieur.",
+    "departmentWait": "Selon l'estimation actuelle d'AHS, il faut {{estimate}} entre le triage et la consultation avec un médecin, pour les cas moins urgents. Ce n'est pas votre attente personnelle.",
+    "title": "Votre session est ouverte",
+    "updated": "Mise à jour à {{time}}.",
+    "waited": "Depuis le triage, vous avez attendu {{waited}}."
   },
   "pain": {
     "low": "Aucune douleur",
@@ -41,39 +60,52 @@
     "title": "Vous partez?",
     "info": "Veuillez avertir un membre du personnel avant de partir. Si vous vous sentez plus mal, retournez au triage immédiatement.",
     "confirm": "Oui, je pars",
-    "cancel": "Non, je reste"
+    "cancel": "Non, je reste",
+    "after": "Si votre état s'aggrave après votre départ, appelez le 911 ou allez à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811.",
+    "title_companion": "La personne s'en va?",
+    "info_companion": "Veuillez avertir un membre du personnel avant son départ. Si son état semble s'aggraver, ramenez-la au triage immédiatement.",
+    "confirm_companion": "Oui, la personne s'en va",
+    "cancel_companion": "Non, la personne reste",
+    "after_companion": "Si son état s'aggrave après son départ, appelez le 911 ou amenez-la à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811."
   },
   "sent": {
     "title": "Merci, nous avons reçu vos réponses",
+    "queuedTitle": "Pas encore envoyé",
+    "queuedBody": "Pas encore envoyé. Nous continuons d'essayer. Si vous vous sentez plus mal, avertissez un membre du personnel.",
     "reported": "Signalé",
     "received": "Reçu par l'équipe de soins",
     "waiting": "En attente d'envoi",
-    "back": "Retour",
-    "stillChecking": "Le personnel viendra quand même vous voir selon son propre horaire."
+    "stillChecking": "Le personnel continuera de venir vous voir. Si vous vous sentez plus mal, touchez « J'ai besoin d'aide maintenant » ou allez au bureau de triage.",
+    "followup_one": "Répondre à {{count}} autre question",
+    "followup_many": "Répondre à {{count}} autres questions",
+    "followup_other": "Répondre à {{count}} autres questions",
+    "back": "Retour"
   },
   "message": {
     "none": "Le personnel verra vos réponses.",
-    "clinician_will_check": "Un membre de l'équipe médicale viendra vous voir.",
-    "clinician_told": "Un membre de l'équipe médicale a été avisé.",
-    "leaving_info": "Veuillez avertir le personnel avant de partir. Retournez au triage immédiatement si vous vous sentez plus mal."
+    "clinician_will_check": "Un médecin ou le personnel infirmier viendra vous voir.",
+    "clinician_told": "Nous avons avisé un médecin ou le personnel infirmier.",
+    "leaving_info": "Veuillez avertir le personnel avant de partir. Si votre état s'aggrave après votre départ, appelez le 911 ou allez à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811.",
+    "leaving_info_companion": "Veuillez avertir le personnel avant le départ de la personne. Si son état s'aggrave après son départ, appelez le 911 ou amenez-la à l'urgence la plus proche. Pour des conseils santé en tout temps, appelez le 811."
   },
-  "outbox": {},
+  "outbox": {
+    "saved": "Pas encore envoyé. Nous continuons d'essayer. Si vous vous sentez plus mal, avertissez un membre du personnel maintenant."
+  },
   "exchange": {
     "invalid": {
       "title": "Ce code n'a pas fonctionné"
     },
-    "askDesk": "Demandez un nouveau code au bureau de triage.",
+    "askDesk": "Demandez un nouveau code à un membre du personnel.",
     "who": "Qui utilise ce téléphone?",
     "role": {
       "patient": "Je suis la personne qui consulte",
       "companion": "J'accompagne la personne qui consulte"
     },
-    "inactive": "Ce code n'est plus actif. Veuillez vous adresser au bureau de triage.",
-    "failed": "Cela n'a pas fonctionné. Veuillez réessayer ou vous adresser au bureau de triage.",
+    "failed": "Cela n'a pas fonctionné. Réessayez ou adressez-vous à un membre du personnel.",
     "takeover": {
-      "title": "L'autre appareil sera déconnecté",
-      "who": "{{who}} utilise un autre téléphone depuis {{time}}. Un seul téléphone peut être connecté à la fois.",
-      "confirm": "Déconnecter l'autre téléphone et continuer",
+      "title": "Un autre téléphone est déjà connecté",
+      "who": "{{who}} utilise un autre téléphone, connecté à {{time}}. Un seul téléphone peut être utilisé. Si vous continuez, l'autre téléphone sera déconnecté.",
+      "confirm": "Utiliser ce téléphone à la place",
       "cancel": "Annuler"
     },
     "signedInAs": {
@@ -83,41 +115,64 @@
     "signedOut": {
       "title": "Votre session est fermée.",
       "help": "Si vous avez besoin d'aide maintenant, avertissez un membre du personnel. Pour vous reconnecter, scannez le code QR de la visite."
-    }
+    },
+    "intro": "Cette page sert à avertir le personnel des urgences si quelque chose change pendant l'attente. Elle ne remplace pas une conversation avec le personnel.",
+    "help": "Vous vous sentez beaucoup plus mal? Avertissez un membre du personnel maintenant.",
+    "companionHint": "Membre de la famille ou proche qui répond pour la personne",
+    "inactive": "Ce code ne fonctionne plus. Veuillez demander un nouveau code à un membre du personnel."
   },
   "privacy": {
     "title": "Ce que nous conservons",
     "stored1": "Vos réponses et le moment où vous les avez données.",
-    "stored2": "Votre niveau de triage et le groupe de votre motif de consultation.",
+    "stored2": "Le degré d'urgence fixé par le personnel infirmier, et la raison principale de votre visite.",
     "stored3": "Les mesures prises par le personnel en réponse.",
     "notStored": "Nous ne conservons jamais votre nom ni votre numéro d'assurance maladie.",
-    "synthetic": "Cette démonstration utilise uniquement des données fictives."
+    "synthetic": "Cette démonstration utilise uniquement des données fictives.",
+    "seen": "Le personnel des urgences voit vos réponses. Ce n'est pas votre dossier médical.",
+    "shared": "Toute personne qui tient ce téléphone peut voir cette page. Déconnectez-vous avant de le prêter.",
+    "code": "Gardez votre code privé."
   },
   "circle": {
-    "intro": "Des formes vont apparaître une à la fois. Comptez les cercles. Ne tenez pas compte des carrés.",
+    "intro": "Des formes vont apparaître une à la fois. Vous ne verrez chacune qu'une seule fois.",
     "start": "Commencer",
     "watch": "Regardez l'écran et comptez les cercles.",
     "cantDo": "Je ne peux pas le faire",
     "countLabel": "Nombre de cercles",
     "fewer": "Un de moins",
     "more": "Un de plus",
-    "confirm": "C'est mon total"
+    "confirm": "Terminé",
+    "notTest": "Ce n'est pas un test médical. Si c'est difficile, touchez « Je ne peux pas le faire » et le personnel viendra vous voir."
   },
   "desk": {
-    "title": "Votre question a été transmise au personnel infirmier du triage"
+    "title": "Votre question a été transmise au personnel infirmier du triage",
+    "body": "Le personnel infirmier du triage recevra votre question et viendra dès que possible. Si vous vous sentez plus mal, présentez-vous au triage.",
+    "notClinical": "Si vous vous sentez plus mal, touchez « J'ai peur que mon état s'aggrave ». Si vous avez besoin d'aide tout de suite, touchez « J'ai besoin d'aide maintenant » ou allez au bureau de triage."
   },
   "flow": {
     "progress": "Question {{n}} sur {{total}}",
     "next": "Suivant",
-    "send": "Envoyer",
+    "send": "Envoyer au personnel",
     "back": "Retour",
-    "finishLater": "Terminer plus tard",
+    "finishLater": "Arrêter et envoyer mes réponses",
     "finishLaterHelp": "Si vous arrêtez, nous enverrons les réponses déjà données.",
-    "sendNow": "Envoyer les signes d'alerte maintenant",
-    "progressLabel": "Progression du questionnaire"
+    "sendNow": "Envoyer au personnel maintenant",
+    "progressLabel": "Progression du questionnaire",
+    "stopEmpty": "Arrêter pour l'instant",
+    "chooseAnswer": "Choisissez une réponse, ou choisissez « Je ne sais pas »."
   },
-  "pages": {
-    "patientEntry": "Ouverture de votre questionnaire"
+  "waitWords": {
+    "short": "moins de 15 minutes",
+    "minutes": "environ {{n}} minutes",
+    "hours": "environ {{lo}} à {{hi}} heures"
+  },
+  "duration": {
+    "hours_one": "{{count}} heure",
+    "hours_many": "{{count}} heures",
+    "hours_other": "{{count}} heures",
+    "minutes_one": "{{count}} minute",
+    "minutes_many": "{{count}} minutes",
+    "minutes_other": "{{count}} minutes",
+    "inTime": "dans {{value}}"
   },
   "triageInfo": {
     "title": "Comment fonctionne le triage",
@@ -127,10 +182,6 @@
     "worse": "Si vous vous sentez plus mal, avertissez le personnel immédiatement.",
     "leaving": "Veuillez avertir le personnel avant de partir.",
     "level": {
-      "heading": "Votre niveau de triage",
-      "heading_companion": "Niveau de triage du patient ou de la patiente",
-      "label": "Niveau {{level}} : {{name}}",
-      "setAtTriage": "C'est le niveau fixé par le personnel infirmier du triage à l'arrivée.",
       "2": {
         "name": "Très urgent",
         "body": "Le personnel infirmier a relevé des signes qui demandent des soins très rapidement. Le personnel passera souvent."
@@ -146,7 +197,28 @@
       "5": {
         "name": "Non urgent",
         "body": "Cela peut attendre sans danger. L'attente peut être longue. Vous êtes au bon endroit."
-      }
+      },
+      "heading": "Votre niveau de triage",
+      "heading_companion": "Niveau de triage du patient ou de la patiente",
+      "label": "Niveau {{level}} : {{name}}",
+      "setAtTriage": "C'est le niveau fixé par le personnel infirmier du triage à l'arrivée."
     }
+  },
+  "reminders": {
+    "title": "Rappels du questionnaire",
+    "hint": "Votre téléphone peut vibrer quand c'est l'heure du questionnaire.",
+    "turnOn": "Activer les rappels",
+    "turnOff": "Désactiver les rappels",
+    "on": "Les rappels sont activés. Votre téléphone vibrera quand le questionnaire sera prêt.",
+    "courtesy": "Si un rappel n'arrive pas, le personnel vient quand même vous voir.",
+    "blocked": "Les notifications sont bloquées pour ce site. Pour recevoir les rappels, autorisez-les dans les réglages de votre téléphone.",
+    "failed": "Les rappels n'ont pas pu être activés. Réessayez.",
+    "homeScreenTitle": "Recevoir les rappels sur iPhone",
+    "homeScreen1": "Dans Safari, touchez le bouton Partager.",
+    "homeScreen2": "Choisissez « Sur l'écran d'accueil ».",
+    "homeScreen3": "Ouvrez Recheck depuis votre écran d'accueil, puis activez les rappels.",
+    "notificationTitle": "Recheck",
+    "notificationBody": "C'est l'heure de votre questionnaire.",
+    "dueNow": "C'est l'heure de votre questionnaire."
   }
 }

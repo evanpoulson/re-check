@@ -29,8 +29,22 @@ def query(client, sql, *params, one=True):
     return client.portal.call(run)
 
 
-def sign_in(client, *, role="patient", **visit):
-    """Enrol a fresh visit as the triage nurse and sign a phone in to it. Returns the visit ID."""
+def make_due(client, visit_id):
+    """Open the next check-in. Tests share one transaction, so now() never moves; move the due time instead."""
+
+    async def run():
+        async with client.app.state.pool.connection() as conn:
+            await conn.execute("SELECT set_config('app.actor', 'test|clock', true)")
+            await conn.execute("UPDATE visit SET next_prompt_due_at = now() - interval '1 minute' WHERE id = %s", [visit_id])
+
+    client.portal.call(run)
+
+
+def sign_in(client, *, role="patient", due=True, **visit):
+    """Enrol a fresh visit as the triage nurse and sign a phone in to it. Returns the visit ID.
+
+    With `due`, the first check-in is already open, as if one CTAS interval had passed.
+    """
     client.post("/api/staff/session", json={"role": "triage_nurse"})
     body = {"submission_id": sid(), "ctas": 3, "complaint_group": "chest_back_pain", "language": "en", "channel": "phone"}
     body.update(visit)
@@ -39,12 +53,27 @@ def sign_in(client, *, role="patient", **visit):
     token = enrolled.json()["link"].rsplit("/v/", 1)[1]
     client.cookies.delete("recheck_session", path="/api")
     assert client.post("/api/session", json={"token": token, "role": role}).status_code == 200
+    if due:
+        make_due(client, enrolled.json()["visit_id"])
     return enrolled.json()["visit_id"]
 
 
 # A coherent "right now" answer for each change: "much worse" with "very poor" is red,
 # "worse" with "poor" is amber (see recheck/rules.py).
 NOW_FOR = {"much_worse": "very_poor", "worse": "poor"}
+
+
+NOT_ASKED = {"kind": "missing", "reason": "not_asked"}
+
+
+def followup(items, reporter="patient"):
+    """Follow-up answers after an urgent report: items only, every fixed question not asked."""
+    return {
+        "submission_id": sid(), "kind": "checkin", "purpose": "followup", "reporter": reporter,
+        "channel": "phone", "captured_at": now(), "questionnaire_version": default_bank().version,
+        "feeling_now": NOT_ASKED, "feeling_change": NOT_ASKED, "pain": NOT_ASKED,
+        "new_findings": NOT_ASKED, "attention": NOT_ASKED, "items": items,
+    }
 
 
 def checkin(*, change=None, findings=None, pain=None, attention=None, items=None, reporter="patient", now_feeling=None, **extra):
@@ -84,7 +113,7 @@ def open_task(client, visit_id):
 
 
 def test_reassuring_checkin_raises_nothing_and_moves_only_the_patient_timer(live_client):
-    visit = sign_in(live_client)
+    visit = sign_in(live_client, due=False)
     fresh = query(live_client, "SELECT next_prompt_due_at FROM visit WHERE id = %s", visit)[0]
 
     # Tests share one transaction, so now() doesn't move; pretend the prompt is already overdue instead.
@@ -137,6 +166,7 @@ def test_finding_opens_a_red_task_with_evidence(live_client):
 def test_later_reports_add_reasons_but_never_lower_the_task(live_client):
     visit = sign_in(live_client)
     post(live_client, checkin(change="much_worse"))  # red
+    make_due(live_client, visit)
     worried = {"submission_id": sid(), "kind": "concern", "concern": "worried",
                "reporter": "patient", "channel": "phone", "captured_at": now()}
     assert post(live_client, worried).json()["patient_message"] == "clinician_will_check"
@@ -206,6 +236,55 @@ def test_question_bank_is_checked(live_client):
     assert post(live_client, checkin(items={"pain_moved": {"kind": "choice", "value": "yes"}})).status_code == 422
 
 
+# --- when a check-in is open --------------------------------------------------
+
+
+def test_checkin_opens_only_when_due_but_help_is_always_available(live_client):
+    visit = sign_in(live_client, due=False)
+    early = post(live_client, checkin())
+    assert early.status_code == 409 and "isn't open yet" in early.json()["detail"]
+    assert query(live_client, "SELECT count(*) FROM report WHERE visit_id = %s", visit) == (0,)
+    base = {"reporter": "patient", "channel": "phone", "captured_at": now()}
+    for body in (
+        {"kind": "concern", "concern": "help_now"},
+        {"kind": "concern", "concern": "worried"},
+        {"kind": "concern", "concern": "desk_question"},
+        {"kind": "finding", "findings": ["trouble_breathing"]},
+        {"kind": "leaving"},
+    ):
+        r = post(live_client, {**base, **body, "submission_id": sid()})
+        assert r.status_code == 200, (body, r.text)
+    make_due(live_client, visit)
+    assert post(live_client, checkin()).status_code == 200
+    # The timer restarted, so the next one is closed again until its due time.
+    assert post(live_client, checkin()).status_code == 409
+
+
+def test_retry_of_an_accepted_checkin_is_still_a_duplicate_after_the_timer_moves(live_client):
+    sign_in(live_client)
+    body = checkin()
+    first = post(live_client, body)
+    assert first.status_code == 200, first.text
+    again = post(live_client, body)
+    assert again.status_code == 200 and again.json()["duplicate"] is True
+
+
+def test_followup_is_accepted_any_time_and_moves_no_timer(live_client):
+    visit = sign_in(live_client, due=False)
+    before = query(live_client, "SELECT next_prompt_due_at, staff_reassess_due_at FROM visit WHERE id = %s", visit)
+    r = post(live_client, followup({"pain_moved": {"kind": "yes_no", "value": True}}))
+    assert r.status_code == 200, r.text
+    after = query(live_client, "SELECT next_prompt_due_at, staff_reassess_due_at FROM visit WHERE id = %s", visit)
+    assert after == before
+    assert query(live_client, "SELECT items->'pain_moved'->>'value' FROM report WHERE visit_id = %s", visit) == ("true",)
+
+
+def test_followup_cannot_carry_checkin_answers(live_client):
+    sign_in(live_client, due=False)
+    sneaky = {**followup({}), "feeling_change": {"kind": "answered", "value": "same"}}
+    assert post(live_client, sneaky).status_code == 422
+
+
 # --- circle-counting check ---------------------------------------------------
 
 
@@ -232,6 +311,7 @@ def test_wrong_count_asks_for_an_in_person_check_and_prompt_is_single_use(live_c
     assert r.json()["patient_message"] == "none"
     level, _, _, _, reasons = open_task(live_client, visit)
     assert (level, reasons) == ("overdue", ["attention_incorrect"])
+    make_due(live_client, visit)
     reuse = post(live_client, checkin(attention={"kind": "answered", "prompt_id": prompt, "count": 3}))
     assert reuse.status_code == 422
 
@@ -257,3 +337,49 @@ def test_enrolment_rejects_a_group_the_cedis_map_contradicts(live_client):
     r = live_client.post("/api/visits", json=body)
     assert r.status_code == 422
     assert "chest_back_pain" in r.json()["detail"]
+
+
+# --- demo: open a check-in now -------------------------------------------------
+
+
+def open_now(client, visit_id, submission_id=None):
+    client.post("/api/staff/session", json={"role": "triage_nurse"})
+    return client.post(f"/api/visits/{visit_id}/open-checkin", json={"submission_id": submission_id or sid()})
+
+
+def test_open_checkin_now_is_a_demo_setting(live_client, monkeypatch):
+    monkeypatch.delenv("RECHECK_DEMO_CHECKINS", raising=False)
+    visit = sign_in(live_client, due=False)
+    assert open_now(live_client, visit).status_code == 403
+    assert live_client.get("/api/staff/session").json()["demo_checkins"] is False
+
+
+def test_open_checkin_now_opens_it_without_moving_the_staff_timer(live_client, monkeypatch):
+    monkeypatch.setenv("RECHECK_DEMO_CHECKINS", "true")
+    visit = sign_in(live_client, due=False)
+    staff_due = query(live_client, "SELECT staff_reassess_due_at FROM visit WHERE id = %s", visit)[0]
+    retry = sid()
+    assert open_now(live_client, visit, retry).status_code == 204
+    assert open_now(live_client, visit, retry).status_code == 204  # a retry is harmless
+    assert live_client.get("/api/staff/session").json()["demo_checkins"] is True
+    open_, still = query(
+        live_client, "SELECT next_prompt_due_at <= now(), staff_reassess_due_at FROM visit WHERE id = %s", visit
+    )
+    assert open_ and still == staff_due
+    # Staff and patient cookies are separate, so the patient's phone can check in now.
+    assert live_client.get("/api/patient/home").json()["checkin_open"] is True
+    assert post(live_client, checkin()).status_code == 200
+
+
+def test_demo_enrolment_opens_the_first_checkin_at_once(live_client, monkeypatch):
+    monkeypatch.setenv("RECHECK_DEMO_CHECKINS", "true")
+    sign_in(live_client, due=False)
+    assert live_client.get("/api/patient/home").json()["checkin_open"] is True
+    assert post(live_client, checkin()).status_code == 200
+    assert live_client.post("/api/staff/session", json={"role": "triage_nurse"}).status_code == 200
+    body = {"submission_id": sid(), "ctas": 4, "complaint_group": "general", "cedis_code": "609",
+            "app_exclusion": "child", "language": "en"}
+    e = live_client.post("/api/visits", json=body)
+    assert e.status_code == 201, e.text
+    assert query(live_client, "SELECT next_prompt_due_at FROM visit WHERE id = %s", e.json()["visit_id"]) == (None,)
+    assert open_now(live_client, e.json()["visit_id"]).status_code == 409

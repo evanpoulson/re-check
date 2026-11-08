@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Flag, ScanLine } from 'lucide-react'
+import { CircleCheck, Flag, Printer, ScanLine } from 'lucide-react'
 import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -9,6 +9,7 @@ import {
   postFlagHigher,
   postVitals,
   staffSignOut,
+  openCheckinNow,
   updateVisitExclusion,
   updateVisitStatus,
 } from '@/api/api'
@@ -18,7 +19,9 @@ import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
 import { signedInText } from '@/lib/session'
 import { clock } from '@/lib/time'
-import { emptyVitals, validateVitals, type VitalsError, type VitalsForm } from '@/lib/vitals'
+import { cn } from '@/lib/utils'
+import { emptyVitals, validateVitals, VITALS_RANGES, vitalsText, type VitalsErrors, type VitalsField, type VitalsForm } from '@/lib/vitals'
+import { rolesText } from './visit/model'
 import { Note, SectionCard } from './visit/parts'
 
 const DISPOSITIONS: Disposition[] = [
@@ -35,10 +38,10 @@ const FIELD = 'field'
 const NOTE_MAX = 280
 
 /** Reuse a submission ID for an unchanged retry, and rotate it after a deliberate edit. */
-function useAction<A>(
+function useAction<A, R = unknown>(
   visitId: string,
-  fn: (args: A, submissionId: string) => Promise<unknown>,
-  onSaved?: () => void,
+  fn: (args: A, submissionId: string) => Promise<R>,
+  onSaved?: (result: R) => void,
 ) {
   const qc = useQueryClient()
   const last = useRef<{ key: string | undefined; id: string } | null>(null)
@@ -48,9 +51,9 @@ function useAction<A>(
       if (!last.current || last.current.key !== key) last.current = { key, id: newSubmissionId() }
       return fn(args, last.current.id)
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       last.current = null
-      onSaved?.()
+      onSaved?.(result)
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['visit', visitId] }),
         qc.invalidateQueries({ queryKey: ['board'] }),
@@ -62,16 +65,16 @@ function useAction<A>(
   const message = error instanceof ApiError && typeof (error.body as { detail?: unknown } | undefined)?.detail === 'string'
     ? (error.body as { detail: string }).detail
     : error?.message
-  return { run: m.mutate, pending: m.isPending, saved: m.isSuccess, error: message }
+  return { run: m.mutate, pending: m.isPending, saved: m.isSuccess, data: m.data, error: message }
 }
 
-function ErrorText({ children }: { children: React.ReactNode }) {
-  return <p role="alert" className="font-semibold text-level-red">{children}</p>
+function ErrorText({ id, children }: { id?: string; children: React.ReactNode }) {
+  return <p id={id} role="alert" className="font-semibold text-level-red">{children}</p>
 }
 
 /**
  * "I've seen this." Shows the acknowledgement state for everyone, and the button
- * only to a role the task is routed to.
+ * only to a role that may acknowledge.
  */
 export function AcknowledgeAction({ task, canAct, stale, onAcknowledged }: {
   task: Task
@@ -91,41 +94,43 @@ export function AcknowledgeAction({ task, canAct, stale, onAcknowledged }: {
   }
   return (
     <div className="space-y-3">
-      <p className="eyebrow text-ink">{t('visitPage.ackPending')}</p>
+      <p className="text-small font-semibold">{t('visitPage.ackPending')}</p>
       {canAct ? (
         <Button className="w-full" disabled={stale || ack.pending} onClick={() => ack.run()}>
           {ack.pending ? t('actions.saving') : t('actions.acknowledge')}
         </Button>
       ) : (
-        <p className="text-[0.9375rem] text-muted">
-          {t('visitPage.notRouted', { roles: task.routed_to.map((r) => t(`role.${r}`)).join(', ') })}
-        </p>
+        <p className="text-small text-muted">{t('visitPage.notRouted', { roles: rolesText(task.routed_to, t) })}</p>
       )}
-      <p className="text-[0.9375rem] text-muted">{t('actions.ackHelp')}</p>
+      <p className="text-small text-muted">{t('actions.ackHelp')}</p>
       {ack.error && <ErrorText>{ack.error}</ErrorText>}
     </div>
   )
 }
 
-/** The disposition list. Nothing is preselected, and it only saves once the task is acknowledged. */
-export function DispositionForm({ task, canAct, stale, focusRequest, onComplete }: {
+/**
+ * The outcome list, for a role the task is routed to. Nothing is preselected. The button
+ * stays enabled and says what is missing: the task must be acknowledged first, and an
+ * outcome chosen deliberately.
+ */
+export function DispositionForm({ task, stale, focusRequest, onComplete }: {
   task: Task
-  canAct: boolean
   stale: boolean
   /** Increment to move focus to the first outcome, e.g. right after acknowledging. */
   focusRequest: number
-  onComplete: () => void
+  onComplete: (task: Task) => void
 }) {
   const { t } = useTranslation()
   const name = useId()
   const [disposition, setDisposition] = useState<Disposition | ''>('')
+  const [problem, setProblem] = useState<'ack' | 'choose' | null>(null)
   const first = useRef<HTMLInputElement>(null)
   const assess = useAction(task.visit_id, (d: Disposition, submission_id) =>
     assessTask(task.task_id, { submission_id, disposition: d }),
     onComplete,
   )
   const acknowledged = task.status === 'acknowledged'
-  const locked = !canAct || stale || assess.pending
+  const locked = stale || assess.pending
 
   useEffect(() => {
     if (focusRequest > 0) first.current?.focus()
@@ -140,14 +145,23 @@ export function DispositionForm({ task, canAct, stale, focusRequest, onComplete 
     >
       <form
         className="space-y-4"
+        noValidate
         onSubmit={(event) => {
           event.preventDefault()
-          if (disposition && acknowledged && !locked) assess.run(disposition)
+          if (locked) return
+          if (!acknowledged) return setProblem('ack')
+          if (!disposition) {
+            setProblem('choose')
+            first.current?.focus()
+            return
+          }
+          setProblem(null)
+          assess.run(disposition)
         }}
       >
-        <fieldset disabled={locked}>
-          <legend className="mb-2 text-[0.9375rem] font-semibold">{t('actions.disposition')}</legend>
-          <div className="choice-list">
+        <fieldset disabled={locked} aria-describedby={problem === 'choose' ? 'disposition-error' : undefined}>
+          <legend className="mb-2 text-small font-semibold">{t('actions.disposition')}</legend>
+          <div className={cn('choice-list', problem === 'choose' && 'border-level-red!')}>
             {DISPOSITIONS.map((d, i) => (
               <label key={d}>
                 <input
@@ -156,68 +170,118 @@ export function DispositionForm({ task, canAct, stale, focusRequest, onComplete 
                   name={name}
                   value={d}
                   checked={disposition === d}
-                  onChange={() => setDisposition(d)}
+                  onChange={() => {
+                    setDisposition(d)
+                    if (problem === 'choose') setProblem(null)
+                  }}
                 />
                 {t(`disposition.${d}`)}
               </label>
             ))}
           </div>
         </fieldset>
-        <Button type="submit" className="w-full" disabled={locked || !acknowledged || !disposition}>
+        <Button type="submit" className="w-full" disabled={locked}>
           {assess.pending ? t('actions.saving') : t('actions.assess')}
         </Button>
-        <p className="text-[0.9375rem] text-muted">
-          {canAct ? t('visitPage.assessment.assessHelp') : t('visitPage.notRouted', {
-            roles: task.routed_to.map((r) => t(`role.${r}`)).join(', '),
-          })}
-        </p>
+        <p className="text-small text-muted">{t('visitPage.assessment.assessHelp')}</p>
+        {problem && (
+          <ErrorText id="disposition-error">
+            {problem === 'ack' ? t('actions.ackFirst') : t('visitPage.assessment.chooseOutcome')}
+          </ErrorText>
+        )}
         {assess.error && <ErrorText>{assess.error}</ErrorText>}
       </form>
     </SectionCard>
   )
 }
 
-function VitalsInput({ field, value, disabled, onChange }: {
-  field: keyof Omit<VitalsForm, 'supersedes'>
+function VitalsInput({ field, value, disabled, error, onChange }: {
+  field: VitalsField
   value: string
   disabled: boolean
+  error?: string
   onChange: (v: string) => void
 }) {
   const { t } = useTranslation()
   return (
-    <div className="min-w-0">
-      <label htmlFor={`v-${field}`} className="mb-1.5 block text-[0.9375rem] font-semibold">{t(`vitals.${field}`)}</label>
-      <input id={`v-${field}`} inputMode="decimal" className={FIELD} disabled={disabled} value={value} onChange={(e) => onChange(e.target.value)} />
+    // The label row takes any spare height, so inputs line up when a neighbour's label wraps.
+    <div className="grid min-w-0 grid-rows-[1fr_auto_auto]">
+      <label htmlFor={`v-${field}`} className="mb-1.5 flex items-end text-small font-semibold">{t(`vitals.${field}`)}</label>
+      <input
+        id={`v-${field}`}
+        inputMode="decimal"
+        className={FIELD}
+        disabled={disabled}
+        value={value}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? `v-${field}-error` : undefined}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {error && <p id={`v-${field}-error`} className="mt-1.5 text-small font-semibold text-level-red">{error}</p>}
     </div>
   )
 }
+
+const VITALS_ORDER: VitalsField[] = ['sbp', 'dbp', 'hr', 'rr', 'spo2', 'temp_c']
 
 export function VitalsCard({ detail, stale }: { detail: VisitDetail; stale: boolean }) {
   const { t } = useTranslation()
   const { visit } = detail
   const vitals = detail.timeline.filter((e): e is VitalsRecord => 'vitals_id' in e)
+  const recent = vitals.slice(-3).reverse()
   const [form, setForm] = useState<VitalsForm>(emptyVitals)
   const [measuredAt, setMeasuredAt] = useState('')
-  const [vitalsError, setVitalsError] = useState<VitalsError | 'future' | null>(null)
+  const [errors, setErrors] = useState<VitalsErrors>({})
+  const [future, setFuture] = useState(false)
   const attempt = useRef<Parameters<typeof postVitals>[0] | null>(null)
   const action = useAction(visit.visit_id, postVitals, () => {
     attempt.current = null
     setForm(emptyVitals)
     setMeasuredAt('')
   })
-  const set = (k: keyof VitalsForm) => (v: string) => setForm((f) => ({ ...f, [k]: v }))
+  const set = (k: keyof VitalsForm) => (v: string) => {
+    setForm((f) => ({ ...f, [k]: v }))
+    // An error clears once its field is edited.
+    setErrors((e) => {
+      const next = { ...e }
+      delete next[k as VitalsField]
+      delete next.none
+      return next
+    })
+  }
   const disabled = stale || action.pending
+
+  const fieldError = (f: VitalsField): string | undefined => {
+    const e = errors[f]
+    if (!e) return undefined
+    const field = t(`vitals.names.${f}`)
+    if (e === 'range') {
+      const [lo, hi] = VITALS_RANGES[f]
+      return t(f === 'temp_c' ? 'vitals.errors.rangeDecimal' : 'vitals.errors.range', { field, lo, hi })
+    }
+    return t(`vitals.errors.${e}`, { field: e === 'bpPair' ? field.toLocaleLowerCase() : field })
+  }
 
   function submit(event: React.FormEvent) {
     event.preventDefault()
     if (disabled) return
     const chosen = measuredAt ? new Date(measuredAt) : null
-    if (chosen && chosen.getTime() > Date.now() + 60_000) return setVitalsError('future')
+    const isFuture = !!chosen && chosen.getTime() > Date.now() + 60_000
+    setFuture(isFuture)
     const previous = attempt.current
     const at = chosen?.toISOString() ?? previous?.measured_at ?? new Date().toISOString()
     const result = validateVitals(form, visit.visit_id, previous?.submission_id ?? newSubmissionId(), at)
-    if (!result.ok) return setVitalsError(result.error)
-    setVitalsError(null)
+    if (!result.ok || isFuture) {
+      const found = result.ok ? {} : result.errors
+      setErrors(found)
+      // Move to the first field that needs fixing.
+      const firstBad = VITALS_ORDER.find((f) => found[f])
+      const target = document.getElementById(firstBad ? `v-${firstBad}` : isFuture ? 'v-measured' : 'v-sbp')
+      target?.focus({ preventScroll: true })
+      target?.scrollIntoView({ block: 'center' })
+      return
+    }
+    setErrors({})
     const body = previous && JSON.stringify(previous) !== JSON.stringify(result.body)
       ? { ...result.body, submission_id: newSubmissionId(), measured_at: chosen?.toISOString() ?? new Date().toISOString() }
       : result.body
@@ -225,59 +289,86 @@ export function VitalsCard({ detail, stale }: { detail: VisitDetail; stale: bool
     action.run(body)
   }
 
+  const saved = action.saved && form === emptyVitals ? action.data : undefined
+
   return (
     <SectionCard title={t('actions.vitals')} lead={t('visitPage.assessment.vitalsLead')}>
+      {recent.length > 0 && (
+        <div className="space-y-1.5">
+          <h4 className="text-small font-semibold">{t('visitPage.assessment.recentVitals')}</h4>
+          <ul className="space-y-1 text-small">
+            {recent.map((v) => (
+              <li key={v.vitals_id} className="flex flex-wrap gap-x-2">
+                <span className="tabular font-semibold">{clock(v.measured_at)}</span>
+                <span>{vitalsText(v, t)}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {saved && (
+        <div role="status" className="flex items-start gap-2.5 rounded-data border border-line border-l-4 border-l-ink bg-surface p-3">
+          <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0" />
+          <div className="min-w-0">
+            <p className="font-semibold">{t('actions.vitalsSavedAt', { time: clock(saved.measured_at) })}</p>
+            <p className="text-small text-muted">{vitalsText(saved, t)}</p>
+          </div>
+        </div>
+      )}
       <form onSubmit={submit} noValidate className="space-y-4">
         <fieldset className="min-w-0">
           <legend className="mb-2 font-semibold">{t('visitPage.assessment.bp')}</legend>
-          <div className="grid grid-cols-2 gap-3">
-            <VitalsInput field="sbp" value={form.sbp} disabled={disabled} onChange={set('sbp')} />
-            <VitalsInput field="dbp" value={form.dbp} disabled={disabled} onChange={set('dbp')} />
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-3">
+            <VitalsInput field="sbp" value={form.sbp} disabled={disabled} error={fieldError('sbp')} onChange={set('sbp')} />
+            <VitalsInput field="dbp" value={form.dbp} disabled={disabled} error={fieldError('dbp')} onChange={set('dbp')} />
           </div>
         </fieldset>
-        <div className="grid grid-cols-2 gap-3">
-          <VitalsInput field="hr" value={form.hr} disabled={disabled} onChange={set('hr')} />
-          <VitalsInput field="rr" value={form.rr} disabled={disabled} onChange={set('rr')} />
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-3">
+          <VitalsInput field="hr" value={form.hr} disabled={disabled} error={fieldError('hr')} onChange={set('hr')} />
+          <VitalsInput field="rr" value={form.rr} disabled={disabled} error={fieldError('rr')} onChange={set('rr')} />
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          <VitalsInput field="spo2" value={form.spo2} disabled={disabled} onChange={set('spo2')} />
-          <VitalsInput field="temp_c" value={form.temp_c} disabled={disabled} onChange={set('temp_c')} />
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,7rem),1fr))] gap-3">
+          <VitalsInput field="spo2" value={form.spo2} disabled={disabled} error={fieldError('spo2')} onChange={set('spo2')} />
+          <VitalsInput field="temp_c" value={form.temp_c} disabled={disabled} error={fieldError('temp_c')} onChange={set('temp_c')} />
         </div>
         <div>
-          <label htmlFor="v-measured" className="mb-1.5 block text-[0.9375rem] font-semibold">{t('visitPage.assessment.measuredAt')}</label>
+          <label htmlFor="v-measured" className="mb-1.5 block text-small font-semibold">{t('visitPage.assessment.measuredAt')}</label>
           <input
             id="v-measured"
             type="datetime-local"
             className={FIELD}
             disabled={disabled}
             value={measuredAt}
-            aria-describedby="v-measured-help"
-            onChange={(e) => setMeasuredAt(e.target.value)}
+            aria-invalid={future ? true : undefined}
+            aria-describedby={future ? 'v-measured-error v-measured-help' : 'v-measured-help'}
+            onChange={(e) => {
+              setMeasuredAt(e.target.value)
+              setFuture(false)
+            }}
           />
-          <p id="v-measured-help" className="mt-1.5 text-sm text-muted">{t('visitPage.assessment.measuredAtHelp')}</p>
+          {future && <p id="v-measured-error" className="mt-1.5 text-small font-semibold text-level-red">{t('vitals.errors.future')}</p>}
+          <p id="v-measured-help" className="mt-1.5 text-small text-muted">{t('visitPage.assessment.measuredAtHelp')}</p>
         </div>
         {vitals.length > 0 && (
           <div>
-            <label htmlFor="v-supersedes" className="mb-1.5 block text-[0.9375rem] font-semibold">{t('vitals.supersedes')}</label>
-            <select id="v-supersedes" className={FIELD} disabled={disabled} value={form.supersedes} onChange={(e) => set('supersedes')(e.target.value)}>
+            <label htmlFor="v-supersedes" className="mb-1.5 block text-small font-semibold">{t('vitals.supersedes')}</label>
+            <select id="v-supersedes" className={`${FIELD} select`} disabled={disabled} value={form.supersedes} onChange={(e) => set('supersedes')(e.target.value)}>
               <option value="">{t('vitals.newEntry')}</option>
               {vitals.map((v) => (
                 <option key={v.vitals_id} value={v.vitals_id}>
-                  {clock(v.measured_at)}
-                  {v.sbp !== null ? ` BP ${v.sbp}/${v.dbp}` : ''}
-                  {v.hr !== null ? ` HR ${v.hr}` : ''}
+                  {clock(v.measured_at)} · {vitalsText(v, t)}
                 </option>
               ))}
             </select>
           </div>
         )}
-        {vitalsError && <ErrorText>{t(`vitals.errors.${vitalsError}`)}</ErrorText>}
-        {action.error && <ErrorText>{action.error}</ErrorText>}
-        {action.saved && form === emptyVitals && <p role="status" className="text-sm text-muted">{t('actions.vitalsSaved')}</p>}
         <Button type="submit" className="w-full" disabled={disabled}>
           {action.pending ? t('actions.saving') : t('actions.recordVitals')}
         </Button>
-        <p className="text-sm text-muted">{t('visitPage.assessment.vitalsNotAssessment')}</p>
+        {/* Form-level messages go below the button, so they never push it down. */}
+        {errors.none && <ErrorText>{t('vitals.errors.none')}</ErrorText>}
+        {action.error && <ErrorText>{action.error}</ErrorText>}
+        <p className="text-small text-muted">{t('visitPage.assessment.vitalsNotAssessment')}</p>
       </form>
     </SectionCard>
   )
@@ -294,7 +385,7 @@ export function FlagHigherCard({ visit, stale }: { visit: VisitSummary; stale: b
   return (
     <SectionCard title={t('actions.flagHigher')} lead={t('visitPage.flagLead')}>
       <div className="space-y-1.5">
-        <label htmlFor="flag-note" className="block text-[0.9375rem] font-semibold">{t('visitPage.flagNote')}</label>
+        <label htmlFor="flag-note" className="block text-small font-semibold">{t('visitPage.flagNote')}</label>
         <textarea
           id="flag-note"
           rows={2}
@@ -306,13 +397,13 @@ export function FlagHigherCard({ visit, stale }: { visit: VisitSummary; stale: b
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
-        <p id="flag-count" className="tabular text-sm text-muted">{t('visitPage.flagCount', { count: note.length, max: NOTE_MAX })}</p>
+        <p id="flag-count" className="tabular text-note text-muted">{t('visitPage.flagCount', { count: note.length, max: NOTE_MAX })}</p>
       </div>
       <Button variant="secondary" className="w-full" disabled={stale || flag.pending} onClick={() => flag.run(note.trim())}>
-        <Flag aria-hidden size={18} />
+        <Flag aria-hidden className="size-[1.125rem]" />
         {flag.pending ? t('actions.saving') : t('actions.flagHigher')}
       </Button>
-      {flag.saved && !note && <p role="status" className="text-sm text-muted">{t('actions.flagSaved')}</p>}
+      {flag.saved && !note && <p role="status" className="text-small text-muted">{t('actions.flagSaved')}</p>}
       {flag.error && <ErrorText>{flag.error}</ErrorText>}
     </SectionCard>
   )
@@ -344,12 +435,21 @@ export function VisitQrCard({ visit, stale }: { visit: VisitSummary; stale: bool
           <p>{t('visitPage.manage.qrHelp')}</p>
           <p className="font-semibold">{signedInText(visit, t)}</p>
           <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
-            {link ? (
-              <Button variant="secondary" onClick={() => setLink(null)}>{t('actions.hideQr')}</Button>
-            ) : (
-              <Button variant="secondary" disabled={stale || show.isPending} onClick={() => show.mutate()}>
-                <ScanLine aria-hidden size={18} />
-                {t('visitPage.manage.showQr')}
+            {/* The label and icon stay put; aria-expanded says whether the QR is showing. */}
+            <Button
+              variant="secondary"
+              aria-expanded={!!link}
+              aria-controls="visit-qr"
+              disabled={stale || show.isPending}
+              onClick={() => (link ? setLink(null) : show.mutate())}
+            >
+              <ScanLine aria-hidden className="size-[1.125rem]" />
+              {t('visitPage.manage.showQr')}
+            </Button>
+            {link && (
+              <Button variant="secondary" onClick={() => window.print()}>
+                <Printer aria-hidden className="size-[1.125rem]" />
+                {t('enrol.print')}
               </Button>
             )}
             {visit.signed_in_as && (
@@ -357,9 +457,12 @@ export function VisitQrCard({ visit, stale }: { visit: VisitSummary; stale: bool
                 {t('actions.signOutDevice')}
               </Button>
             )}
-            <p className="min-w-48 flex-1 text-[0.9375rem] text-muted">{t('visitPage.manage.qrReused')}</p>
+            <p className="min-w-[min(12rem,100%)] flex-1 text-small text-muted">{t('visitPage.manage.qrReused')}</p>
           </div>
-          {link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={link} />}
+          {/* Flat inside this section: no second card shadow. Printing prints only this. */}
+          <div id="visit-qr" className={cn(link && 'print-qr', '[&>div]:bg-transparent! [&>div]:p-2! [&>div]:shadow-none!')}>
+            {link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={link} />}
+          </div>
           {(error || signOut.error) && <ErrorText>{error ?? signOut.error}</ErrorText>}
         </>
       ) : (
@@ -369,11 +472,20 @@ export function VisitQrCard({ visit, stale }: { visit: VisitSummary; stale: bool
   )
 }
 
+type ClosedStatus = 'roomed' | 'left' | 'discharged'
+
+/**
+ * Roomed, Left or Discharged. Each one ends the visit and signs out the patient's phone
+ * (the API closes the visit and revokes its session), so each asks for a confirm first.
+ */
 export function VisitStatusCard({ visit, stale }: { visit: VisitSummary; stale: boolean }) {
   const { t } = useTranslation()
-  const status = useAction(visit.visit_id, (s: 'roomed' | 'left' | 'discharged', submission_id) =>
+  const [confirming, setConfirming] = useState<ClosedStatus | null>(null)
+  const [done, setDone] = useState<ClosedStatus | null>(null)
+  const status = useAction(visit.visit_id, (s: ClosedStatus, submission_id) =>
     updateVisitStatus(visit.visit_id, { submission_id, status: s }),
   )
+  const hasPhone = !visit.app_exclusion
   return (
     <SectionCard
       title={t('actions.visitStatus')}
@@ -383,27 +495,66 @@ export function VisitStatusCard({ visit, stale }: { visit: VisitSummary; stale: 
         {(['roomed', 'left', 'discharged'] as const).map((s) => (
           <Button
             key={s}
-            variant="secondary"
+            variant={s === 'roomed' ? 'primary' : 'secondary'}
             aria-pressed={visit.status === s}
+            aria-expanded={confirming === s}
             disabled={stale || status.pending || visit.status === s}
-            onClick={() => status.run(s)}
+            onClick={() => {
+              setDone(null)
+              setConfirming(s)
+            }}
           >
             {t(`visitStatus.${s}`)}
           </Button>
         ))}
       </div>
-      <p className="text-[0.9375rem] text-muted">{t('visitPage.manage.statusHelp')}</p>
+      {confirming && (
+        <div role="group" aria-labelledby="status-confirm" className="space-y-3 rounded-data border border-line bg-canvas p-4">
+          <p id="status-confirm" className="font-semibold">{t('visitPage.manage.confirmTitle', { status: t(`visitStatus.${confirming}`).toLocaleLowerCase() })}</p>
+          <p className="text-small">
+            {visit.status === 'waiting'
+              ? t(hasPhone ? 'visitPage.manage.confirmEnds' : 'visitPage.manage.confirmEndsNoPhone')
+              : t('visitPage.manage.confirmChange')}
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Button
+              variant={confirming === 'roomed' ? 'primary' : 'danger'}
+              disabled={stale || status.pending}
+              onClick={() => {
+                const s = confirming
+                status.run(s, { onSuccess: () => { setConfirming(null); setDone(s) } })
+              }}
+            >
+              {status.pending ? t('actions.saving') : t('visitPage.manage.confirmButton', { status: t(`visitStatus.${confirming}`).toLocaleLowerCase() })}
+            </Button>
+            <Button variant="secondary" disabled={status.pending} onClick={() => setConfirming(null)}>
+              {t('visitPage.manage.cancel')}
+            </Button>
+          </div>
+        </div>
+      )}
+      {done && visit.closed_at && (
+        <p role="status" className="flex items-start gap-2 font-semibold">
+          <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0" />
+          {t(hasPhone ? 'visitPage.manage.statusDone' : 'visitPage.manage.statusDoneNoPhone', {
+            status: t(`visitStatus.${done}`).toLocaleLowerCase(),
+            time: clock(visit.closed_at),
+          })}
+        </p>
+      )}
+      <p className="text-small text-muted">{t('visitPage.manage.statusHelp')}</p>
       {status.error && <ErrorText>{status.error}</ErrorText>}
     </SectionCard>
   )
 }
 
-/** Irreversible: a reason must be chosen deliberately, then confirmed. */
+/** Irreversible: a reason must be chosen deliberately, then confirmed. The button checks both on press. */
 export function StopAppCard({ visit, stale }: { visit: VisitSummary; stale: boolean }) {
   const { t } = useTranslation()
   const name = useId()
   const [reason, setReason] = useState<AppExclusion | ''>('')
   const [confirmed, setConfirmed] = useState(false)
+  const [problem, setProblem] = useState<'reason' | 'confirm' | null>(null)
   const exclude = useAction(visit.visit_id, (r: AppExclusion, submission_id) =>
     updateVisitExclusion(visit.visit_id, { submission_id, app_exclusion: r }),
   )
@@ -412,7 +563,7 @@ export function StopAppCard({ visit, stale }: { visit: VisitSummary; stale: bool
     return (
       <SectionCard title={t('actions.stopApp')}>
         <p>{t('enrol.notOffered', { reason: t(`exclusion.${visit.app_exclusion}`) })}</p>
-        <p className="text-[0.9375rem] text-muted">{t('enrol.excludedHelp')}</p>
+        <p className="text-small text-muted">{t('enrol.excludedHelp')}</p>
       </SectionCard>
     )
   }
@@ -423,36 +574,92 @@ export function StopAppCard({ visit, stale }: { visit: VisitSummary; stale: bool
       <Note tone="neutral">
         <p>{t('visitPage.manage.stopImpact')}</p>
         <p className="font-semibold">{t('visitPage.manage.stopContinues')}</p>
-        <p className="text-[0.9375rem] text-muted">{t('visitPage.manage.stopCannotUndo')}</p>
+        <p className="text-small text-muted">{t('visitPage.manage.stopCannotUndo')}</p>
       </Note>
-      <fieldset disabled={locked}>
-        <legend className="mb-2 text-[0.9375rem] font-semibold">{t('visitPage.manage.stepReason')}</legend>
-        <div className="choice-list">
+      <fieldset disabled={locked} aria-describedby={problem === 'reason' ? 'stop-error' : undefined}>
+        <legend className="mb-2 text-small font-semibold">{t('visitPage.manage.stepReason')}</legend>
+        <div className={cn('choice-list', problem === 'reason' && 'border-level-red!')}>
           {EXCLUSIONS.map((x) => (
             <label key={x}>
-              <input type="radio" name={name} value={x} checked={reason === x} onChange={() => setReason(x)} />
+              <input
+                type="radio"
+                name={name}
+                value={x}
+                checked={reason === x}
+                onChange={() => {
+                  setReason(x)
+                  if (problem === 'reason') setProblem(null)
+                }}
+              />
               {t(`exclusion.${x}`)}
             </label>
           ))}
         </div>
       </fieldset>
-      <fieldset disabled={locked || !reason}>
-        <legend className="mb-2 text-[0.9375rem] font-semibold">{t('visitPage.manage.stepConfirm')}</legend>
-        <label className="flex min-h-12 items-center gap-3 text-[0.9375rem]">
+      <fieldset disabled={locked} aria-describedby={problem === 'confirm' ? 'stop-error' : undefined}>
+        <legend className="mb-2 text-small font-semibold">{t('visitPage.manage.stepConfirm')}</legend>
+        <label className="flex min-h-12 items-center gap-3 text-small">
           <input
+            id="stop-confirm"
             type="checkbox"
             className="size-5 accent-level-red"
             checked={confirmed}
-            onChange={(e) => setConfirmed(e.target.checked)}
+            aria-invalid={problem === 'confirm' ? true : undefined}
+            onChange={(e) => {
+              setConfirmed(e.target.checked)
+              if (problem === 'confirm') setProblem(null)
+            }}
           />
           {t('actions.stopAppConfirm')}
         </label>
       </fieldset>
-      <Button variant="danger" className="w-full" disabled={locked || !reason || !confirmed} onClick={() => reason && exclude.run(reason)}>
+      <Button
+        variant="danger"
+        className="w-full"
+        disabled={locked}
+        onClick={() => {
+          if (!reason) return setProblem('reason')
+          if (!confirmed) {
+            setProblem('confirm')
+            document.getElementById('stop-confirm')?.focus()
+            return
+          }
+          setProblem(null)
+          exclude.run(reason)
+        }}
+      >
         {exclude.pending ? t('actions.saving') : t('actions.stopAppButton')}
       </Button>
-      <p className="text-sm text-muted">{t('visitPage.manage.stopHelp')}</p>
+      {problem && <ErrorText id="stop-error">{t(problem === 'reason' ? 'visitPage.manage.chooseReason' : 'visitPage.manage.tickConfirm')}</ErrorText>}
+      <p className="text-small text-muted">{t('visitPage.manage.stopHelp')}</p>
       {exclude.error && <ErrorText>{exclude.error}</ErrorText>}
+    </SectionCard>
+  )
+}
+
+/** Demo only (RECHECK_DEMO_CHECKINS): open the patient's next check-in now instead of waiting for its due time. */
+export function OpenCheckinCard({ visit, stale }: { visit: VisitSummary; stale: boolean }) {
+  const { t } = useTranslation()
+  const [openedAt, setOpenedAt] = useState<string | null>(null)
+  const open = useAction(visit.visit_id, (_: null, submission_id) => openCheckinNow(visit.visit_id, { submission_id }), () =>
+    setOpenedAt(new Date().toISOString()),
+  )
+  const due = visit.next_prompt_due_at
+  const alreadyOpen = due !== null && Date.parse(due) <= Date.now()
+  return (
+    <SectionCard title={t('visitPage.manage.openCheckin')} lead={t('visitPage.manage.openCheckinLead')}>
+      <Button variant="secondary" disabled={stale || open.pending || alreadyOpen} onClick={() => open.run(null)}>
+        {open.pending ? t('actions.saving') : t('visitPage.manage.openCheckinButton')}
+      </Button>
+      {openedAt ? (
+        <p role="status" className="flex items-start gap-2 font-semibold">
+          <CircleCheck aria-hidden className="mt-0.5 size-5 shrink-0" />
+          {t('visitPage.manage.openCheckinDone', { time: clock(openedAt) })}
+        </p>
+      ) : (
+        alreadyOpen && <p className="text-small">{t('visitPage.manage.openCheckinAlready')}</p>
+      )}
+      {open.error && <ErrorText>{open.error}</ErrorText>}
     </SectionCard>
   )
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { emptyEnrol, validateEnrol } from './enrol'
+import { emptyEnrol, matchCedis, validateEnrol } from './enrol'
 
 const id = '11111111-1111-4111-8111-111111111111'
 
@@ -73,5 +73,13 @@ describe('validateEnrol (mirrors VisitCreate)', () => {
   it('carries the client submission id', () => {
     const r = validateEnrol({ ...emptyEnrol, ctas: 4 }, id)
     expect(r.ok && r.body.submission_id).toBe(id)
+  })
+
+  it('finds CEDIS codes by code prefix or by name', () => {
+    expect(matchCedis('').length).toBeGreaterThan(20)
+    expect(matchCedis('4').every((e) => e.code.startsWith('4'))).toBe(true)
+    const byName = matchCedis(matchCedis('')[0]!.name.slice(0, 5).toLowerCase())
+    expect(byName.length).toBeGreaterThan(0)
+    expect(matchCedis('zzzz')).toEqual([])
   })
 })

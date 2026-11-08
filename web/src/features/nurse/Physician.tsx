@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ArrowRight, RefreshCw, Search } from 'lucide-react'
+import { ArrowRight, RefreshCw, Search, X } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
@@ -7,8 +7,11 @@ import { getWorklist } from '@/api/api'
 import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { shortRef } from '@/lib/board'
-import { clock, formatMinutes, useNow } from '@/lib/time'
+import { clock, formatMinutes, isDueNow, useNow } from '@/lib/time'
+import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
+import { cn } from '@/lib/utils'
+import { TaskLevelLabel, TaskStatus } from './TaskStatus'
 import { useDashboardEvents } from './useDashboardEvents'
 
 export function Physician() {
@@ -18,6 +21,7 @@ export function Physician() {
   const query = useQuery({ queryKey: ['worklist'], queryFn: getWorklist, retry: false })
   const [filter, setFilter] = useState<'all' | 'open' | 'acknowledged'>('all')
   const [search, setSearch] = useState('')
+  usePageTitle(t('review.title'))
   const active = [...(query.data?.rows ?? [])]
     .sort((a, b) => a.rank - b.rank)
     .flatMap((row) => {
@@ -34,7 +38,12 @@ export function Physician() {
       .join(' ').toLocaleLowerCase().includes(term),
   )
   const filters = ['all', 'open', 'acknowledged'] as const
-  const duration = (delta: number) => t(delta < 0 ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(delta) })
+  const duration = (delta: number) =>
+    isDueNow(delta) ? t('review.dueNow') : t(delta < 0 ? 'review.overdueBy' : 'review.dueIn', { time: formatMinutes(delta) })
+  const clearSearch = () => {
+    setSearch('')
+    document.getElementById('worklist-search')?.focus()
+  }
 
   return (
     <main id="main-content" className="staff-page">
@@ -50,7 +59,7 @@ export function Physician() {
           )}
         </div>
         <Button variant="secondary" aria-label={t('review.refresh')} disabled={query.isFetching} onClick={() => void query.refetch()}>
-          <RefreshCw size={16} aria-hidden className={query.isFetching ? 'animate-spin' : ''} />
+          <RefreshCw aria-hidden className={cn('size-[1em]', query.isFetching && 'animate-spin')} />
           <span className="hidden sm:inline">{t('review.refresh')}</span>
         </Button>
       </header>
@@ -67,9 +76,9 @@ export function Physician() {
             ))}
           </div>
           <label className="search-field">
-            <Search size={17} aria-hidden />
+            <Search aria-hidden className="size-[1.1em]" />
             <span className="sr-only">{t('review.search')}</span>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('review.search')} />
+            <input id="worklist-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('review.search')} />
           </label>
         </div>
         {!query.data ? (
@@ -79,33 +88,35 @@ export function Physician() {
             retry={query.isError ? () => void query.refetch() : undefined}
           />
         ) : rows.length === 0 ? (
-          <PageState title={t(term ? 'review.noMatch' : `review.empty.${filter}`)} />
+          <PageState
+            title={t(term ? 'review.noMatch' : `review.empty.${filter}`)}
+            action={term ? (
+              <Button variant="secondary" onClick={clearSearch}>
+                <X aria-hidden className="size-[1em]" />
+                {t('review.clearSearch')}
+              </Button>
+            ) : undefined}
+          />
         ) : (
           <ul className="review-list" aria-label={t('review.tasks')}>
             {rows.map(({ row, task, reason, label }) => {
               const id = row.visit.visit_id
               const ref = shortRef(row)
-              const ackDelta = task.ack_due_at ? Date.parse(task.ack_due_at) - now : null
               const staffDelta = row.visit.staff_reassess_due_at ? Date.parse(row.visit.staff_reassess_due_at) - now : null
               return (
                 <li key={id}>
-                  <Link className="review-row" to={`/staff/visits/${id}`} aria-labelledby={`reason-${id} ref-${id}`}>
+                  <Link className="review-row" to={`/staff/visits/${id}`} state={{ from: '/staff/physician' }} aria-labelledby={`reason-${id} ref-${id}`}>
                     <div className="concern-cell">
-                      {task.level === 'red' && <span className="task-label task-red">{t('review.urgent')}</span>}
+                      <TaskLevelLabel level={task.level} />
                       <h2 id={`reason-${id}`}>{label}</h2>
                       <p>
                         <strong id={`ref-${id}`}>{ref}</strong> · {t(`complaint.${row.visit.complaint_group}`)} · CTAS {row.visit.ctas} · {clock(reason?.fired_at ?? task.created_at)}
                       </p>
                     </div>
                     <div className="review-status">
-                      <span className={ackDelta !== null && ackDelta < 0 && task.status === 'open' ? 'text-level-red' : ''}>
-                        {t(`review.filters.${task.status}`)}
-                        {task.status === 'open' && ackDelta !== null ? ` · ${duration(ackDelta)}` : ''}
-                      </span>
-                      {staffDelta !== null && <p>{t('review.staffDue', { timing: duration(staffDelta) })}</p>}
-                      {task.escalated && <p>{t('review.backup')}</p>}
+                      <TaskStatus task={task} now={now} notes={[staffDelta !== null && t('review.staffDue', { timing: duration(staffDelta) })]} />
                     </div>
-                    <ArrowRight size={18} aria-hidden className="row-arrow" />
+                    <ArrowRight aria-hidden className="row-arrow size-[1.125rem] rtl:-scale-x-100" />
                   </Link>
                 </li>
               )

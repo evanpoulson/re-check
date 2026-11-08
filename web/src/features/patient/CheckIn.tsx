@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
+import { ArrowRight, ChevronLeft, CircleAlert, CircleCheckBig, Clock } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { getPatientHome, signOut } from '@/api/api'
@@ -22,6 +22,7 @@ import { sendReport } from '@/lib/outbox'
 import { useNow } from '@/lib/time'
 import { CheckinFlow } from './CheckinFlow'
 import { PatientLayout } from './PatientLayout'
+import { Reminders } from './Reminders'
 
 type View =
   | { name: 'home' }
@@ -52,6 +53,15 @@ export function CheckIn() {
   // The help buttons stay enabled while sending, so a second tap must not send twice.
   const inFlight = useRef(false)
   const content = useRef<HTMLDivElement>(null)
+  // The check-in opens at its due time: refetch then, rather than waiting for the minute poll.
+  const dueAt = home?.next_checkin_due_at
+  const open = home?.checkin_open
+  useEffect(() => {
+    if (!dueAt || open) return
+    const wait = Math.max(0, Date.parse(dueAt) - Date.now()) + 1000
+    const id = setTimeout(() => void qc.invalidateQueries({ queryKey: ['home'] }), wait)
+    return () => clearTimeout(id)
+  }, [dueAt, open, qc])
   useEffect(() => {
     const heading = content.current?.querySelector('h1')
     if (heading) {
@@ -83,6 +93,8 @@ export function CheckIn() {
     )
   }
 
+  // Companion wording ("Is the patient leaving?") falls back to the patient's where there is none.
+  const companion = home.role === 'companion' ? 'companion' : undefined
   const common = (reporter = home.role) => ({
     submission_id: newSubmissionId(),
     reporter,
@@ -150,6 +162,7 @@ export function CheckIn() {
         )}
 
         {view.name === 'home' && <Home home={home} now={now} setView={setView} onSignOut={endSession} />}
+        {view.name === 'home' && <Reminders />}
 
         {view.name === 'checkin' && (
           <CheckinFlow
@@ -189,8 +202,8 @@ export function CheckIn() {
         {view.name === 'confirmLeave' && (
           <section className="space-y-6">
             <div className="space-y-2">
-              <h1>{t('leaving.title')}</h1>
-              <p>{t('leaving.info')}</p>
+              <h1>{t('leaving.title', { context: companion })}</h1>
+              <p>{t('leaving.info', { context: companion })}</p>
             </div>
             <div className="grid gap-3">
               <Button
@@ -205,10 +218,10 @@ export function CheckIn() {
                   )
                 }
               >
-                {t('leaving.confirm')}
+                {t('leaving.confirm', { context: companion })}
               </Button>
               <Button size="lg" variant="secondary" className="w-full" onClick={() => setView({ name: 'home' })}>
-                {t('leaving.cancel')}
+                {t('leaving.cancel', { context: companion })}
               </Button>
             </div>
           </section>
@@ -231,9 +244,9 @@ export function CheckIn() {
           <section className="space-y-6">
             <div className="space-y-2">
               <h1>{view.queued ? t('sent.queuedTitle') : t('sent.title')}</h1>
-              <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`)}</p>
+              <p>{view.queued ? t('sent.queuedBody') : t(`message.${view.message}`, { context: companion })}</p>
             {/* Leaving: after-leaving advice even when the report has not sent yet. */}
-            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after')}</p>}
+            {view.queued && view.message === 'leaving_info' && <p>{t('leaving.after', { context: companion })}</p>}
             {/* Never "all clear": staff still check on their own schedule. */}
               <p className="text-base text-muted">{t('sent.stillChecking')}</p>
             </div>
@@ -275,10 +288,15 @@ function Home({ home, now, setView, onSignOut }: { home: PatientHome; now: numbe
       </div>
       {home.message !== 'none' && <p className="rounded-card bg-brand-50 px-5 py-4 text-base">{t(`message.${home.message}`)}</p>}
       <section className="p-card" aria-label={t('patient.nextCheckin')}>
-        <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
-          {t('patient.startCheckin')}
-          <ArrowRight size={20} aria-hidden />
-        </Button>
+        {home.checkin_open ? (
+          <Button size="lg" className="w-full justify-between" onClick={() => setView({ name: 'checkin' })}>
+            {t('patient.startCheckin')}
+            <ArrowRight size={20} aria-hidden className="rtl:-scale-x-100" />
+          </Button>
+        ) : (
+          // Not due yet: say when it opens. Help and "Report a change" stay available.
+          <p className="text-base">{t('patient.checkinNotOpen')}</p>
+        )}
         <div className="patient-next">
           <span>{t('patient.nextCheckin')}</span>
           <CountdownChip due={home.next_checkin_due_at} now={now} patient />
@@ -349,9 +367,15 @@ function ReportChange({
   const [picked, setPicked] = useState<FindingCode[]>([])
   return (
     <section aria-labelledby="change" className="space-y-6">
-      <h1 id="change">
-        {text('new_findings', home.role)}
-      </h1>
+      <div>
+        <button type="button" className="back-link mb-0!" disabled={sending} onClick={onCancel}>
+          <ChevronLeft aria-hidden size={18} className="rtl:rotate-180" />
+          {t('flow.back')}
+        </button>
+        <h1 id="change">
+          {text('new_findings', home.role)}
+        </h1>
+      </div>
       <div role="group" aria-labelledby="change" className="grid gap-3">
         {options('new_findings').map((o) => {
           const code = o.code as FindingCode
@@ -370,9 +394,6 @@ function ReportChange({
       <div className="grid gap-3">
         <Button size="lg" className="w-full" disabled={picked.length === 0 || sending} onClick={() => onSend(picked)}>
           {t('change.send')}
-        </Button>
-        <Button size="lg" variant="ghost" className="w-full" onClick={onCancel}>
-          {t('flow.back')}
         </Button>
       </div>
     </section>

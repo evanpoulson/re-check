@@ -23,6 +23,7 @@ staff browser ──Auth0 sign-in──► web (React, Vite) ──/api──►
 3. The API stores the report and runs the rules. In the same transaction, it opens or raises the one review task of the visit.
 4. The staff dashboards refresh live. Staff acknowledge the task, then assess the patient.
 5. Timers make a task when a check-in is missed. They send unacknowledged urgent tasks to the charge nurse.
+6. If the patient turned on reminders, the timers also send a Web Push reminder when a check-in is due.
 
 ## Repository map
 
@@ -35,6 +36,8 @@ staff browser ──Auth0 sign-in──► web (React, Vite) ──/api──►
 | [`auth0/`](auth0/README.md) | Auth0 tenant setup for staff sign-in |
 | [`infra/`](infra/README.md), [`deploy/`](deploy/README.md), `compose.yaml`, `.github/workflows/` | Demo deployment: Terraform, Docker Compose, Caddy, GitHub Actions |
 | [`docs/`](docs/README.md) | Project plan, research briefs, design notes |
+| `research_notes/` | Source notes for the patient view evidence brief |
+| `reports/` | A copy of [`docs/research/patient-view-evidence.md`](docs/research/patient-view-evidence.md) |
 | `media/` | Source logo. `web/src/components/Brand.tsx` uses it. |
 | `EXTERNAL RUNBOOK 2026.pdf` | The runbook from the hackathon organizers: schedule, prompts, judging |
 | [`AGENTS.md`](AGENTS.md) | Scope, stack and rules for all changes to the code |

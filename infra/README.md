@@ -51,8 +51,11 @@ phone / staff browser ─HTTPS─► Caddy :443 ─► web (nginx) ─/api─►
    | Secret | `RECHECK_POLLER_DATABASE_URL` | Optional. Set it to start the wait-time poller. |
    | Variable | `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID` | Staff sign-in (see `auth0/README.md`) |
    | Secret | `AUTH0_CLIENT_SECRET` | Staff sign-in |
-   | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. The default is `15`, so this instance runs the missed check-in and escalation timers. `0` turns them off. Keep the timers off on all other computers that use the same database. |
+   | Variable | `RECHECK_SCHEDULER_SECONDS` | Optional. The default is `15`, so this instance runs the missed check-in, escalation and reminder timers. `0` turns them off. Keep the timers off on all other computers that use the same database. |
    | Variable | `RECHECK_DEMO_STAFF` | Optional. `true` shows the demo role picker next to Auth0 sign-in. |
+   | Variable | `RECHECK_DEMO_CHECKINS` | Optional. The default is `true` on this instance. The first check-in of a new visit then opens at enrolment, not one CTAS interval later, and desk staff see "Open check-in now" on Visit management. `false` turns off both. |
+   | Secret | `RECHECK_VAPID_PRIVATE_KEY` | Optional. Turns on check-in reminders by Web Push. To make a key, run `cd api && uv run python -m recheck.push keygen`. Keep one key for the full event, because a new key breaks all saved subscriptions. The database must have `db/migrations/2026-11-08-push-reminders.sql`. |
+   | Variable | `RECHECK_VAPID_SUBJECT` | Optional. A `mailto:` or `https://` contact for the push services. The default is `https://<SITE_ADDRESS>`. |
 
    Do not use `$` in these values. Compose reads `$` in `.env` as a variable.
 4. **Auth0.** In the Auth0 application, add `https://<SITE_ADDRESS>/api/staff/callback` as a callback URL. Add `https://<SITE_ADDRESS>/staff/sign-in` as a logout URL.
@@ -77,7 +80,7 @@ Load the synthetic cohort from your computer as usual (see `api/README.md`). The
 | Problem | Cause and fix |
 | --- | --- |
 | The certificate does not issue | sslip.io is shared, so Let's Encrypt rate limits can apply. Caddy then tries ZeroSSL. If this also fails, point a real domain at the IP and set `SITE_ADDRESS`. Certificates stay in the `caddy_data` volume, so a redeploy does not request new ones. |
-| Phones fail over HTTP | Browsers give `crypto.randomUUID()` only on secure origins, and the session cookies are `Secure`. Always share the `https://` URL. |
+| Phones fail over HTTP | Browsers give `crypto.randomUUID()`, service workers and Web Push only on secure origins, and the session cookies are `Secure`. Always share the `https://` URL. |
 | A build stops because memory is low | The instance has 2 GB of RAM and 2 GB of swap. Set `instance_type = "t3.medium"` and apply again. |
 | The instance is empty after `terraform apply` | A change to `user-data.sh` or to the key replaces the instance. The Elastic IP moves to the new instance, so the URL and `DEPLOY_HOST` stay the same. Run **Deploy** again. |
 

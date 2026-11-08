@@ -39,7 +39,7 @@ export function AnswerButton({
         {/* Read as the description, not as part of the button's name. */}
         {hint && <span id={hintId} aria-hidden className="choice-hint">{hint}</span>}
       </span>
-      {kind === 'button' && <ChevronRight aria-hidden className="chev size-5" />}
+      {kind === 'button' && <ChevronRight aria-hidden className="chev size-5 rtl:rotate-180" />}
     </button>
   )
 }

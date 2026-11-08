@@ -9,7 +9,7 @@ from ..contract.visits import StaffSignOut, VisitCreate, VisitEnrolled, VisitLin
 from ..db import write_tx
 from ..question_bank import EnrolmentConflict, check_enrolment, default_bank
 from ..security import decrypt_token, encrypt_token, new_token, token_hash
-from ..settings import public_url
+from ..settings import demo_checkins_enabled, public_url
 from .. import events, submissions
 from ..contract.codes import DashboardEventType
 
@@ -50,9 +50,9 @@ async def enrol_visit(body: VisitCreate, staff: DeskStaff, pool: Pool, response:
         token = new_token() if app else None
         cur = await conn.execute(
             """
-            INSERT INTO visit (site_id, ctas, complaint_group, cedis_code, complaint_detail, language, app_exclusion,
-                               channel, pager_no, token_hash, token_ciphertext)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO visit (site_id, ctas, complaint_group, cedis_code, language, app_exclusion,
+                               channel, pager_no, token_hash, token_ciphertext, next_prompt_due_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CASE WHEN %s THEN now() END)
             RETURNING id
             """,
             [
@@ -60,13 +60,14 @@ async def enrol_visit(body: VisitCreate, staff: DeskStaff, pool: Pool, response:
                 body.ctas,
                 body.complaint_group,
                 body.cedis_code,
-                body.complaint_detail,
                 body.language,
                 body.app_exclusion,
                 body.channel,
                 body.pager_no,
                 token_hash(token) if token else None,
                 encrypt_token(token) if token else None,
+                # Demo: the first check-in opens at enrolment. Otherwise the schema sets it one CTAS interval on.
+                app and demo_checkins_enabled(),
             ],
         )
         (visit_id,) = await cur.fetchone()

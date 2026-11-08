@@ -37,10 +37,47 @@
   --color-level-amber-bg: #fff4d6;
   --color-level-silent: #6e3fc8;
   --color-level-silent-bg: #f3edfc;
-  --color-level-leave: #b14300;
-  --color-level-leave-bg: #fff0e3;
+  /* Leave risk is petrol, not orange, so it never reads as amber (also under deuteranopia). */
+  --color-level-leave: #005f73;
+  --color-level-leave-bg: #e1f1f4;
   --color-level-overdue: #48484a;
   --color-level-overdue-bg: #ececf0;
+
+  /*
+    The one type scale, for staff and patient screens: 13 / 15 / 16 / 17 / 18 / 21 / 28 / 34 / 40 px,
+    in rem so it follows the user's text size. Tailwind's own sizes (text-sm, text-xl...)
+    are switched off, so nothing can step outside it. `cn` knows these names (lib/utils.ts).
+  */
+  --text-*: initial;
+  --text-note: 0.8125rem;
+  --text-note--line-height: 1.4;
+  --text-small: 0.9375rem;
+  --text-small--line-height: 1.45;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5;
+  /* Button labels (17px), as on apple.com. */
+  --text-button: 1.0625rem;
+  --text-button--line-height: 1.3;
+  --text-lead: 1.125rem;
+  --text-lead--line-height: 1.45;
+  --text-title: 1.3125rem;
+  --text-title--line-height: 1.3;
+  --text-heading: 1.75rem;
+  --text-heading--line-height: 1.2;
+  /* Staff page titles (34px): the worklist, escalations and a visit's name. */
+  --text-page: 2.125rem;
+  --text-page--line-height: 1.15;
+  /* The wordmark in the staff bar (25px). */
+  --text-wordmark: 1.5625rem;
+  --text-display: 2.5rem;
+  --text-display--line-height: 1.1;
+  /* The circle check's count, read at arm's length. */
+  --text-counter: 4.5rem;
+  --text-counter--line-height: 1;
+
+  /* Every staff page shares one container and left edge with the header (S-4). */
+  --staff-max: 1280px;
+  --staff-pad: 32px;
 
   --radius-data: 8px;
   --radius-card: 18px;
@@ -71,6 +108,10 @@
     outline: 3px solid rgb(0 113 227 / 0.6);
     outline-offset: 2px;
   }
+  /* A page heading takes focus for screen readers on page change; it isn't a control, so no ring. */
+  h1[tabindex='-1']:focus {
+    outline: none;
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
   }
@@ -79,19 +120,20 @@
 @layer components {
   /* Translucent bar, as in apple.com's navigation. */
   .glass {
-    background: rgb(251 251 253 / 0.8);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    backdrop-filter: saturate(180%) blur(20px);
+    background: rgb(251 251 253 / 0.92);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
   }
   /* A form field: white, hairline border, blue ring on focus. */
   .field {
     min-height: 2.75rem;
     width: 100%;
     border-radius: 12px;
-    border: 1px solid var(--color-line);
+    /* 3.6:1 on white: a control boundary needs 3:1 (WCAG 1.4.11). */
+    border: 1px solid var(--color-answer);
     background: var(--color-surface);
     padding-inline: 0.875rem;
-    font-size: 1rem;
+    font-size: var(--text-base);
     transition: border-color 150ms, box-shadow 150ms;
   }
   .field:focus-visible {
@@ -99,155 +141,31 @@
     border-color: var(--color-brand-500);
     box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
   }
+  .field[aria-invalid='true'] {
+    border-color: var(--color-level-red);
+  }
+  /* Locked fields (for example a group set by the CEDIS code) look locked. */
   .field:disabled {
-    background-color: var(--color-canvas);
+    background: var(--color-canvas);
     color: var(--color-muted);
     cursor: not-allowed;
   }
-  /*
-    Dropdowns: our own grey chevron instead of the browser's, so they look the same on
-    every OS, with room on the right so long options never run under it. `.field` is the
-    form dropdown; `.select-pill` is the compact pill used in filter bars.
-  */
-  select.field,
-  .select-pill {
+  /* A select drawn like every other field, with room for its own chevron. */
+  .field.select {
     appearance: none;
-    cursor: pointer;
-    padding-right: 2.5rem;
-    text-overflow: ellipsis;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    padding-inline-end: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
-    background-position: right 0.875rem center;
-    background-size: 1rem;
+    background-position: right 0.75rem center;
+    text-overflow: ellipsis;
   }
-  select.field:hover:not(:disabled),
-  .select-pill:hover:not(:disabled) {
-    border-color: var(--color-muted);
+  [dir='rtl'] .field.select {
+    background-position: left 0.75rem center;
   }
-  /*
-    A wide table that scrolls sideways. Where the browser supports scroll-driven
-    animation, the edge with more content fades out (right at the start, left at the
-    end, both in between), so a cut-off column reads as "more this way" instead of
-    clipped text. A table that fits has no fade.
-  */
-  .table-scroll {
-    overflow-x: auto;
-    border-radius: inherit;
-  }
-  @supports (animation-timeline: scroll()) {
-    .table-scroll {
-      mask-image: linear-gradient(
-        to right,
-        transparent,
-        #000 var(--fade-start),
-        #000 calc(100% - var(--fade-end)),
-        transparent
-      );
-      animation: table-scroll-fade linear both;
-      animation-timeline: scroll(self inline);
-    }
-  }
-  /* A locked dropdown can't open, so it loses the chevron. */
-  select.field:disabled {
-    background-image: none;
-    opacity: 1;
-  }
-  /*
-    The pill fits the chosen option on one line, so a long choice never wraps or loses
-    its chevron. The minimum width keeps short choices ("All", "3") the same size, so
-    picking one doesn't nudge the filters after it.
-  */
-  .select-pill {
-    min-height: 2.75rem;
-    min-width: 4.5rem;
-    white-space: nowrap;
-    border-radius: var(--radius-tap);
-    border: 1px solid var(--color-line);
-    background-color: var(--color-surface);
-    padding-left: 1rem;
-    font-size: 0.9375rem;
-    transition: border-color 150ms, box-shadow 150ms;
-  }
-  .select-pill:focus-visible {
-    outline: none;
-    border-color: var(--color-brand-500);
-    box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
-  }
-  /*
-    Where the browser allows it (Chrome and Edge 135+), the open list is ours too: a white
-    card with hairline rows, a blue hover and a check on the chosen option. Elsewhere the
-    browser draws its own list under the same pill.
-  */
-  @supports (appearance: base-select) {
-    .select-pill,
-    .select-pill::picker(select) {
-      appearance: base-select;
-    }
-    .select-pill {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding-right: 0.875rem;
-      background-image: none;
-    }
-    .select-pill::picker-icon {
-      content: '';
-      width: 1rem;
-      height: 1rem;
-      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")
-        center / 1rem no-repeat;
-      transition: rotate 150ms;
-    }
-    .select-pill:open::picker-icon {
-      rotate: 180deg;
-    }
-    .select-pill::picker(select) {
-      margin-block: 6px;
-      min-width: anchor-size(width);
-      padding: 6px;
-      border: 1px solid var(--color-line);
-      border-radius: 14px;
-      background: var(--color-surface);
-      box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
-    }
-    .select-pill option {
-      display: flex;
-      align-items: center;
-      gap: 0.75rem;
-      min-height: 2.75rem;
-      padding: 0.5rem 0.75rem;
-      border-radius: var(--radius-data);
-      font-size: 0.9375rem;
-      white-space: nowrap;
-      cursor: pointer;
-    }
-    .select-pill option:hover,
-    .select-pill option:focus-visible {
-      outline: none;
-      background: var(--color-brand-50);
-    }
-    .select-pill option:checked {
-      font-weight: 600;
-    }
-    /* The chosen option is marked by weight and a check, not colour alone. */
-    .select-pill option::checkmark {
-      order: 1;
-      margin-inline-start: auto;
-      color: var(--color-brand-500);
-      font-weight: 700;
-    }
-  }
-  /* "Lead phrase. Grey continuation." headings. */
-  .headline-split > em {
-    font-style: normal;
-    color: var(--color-muted);
-  }
-  /* Small uppercase eyebrow above a title, as in "NEW" on apple.com. */
+  /* A short label above content: one to three words, sentence case. Arabic and Urdu have no capitals, so it never relies on them. */
   .eyebrow {
-    font-size: 0.75rem;
+    font-size: var(--text-note);
     font-weight: 600;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
     color: var(--color-muted);
   }
 }
@@ -256,23 +174,40 @@
   .no-print {
     display: none !important;
   }
+  /* Printing a re-shown visit QR prints only the QR. */
+  body:has(.print-qr) * {
+    visibility: hidden;
+  }
+  body:has(.print-qr) .print-qr,
+  body:has(.print-qr) .print-qr * {
+    visibility: visible;
+  }
+  body:has(.print-qr) .print-qr {
+    position: absolute;
+    inset: 0 0 auto 0;
+  }
 }
 
 @layer components {
   .brand {
     display: inline-flex;
     align-items: center;
-    font-size: 25px;
-    letter-spacing: -1px;
+    font-size: var(--text-title);
+    letter-spacing: -0.04em;
     font-weight: 600;
   }
   .brand-mark {
     width: auto;
-    height: 32px;
-    margin-right: 9px;
+    /* In em, so the mark grows with the wordmark and the user's text size. */
+    height: 1.5em;
+    margin-inline-end: 0.35em;
   }
   .brand-period {
     color: var(--color-brand-600);
+  }
+  /* The staff bar carries the larger wordmark (25px at 100% text). */
+  .staff-header .brand {
+    font-size: var(--text-wordmark);
   }
   /* The redesign's sticky glass bar. */
   .staff-header {
@@ -281,13 +216,20 @@
     z-index: 20;
     min-height: 56px;
     display: flex;
-    gap: 22px;
+    /* At large text the bar wraps onto more rows instead of running off the screen. */
+    flex-wrap: wrap;
+    gap: 0 22px;
     align-items: center;
-    padding: 6px 32px;
+    /* Keep the brand anchored to the viewport gutter at every width. */
+    padding-block: 6px;
+    padding-inline: var(--staff-pad);
     border-bottom: 1px solid rgb(210 210 215 / 0.7);
-    background: rgb(251 251 253 / 0.8);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
-    backdrop-filter: saturate(180%) blur(20px);
+    background: rgb(251 251 253 / 0.92);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+  }
+  .staff-header nav:empty {
+    display: none;
   }
   .staff-header nav {
     display: flex;
@@ -300,10 +242,9 @@
     min-height: 44px;
     padding: 8px 12px;
     color: rgb(29 29 31 / 0.8);
-    font-size: 0.875rem;
+    font-size: var(--text-small);
     transition: color 150ms;
   }
-  .staff-nav-link:hover,
   .staff-nav-link.is-active {
     color: var(--color-ink);
   }
@@ -311,30 +252,71 @@
     font-weight: 600;
   }
   .staff-identity {
-    margin-left: auto;
+    margin-inline-start: auto;
     display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: var(--text-small);
     color: var(--color-muted);
   }
-  .staff-page {
-    max-width: 1280px;
-    padding: 28px 32px;
-    margin: auto;
+  /* The staff page container. The visit page uses .staff-container for its bands. */
+  .staff-page,
+  .staff-container {
+    max-width: var(--staff-max);
+    padding-inline: var(--staff-pad);
+    margin-inline: auto;
   }
+  .staff-page {
+    padding-block: 28px;
+  }
+  /* The triage board is a wide table (up to 1440px), centred on the page. */
+  .staff-page-wide {
+    max-width: 1440px;
+    margin-inline: auto;
+  }
+  /*
+    A table that scrolls sideways in its own box. Edge shadows show on whichever
+    side has more columns (covers scroll with the content, shadows stay put).
+  */
+  .table-scroll {
+    /* Positioned, so screen-reader-only text inside can't widen the page. */
+    position: relative;
+    /* Keeps the sticky header cells' z-index inside the table, so tooltips above it are not covered. */
+    isolation: isolate;
+    max-height: 75dvh;
+    overflow: auto;
+    overscroll-behavior-x: contain;
+    background:
+      linear-gradient(to right, var(--color-surface) 40%, rgb(255 255 255 / 0)) left / 32px 100% no-repeat local,
+      linear-gradient(to left, var(--color-surface) 40%, rgb(255 255 255 / 0)) right / 32px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) left / 14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) right / 14px 100% no-repeat scroll,
+      var(--color-surface);
+  }
+  /* The action (Refresh) lines up with the <h1>, not the title-and-subtitle block. */
   .page-heading {
     display: flex;
-    align-items: center;
+    flex-wrap: wrap;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 24px;
     margin-bottom: 18px;
   }
+  .page-heading > div {
+    min-width: 0;
+  }
   .page-heading h1 {
-    font-size: 34px;
+    overflow-wrap: break-word;
+    font-size: var(--text-page);
     line-height: 1.15;
-    letter-spacing: -0.9px;
+    letter-spacing: -0.026em;
     font-weight: 600;
+  }
+  /* The heading is 1.15 x 34px tall; a 44px button sits centred on it. */
+  .page-heading > button {
+    margin-top: max(0px, calc((var(--text-page) * 1.15 - 2.75rem) / 2));
   }
   .page-heading p {
     margin-top: 8px;
@@ -363,7 +345,7 @@
   .filter-group button {
     min-height: 44px;
     padding: 6px 12px;
-    font-size: 14px;
+    font-size: var(--text-small);
     border-radius: var(--radius-tap);
     cursor: pointer;
     white-space: nowrap;
@@ -374,23 +356,68 @@
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
     font-weight: 600;
   }
+  /*
+    The redesign's search: a magnifier and text sitting in the toolbar, no box. A hairline
+    (3.6:1) shows under it on hover, and focus draws the usual ring round the whole field.
+  */
   .search-field {
     display: flex;
     align-items: center;
     gap: 8px;
-    color: var(--color-muted);
     min-width: 0;
+    padding-inline: 10px;
+    border-bottom: 1px solid transparent;
+    color: var(--color-muted);
+    transition: border-color 150ms;
+  }
+  @media (hover: hover) {
+    .search-field:hover {
+      border-bottom-color: var(--color-answer);
+    }
+  }
+  .search-field:focus-within {
+    border-bottom-color: var(--color-answer);
+    border-radius: var(--radius-data) var(--radius-data) 0 0;
+    outline: 3px solid rgb(0 113 227 / 0.6);
+    outline-offset: 2px;
   }
   .search-field input {
     min-height: 44px;
-    font-size: 14px;
-    width: 190px;
+    width: 12rem;
     min-width: 0;
     background: transparent;
+    color: var(--color-ink);
+    font-size: var(--text-small);
   }
+  .search-field input:focus-visible {
+    outline: none;
+  }
+  .search-field input::placeholder {
+    color: var(--color-muted);
+  }
+  /* A task level on the worklist and escalations: a dot and the level's name, both in its colour. */
+  .task-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--text-note);
+    font-weight: 600;
+  }
+  .task-label::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .task-red { color: var(--color-level-red); }
+  .task-amber { color: var(--color-level-amber); }
+  .task-silent { color: var(--color-level-silent); }
+  .task-leave_risk { color: var(--color-level-leave); }
+  .task-overdue { color: var(--color-level-overdue); }
   .review-row {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 235px) 18px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 17rem) 1.125rem;
     align-items: center;
     gap: 16px;
     padding: 14px 20px;
@@ -401,58 +428,36 @@
   .review-row {
     transition: background 0.15s;
   }
-  .review-row:hover {
-    background: #f9faf8;
+  @media (hover: hover) {
+    .review-row:hover {
+      background: #f9faf8;
+    }
   }
   .review-row:focus-visible {
     outline-offset: -4px;
   }
-  .task-label {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .task-label::before {
-    content: '';
-    height: 6px;
-    width: 6px;
-    background: currentColor;
-    border-radius: 50%;
-  }
-  .task-red {
-    color: var(--color-level-red);
-  }
-  .task-amber,
-  .task-leave_risk {
-    color: var(--color-level-amber);
-  }
-  .task-silent,
-  .task-overdue {
-    color: var(--color-muted);
-  }
   .concern-cell h2 {
-    font-size: 19px;
-    line-height: 1.25;
+    font-size: var(--text-lead);
+    line-height: 1.3;
     font-weight: 600;
-    letter-spacing: -0.3px;
+    letter-spacing: -0.01em;
     margin: 4px 0;
   }
   .concern-cell p {
-    font-size: 14px;
+    font-size: var(--text-small);
     color: var(--color-muted);
   }
   .concern-cell p strong {
     color: var(--color-ink);
     font-weight: 550;
   }
+  /* Status in sentence-case bold, then its timing and notes below in grey. */
   .review-status {
-    font-size: 14px;
+    font-size: var(--text-small);
   }
   .review-status p {
     color: var(--color-muted);
-    font-size: 13px;
+    font-size: var(--text-note);
     margin-top: 2px;
   }
   .row-arrow {
@@ -468,7 +473,7 @@
     color: var(--color-muted);
   }
   .page-state h2 {
-    font-size: 22px;
+    font-size: var(--text-title);
     font-weight: 600;
     color: var(--color-ink);
   }
@@ -491,48 +496,15 @@
     gap: 8px;
     align-items: center;
     min-height: 44px;
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
     color: var(--color-brand-600);
     margin-bottom: 16px;
   }
-  .back-link:hover {
-    text-decoration: underline;
-    text-underline-offset: 4px;
-  }
-  .visit-heading {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 24px;
-    margin-bottom: 28px;
-  }
-  .visit-heading h1 {
-    font-size: 32px;
-    line-height: 1.2;
-    font-weight: 600;
-    letter-spacing: -0.6px;
-  }
-  .visit-heading p {
-    color: var(--color-muted);
-    margin-top: 8px;
-  }
-  .concern-panel {
-    padding: 28px;
-    background: var(--color-surface);
-    border-radius: var(--radius-card);
-    box-shadow: var(--shadow-card);
-  }
-  .concern-panel h2 {
-    font-size: 28px;
-    line-height: 1.2;
-    letter-spacing: -0.5px;
-    font-weight: 600;
-    margin: 12px 0;
-  }
-  .concern-panel .routing {
-    font-size: 15px;
-    color: var(--color-muted);
-    margin-top: 12px;
+  @media (hover: hover) {
+    .back-link:hover {
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
   }
   /* Visit page tabs: the current page is a white tab with a blue rule underneath. */
   .visit-tab {
@@ -543,13 +515,15 @@
     border-radius: var(--radius-data) var(--radius-data) 0 0;
     border-bottom: 3px solid transparent;
     color: var(--color-muted);
-    font-size: 17px;
+    font-size: var(--text-lead);
     font-weight: 500;
     white-space: nowrap;
     transition: color 150ms, background 150ms;
   }
-  .visit-tab:hover {
-    color: var(--color-ink);
+  @media (hover: hover) {
+    .visit-tab:hover {
+      color: var(--color-ink);
+    }
   }
   .visit-tab.is-active {
     background: var(--color-surface);
@@ -597,33 +571,15 @@
     cursor: not-allowed;
     color: var(--color-muted);
   }
-  .section-title {
-    font-size: 19px;
-    font-weight: 600;
-    margin-bottom: 16px;
-  }
-  .disclosure {
-    border-top: 1px solid var(--color-line);
-    padding-top: 16px;
-  }
-  .disclosure > summary {
-    cursor: pointer;
-    min-height: 44px;
-    font-weight: 550;
-    font-size: 16px;
-  }
-  .disclosure[open] > summary {
-    margin-bottom: 16px;
-  }
   /*
     Patient type scale, one size per role:
-    title 1.75rem/600, body 1.125rem, secondary 1rem muted, small 0.9375rem muted.
+    title --text-heading/600, body --text-lead, secondary --text-base muted, small --text-small muted.
     Spacing: 24px between blocks, 12px inside a group, 20px card padding.
   */
   .patient-shell {
     min-height: 100dvh;
     padding-bottom: 40px;
-    font-size: 1.125rem;
+    font-size: var(--text-lead);
     line-height: 1.5;
   }
   /* --dock-h is the help dock's measured height, so nothing hides behind it at large text. */
@@ -631,20 +587,20 @@
     padding-bottom: calc(var(--dock-h, 142px) + 24px);
   }
   .patient-shell h1 {
-    font-size: 1.75rem;
+    font-size: var(--text-heading);
     font-weight: 600;
     line-height: 1.2;
     letter-spacing: -0.02em;
     text-wrap: pretty;
   }
   .patient-shell h2 {
-    font-size: 1.125rem;
+    font-size: var(--text-lead);
     font-weight: 600;
     line-height: 1.3;
   }
   .p-lede {
     margin-top: 8px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   .p-card {
@@ -670,7 +626,7 @@
     min-height: 56px;
     cursor: pointer;
     list-style: none;
-    font-size: 1rem;
+    font-size: var(--text-base);
     font-weight: 500;
   }
   .p-disclosure > summary::-webkit-details-marker {
@@ -691,7 +647,7 @@
     padding: 0 0 16px;
     padding-inline-start: 20px;
     list-style: disc;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   .p-disclosure > ul > li + li {
@@ -700,11 +656,11 @@
   .patient-context {
     display: grid;
     gap: 8px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   .patient-context .lead {
-    font-size: 1.125rem;
+    font-size: var(--text-lead);
     font-weight: 500;
     color: var(--color-ink);
   }
@@ -715,7 +671,7 @@
     padding-top: 16px;
     margin-top: 16px;
     border-top: 1px solid var(--color-line);
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
 
@@ -734,7 +690,7 @@
     border-radius: 14px;
     background: var(--color-surface);
     text-align: start;
-    font-size: 1.125rem;
+    font-size: var(--text-lead);
     line-height: 1.35;
     transition: border-color 120ms, box-shadow 120ms, background-color 120ms;
   }
@@ -785,7 +741,7 @@
   .choice-hint {
     display: block;
     margin-top: 2px;
-    font-size: 1rem;
+    font-size: var(--text-base);
     color: var(--color-muted);
   }
   .choice > .chev {
@@ -804,7 +760,7 @@
   }
   .scale button {
     min-height: 56px;
-    font-size: 1.0625rem;
+    font-size: var(--text-button);
     font-variant-numeric: tabular-nums;
     transition: background-color 120ms, color 120ms;
   }
@@ -827,7 +783,7 @@
     display: flex;
     justify-content: space-between;
     margin-top: 8px;
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
     color: var(--color-muted);
   }
 
@@ -837,7 +793,7 @@
     grid-template-columns: 1fr auto;
     align-items: center;
     row-gap: 4px;
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
     color: var(--color-muted);
   }
   .flow-head .back-link {
@@ -851,6 +807,19 @@
     grid-column: 1 / -1;
     width: 100%;
     height: 4px;
+  }
+
+  /* Check-in reminders: a quieter card under the check-in. */
+  .patient-reminders {
+    margin-top: 16px;
+    padding: 16px 20px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+  }
+  .patient-reminders h2 {
+    font-size: var(--text-base);
+    font-weight: 600;
   }
   /* Compact version of the redesign's glass help bar. */
   .patient-dock {
@@ -878,7 +847,7 @@
     min-height: 48px;
     padding: 6px 12px;
     border-radius: var(--radius-tap);
-    font-size: 0.9375rem;
+    font-size: var(--text-small);
     font-weight: 500;
     line-height: 1.2;
     text-align: center;
@@ -904,50 +873,103 @@
     cursor: not-allowed;
   }
 }
+/* Staff header: one row down to 761 px. Narrower, two rows (brand and sign-out, then nav) and not sticky. */
+.staff-nav-link,
+.staff-who {
+  white-space: nowrap;
+}
+.staff-header > a {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+/* Hover only where there is a pointer: on touch a tapped link would stay highlighted. */
+@media (hover: hover) {
+  .staff-nav-link:hover {
+    color: var(--color-ink);
+  }
+}
 @media (max-width: 1100px) {
+  :root {
+    --staff-pad: 24px;
+  }
   .staff-header {
-    padding: 16px 24px;
-    gap: 24px;
-    flex-wrap: wrap;
+    gap: 0 16px;
+  }
+  .staff-header nav {
+    gap: 2px;
+  }
+  /* The charge nurse has four links: tighter links, and the role name gives way so sign-out stays on screen. */
+  .staff-nav-link {
+    padding-inline: 8px;
+  }
+  .staff-header:has(.staff-nav-link:nth-child(4)) .staff-who {
+    display: none;
+  }
+  .staff-nav-link svg {
+    display: none;
   }
   .staff-identity {
-    font-size: 13px;
+    font-size: var(--text-note);
   }
-  .staff-page {
-    padding: 32px 24px;
+  /* Icon only; the text stays for screen readers and in the tooltip. */
+  .demo-badge.is-compact {
+    padding: 4px;
+  }
+  .demo-badge.is-compact .demo-badge-text,
+  .staff-sign-out-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .list-toolbar {
     flex-wrap: wrap;
   }
 }
 @media (max-width: 760px) {
+  :root {
+    --staff-pad: 16px;
+  }
   .staff-header {
-    gap: 12px;
-    padding: 16px 20px;
+    position: static;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding-block: 4px;
   }
   .staff-header nav {
+    order: 3;
+    width: 100%;
     gap: 4px;
+    margin-inline: -8px;
   }
-  .staff-nav-link {
-    font-size: 14px;
-    padding: 8px;
-  }
-  .staff-nav-link svg {
+  .staff-who {
     display: none;
   }
+  .staff-nav-link {
+    padding: 8px;
+  }
   .staff-page {
-    padding: 24px 20px;
+    padding-block: 24px;
   }
   .page-heading {
-    align-items: flex-start;
     gap: 12px;
     margin-bottom: 24px;
   }
   .page-heading h1 {
-    font-size: 29px;
+    font-size: var(--text-heading);
+  }
+  .page-heading > button {
+    margin-top: calc((var(--text-heading) * 1.15 - 2.75rem) / 2);
+  }
+  .staff-header .brand {
+    font-size: var(--text-title);
   }
   .page-heading p {
-    font-size: 15px;
+    font-size: var(--text-small);
   }
   .page-heading > button {
     font-size: 0;
@@ -955,32 +977,32 @@
     min-width: 44px;
   }
   .page-heading > button svg {
-    width: 18px;
-    height: 18px;
+    width: 1.125rem;
+    height: 1.125rem;
   }
   .filter-group {
     width: 100%;
   }
+  /* Each filter takes the room its label needs, so "To acknowledge 2" stays on one line. */
   .filter-group button {
-    flex: 1;
-    font-size: 13px;
+    flex: 1 1 auto;
+    font-size: var(--text-note);
     padding: 6px 7px;
-    min-height: 44px;
   }
   .list-toolbar {
     padding: 12px;
     gap: 8px;
   }
   .search-field {
-    padding-inline: 8px;
     width: 100%;
   }
+  /* 16px, so iOS doesn't zoom into the field. */
   .search-field input {
-    font-size: 16px;
+    font-size: var(--text-base);
     width: 100%;
   }
   .review-row {
-    grid-template-columns: minmax(0, 1fr) 18px;
+    grid-template-columns: minmax(0, 1fr) 1.125rem;
     gap: 6px 12px;
     padding: 12px 14px;
   }
@@ -991,16 +1013,18 @@
     grid-column: 2;
     grid-row: 1 / span 2;
   }
-
-  .visit-heading h1 {
-    font-size: 28px;
+}
+@media (max-width: 450px) {
+  :root {
+    --staff-pad: 12px;
   }
-  .visit-heading {
-    margin-bottom: 24px;
-  }
-  .concern-panel {
-    padding: 20px;
-  }
+  .staff-header { gap: 4px 8px; padding-block: 6px; }
+  .staff-header nav { flex-wrap: wrap; gap: 0; }
+  .staff-nav-link { padding-inline: 6px; font-size: var(--text-note); }
+  .staff-identity { gap: 2px; }
+  .staff-page { padding-block: 16px; }
+  .page-heading { margin-bottom: 12px; }
+  .filter-group { flex-wrap: wrap; }
 }
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1009,11 +1033,6 @@
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
-  }
-}
-@media (max-width: 760px) {
-  .concern-panel {
-    width: 100%;
   }
 }
 /* Keep focused headings clear of the sticky top bar (WCAG 2.4.11). */
@@ -1036,61 +1055,557 @@ html:has(.patient-shell.has-dock) {
   border: 0;
   border-radius: 4px;
 }
-@media (min-width: 761px) and (max-width: 1100px) {
-}
-.staff-header > a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-}
-.filter-group button {
-  min-height: 44px;
-}
-.worklist-footer {
-  align-items: center;
-}
-.worklist-footer a {
-  min-height: 44px;
-}
-@media (max-width: 760px) {
-  .worklist-footer {
+
+/*
+  Triage board: level cards, the table card and its header filters, and the New visit sheet.
+*/
+@layer components {
+  .board > * + * {
+    margin-top: 16px;
+  }
+  .board-heading {
+    margin-bottom: 0;
+  }
+  /* The 44px New visit button sits centred on the 1.15 x 34px heading. */
+  .board-heading-action {
+    flex-shrink: 0;
+    margin-top: max(0px, calc((var(--text-page) * 1.15 - 2.75rem) / 2));
+  }
+
+  /* Level cards: deploy's metric cards, and each one is the filter for its level. */
+  .level-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @media (min-width: 640px) {
+    .level-cards {
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 12px;
+    }
+  }
+  @media (min-width: 1024px) {
+    .level-cards {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+  .level-card {
+    display: flex;
+    flex-direction: column;
     align-items: flex-start;
+    gap: 6px;
+    min-width: 0;
+    padding: 14px 44px 14px 16px;
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-card);
+    text-align: start;
+    cursor: pointer;
+    transition: box-shadow 150ms, background-color 150ms;
+  }
+  @media (hover: hover) {
+    .level-card:hover {
+      box-shadow: 0 4px 18px rgb(0 0 0 / 0.1);
+    }
+  }
+  /* Selected is the blue selection ring, never a status colour. */
+  .level-card[aria-pressed='true'] {
+    background: var(--color-brand-50);
+    box-shadow: inset 0 0 0 2px var(--color-brand-500), var(--shadow-card);
+  }
+  .level-card-count {
+    font-size: var(--text-display);
+    line-height: 1;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+  }
+
+  /* The table card's title row: heading and count, then the active filters. */
+  .board-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 16px;
+    min-height: 60px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--color-line);
+  }
+  .board-scroll {
+    border-radius: 0;
+  }
+  /* The empty end of each row fills spare space without stretching any data column. */
+  .board-scroll tr::after {
+    content: '';
+    display: table-cell;
+  }
+  .board-scroll thead tr::after {
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-surface);
+  }
+  .board-th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 10px 6px 8px;
+    vertical-align: bottom;
+    border-bottom: 1px solid var(--color-line);
+    background: var(--color-surface);
+  }
+  .board-th:first-child {
+    padding-inline-start: 10px;
+  }
+  .board-th:last-child {
+    padding-inline-end: 10px;
+  }
+  .board-row {
+    vertical-align: middle;
+    transition: background-color 150ms;
+  }
+  .board-row + .board-row {
+    border-top: 1px solid rgb(210 210 215 / 0.7);
+  }
+  @media (hover: hover) {
+    .board-row:hover {
+      background: #fafafc;
+    }
+  }
+  .board-row > * {
+    padding: 10px 6px;
+  }
+  .board-row > :first-child {
+    padding-inline: 10px 6px;
+    box-shadow: inset 3px 0 0 var(--board-row-accent, transparent);
+  }
+  .board-row > :last-child {
+    padding-inline-end: 10px;
+  }
+
+  /* Header buttons: sort and filter share one quiet pill shape; the active one turns blue. */
+  .column-sort,
+  .column-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 28px;
+    margin-inline: -6px;
+    padding-inline: 6px;
+    border-radius: var(--radius-tap);
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 150ms, color 150ms;
+  }
+  @media (hover: hover) {
+    .column-sort:hover,
+    .column-filter:hover {
+      background: var(--color-canvas);
+      color: var(--color-ink);
+    }
+  }
+  .column-sort.is-active {
+    color: var(--color-ink);
+  }
+  .column-filter[aria-expanded='true'] {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+  }
+  .column-filter.is-active {
+    color: var(--color-brand-600);
+  }
+  .column-filter-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.25rem;
+    height: 1.25rem;
+    padding-inline: 5px;
+    border-radius: var(--radius-tap);
+    background: var(--color-brand-500);
+    color: white;
+    font-size: var(--text-note);
+    line-height: 1;
+  }
+
+  /* The open filter menu: a frosted card with hairline edge, as in macOS menus. */
+  .filter-menu {
+    position: fixed;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    min-width: 15rem;
+    max-width: calc(100vw - 32px);
+    max-height: min(26rem, calc(100dvh - 32px));
+    overflow-y: auto;
+    padding: 6px;
+    border: 1px solid rgb(0 0 0 / 0.08);
+    border-radius: 14px;
+    background: rgb(255 255 255 / 0.92);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    box-shadow: 0 12px 32px rgb(0 0 0 / 0.14), 0 2px 6px rgb(0 0 0 / 0.06);
+    font-size: var(--text-small);
+    font-weight: 400;
+    color: var(--color-ink);
+    text-align: start;
+    letter-spacing: normal;
+    text-transform: none;
+  }
+  .filter-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 40px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    text-align: start;
+    cursor: pointer;
+  }
+  @media (hover: hover) {
+    .filter-menu-item:hover {
+      background: var(--color-canvas);
+    }
+  }
+  .filter-menu-item:focus {
+    outline: none;
+    background: var(--color-brand-50);
+  }
+  .filter-menu-item:focus-visible {
+    box-shadow: inset 0 0 0 2px var(--color-brand-500);
+  }
+
+  /* An active filter: a grey pill with its own remove cross. */
+  .filter-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 32px;
+    padding: 4px 10px 4px 12px;
+    border-radius: var(--radius-tap);
+    background: var(--color-brand-50);
+    color: var(--color-brand-700);
+    font-size: var(--text-note);
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+  @media (hover: hover) {
+    .filter-chip:hover {
+      background: var(--color-brand-100);
+    }
+  }
+
+  /* New visit: a sheet that slides in from the right over the dimmed board. */
+  .sheet-root {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+  }
+  .sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgb(0 0 0 / 0.28);
+    animation: sheet-fade 200ms ease-out;
+  }
+  .sheet {
+    position: absolute;
+    inset-block: 10px;
+    inset-inline-end: 10px;
+    display: flex;
+    flex-direction: column;
+    width: min(36rem, calc(100vw - 20px));
+    border-radius: var(--radius-card);
+    background: var(--color-canvas);
+    box-shadow: 0 24px 64px rgb(0 0 0 / 0.22);
+    overflow: hidden;
+    animation: sheet-in 280ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sheet:focus {
+    outline: none;
+  }
+  [dir='rtl'] .sheet {
+    animation-name: sheet-in-rtl;
+  }
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 24px 28px 32px;
+  }
+  .sheet-heading {
+    margin-bottom: 18px;
+    padding-inline-end: 48px;
+  }
+  .sheet-heading h2 {
+    font-size: var(--text-heading);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+  }
+  .sheet-heading h2:focus {
+    outline: none;
+  }
+  .sheet-heading p {
+    margin-top: 6px;
+    color: var(--color-muted);
+  }
+  /* Round close button, as on Apple sheets: grey disc, dark cross. */
+  .sheet-close {
+    position: absolute;
+    top: 20px;
+    inset-inline-end: 20px;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: rgb(118 118 128 / 0.14);
+    color: var(--color-muted);
+    cursor: pointer;
+    transition: background-color 150ms, color 150ms;
+  }
+  @media (hover: hover) {
+    .sheet-close:hover {
+      background: rgb(118 118 128 / 0.24);
+      color: var(--color-ink);
+    }
+  }
+  /* A 44px hit area around the 36px disc. */
+  .sheet-close::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+  }
+  @media (max-width: 640px) {
+    .sheet {
+      inset: 0;
+      width: 100%;
+      border-radius: 0;
+    }
+    .sheet-body {
+      padding: 20px 16px 28px;
+    }
+    .sheet-close {
+      top: 16px;
+      inset-inline-end: 12px;
+    }
+  }
+  @media (max-width: 760px) {
+    .level-card {
+      padding: 12px 40px 12px 14px;
+    }
+    .level-card-count {
+      font-size: var(--text-heading);
+    }
+    .board-toolbar {
+      padding: 10px 14px;
+    }
+    /* The heading's action keeps its label: it is the page's main task. */
+    .board-heading-action {
+      margin-top: 0;
+    }
+  }
+}
+@keyframes sheet-in {
+  from {
+    transform: translateX(calc(100% + 16px));
+  }
+}
+@keyframes sheet-in-rtl {
+  from {
+    transform: translateX(calc(-100% - 16px));
+  }
+}
+@keyframes sheet-fade {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet,
+  .sheet-backdrop {
+    animation: none;
+  }
+}
+@media print {
+  /* With the sheet open, print only what it shows (the new visit's QR). */
+  body:has(.sheet-root) > :not(.sheet-host) {
+    display: none !important;
+  }
+  .sheet-root,
+  .sheet {
+    position: static;
+    width: auto;
+    box-shadow: none;
+    background: none;
+    overflow: visible;
+  }
+  .sheet-body {
+    overflow: visible;
   }
 }
 
-@media (max-width: 450px) {
-  .staff-header { gap: 4px 8px; padding: 6px 12px; }
-  .staff-header nav { flex-wrap: wrap; }
-  .staff-identity { gap: 2px; }
-  .staff-page { padding: 16px 12px; }
-  .page-heading { margin-bottom: 12px; }
-  .filter-group { flex-wrap: wrap; }
-  .filter-group button { white-space: normal; }
+.staff-menu {
+  position: relative;
+}
+.staff-menu summary {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  list-style: none;
+  cursor: pointer;
+  border-radius: var(--radius-tap);
+}
+.staff-menu summary::-webkit-details-marker { display: none; }
+.staff-menu summary:hover { background: var(--color-canvas); }
+.staff-menu-panel {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 4px);
+  z-index: 1;
+  min-width: 10.5rem;
+  padding: 4px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  box-shadow: var(--shadow-card);
+}
+.staff-menu-panel > :is(a, button) {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  width: 100%;
+  min-height: 44px;
+  border-radius: 8px;
+  white-space: nowrap;
+}
+.staff-menu-panel > :is(a, button):hover { background: var(--color-canvas); }
+.board-row > *, .board-th {
+  text-align: center;
+  padding: 7px 6px;
+  overflow-wrap: break-word;
+}
+.board-row > :is(:first-child, :last-child),
+.board-th:is(:first-child, :last-child) { padding-inline: 6px; }
+.board-th {
+  vertical-align: middle;
+  white-space: nowrap;
+}
+.board-th :is(.column-sort, .column-filter) {
+  justify-content: center;
+  margin-inline: 0;
+  padding-inline: 0;
+}
+.board-th[data-resizable]:not([data-collapsed]) {
+  padding-inline: 11px;
+}
+.column-resize {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: 9px;
+  cursor: col-resize;
+  touch-action: none;
+  z-index: 1;
+}
+.column-resize::after {
+  content: '';
+  position: absolute;
+  inset-block: 25%;
+  inset-inline-end: 2px;
+  border-inline-end: 1px solid var(--color-line);
+}
+.column-resize:is(:hover, :focus-visible)::after {
+  border-inline-end: 2px solid var(--color-brand-600);
 }
 
-/* The edge fade on a sideways-scrolling table (see .table-scroll). */
-@property --fade-start {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
+.board-width-probe {
+  position: fixed;
+  inset: 0 auto auto 0;
+  visibility: hidden;
+  pointer-events: none;
+  table-layout: auto;
+  width: max-content !important;
 }
-@property --fade-end {
-  syntax: '<length>';
-  inherits: false;
-  initial-value: 0px;
+.board-width-probe :is(th, td, button, span, div) {
+  white-space: nowrap !important;
+  max-width: none !important;
+  overflow-wrap: normal !important;
 }
-@keyframes table-scroll-fade {
-  0% {
-    --fade-start: 0px;
-    --fade-end: 56px;
+.staff-menu-profile {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: min(15rem, 70vw);
+  padding: 10px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--color-line);
+}
+
+.board-row > :is([data-resizable], [data-collapsed]) {
+  cursor: col-resize;
+}
+.board-cell-content > svg {
+  margin-inline: auto;
+}
+.board-row .board-flags > .inline-flex {
+  flex-shrink: 0;
+  min-height: calc(1.4em + 6px);
+}
+.board-row :is([data-column="nextCheckin"], [data-column="reassess"]) .whitespace-nowrap {
+  max-width: 100%;
+  white-space: normal;
+}
+.board-th[data-collapsed],
+.board-row > [data-collapsed] {
+  padding-inline: 1px;
+  background: var(--color-canvas);
+}
+.board-scroll [data-column="pain"] {
+  position: sticky;
+  inset-inline-end: 0;
+  user-select: none;
+}
+.board-row > [data-column="pain"] {
+  z-index: 1;
+}
+.board-row > [data-column="pain"]:not([data-collapsed]) {
+  background: var(--color-surface);
+}
+@media (hover: hover) {
+  .board-row:hover > [data-column="pain"]:not([data-collapsed]) {
+    background: #fafafc;
   }
-  8%,
-  92% {
-    --fade-start: 56px;
-    --fade-end: 56px;
-  }
-  100% {
-    --fade-start: 56px;
-    --fade-end: 0px;
-  }
+}
+.board-th[data-column="pain"] {
+  z-index: 11;
+}
+.board-expand-column {
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  min-height: 28px;
+  cursor: zoom-in;
+  border-radius: 5px;
+  color: var(--color-muted);
+}
+.board-expand-column:hover {
+  color: var(--color-brand-600);
+}
+.board-width-probe .board-cell-content:not([hidden]) {
+  display: inline-block;
+  width: max-content;
+}
+.board-width-probe .board-flags {
+  flex-wrap: nowrap;
 }

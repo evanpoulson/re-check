@@ -54,7 +54,7 @@ export function InfoTip({ label, children, className }: { label: string; childre
         onClick={() => setOpen(true)}
         // A 32px target whose negative margins keep it from adding height or inset to the row.
         className={cn(
-          'flex size-8 items-center justify-center rounded-full text-[#86868b] transition-colors hover:bg-canvas hover:text-muted',
+          'flex size-8 items-center justify-center rounded-full text-answer transition-colors hover:bg-canvas hover:text-muted',
           className,
         )}
       >
@@ -66,7 +66,7 @@ export function InfoTip({ label, children, className }: { label: string; childre
         id={id}
         hidden={!open}
         style={shift ? { transform: `translateX(${shift}px)` } : undefined}
-        className="absolute top-full right-0 z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl bg-ink p-2.5 text-left text-xs leading-snug font-normal text-white shadow-lg"
+        className="absolute top-full right-0 z-30 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl bg-ink p-2.5 text-left text-note leading-snug font-normal text-white shadow-lg"
       >
         {children}
       </span>

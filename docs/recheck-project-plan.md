@@ -6,13 +6,14 @@
 
 | Built | Still to build |
 | --- | --- |
-| Pydantic contract and contract tests ([`api/`](../api/README.md)) | Charge nurse escalation and handover screens in the web app. The API routes exist. |
-| FastAPI routes for enrolment, QR sign-in, reports, staff actions, views and site settings | A live simulator that sends reports. The synthetic cohort loader exists. |
-| Rules, the one active task, missed check-in and escalation timers | Pager and voice input |
-| Server-Sent Events to staff screens | Named handover ownership (needs a contract and storage decision) |
-| [TimescaleDB schema](../db/README.md) and SQL checks, live on Tiger Cloud | A CI workflow that runs the checks on pull requests |
+| Pydantic contract and contract tests ([`api/`](../api/README.md)) | A live simulator that sends reports. The synthetic cohort loader exists. |
+| FastAPI routes for enrolment, QR sign-in, reports, staff actions, views and site settings | Pager and voice input |
+| Rules, the one active task, missed check-in and escalation timers | Named handover ownership (needs a contract and storage decision) |
+| Check-in reminders by Web Push, and demo check-ins | A CI workflow that runs the checks on pull requests |
+| Server-Sent Events to staff screens | |
+| [TimescaleDB schema](../db/README.md) and SQL checks, live on Tiger Cloud | |
 | Auth0 staff sign-in and the demo role picker | |
-| Web app: sign-in, enrolment, triage board, physician worklist, visit pages, patient check-in in 15 languages | |
+| Web app: sign-in, New visit, triage board, physician worklist, charge nurse escalations and handover, visit pages, patient check-in in 15 languages | |
 | AHS wait estimate poller | |
 | Demo deployment on AWS ([`infra/`](../infra/README.md)) | |
 
@@ -20,12 +21,12 @@
 
 | Workflow | Page | Done when |
 | --- | --- | --- |
-| Triage | Enrolment · `/staff/visits/new` | Staff enter CTAS 2–5, complaint, language, and phone or pager channel. CEDIS is optional. Enrolment returns one QR link. The link works while the visit is waiting. For pager visits, it is also the phone fallback. The person who scans it chooses patient or companion. One device can be signed in at a time. The desk can show the same QR again from the visit. |
-| Patient and companion | Check-in · `/check-in` | A phone scan opens the check-in without an account. Answers change the follow-up questions. Urgent findings route immediately. The page shows "Get help now", intent to leave, pending and saved states, and a "What we store" panel. A companion observation is separate from the pain that the patient reports. The page is in the 15 most common mother tongues in Alberta. These translations are drafts, and a certified medical translator must review them before real use. The page shows the current AHS wait estimate for new arrivals (or "Estimate unavailable") and the time waited. It tells the patient that answers do not change their place in line. |
+| Triage | New visit · sheet on `/staff/triage` | Staff enter CTAS 2–5, complaint, language, and phone or pager channel. CEDIS is optional. Enrolment returns one QR link. The link works while the visit is waiting. For pager visits, it is also the phone fallback. The person who scans it chooses patient or companion. One device can be signed in at a time. The desk can show the same QR again from the visit. |
+| Patient and companion | Check-in · `/v/:token`, then `/check-in` | A phone scan opens the check-in without an account. Answers change the follow-up questions. Urgent findings route immediately. The page shows "Get help now", intent to leave, pending and saved states, and a "What we store" panel. A companion observation is separate from the pain that the patient reports. The page is in the 15 most common mother tongues in Alberta. These translations are drafts, and a certified medical translator must review them before real use. The page shows the current AHS wait estimate for new arrivals (or "Estimate unavailable") and the time waited. It tells the patient that answers do not change their place in line. |
 | Clinical review | Physician worklist · `/staff/physician` | A saved report shows with its time and reason. The order is red, amber, silent, leave risk and overdue, then wait time. A missed patient check-in looks different from an overdue staff reassessment. |
-| Clinical review | Visit timeline · `/staff/visits/:id` | Staff see the report, the rule, the recipient, the acknowledgement and the assessment. Acknowledgement and assessment are separate actions. A simple symptom trend comes from stored check-ins. Staff can record repeat vitals and flag a concern from the visit. |
-| Triage | Triage board · `/staff/triage` | Staff see who is waiting and which staff reassessments are due. The board includes enrolment and "flag a concern". The physician worklist shows missed prompts. To show them on the board, extend its row model or link to the visit. |
-| Escalation | Charge nurse escalations · `/staff/escalations` | A simulated urgent alert without an answer goes to the designated backup. The handover tab shows open tasks, routing roles and overdue reassessments. Named assignment and explicit transfer need an agreed contract and a storage change. |
+| Clinical review | Visit · `/staff/visits/:id` | A page with the Overview, Assessment, Timeline and Visit management tabs. Staff see the report, the rule, the recipient, the acknowledgement and the assessment. Acknowledgement and assessment are separate actions. A simple symptom trend comes from stored check-ins. Staff can record repeat vitals and flag a concern from the visit. |
+| Triage | Triage board · `/staff/triage` | Staff see who is waiting and which staff reassessments are due. The board includes New visit and "flag a concern". The board uses the worklist rows, so a missed patient check-in ("No response") looks different from an overdue staff reassessment. |
+| Escalation | Charge nurse escalations · `/staff/escalations` | A simulated urgent alert without an answer goes to the designated backup. The Handover tab (`/staff/escalations/handover`) shows open tasks, routing roles and overdue reassessments. Named assignment and explicit transfer need an agreed contract and a storage change. |
 
 Keep privacy, QR printing, assessment entry and handover inside these screens. The quality summary has a response model. A separate quality page is optional.
 

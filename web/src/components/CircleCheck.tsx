@@ -104,7 +104,7 @@ export function CircleCheck({ prompt, role, onDone, onExpired }: Props) {
             <Button size="lg" variant="secondary" aria-label={t('circle.fewer')} disabled={count <= 0} onClick={() => setCount(count - 1)}>
               <Minus aria-hidden className="size-6" />
             </Button>
-            <output aria-live="polite" className="tabular min-w-20 text-center text-7xl font-semibold tracking-tight">
+            <output aria-live="polite" className="tabular min-w-20 text-center text-counter font-semibold tracking-tight">
               {count}
             </output>
             <Button size="lg" variant="secondary" aria-label={t('circle.more')} disabled={count >= 20} onClick={() => setCount(count + 1)}>

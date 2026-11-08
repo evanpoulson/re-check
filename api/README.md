@@ -1,6 +1,6 @@
 # Recheck API
 
-The Python back end. It holds the API contract, the routes, the rules, the timers, the synthetic cohort and the wait-time poller.
+The Python back end. It holds the API contract, the routes, the rules, the timers, the check-in reminders, the synthetic cohort and the wait-time poller.
 
 ## Develop
 
@@ -19,7 +19,10 @@ AUTH0_CLIENT_ID=...
 AUTH0_CLIENT_SECRET=...
 AUTH0_CALLBACK_URL=...                     # optional: default is {RECHECK_PUBLIC_URL}/api/staff/callback
 RECHECK_DEMO_STAFF=false                   # optional: true turns on the demo role picker
+RECHECK_DEMO_CHECKINS=false                # optional: true opens the first check-in of a new visit at enrolment, and permits open-checkin
 RECHECK_SCHEDULER_SECONDS=15               # demo machine only: turns on the timers (off when not set)
+RECHECK_VAPID_PRIVATE_KEY=...              # optional: turns on check-in reminders by Web Push (uv run python -m recheck.push keygen)
+RECHECK_VAPID_SUBJECT=mailto:...           # optional: contact for push services. Default is RECHECK_PUBLIC_URL, which must then be https.
 RECHECK_SITE_TIMEZONE=America/Edmonton     # optional: local time for duty hours and shifts
 RECHECK_TLP_HOURS=08:00-22:00              # optional demo value: physician duty hours. Not set = always on duty.
 RECHECK_SHIFT_CHANGES=07:00,19:00          # optional demo value: nursing shift changes for handover
@@ -47,10 +50,11 @@ Keep the `--loop` option. Async psycopg does not work with the default Windows e
 | `codes.py` | Fixed code lists: complaint groups, findings, task levels, dispositions |
 | `answers.py` | Answer values: a value or an explicit reason why it is missing |
 | `reports.py` | Patient and companion reports from phone, pager or simulator |
-| `visits.py` | Enrolment, QR token exchange, visit state |
+| `visits.py` | Enrolment, QR token exchange, visit state, open check-in |
 | `staff.py` | Vitals, "flag higher", acknowledge, assess, site settings |
 | `tasks.py` | The review tasks that the rules make |
 | `patient.py` | The data that patient and companion screens load |
+| `push.py` | Check-in reminder settings and Web Push subscriptions |
 | `views.py` | Physician worklist, triage board, charge nurse view, handover, quality page |
 | `events.py` | Live dashboard notices |
 | `common.py` | Shared base types |
@@ -92,9 +96,13 @@ Conventions:
 | `POST /api/visits/{id}/flag` | triage nurse | `FlagHigher` → `FlagRecord`. Opens or raises an amber task (`staff_flag`). |
 | `POST /api/visits/{id}/status` | triage nurse, physician or charge nurse | `VisitStatusUpdate` → 204. Closes the visit and signs out its device. |
 | `POST /api/visits/{id}/exclusion` | triage or charge nurse | `VisitExclusionUpdate` → 204. Stops patient prompts. The staff timer continues. |
+| `POST /api/visits/{id}/open-checkin` | triage or charge nurse | `OpenCheckin` → 204. Demo only: 403 if `RECHECK_DEMO_CHECKINS` is off. Opens the check-in of the patient now. The staff timer does not change. |
 | `GET /api/events` | any signed-in staff | Server-Sent Events: one `DashboardEvent` for each change at the site of the staff member |
-| `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, circle prompt (patient only, the same prompt until answered), wait estimate or null, minutes waited |
-| `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`. A retry gives `duplicate: true`. |
+| `GET /api/patient/home` | signed-in device | `PatientHome`: follow-up questions, `checkin_open` (whether the next check-in is open), circle prompt, wait estimate or null, minutes waited. The circle prompt is for the patient only, while a check-in is open. It stays the same until answered. |
+| `POST /api/patient/reports` | signed-in device | `PatientReport` → `ReportReceipt`. A retry gives `duplicate: true`. A scheduled check-in before its due time gives 409. |
+| `GET /api/patient/push` | signed-in device | `PushConfig`: whether check-in reminders are on, and the public key for the subscription |
+| `PUT /api/patient/push/subscription` | signed-in device | `PushSubscriptionSave` → 204. The same subscription again changes nothing. A new one replaces the old one. Known push services only. |
+| `DELETE /api/patient/push/subscription` | signed-in device | 204. Turns off reminders for this device. A retry is safe. |
 
 ## Staff sign-in
 
@@ -140,7 +148,12 @@ Levels and deadlines only escalate:
 - The API only adds recipients.
 - An acknowledgement deadline only moves earlier.
 - A reassuring answer makes no change.
-- A check-in restarts the patient prompt timer. No report moves the staff reassessment timer.
+
+Timers and reports:
+
+- The API accepts a scheduled check-in only when the patient prompt is due. The check-in restarts that timer.
+- The API accepts concerns, new findings, leaving and follow-up answers (`purpose: followup`) at any time. These move no timer.
+- No report moves the staff reassessment timer.
 
 Enrolment also rejects a complaint group or a missing exclusion that the CEDIS map contradicts.
 
@@ -156,8 +169,24 @@ A level is only the colour and the rank of the task on the staff dashboards. Not
 
 - **Missed check-in.** A waiting app visit gets a silent `missed_checkin` reason when its patient prompt is 5 minutes overdue. This occurs one time for each due time.
 - **Escalation.** A red task without an acknowledgement after its 2-minute deadline becomes escalated. The charge nurse also gets it. The timeline shows the deadline as the time of the escalation.
+- **Check-in reminders.** See [Check-in reminders](#check-in-reminders).
 
 The timers write to the database in `RECHECK_DATABASE_URL`, and you cannot undo these writes. Thus, keep the timers off when you develop against the shared demo database. Turn them on only on the demo machine: add `RECHECK_SCHEDULER_SECONDS=15` to its `.env`.
+
+### Demo check-ins
+
+With `RECHECK_DEMO_CHECKINS=true`, the first check-in of a new visit opens at enrolment, not one CTAS interval later. Desk staff can also open a check-in now with `open-checkin` ("Open check-in now" on Visit management). The deploy workflow turns this on for the demo instance.
+
+## Check-in reminders
+
+`recheck/push.py` sends check-in reminders by Web Push. The reminders are on only when `RECHECK_VAPID_PRIVATE_KEY` is set. To make a key, run `uv run python -m recheck.push keygen`. Keep one key for the event, because a new key breaks all saved subscriptions.
+
+- A device that turned on reminders gets a push at the due time of the patient prompt.
+- After that, it gets one every 5 minutes until the person checks in or one CTAS interval has passed. This is 3 reminders for CTAS 2 and 24 for CTAS 5.
+- The scheduler claims each (visit, due time, slot) in `push_send` before it sends. Thus each reminder goes out one time. The answer of the push service goes into the same row. A 404 or 410 ends the subscription.
+- The message says only "It's time for your check-in."
+- Reminders stop with the session: sign-out, takeover, or a closed visit.
+- Reminders are a courtesy. The missed check-in task never depends on a reminder. Staff screens do not show the reminder status.
 
 ## Live updates
 

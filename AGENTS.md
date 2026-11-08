@@ -14,8 +14,9 @@ The prototype is a standalone companion to Connect Care and Epic Rover. It uses 
 | Database | PostgreSQL with [TimescaleDB from Tiger Data](https://www.tigerdata.com/timescaledb) |
 | Rules tests | pytest and Hypothesis |
 | Live dashboard updates | Server-Sent Events (`GET /api/events`) |
+| Check-in reminders | Web Push (VAPID), sent by the API timers |
 
-[`README.md`](README.md) has the repository map and the quickstart. Each folder README tells what is built in that area.
+[`README.md`](README.md) has the repository map and the quickstart. Each folder README tells what is built in that area. [`docs/design/frontend.md`](docs/design/frontend.md) has the frontend design.
 
 ## Contract and data access
 
@@ -35,7 +36,7 @@ Staff sign in with Auth0. The team uses Google or GitHub single sign-on. Microso
 - The web app reads the signed-in user from `GET /api/staff/session`. The web app never stores a role itself.
 - The sign-in page asks `GET /api/staff/sign-in-options` which buttons to show.
 - "Sign in" goes to `/api/staff/login`. To sign out, Auth0 users go to `/api/staff/logout`. Demo users call `DELETE /api/staff/session`.
-- The charge nurse can open the triage board and the worklist.
+- The home page of the charge nurse is `/staff/escalations` (escalations and handover). The charge nurse can also open the triage board, New visit and the worklist.
 - In development, Vite sends `/api` to FastAPI (`RECHECK_API_URL`, default `http://127.0.0.1:8000`). This keeps the cookies and the Auth0 callback on one origin.
 - The mocks show only the demo picker.
 
@@ -91,6 +92,7 @@ Read the [research brief](docs/research/recheck-waiting-room.md) before you chan
 - Schedule patient prompts and staff reassessments independently. Use the two due fields in the schema.
 - A patient response never resets the staff timer.
 - A missed check-in creates a staff task. This also applies when the patient has no digital channel that works.
+- A check-in reminder is a courtesy. The missed check-in task never depends on a reminder.
 
 ### Tasks
 
@@ -100,10 +102,6 @@ Read the [research brief](docs/research/recheck-waiting-room.md) before you chan
 - Track delivery, acknowledgement and assessment separately.
 - A task goes from open to acknowledged to completed. Completion needs a disposition.
 - The schema routes tasks to roles. Named handover ownership still needs a decision about the contract and the storage.
-
-## Documentation to do
-
-- Write a frontend design document for all staff and patient screens, from the current app. Until then, [`docs/design/review-flow.md`](docs/design/review-flow.md) has the current visual guidelines.
 
 ## Git workflow
 

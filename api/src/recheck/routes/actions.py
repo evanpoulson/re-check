@@ -1,4 +1,5 @@
-"""Staff actions: acknowledge and assess tasks, record vitals, flag higher, close or exclude a visit.
+"""Staff actions: acknowledge and assess tasks, record vitals, flag higher, close or exclude a visit,
+and (demo only) open a patient's check-in now.
 
 Behaviour matches the web app's mock server (web/src/api/mocks/store.ts).
 The acting staff member comes from the staff session; every write is
@@ -16,9 +17,10 @@ from ..auth import Pool, Staff, require_staff
 from ..contract.codes import DashboardEventType, Disposition, StaffRole
 from ..contract.staff import AcknowledgeTask, AssessTask, FlagHigher, FlagRecord, VitalsCreate, VitalsRecord
 from ..contract.tasks import Task
-from ..contract.visits import VisitExclusionUpdate, VisitStatusUpdate
+from ..contract.visits import OpenCheckin, VisitExclusionUpdate, VisitStatusUpdate
 from ..db import write_tx
 from ..rules import STAFF_FLAG
+from ..settings import demo_checkins_enabled
 
 router = APIRouter(prefix="/api", tags=["staff actions"])
 
@@ -275,6 +277,36 @@ async def set_exclusion(visit_id: UUID, body: VisitExclusionUpdate, staff: DeskS
                 raise _conflict("an app exclusion cannot be removed or changed")
             await conn.execute(
                 "UPDATE visit SET app_exclusion = %s WHERE id = %s", [body.app_exclusion.value, visit_id]
+            )
+            await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
+            await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
+                                     visit_id=visit_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post(
+    "/visits/{visit_id}/open-checkin",
+    status_code=status.HTTP_204_NO_CONTENT,
+    tags=["staff actions (demo)"],
+    responses={
+        403: {"description": "Demo check-ins are turned off (RECHECK_DEMO_CHECKINS)"},
+        404: {"description": "No such visit at this site"},
+        409: {"description": "The visit is closed or doesn't offer the app"},
+    },
+)
+async def open_checkin(visit_id: UUID, body: OpenCheckin, staff: DeskStaff, pool: Pool) -> Response:
+    """Demo only: open the patient's next check-in now. The due time only moves earlier; the staff timer stays."""
+    if not demo_checkins_enabled():
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "opening a check-in early is a demo setting that is turned off")
+    endpoint = "visits.open_checkin"
+    fp = submissions.fingerprint(body, visit=visit_id)
+    async with write_tx(pool, staff.actor) as conn:
+        visit_status, exclusion = await _visit_at_site(conn, visit_id, staff.site_id, lock=True)
+        if await submissions.find(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp) is None:
+            if visit_status != "waiting" or exclusion is not None:
+                raise _conflict("only a waiting visit that offers the app has check-ins")
+            await conn.execute(
+                "UPDATE visit SET next_prompt_due_at = least(next_prompt_due_at, now()) WHERE id = %s", [visit_id]
             )
             await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,

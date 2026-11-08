@@ -1,5 +1,5 @@
 import { CircleAlert } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { exchangeToken } from '@/api/api'
@@ -8,7 +8,8 @@ import type { Role, SignInConflict } from '@/api/types'
 import { AnswerButton } from '@/components/AnswerButton'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { clock } from '@/lib/time'
+import { chosenLanguage } from '@/i18n'
+import { clock, isolate } from '@/lib/time'
 import { PatientLayout } from './PatientLayout'
 
 type State =
@@ -28,12 +29,15 @@ export function Exchange() {
   const { token = '' } = useParams()
   const navigate = useNavigate()
   const [state, setState] = useState<State>({ name: 'choose' })
+  const titleKey = state.name === 'inactive' ? 'exchange.inactive' : state.name === 'conflict' ? 'exchange.takeover.title' : 'exchange.who'
+  useEffect(() => { document.title = `${t(titleKey)} · Recheck` }, [titleKey, t])
 
   async function signIn(role: Role, takeover?: string) {
     setState({ name: 'sending', role })
     try {
       const session = await exchangeToken({ token, role, ...(takeover ? { takeover_session_id: takeover } : {}) })
-      void i18n.changeLanguage(session.language)
+      // Keep a language the person picked on this phone; otherwise use the visit's.
+      void i18n.changeLanguage(chosenLanguage() ?? session.language)
       navigate('/check-in', { replace: true })
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -67,7 +71,7 @@ export function Exchange() {
           <p className="text-base text-muted">
             {t('exchange.takeover.who', {
               who: t(`exchange.signedInAs.${conflict.signed_in_as}`),
-              time: clock(conflict.signed_in_since),
+              time: isolate(clock(conflict.signed_in_since, i18n.language)),
             })}
           </p>
           <div className="grid gap-3">
