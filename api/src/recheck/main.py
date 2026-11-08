@@ -10,7 +10,7 @@ Run locally from `api/`:
 import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager, suppress
+from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import FastAPI, Request
@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from psycopg import errors
 from psycopg_pool import AsyncConnectionPool
 
-from . import scheduler
+from . import events, scheduler
 from .contract.common import OutputModel
 from .db import make_pool
 from .routes import ROUTERS
@@ -56,18 +56,18 @@ def create_app(pool: AsyncConnectionPool | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         app.state.pool = pool if pool is not None else make_pool(database_url())
+        app.state.broker = events.Broker()
         # Don't wait for a connection: the API still starts, and /health reports the outage.
         await app.state.pool.open(wait=False)
-        # Timers run only in the real server; tests that bring their own pool call run_checks directly.
+        # Background work runs only in the real server; tests that bring their own pool drive it directly.
         every = scheduler_seconds() if pool is None else 0
         timers = asyncio.create_task(scheduler.run_forever(app.state.pool, every)) if every > 0 else None
+        listener = asyncio.create_task(app.state.broker.listen(database_url())) if pool is None else None
         try:
             yield
         finally:
-            if timers is not None:
-                timers.cancel()
-                with suppress(asyncio.CancelledError):
-                    await timers
+            await events.stop(listener)
+            await events.stop(timers)
             await app.state.pool.close()
 
     app = FastAPI(title="Recheck API", version="0.1.0", lifespan=lifespan)

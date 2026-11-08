@@ -11,9 +11,9 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 
-from .. import submissions, tasks, views
+from .. import events, submissions, tasks, views
 from ..auth import Pool, Staff, require_staff
-from ..contract.codes import Disposition, StaffRole
+from ..contract.codes import DashboardEventType, Disposition, StaffRole
 from ..contract.staff import AcknowledgeTask, AssessTask, FlagHigher, FlagRecord, VitalsCreate, VitalsRecord
 from ..contract.tasks import Task
 from ..contract.visits import VisitExclusionUpdate, VisitStatusUpdate
@@ -99,6 +99,7 @@ async def acknowledge_task(task_id: UUID, body: AcknowledgeTask, staff: Clinical
                 " acknowledged_by_role = %s WHERE id = %s",
                 [staff.actor, staff.role.value, task_id],
             )
+            await events.notify(conn, DashboardEventType.TASK_CHANGED, visit_id, task_id)
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
                                      visit_id=visit_id)
         return await _task(conn, task_id, visit_id)
@@ -143,6 +144,7 @@ async def assess_task(task_id: UUID, body: AssessTask, staff: ClinicalStaff, poo
                     "UPDATE visit SET status = %s, closed_at = now() WHERE id = %s AND status = 'waiting'",
                     [closes, visit_id],
                 )
+            await events.notify(conn, DashboardEventType.TASK_CHANGED, visit_id, task_id)
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
                                      visit_id=visit_id)
         return await _task(conn, task_id, visit_id)
@@ -189,6 +191,7 @@ async def record_vitals(visit_id: UUID, body: VitalsCreate, staff: DeskStaff, po
             await conn.execute(
                 "UPDATE visit SET last_staff_check_at = now() WHERE id = %s AND status = 'waiting'", [visit_id]
             )
+            await events.notify(conn, DashboardEventType.VITALS_RECORDED, visit_id)
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
                                      visit_id=visit_id)
         records = await views.vitals_records(conn, visit_id)
@@ -220,7 +223,10 @@ async def flag_higher(visit_id: UUID, body: FlagHigher, staff: TriageNurse, pool
             )
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
                                      visit_id=visit_id)
-            await tasks.raise_task(conn, visit_id, [STAFF_FLAG], [{"kind": "flag", "id": str(body.submission_id)}])
+            task_id = await tasks.raise_task(
+                conn, visit_id, [STAFF_FLAG], [{"kind": "flag", "id": str(body.submission_id)}]
+            )
+            await events.notify(conn, DashboardEventType.TASK_CHANGED, visit_id, task_id)
         rows = await views.reports_for(conn, [visit_id])
     return views.flag_record(next(r for r in rows if r["id"] == body.submission_id))
 
@@ -247,6 +253,7 @@ async def set_visit_status(visit_id: UUID, body: VisitStatusUpdate, staff: Clini
             await conn.execute(
                 "UPDATE visit SET status = %s, closed_at = now() WHERE id = %s", [body.status.value, visit_id]
             )
+            await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
                                      visit_id=visit_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
@@ -269,6 +276,7 @@ async def set_exclusion(visit_id: UUID, body: VisitExclusionUpdate, staff: DeskS
             await conn.execute(
                 "UPDATE visit SET app_exclusion = %s WHERE id = %s", [body.app_exclusion.value, visit_id]
             )
+            await events.notify(conn, DashboardEventType.VISIT_CHANGED, visit_id)
             await submissions.record(conn, body.submission_id, actor=staff.actor, endpoint=endpoint, fp=fp,
                                      visit_id=visit_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -13,11 +13,11 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from .. import rules, submissions, tasks
+from .. import events, rules, submissions, tasks
 from ..attention import AttentionResult, PromptMismatch, score
 from ..auth import Pool, VisitSession, current_visit_session
 from ..contract.answers import AttentionAnswered
-from ..contract.codes import Channel, ComplaintGroup
+from ..contract.codes import Channel, ComplaintGroup, DashboardEventType
 from ..contract.reports import CheckinReport, FindingReport, PatientReport, ReportReceipt
 from ..db import write_tx
 from ..question_bank import QuestionBank, default_bank, option_codes, ext_value, raw_answers
@@ -228,9 +228,12 @@ async def post_report(
                 "UPDATE visit SET next_prompt_due_at = now() + ctas_interval(ctas) WHERE id = %s", [session.visit_id]
             )
         fires = rules.evaluate(report, attention)
-        await tasks.raise_task(
+        task_id = await tasks.raise_task(
             conn, session.visit_id, fires, [{"kind": "report", "id": str(report.submission_id)}]
         )
+        await events.notify(conn, DashboardEventType.REPORT_RECEIVED, session.visit_id)
+        if task_id is not None:
+            await events.notify(conn, DashboardEventType.TASK_CHANGED, session.visit_id, task_id)
     return _receipt(report, received_at, bank, visit, attention=attention, duplicate=False)
 
 

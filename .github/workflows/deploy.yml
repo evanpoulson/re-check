@@ -1,0 +1,115 @@
+# Push to `deploy` (fast-forward it from main) to ship that commit to the EC2 box:
+# SSH in, write .env from GitHub secrets, check out the commit, rebuild and restart with compose.
+name: Deploy
+
+on:
+  push:
+    branches: [deploy]
+  workflow_dispatch:
+
+# One deploy at a time; a newer push waits for the running one instead of cancelling it mid-build.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      DEPLOY_HOST: ${{ vars.DEPLOY_HOST }}
+      # Defaults to <ip-with-dashes>.sslip.io; set this variable to use your own domain instead.
+      SITE_ADDRESS: ${{ vars.SITE_ADDRESS }}
+    steps:
+      - name: Check configuration
+        run: |
+          if [ -z "$DEPLOY_HOST" ]; then
+            echo "::error::Set the DEPLOY_HOST repository variable to the Terraform public_ip output"
+            exit 1
+          fi
+          if [ -z "$SITE_ADDRESS" ]; then
+            echo "SITE_ADDRESS=$(echo "$DEPLOY_HOST" | tr . -).sslip.io" >> "$GITHUB_ENV"
+          fi
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Trust the host key on first contact; the box only lives for the event.
+          for _ in 1 2 3 4 5 6; do
+            ssh-keyscan -T 10 -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null && break
+            sleep 10
+          done
+          cat >> ~/.ssh/config <<EOF
+          Host box
+            HostName $DEPLOY_HOST
+            User ubuntu
+            IdentityFile ~/.ssh/deploy_key
+            ServerAliveInterval 30
+          EOF
+
+      - name: Wait for first-boot setup
+        run: ssh box 'cloud-init status --wait > /dev/null; test -d ~/re-check/.git'
+
+      - name: Write .env
+        env:
+          RECHECK_DATABASE_URL: ${{ secrets.RECHECK_DATABASE_URL }}
+          RECHECK_SECRET_KEY: ${{ secrets.RECHECK_SECRET_KEY }}
+          RECHECK_POLLER_DATABASE_URL: ${{ secrets.RECHECK_POLLER_DATABASE_URL }}
+          # Staff sign-in with Auth0. The callback is {RECHECK_PUBLIC_URL}/api/staff/callback.
+          AUTH0_DOMAIN: ${{ vars.AUTH0_DOMAIN }}
+          AUTH0_CLIENT_ID: ${{ vars.AUTH0_CLIENT_ID }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+          # "true" keeps the demo role picker as a fallback if Auth0 fails on demo day.
+          RECHECK_DEMO_STAFF: ${{ vars.RECHECK_DEMO_STAFF }}
+          # This box is the demo machine, so its API runs the missed check-in and escalation timers.
+          # Their writes to the shared database can't be undone; set the variable to 0 to turn them off.
+          RECHECK_SCHEDULER_SECONDS: ${{ vars.RECHECK_SCHEDULER_SECONDS || '15' }}
+        run: |
+          profiles=https
+          if [ -n "$RECHECK_POLLER_DATABASE_URL" ]; then profiles=https,poller; fi
+          # Sent over stdin so the secrets never appear in a command line.
+          {
+            printf 'COMPOSE_PROFILES=%s\n' "$profiles"
+            printf 'SITE_ADDRESS=%s\n' "$SITE_ADDRESS"
+            printf 'RECHECK_PUBLIC_URL=https://%s\n' "$SITE_ADDRESS"
+            printf 'RECHECK_COOKIE_SECURE=true\n'
+            printf 'RECHECK_DATABASE_URL=%s\n' "$RECHECK_DATABASE_URL"
+            printf 'RECHECK_SECRET_KEY=%s\n' "$RECHECK_SECRET_KEY"
+            printf 'RECHECK_POLLER_DATABASE_URL=%s\n' "$RECHECK_POLLER_DATABASE_URL"
+            printf 'AUTH0_DOMAIN=%s\n' "$AUTH0_DOMAIN"
+            printf 'AUTH0_CLIENT_ID=%s\n' "$AUTH0_CLIENT_ID"
+            printf 'AUTH0_CLIENT_SECRET=%s\n' "$AUTH0_CLIENT_SECRET"
+            printf 'RECHECK_DEMO_STAFF=%s\n' "$RECHECK_DEMO_STAFF"
+            printf 'RECHECK_SCHEDULER_SECONDS=%s\n' "$RECHECK_SCHEDULER_SECONDS"
+          } | ssh box 'umask 077 && cat > ~/re-check/.env'
+
+      - name: Pull and restart
+        run: |
+          # $GITHUB_SHA expands here on the runner, on purpose.
+          ssh box "set -e
+            cd ~/re-check
+            git fetch --depth 1 origin $GITHUB_SHA
+            git checkout --force --detach FETCH_HEAD
+            docker compose up -d --build --remove-orphans
+            docker image prune -f > /dev/null
+            docker compose ps"
+
+      - name: Smoke test
+        run: |
+          for _ in $(seq 1 18); do
+            if curl -fsS "https://$SITE_ADDRESS/api/health"; then echo; exit 0; fi
+            sleep 10
+          done
+          echo "::error::https://$SITE_ADDRESS/api/health did not return 200 within 3 minutes"
+          ssh box 'cd ~/re-check && docker compose logs --tail 50'
+          exit 1
+
+      - name: Summary
+        run: echo "Deployed $GITHUB_SHA to https://$SITE_ADDRESS" >> "$GITHUB_STEP_SUMMARY"
