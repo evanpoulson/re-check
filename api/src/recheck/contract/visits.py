@@ -65,18 +65,17 @@ class VisitEnrolled(OutputModel):
     visit_id: UUID
     app_exclusion: AppExclusion | None = None
     link: str | None = Field(
-        description="URL for the visit's QR. Reusable until it expires; one device signed in at a time."
+        description=(
+            "URL for the visit's QR. Works while the visit is waiting; one device signed in at a time."
+        )
     )
-    link_expires_at: Timestamp | None
     pager_no: PagerNumber | None = None
 
     @model_validator(mode="after")
     def _link_matches_offer(self) -> Self:
-        if self.app_exclusion is None and (self.link is None or self.link_expires_at is None):
-            raise ValueError("an app visit needs a link and its expiry")
-        if self.app_exclusion is not None and any(
-            v is not None for v in (self.link, self.link_expires_at, self.pager_no)
-        ):
+        if self.app_exclusion is None and self.link is None:
+            raise ValueError("an app visit needs a link")
+        if self.app_exclusion is not None and any(v is not None for v in (self.link, self.pager_no)):
             raise ValueError("a visit without the app has no link or pager")
         return self
 
@@ -91,7 +90,6 @@ class VisitLink(OutputModel):
 
     visit_id: UUID
     link: str
-    link_expires_at: Timestamp
 
 
 class VisitExclusionUpdate(InputModel):

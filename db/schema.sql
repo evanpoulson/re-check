@@ -130,8 +130,9 @@ $$;
 
 -- ---------------------------------------------------------------------------
 -- visit: one waiting-room stay (FR1 to FR3)
--- No name or health number is stored. Each app visit has one QR token, reusable
--- until it expires. It is stored twice: a SHA-256 hash to look it up on scan,
+-- No name or health number is stored. Each app visit has one QR token. It has
+-- no expiry: it works while the visit is waiting and offers the app (sign-in
+-- checks this) and stops when the visit closes or is excluded. It is stored twice: a SHA-256 hash to look it up on scan,
 -- and a copy encrypted by the API server (key held outside the database) so
 -- the desk can show the same QR again. Neither reaches the audit log.
 -- ---------------------------------------------------------------------------
@@ -153,7 +154,6 @@ CREATE TABLE visit (
     -- person who scans it chooses patient or companion (FR11).
     token_hash               bytea            UNIQUE CHECK (octet_length(token_hash) = 32),
     token_ciphertext         bytea            CHECK (octet_length(token_ciphertext) BETWEEN 16 AND 512),
-    token_expires_at         timestamptz,
     triaged_at               timestamptz      NOT NULL DEFAULT now(),
     status                   visit_status     NOT NULL DEFAULT 'waiting',
     closed_at                timestamptz,
@@ -167,7 +167,7 @@ CREATE TABLE visit (
     -- and token history; visit_exclusion_guard handles that change.
     CONSTRAINT visit_app_offer CHECK (
         CASE WHEN app_exclusion IS NULL THEN
-            num_nulls(channel, token_hash, token_ciphertext, token_expires_at) = 0
+            num_nulls(channel, token_hash, token_ciphertext) = 0
         ELSE
             next_prompt_due_at IS NULL
         END
@@ -199,7 +199,7 @@ CREATE FUNCTION visit_set_first_due() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
     IF NEW.app_exclusion IS NOT NULL
-       AND num_nonnulls(NEW.channel, NEW.pager_no, NEW.token_hash, NEW.token_ciphertext, NEW.token_expires_at) > 0 THEN
+       AND num_nonnulls(NEW.channel, NEW.pager_no, NEW.token_hash, NEW.token_ciphertext) > 0 THEN
         RAISE EXCEPTION 'a visit enrolled without the app has no channel, pager or QR tokens'
             USING ERRCODE = 'check_violation';
     END IF;

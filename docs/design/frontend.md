@@ -59,7 +59,7 @@ Fields exactly as the contract and schema:
 - `channel`: phone or pager. `pager_no` (1 to 6 digits) appears only for pager. A pager already bound to a waiting patient is rejected by the schema, so show the server error inline.
 - A client `submission_id` is generated once and reused on retry.
 
-After submit (`VisitEnrolled`), show one QR card (`link`) with Print and Save and the expiry from `link_expires_at`. The same code serves the patient and the companion: whoever scans it chooses who they are. Only one device is signed in at a time. To switch people or phones, the nurse opens the visit and taps **Show QR**, which fetches `VisitLink` (the same code again). Also show when the first prompt and the staff reassessment are due (CTAS demo defaults of 15, 30, 60 and 120 minutes). For pager patients, the same QR is the phone fallback.
+After submit (`VisitEnrolled`), show one QR card (`link`) with Print and Save. The code has no expiry: it works while the visit is waiting and stops when the visit closes. The same code serves the patient and the companion: whoever scans it chooses who they are. Only one device is signed in at a time. To switch people or phones, the nurse opens the visit and taps **Show QR**, which fetches `VisitLink` (the same code again). Also show when the first prompt and the staff reassessment are due (CTAS demo defaults of 15, 30, 60 and 120 minutes). For pager patients, the same QR is the phone fallback.
 
 ```
 +--------------------------------------------------------------+
@@ -72,7 +72,7 @@ After submit (`VisitEnrolled`), show one QR card (`link`) with Print and Save an
    after submit:
 +--------------------------+
 |        [ VISIT QR ]      |  Patient or companion scans.
-|  Scan to check in        |  Expires 14:30
+|  Scan to check in        |  Works while waiting
 |  [Print] [Save]          |  First check-in 14:15
 +--------------------------+  Show again from the visit.
 ```
@@ -128,7 +128,7 @@ Subscribe to `DashboardEvent` and refetch the affected view, since events are ch
 
 ## Patient and companion side (`/v/:token`, then `/check-in`)
 
-After scanning, the person picks **"I'm the patient"** or **"I'm with the patient"**. The `POST` token exchange (`TokenExchange` with `role`) returns `SessionInfo`, and an HttpOnly cookie holds the session. If another device is already signed in, the server answers 409 with `SignInConflict` (who is signed in and since when). Show **"This will sign out the other device"** and, only after the person confirms, resend with `takeover_session_id` from the 409. If someone else took over in the meantime, the server answers 409 again and the person is asked again. Sessions have no timer: they end on takeover, when the person taps **Sign out** (`SignOut`), when staff sign the device out (`StaffSignOut`), or when the visit closes. A signed-out device can't send anything, including reports it queued offline, so it shows "You've been signed out. If you need help now, tell a staff member." and a way to scan again. An invalid or expired token shows "Ask the triage desk for a new code".
+After scanning, the person picks **"I'm the patient"** or **"I'm with the patient"**. The `POST` token exchange (`TokenExchange` with `role`) returns `SessionInfo`, and an HttpOnly cookie holds the session. If another device is already signed in, the server answers 409 with `SignInConflict` (who is signed in and since when). Show **"This will sign out the other device"** and, only after the person confirms, resend with `takeover_session_id` from the 409. If someone else took over in the meantime, the server answers 409 again and the person is asked again. Sessions have no timer: they end on takeover, when the person taps **Sign out** (`SignOut`), when staff sign the device out (`StaffSignOut`), or when the visit closes. A signed-out device can't send anything, including reports it queued offline, so it shows "You've been signed out. If you need help now, tell a staff member." and a way to scan again. An unknown token, or one for a visit that has closed, shows "This code is no longer active. Please speak to the triage desk."
 
 Every screen shows the wait range when present, "Your answers never change your place in line.", a language switch, a "What we store" link to the `PrivacyPanel`, and the persistent `HelpBar` (I'm worried, I need help now).
 

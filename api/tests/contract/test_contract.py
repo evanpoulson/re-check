@@ -226,12 +226,12 @@ def test_app_exclusion_means_no_channel():
 
 def test_enrolment_returns_one_link_for_an_app_visit():
     now = datetime(2026, 11, 7, 20, 15, tzinfo=timezone.utc)
-    VisitEnrolled(visit_id=uuid4(), link="https://x/v/abc", link_expires_at=now)
-    VisitEnrolled(visit_id=uuid4(), app_exclusion="child", link=None, link_expires_at=None)
+    VisitEnrolled(visit_id=uuid4(), link="https://x/v/abc")
+    VisitEnrolled(visit_id=uuid4(), app_exclusion="child", link=None)
     with pytest.raises(ValidationError):
-        VisitEnrolled(visit_id=uuid4(), link=None, link_expires_at=now)
+        VisitEnrolled(visit_id=uuid4(), link=None)
     with pytest.raises(ValidationError):
-        VisitEnrolled(visit_id=uuid4(), app_exclusion="child", link="https://x/v/abc", link_expires_at=now)
+        VisitEnrolled(visit_id=uuid4(), app_exclusion="child", link="https://x/v/abc")
 
 
 TOKEN = "A" * 32
