@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { Link } from 'react-router'
 import { useTranslation } from 'react-i18next'
 import { getWorklist } from '@/api/api'
-import { LevelChip } from '@/components/LevelChip'
 import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { shortRef } from '@/lib/board'
@@ -12,7 +11,7 @@ import { clock, formatMinutes, isDueNow, useNow } from '@/lib/time'
 import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
 import { cn } from '@/lib/utils'
-import { TaskStatus } from './TaskStatus'
+import { TaskLevelLabel, TaskStatus } from './TaskStatus'
 import { useDashboardEvents } from './useDashboardEvents'
 
 export function Physician() {
@@ -108,15 +107,14 @@ export function Physician() {
                 <li key={id}>
                   <Link className="review-row" to={`/staff/visits/${id}`} aria-labelledby={`reason-${id} ref-${id}`}>
                     <div className="concern-cell">
-                      <LevelChip level={task.level} />
+                      <TaskLevelLabel level={task.level} />
                       <h2 id={`reason-${id}`}>{label}</h2>
                       <p>
                         <strong id={`ref-${id}`}>{ref}</strong> · {t(`complaint.${row.visit.complaint_group}`)} · CTAS {row.visit.ctas} · {clock(reason?.fired_at ?? task.created_at)}
                       </p>
                     </div>
                     <div className="review-status">
-                      <TaskStatus task={task} now={now} />
-                      {staffDelta !== null && <p>{t('review.staffDue', { timing: duration(staffDelta) })}</p>}
+                      <TaskStatus task={task} now={now} notes={[staffDelta !== null && t('review.staffDue', { timing: duration(staffDelta) })]} />
                     </div>
                     <ArrowRight aria-hidden className="row-arrow size-[1.125rem] rtl:-scale-x-100" />
                   </Link>
