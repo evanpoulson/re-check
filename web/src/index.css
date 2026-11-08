@@ -1,13 +1,59 @@
 @import 'tailwindcss';
 
-/* Minimal base. Design tokens and component styles arrive in feat/design-system. */
-:root {
-  font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
-  color: #0f172a;
-  background: #f8fafc;
+/*
+  Design tokens. Calm clinical light theme: slate neutrals and one teal-blue
+  primary. Task-level colours map 1:1 to the contract's TaskLevel and are always
+  paired with an icon and a text label, never colour alone. There is no bright
+  green: "fine" is muted grey.
+*/
+@theme {
+  --font-sans: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  --color-brand-50: #effafa;
+  --color-brand-100: #d5f3f2;
+  --color-brand-500: #0e8f9a;
+  --color-brand-600: #0b7782;
+  --color-brand-700: #0a606a;
+
+  --color-ink: #0f172a;
+  --color-muted: #475569;
+  --color-line: #cbd5e1;
+  --color-surface: #ffffff;
+  --color-canvas: #f4f7fa;
+
+  --color-level-red: #991b1b;
+  --color-level-red-bg: #fee2e2;
+  --color-level-amber: #92400e;
+  --color-level-amber-bg: #fef3c7;
+  --color-level-silent: #5b21b6;
+  --color-level-silent-bg: #ede9fe;
+  --color-level-leave: #9a3412;
+  --color-level-leave-bg: #ffedd5;
+  --color-level-overdue: #334155;
+  --color-level-overdue-bg: #e2e8f0;
 }
 
-body {
-  margin: 0;
-  min-height: 100dvh;
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    color: var(--color-ink);
+    background: var(--color-canvas);
+  }
+  body {
+    margin: 0;
+    min-height: 100dvh;
+  }
+  :focus-visible {
+    outline: 3px solid var(--color-brand-600);
+    outline-offset: 2px;
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
 }
