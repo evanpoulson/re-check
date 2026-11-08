@@ -4,12 +4,17 @@ version = "0.1.0"
 description = "Recheck API, rules, scheduled checks and simulator"
 requires-python = ">=3.12"
 dependencies = [
-    "psycopg[binary]>=3.2,<4",
+    "cryptography>=50.0.2",
+    "fastapi>=0.162.2",
+    "psycopg[binary,pool]>=3.3.8",
     "pydantic>=2.14,<3",
+    "python-dotenv>=1.2.4",
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [dependency-groups]
 dev = [
+    "httpx>=0.28.1",
     "hypothesis>=6",
     "pytest>=8",
 ]
@@ -23,3 +28,4 @@ packages = ["src/recheck"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["live: uses the real database in RECHECK_DATABASE_URL (skip with -m 'not live')"]

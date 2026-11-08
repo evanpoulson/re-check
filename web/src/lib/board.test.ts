@@ -32,6 +32,8 @@ function row(id: string, ctas: number, triagedMinAgo: number, level: BoardRow['l
       next_prompt_due_at: iso(-10),
       staff_reassess_due_at: iso(-10),
       last_staff_check_at: null,
+      signed_in_as: null,
+      signed_in_since: null,
     },
     open_task: null,
     silent: false,

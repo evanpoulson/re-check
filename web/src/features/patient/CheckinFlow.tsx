@@ -26,15 +26,16 @@ interface Props {
 
 /**
  * One question per screen, in the order the question bank's base section sets:
- * who is answering, two wellness questions, pain (patient), new warning signs,
- * the circle check (patient), then the visit's follow-up questions. Leaving
- * early sends what was answered as a partial check-in.
+ * two wellness questions, pain (patient), new warning signs, the circle check
+ * (patient), then the visit's follow-up questions. Who is answering comes from
+ * the sign-in, so it is never asked. Leaving early sends what was answered as a
+ * partial check-in.
  */
 export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel, onPromptExpired, sending }: Props) {
   const { t } = useTranslation()
   const [index, setIndex] = useState(0)
-  // The QR already says who is answering, so preselect it. The answer becomes the report's reporter.
-  const [reporter, setReporter] = useState<Role>(home.role)
+  // Whoever signed in on this device is the reporter; the server rejects any other.
+  const reporter: Role = home.role
   const [draft, setDraft] = useState<CheckinDraft>({ items: {} })
   // Created once and reused, so a retry of the same check-in is a duplicate, not a new report.
   const submissionId = useRef(newSubmissionId())
@@ -60,7 +61,6 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
   const answered = (s: Step, d: CheckinDraft): boolean => {
     if (s.kind === 'item') return d.items[s.item.key] !== undefined
     switch (s.linkId) {
-      case 'answerer': return true
       case 'feeling_now': return d.feelingNow !== undefined
       case 'feeling_change': return d.feelingChange !== undefined
       case 'pain': return d.pain !== undefined
@@ -69,7 +69,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
       default: return false
     }
   }
-  const anyAnswered = steps.some((s) => s.kind !== 'base' || s.linkId !== 'answerer' ? answered(s, draft) : false)
+  const anyAnswered = steps.some((s) => answered(s, draft))
 
   function send(d: CheckinDraft) {
     onSubmit(
@@ -106,7 +106,7 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
         <CircleCheck key={prompt.prompt_id} prompt={prompt} role={reporter} onDone={onCircleDone} onExpired={onPromptExpired} />
       ) : (
         <>
-          <StepView step={step} reporter={reporter} setReporter={setReporter} draft={draft} setDraft={setDraft} />
+          <StepView step={step} reporter={reporter} draft={draft} setDraft={setDraft} />
           <div className="grid gap-3">
             <Button size="lg" disabled={!answered(step, draft) || sending} onClick={() => next(draft)}>
               {last ? t('flow.send') : t('flow.next')}
@@ -130,7 +130,6 @@ export function CheckinFlow({ home, mode = 'full', itemKeys, onSubmit, onCancel,
 interface ViewProps {
   step: Step
   reporter: Role
-  setReporter: (r: Role) => void
   draft: CheckinDraft
   setDraft: (d: CheckinDraft) => void
 }
@@ -171,24 +170,9 @@ function NotSure({ selected, onClick }: { selected: boolean; onClick: () => void
   )
 }
 
-function StepView({ step, reporter, setReporter, draft, setDraft }: ViewProps) {
+function StepView({ step, reporter, draft, setDraft }: ViewProps) {
   if (step.kind === 'item') return <ItemStep item={step.item} draft={draft} setDraft={setDraft} />
   const { linkId } = step
-
-  if (linkId === 'answerer') {
-    return (
-      <>
-        <Question>{text('answerer', reporter)}</Question>
-        <div className="grid gap-3">
-          {options('answerer').map((o) => (
-            <AnswerButton key={o.code} selected={reporter === o.code} onClick={() => setReporter(o.code as Role)}>
-              {o.text}
-            </AnswerButton>
-          ))}
-        </div>
-      </>
-    )
-  }
 
   if (linkId === 'feeling_now' || linkId === 'feeling_change') {
     const key = linkId === 'feeling_now' ? 'feelingNow' : 'feelingChange'

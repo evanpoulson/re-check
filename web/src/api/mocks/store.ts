@@ -24,17 +24,22 @@ import type {
   ReportReceipt,
   ReportRecord,
   Role,
+  SessionEndReason,
   SessionInfo,
+  SessionRecord,
+  SignInConflict,
   StaffRef,
   Task,
   TaskEvent,
   TaskLevel,
   TimelineEntry,
+  TokenExchange,
   TrendPoint,
   TriageBoard,
   VisitCreate,
   VisitDetail,
   VisitEnrolled,
+  VisitLink,
   VisitSummary,
   VitalsCreate,
   VitalsRecord,
@@ -44,9 +49,12 @@ import type {
 
 export class MockError extends Error {
   readonly status: number
-  constructor(status: number, message: string) {
+  /** Sent as the response body instead of `{ detail }`, e.g. a SignInConflict. */
+  readonly body?: unknown
+  constructor(status: number, message: string, body?: unknown) {
     super(message)
     this.status = status
+    this.body = body
   }
 }
 
@@ -57,10 +65,10 @@ interface Prompt {
 }
 interface Rec {
   visit: VisitSummary
-  patientToken: string | null
-  companionToken: string | null
-  patientTokenUsed: boolean
-  companionTokenUsed: boolean
+  /** One QR token per app visit, null when the app is not offered. */
+  token: string | null
+  /** Every sign-in, oldest first. At most one is open (no ended_at). */
+  sessions: SessionRecord[]
   reports: ReportRecord[]
   vitals: VitalsRecord[]
   flags: FlagRecord[]
@@ -75,13 +83,15 @@ interface State {
   visits: Rec[]
   submissions: Record<string, { fingerprint: string; receipt: ReportReceipt }>
 }
+/** This device's sign-in, standing in for the HttpOnly session cookie. */
 interface Session {
   visitId: string
+  sessionId: string
   role: Role
 }
 
-const KEY = 'recheck-mock-state-v2'
-const SESSION_KEY = 'recheck-mock-session-v2'
+const KEY = 'recheck-mock-state-v3'
+const SESSION_KEY = 'recheck-mock-session-v3'
 export const NURSE: StaffRef = { user_id: 'demo-nurse', role: 'triage_nurse' }
 const LEVELS: TaskLevel[] = ['overdue', 'leave_risk', 'silent', 'amber', 'red']
 const MIN = 60_000
@@ -226,11 +236,11 @@ function seed(now: number): State {
       next_prompt_due_at: s.promptDueMin === null ? null : iso(now + s.promptDueMin * MIN),
       staff_reassess_due_at: iso(now + s.reassessDueMin * MIN),
       last_staff_check_at: iso(now - s.triagedMinAgo * MIN),
+      signed_in_as: null,
+      signed_in_since: null,
     },
-    patientToken: s.exclusion ? null : `demo-patient-${s.ref}-token`,
-    companionToken: s.exclusion ? null : `demo-companion-${s.ref}-token`,
-    patientTokenUsed: false,
-    companionTokenUsed: false,
+    token: s.exclusion ? null : `demo-${s.ref}-token`,
+    sessions: [],
     reports: [],
     vitals: [],
     flags: [],
@@ -283,6 +293,10 @@ function seed(now: number): State {
   addCheckin(calm, 20, 'same', 'good', 2, [])
   const first = addCheckin(head, 62, 'same', 'ok', 3, [])
   addCheckin(confused, 12, 'same', 'ok', null, [], {}, 'companion')
+
+  // A companion's phone is already signed in here, so scanning this visit's QR
+  // on another device asks to take over.
+  startSession(confused, 'companion', now - 30 * MIN, null)
 
   raise(chest, 'red', 'finding_chest_pain', 'report', worse, now - 3 * MIN)
   raise(head, 'silent', 'missed_checkin', 'report', first, now - 5 * MIN)
@@ -414,11 +428,11 @@ export function enrol(body: VisitCreate): VisitEnrolled {
       next_prompt_due_at: exclusion ? null : iso(now + interval * MIN),
       staff_reassess_due_at: iso(now + interval * MIN),
       last_staff_check_at: null,
+      signed_in_as: null,
+      signed_in_since: null,
     },
-    patientToken: exclusion ? null : randomToken(),
-    companionToken: exclusion ? null : randomToken(),
-    patientTokenUsed: false,
-    companionTokenUsed: false,
+    token: exclusion ? null : randomToken(),
+    sessions: [],
     reports: [],
     vitals: [],
     flags: [],
@@ -431,17 +445,32 @@ export function enrol(body: VisitCreate): VisitEnrolled {
   s.visits.push(rec)
   save(s)
   notify(rec.visit.visit_id, 'visit.changed')
-  if (exclusion) {
-    return { visit_id: rec.visit.visit_id, app_exclusion: exclusion, patient_link: null, companion_link: null, links_expire_at: null, pager_no: null }
-  }
   return {
     visit_id: rec.visit.visit_id,
-    app_exclusion: null,
-    patient_link: `${origin()}/v/${rec.patientToken}`,
-    companion_link: `${origin()}/v/${rec.companionToken}`,
-    links_expire_at: iso(now + 240 * MIN),
-    pager_no: rec.visit.pager_no,
+    app_exclusion: exclusion,
+    link: rec.token ? linkFor(rec.token) : null,
+    pager_no: exclusion ? null : rec.visit.pager_no,
   }
+}
+
+const linkFor = (token: string) => `${origin()}/v/${token}`
+
+/** The visit's QR again, for the desk. Refused once the visit closes or stops offering the app. */
+export function visitLink(visitId: string): VisitLink {
+  const r = findRec(load(), visitId)
+  if (r.visit.status !== 'waiting') throw new MockError(410, 'The visit is closed')
+  if (r.visit.app_exclusion || !r.token) throw new MockError(409, 'The app is not offered for this visit')
+  return { visit_id: visitId, link: linkFor(r.token) }
+}
+
+/** Staff sign out whichever device is signed in, for example a lost phone. */
+export function staffSignOut(visitId: string) {
+  const s = load()
+  const r = findRec(s, visitId)
+  if (!openSession(r)) throw new MockError(409, 'No device is signed in')
+  endSession(r, 'staff_signed_out', Date.now())
+  save(s)
+  notify(visitId, 'visit.changed')
 }
 
 /** Staff stop offering the app. Irreversible: prompts stop, devices are signed out, the staff timer keeps running. */
@@ -450,6 +479,7 @@ export function setExclusion(visitId: string, reason: AppExclusion) {
   const r = findRec(s, visitId)
   if (r.visit.app_exclusion) throw new MockError(409, 'an app exclusion cannot be removed or changed')
   r.visit = { ...r.visit, app_exclusion: reason, next_prompt_due_at: null }
+  endSession(r, 'app_excluded', Date.now())
   save(s)
   notify(visitId, 'visit.changed')
 }
@@ -525,13 +555,13 @@ export function triageBoard(): TriageBoard {
   return { generated_at: iso(now), rows }
 }
 
-const stamp = (e: TimelineEntry) => Date.parse('received_at' in e ? e.received_at : e.at)
+const stamp = (e: TimelineEntry) => Date.parse('received_at' in e ? e.received_at : 'started_at' in e ? e.started_at : e.at)
 
 export function visitDetail(id: string): VisitDetail {
   const s = load()
   tick(s, Date.now())
   const r = findRec(s, id)
-  const timeline: TimelineEntry[] = [...r.reports, ...r.vitals, ...r.flags, ...r.events].sort((a, b) => stamp(a) - stamp(b))
+  const timeline: TimelineEntry[] = [...r.reports, ...r.vitals, ...r.flags, ...r.events, ...r.sessions].sort((a, b) => stamp(a) - stamp(b))
   return { visit: r.visit, open_task: r.task, timeline }
 }
 
@@ -592,6 +622,7 @@ export function acknowledge(taskId: string): Task {
 
 function closeVisit(r: Rec, status: 'roomed' | 'left' | 'discharged', now: number) {
   r.visit = { ...r.visit, status, closed_at: iso(now) }
+  endSession(r, 'visit_closed', now)
 }
 
 export function assess(taskId: string, disposition: Disposition): Task {
@@ -633,37 +664,90 @@ const getSession = (): Session | null => {
   }
 }
 
-export function exchange(tok: string): SessionInfo {
-  const s = load()
-  const r = s.visits.find((v) => v.patientToken === tok || v.companionToken === tok)
-  if (!r) throw new MockError(404, 'Unknown code')
-  if (r.visit.app_exclusion) throw new MockError(410, 'The app is not offered for this visit')
-  const role: Role = r.patientToken === tok ? 'patient' : 'companion'
-  const used = role === 'patient' ? r.patientTokenUsed : r.companionTokenUsed
-  const mine = getSession()
-  const sameDevice = mine?.visitId === r.visit.visit_id && mine.role === role
-  if (Date.now() - Date.parse(r.visit.triaged_at) > 240 * MIN) throw new MockError(410, 'This code has expired')
-  if (used && !sameDevice) throw new MockError(410, 'This code was already used')
-  if (role === 'patient') r.patientTokenUsed = true
-  else r.companionTokenUsed = true
-  const session: Session = { visitId: r.visit.visit_id, role }
+const setDevice = (session: Session | null) => {
   memorySession = session
   try {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    if (session) sessionStorage.setItem(SESSION_KEY, JSON.stringify(session))
+    else sessionStorage.removeItem(SESSION_KEY)
   } catch {
     /* memory only */
   }
-  save(s)
-  return { role, language: r.visit.language, expires_at: iso(Date.now() + 240 * MIN) }
 }
 
+const openSession = (r: Rec) => r.sessions.find((x) => x.ended_at === null) ?? null
+
+function startSession(r: Rec, role: Role, at: number, replaces: string | null): SessionRecord {
+  const rec: SessionRecord = {
+    type: 'session',
+    session_id: uuid(),
+    visit_id: r.visit.visit_id,
+    role,
+    started_at: iso(at),
+    ended_at: null,
+    end_reason: null,
+    replaces,
+  }
+  r.sessions.push(rec)
+  r.visit = { ...r.visit, signed_in_as: role, signed_in_since: rec.started_at }
+  return rec
+}
+
+function endSession(r: Rec, reason: SessionEndReason, at: number) {
+  const open = openSession(r)
+  if (!open) return
+  Object.assign(open, { ended_at: iso(at), end_reason: reason })
+  r.visit = { ...r.visit, signed_in_as: null, signed_in_since: null }
+}
+
+/**
+ * Scan the QR and say who is using this device. One device per visit: if
+ * another is signed in, answer 409 with SignInConflict until the person
+ * confirms by resending that session's id as `takeover_session_id`.
+ */
+export function exchange(body: TokenExchange): SessionInfo {
+  const s = load()
+  const r = s.visits.find((v) => v.token !== null && v.token === body.token)
+  if (!r) throw new MockError(404, 'Unknown code')
+  if (r.visit.status !== 'waiting' || r.visit.app_exclusion) throw new MockError(410, 'This code is no longer active')
+  const now = Date.now()
+  const open = openSession(r)
+  const mine = getSession()
+  let replaced = false
+  let replaces: string | null = null
+  if (open && mine?.sessionId === open.session_id) {
+    // This device signing in again, for example to switch role.
+    endSession(r, 'signed_out', now)
+  } else if (open && body.takeover_session_id === open.session_id) {
+    endSession(r, 'takeover', now)
+    replaced = true
+    replaces = open.session_id
+  } else if (open) {
+    const conflict: SignInConflict = { session_id: open.session_id, signed_in_as: open.role, signed_in_since: open.started_at }
+    throw new MockError(409, 'Another device is signed in', conflict)
+  }
+  const session = startSession(r, body.role, now, replaces)
+  setDevice({ visitId: r.visit.visit_id, sessionId: session.session_id, role: body.role })
+  save(s)
+  notify(r.visit.visit_id, 'visit.changed')
+  return { role: body.role, language: r.visit.language, replaced_other_device: replaced }
+}
+
+/** This device signs itself out. The visit's QR still works for the next sign-in. */
+export function signOut() {
+  const { s, r } = requireSession()
+  endSession(r, 'signed_out', Date.now())
+  setDevice(null)
+  save(s)
+  notify(r.visit.visit_id, 'visit.changed')
+}
+
+/** The open session must be this device's: takeover, sign-out and closing the visit all end it. */
 function requireSession() {
   const sess = getSession()
   if (!sess) throw new MockError(401, 'No session')
   const s = load()
   const r = findRec(s, sess.visitId)
-  // Excluding a visit signs out its devices.
-  if (r.visit.app_exclusion) throw new MockError(401, 'Session revoked')
+  if (openSession(r)?.session_id !== sess.sessionId) throw new MockError(401, 'Signed out')
   return { s, r, role: sess.role }
 }
 
@@ -679,7 +763,8 @@ export function patientHome(): PatientHome {
   const home: PatientHome = {
     role,
     language: r.visit.language,
-    wait_range: { low_minutes: 30, high_minutes: 90, source: 'site_estimate', as_of: iso(now_) },
+    wait_estimate: { minutes: 287, source: 'ahs_feed', as_of: iso(now_ - 2 * 60_000) },
+    waited_minutes: Math.max(0, Math.floor((now_ - Date.parse(r.visit.triaged_at)) / 60_000)),
     next_checkin_due_at: r.visit.next_prompt_due_at,
     questionnaire_version: bankVersion,
     items: keys.map((k) => questionItem(k, role)),
@@ -703,6 +788,7 @@ export function submitReport(body: PatientReport): ReportReceipt {
   const now = Date.now()
 
   let attentionReason: 'attention_incorrect' | 'attention_unanswered' | null = null
+  if (body.reporter !== role) throw new MockError(422, 'reporter must match the role chosen at sign-in')
   if (body.kind === 'checkin') {
     if (body.reporter === 'companion') {
       if (body.pain.kind !== 'missing') throw new MockError(422, 'pain is self-reported; a companion must send it as missing')
@@ -792,7 +878,6 @@ export function submitReport(body: PatientReport): ReportReceipt {
     patient_message: message,
     follow_up_items: followUpKeys,
   }
-  void role
   s.submissions[body.submission_id] = { fingerprint, receipt }
   save(s)
   notify(r.visit.visit_id, 'report.received')

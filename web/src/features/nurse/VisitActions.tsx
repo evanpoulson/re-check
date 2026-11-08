@@ -1,11 +1,22 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { acknowledgeTask, assessTask, postFlagHigher, postVitals, updateVisitExclusion, updateVisitStatus } from '@/api/api'
+import {
+  acknowledgeTask,
+  assessTask,
+  getVisitLink,
+  postFlagHigher,
+  postVitals,
+  staffSignOut,
+  updateVisitExclusion,
+  updateVisitStatus,
+} from '@/api/api'
 import { ApiError, newSubmissionId } from '@/api/client'
-import type { AppExclusion, Disposition, VisitDetail, VitalsRecord } from '@/api/types'
+import type { AppExclusion, Disposition, VisitDetail, VisitSummary, VitalsRecord } from '@/api/types'
+import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { signedInText } from '@/lib/session'
 import { emptyVitals, validateVitals, type VitalsError, type VitalsForm } from '@/lib/vitals'
 
 const DISPOSITIONS: Disposition[] = [
@@ -135,6 +146,8 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
         </form>
       </Card>
 
+      {!visit.app_exclusion && visit.status === 'waiting' && <DeviceCard visit={visit} />}
+
       <Card className="space-y-3">
         <h3 className="text-lg font-semibold tracking-tight">{t('actions.flagHigher')}</h3>
         <p className="text-sm text-muted">{t('actions.flagHelp')}</p>
@@ -186,5 +199,44 @@ export function VisitActions({ detail }: { detail: VisitDetail }) {
         {status.error && <p role="alert" className="font-semibold text-level-red">{status.error}</p>}
       </Card>
     </section>
+  )
+}
+
+/**
+ * Who is signed in, the visit's QR again, and signing a device out. The QR is
+ * fetched each time it is shown, because the server logs every re-show.
+ */
+function DeviceCard({ visit }: { visit: VisitSummary }) {
+  const { t } = useTranslation()
+  const [link, setLink] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const show = useMutation({
+    mutationFn: () => getVisitLink(visit.visit_id),
+    onSuccess: (v) => {
+      setError(null)
+      setLink(v.link)
+    },
+    onError: () => setError(t('actions.showQrFailed')),
+  })
+  const signOut = useAction(visit.visit_id, (_: void, submission_id) => staffSignOut(visit.visit_id, { submission_id }))
+
+  return (
+    <Card className="space-y-3">
+      <h3 className="font-semibold">{t('actions.device')}</h3>
+      <p>{signedInText(visit, t)}</p>
+      <p className="text-sm text-muted">{t('actions.deviceHelp')}</p>
+      <div className="flex flex-wrap gap-3">
+        {link ? (
+          <Button variant="secondary" onClick={() => setLink(null)}>{t('actions.hideQr')}</Button>
+        ) : (
+          <Button variant="secondary" disabled={show.isPending} onClick={() => show.mutate()}>{t('actions.showQr')}</Button>
+        )}
+        {visit.signed_in_as && (
+          <Button variant="secondary" disabled={signOut.pending} onClick={() => signOut.run()}>{t('actions.signOutDevice')}</Button>
+        )}
+      </div>
+      {link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={link} />}
+      {(error || signOut.error) && <p role="alert" className="font-semibold text-level-red">{error ?? signOut.error}</p>}
+    </Card>
   )
 }

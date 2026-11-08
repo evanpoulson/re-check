@@ -2,7 +2,7 @@ import { QRCodeSVG } from 'qrcode.react'
 import { useTranslation } from 'react-i18next'
 import { Card } from '@/components/ui/card'
 
-/** A QR card for one single-use link. The QR encodes the exact link the API returned. */
+/** A QR card for the visit's link. The QR encodes the exact link the API returned. */
 export function QrCard({ title, hint, link }: { title: string; hint: string; link: string }) {
   const { t } = useTranslation()
   return (

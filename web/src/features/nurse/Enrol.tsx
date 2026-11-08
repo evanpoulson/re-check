@@ -10,7 +10,6 @@ import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { emptyEnrol, validateEnrol, type EnrolErrors, type EnrolForm } from '@/lib/enrol'
-import { clock } from '@/lib/time'
 
 const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general']
 const LANGUAGES: Language[] = ['en', 'pa', 'tl']
@@ -88,6 +87,7 @@ export function Enrol() {
           </Card>
         ) : (
           <>
+<<<<<<< HEAD
             <p role="alert" className="mx-auto max-w-xl rounded-card bg-level-amber-bg px-5 py-3 text-center font-semibold text-level-amber">
               {t('enrol.shownOnce')}
             </p>
@@ -97,6 +97,13 @@ export function Enrol() {
             </div>
             <p className="text-center text-muted">
               {visit.links_expire_at ? t('enrol.expires', { time: clock(visit.links_expire_at) }) : ''}
+=======
+            <div className="max-w-sm">
+              {visit.link && <QrCard title={t('enrol.qrTitle')} hint={t('enrol.qrHint')} link={visit.link} />}
+            </div>
+            <p className="text-muted">
+              {t('enrol.showAgain')}
+>>>>>>> origin/main
               {pager ? ` ${t('enrol.pagerFallback', { pager: visit.pager_no ?? '' })}` : ''}
             </p>
           </>
