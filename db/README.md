@@ -1,72 +1,79 @@
 # Recheck database
 
-PostgreSQL with TimescaleDB, hosted on Tiger Cloud. [`schema.sql`](schema.sql) is the source of truth for the data model. It must stay in step with the Pydantic contract in [`api/src/recheck/contract/`](../api/src/recheck/contract/) (its enums mirror `codes.py`).
+PostgreSQL with TimescaleDB on Tiger Cloud. [`schema.sql`](schema.sql) is the source of truth for the data model. Keep it aligned with the Pydantic contract in [`api/src/recheck/contract/`](../api/src/recheck/contract/). Its enums mirror `codes.py`.
 
 | Path | Contents |
 | --- | --- |
-| [`schema.sql`](schema.sql) | The whole schema for a fresh database: types, tables, triggers, hypertables and roles |
-| [`migrations/`](migrations/) | Dated changes for a database built from an earlier `schema.sql`. Each one is already folded into `schema.sql`. |
+| [`schema.sql`](schema.sql) | The full schema for an empty database: types, tables, triggers, hypertables, roles |
+| [`migrations/`](migrations/) | Dated changes for a database made from an earlier `schema.sql`. `schema.sql` already has all of them. |
 | [`seed/wait_sites.sql`](seed/wait_sites.sql) | Maps the demo site to its AHS wait-times department |
-| [`tests/schema_checks.sql`](tests/schema_checks.sql) | Behaviour checks that run as the app role and roll back |
+| [`tests/schema_checks.sql`](tests/schema_checks.sql) | Behaviour checks. They run as the app role and roll back. |
 
-Synthetic visits are loaded by the API, not by SQL: see [Synthetic cohort](../api/README.md#synthetic-cohort).
+The API loads the synthetic visits. See [Synthetic cohort](../api/README.md#synthetic-cohort).
 
 ## Tables
 
-| Table | Holds | Writes |
+| Table | Contents | Writes |
 | --- | --- | --- |
-| `visit` | One waiting-room stay: site, CTAS, complaint group, language, channel, QR token hash and encrypted copy, status, both due times. No name or health number. | Insert, update; no delete |
-| `visit_session` | The one signed-in device for a visit, and how each session ended | Insert, update; no delete |
-| `submission` | Client-generated submission IDs, so a retry is recognised as a duplicate | Append-only |
-| `attention_prompt` | The circle-counting check issued for a check-in, kept so the server can score it | Append-only |
-| `report` | Every patient, companion and staff report, from any channel (hypertable, 1-day chunks) | Append-only |
-| `vitals` | Staff-measured vitals; a correction is a new row pointing at the old one (hypertable, 1-day chunks) | Append-only |
-| `task` | The visit's one active review task: level, routing, acknowledgement, assessment, disposition | Insert, update; no delete |
+| `visit` | One waiting-room stay: site, CTAS, complaint group, language, channel, QR token hash and encrypted copy, status, both due times. No name or health number. | Insert, update |
+| `visit_session` | The one signed-in device of a visit, and how each session ended | Insert, update |
+| `submission` | Client-generated submission IDs, to find duplicate retries | Append-only |
+| `attention_prompt` | The circle-counting check for a check-in, kept so that the server can score it | Append-only |
+| `report` | All patient, companion and staff reports, from all channels. Hypertable, 1-day chunks. | Append-only |
+| `vitals` | Vitals that staff measure. A correction is a new row that points to the old row. Hypertable, 1-day chunks. | Append-only |
+| `task` | The one active review task of a visit: level, routing, acknowledgement, assessment, disposition | Insert, update |
 | `task_reason` | Why a rule fired, with its ruleset version and evidence | Append-only |
-| `site_setting` | Site-wide switches the triage nurse can change, such as `show_triage_level` | Insert, update; no delete |
-| `wait_site`, `wait_snapshot` | AHS wait-feed mapping, and one snapshot per poll including failures (hypertable, 7-day chunks) | Admin / poller only |
-| `audit_log` | One row per insert or update, naming the actor (hypertable, 7-day chunks) | Append-only, written by triggers |
+| `site_setting` | Switches for the full site that the triage nurse can change, for example `show_triage_level` | Insert, update |
+| `wait_site` | Maps a Recheck site to an AHS department | Admin only |
+| `wait_snapshot` | One row for each poll of the AHS feed, also failed polls. Hypertable, 7-day chunks. | Poller only, append-only |
+| `audit_log` | One row for each insert or update, with the actor. Hypertable, 7-day chunks. | Triggers only, append-only |
 
-## Rules the schema enforces
+## Rules in the schema
 
-- **Every write names an actor.** A transaction that writes must run `SET LOCAL app.actor = '<id>'` first, or it fails. The API does this in `write_tx` ([`api/src/recheck/db.py`](../api/src/recheck/db.py)).
-- **Append-only history.** Triggers reject `UPDATE`, `DELETE` and `TRUNCATE` on the append-only tables above, and `DELETE` and `TRUNCATE` on the rest. Corrections are new rows. Don't add a retention policy to `report`, `vitals` or `audit_log`.
-- **Escalate-only tasks.** A task's level, escalation and status only move forward, and a recorded acknowledgement or assessment can't be rewritten.
-- **One active task per visit, one signed-in device per visit,** and a physical pager bound to one waiting patient at a time.
-- **First due times.** Inserting a visit sets the first staff reassessment and, for app visits, the first patient prompt to triage time plus `ctas_interval()`: 15, 30, 60 or 120 minutes for CTAS 2 to 5 (demo values).
+- **Each write names an actor.** A transaction that writes must first run `SET LOCAL app.actor = '<id>'`. If it does not, the write fails. The API does this in `write_tx` ([`api/src/recheck/db.py`](../api/src/recheck/db.py)).
+- **No deletes.** Triggers reject `DELETE` and `TRUNCATE` on all tables. On append-only tables, they also reject `UPDATE`. A correction is a new row.
+- **No retention policy.** Do not add one to `report`, `vitals` or `audit_log`.
+- **Tasks only escalate.** The level, the escalation and the status of a task only move forward. You cannot change a recorded acknowledgement or assessment.
+- **One of each.** One active task for each visit. One signed-in device for each visit. One waiting patient for each physical pager.
+- **First due times.** A new visit gets its first staff reassessment at triage time plus `ctas_interval()`. App visits also get their first patient prompt at that time. The intervals are 15, 30, 60 and 120 minutes for CTAS 2 to 5. These are demo values.
 
 ## Roles
 
-| Role | Created by | Can |
+| Role | Made by | Permissions |
 | --- | --- | --- |
-| `recheck_app` | `schema.sql` (no login) | Read and insert everywhere; update only `visit`, `visit_session`, `task` and `site_setting`; read `wait_site` and `wait_snapshot`; never delete or truncate |
-| `recheck_api` | You, by hand | The login role the API and the synthetic loader use. Make it a member of `recheck_app`. |
-| `recheck_poller` | `schema.sql` (no login) | Read `wait_site` and insert `wait_snapshot`, nothing else. Give it a password by hand. |
+| `recheck_app` | `schema.sql`, no login | Read and insert on all app tables. Update only `visit`, `visit_session`, `task` and `site_setting`. Read `wait_site` and `wait_snapshot`. Never delete or truncate. |
+| `recheck_api` | You, manually | The login role for the API and the synthetic loader. A member of `recheck_app`. |
+| `recheck_poller` | `schema.sql`, no login | Read `wait_site` and insert into `wait_snapshot`. Nothing more. |
 
-Never connect the app as `tsdbadmin`; `api/tests/test_db_live.py` checks for this.
+Do not connect the app as `tsdbadmin`. `api/tests/test_db_live.py` checks this.
 
 ## Set up a database
 
-Run as the admin user. `schema.sql` is for an empty database; it is not safe to run twice.
+`schema.sql` is for an empty database. Do not run it two times.
 
-```sh
-psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
-psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -f db/seed/wait_sites.sql      # only if you run the wait-time poller
-psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -f db/tests/schema_checks.sql  # prints "schema checks passed"
-```
+1. As the admin user, run:
 
-Then create the login roles, with passwords kept outside Git:
+   ```sh
+   psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -f db/schema.sql
+   psql "$ADMIN_URL" -v ON_ERROR_STOP=1 -f db/tests/schema_checks.sql   # shows "schema checks passed"
+   ```
 
-```sql
-CREATE ROLE recheck_api LOGIN PASSWORD '...' IN ROLE recheck_app;
-ALTER ROLE recheck_poller WITH LOGIN PASSWORD '...';
-```
+2. If you run the wait-time poller, also run `db/seed/wait_sites.sql` as the admin user.
+3. Make the login roles. Keep the passwords out of Git.
 
-Put the `recheck_api` URL in `RECHECK_DATABASE_URL` and the poller's in `RECHECK_POLLER_DATABASE_URL` ([`api/README.md`](../api/README.md#develop)).
+   ```sql
+   CREATE ROLE recheck_api LOGIN PASSWORD '...' IN ROLE recheck_app;
+   ALTER ROLE recheck_poller WITH LOGIN PASSWORD '...';
+   ```
+
+4. Put the `recheck_api` URL in `RECHECK_DATABASE_URL`. Put the poller URL in `RECHECK_POLLER_DATABASE_URL`. See [`api/README.md`](../api/README.md#develop).
 
 ## Change the schema
 
-1. Edit `schema.sql` so a fresh database gets the change.
-2. Add `migrations/YYYY-MM-DD-<what>.sql` that brings an existing database to the same state, wrapped in `BEGIN`/`COMMIT`. Say in its header comment whether it must run before the API that needs it is deployed.
-3. Update the matching contract model and code lists, and add a check to `tests/schema_checks.sql` for any new constraint or trigger.
-4. Apply the migration to the shared Tiger Cloud database as the admin before deploying. There is no migration runner, so nothing records which files have run; check the database first.
+1. Edit `schema.sql`, so that a new database gets the change.
+2. Add `migrations/YYYY-MM-DD-<change>.sql`. It must bring an existing database to the same state. Put it between `BEGIN` and `COMMIT`. In its header comment, tell if it must run before the API deploy.
+3. Update the contract models and code lists that agree with the change.
+4. For each new constraint or trigger, add a check to `tests/schema_checks.sql`.
+5. Before the deploy, apply the migration to the shared Tiger Cloud database as the admin user.
+
+There is no migration runner. Nothing records which migrations ran. Examine the database before you apply a migration.

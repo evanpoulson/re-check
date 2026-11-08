@@ -1,6 +1,6 @@
 // The backend contract defines request and response bodies but no HTTP paths.
-// These paths are PROPOSED. Confirm them against the FastAPI routes when they
-// exist; this is the only file that should change.
+// These paths match the FastAPI routes in api/src/recheck/routes. When a route
+// changes, change it here only.
 export const endpoints = {
   enrolVisit: () => '/api/visits',
   visitStatus: (visitId: string) => `/api/visits/${visitId}/status`,

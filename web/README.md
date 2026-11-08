@@ -1,6 +1,6 @@
 # Recheck web
 
-React, Vite, TypeScript and Tailwind front end for patient check-in and staff review. Current visual guidelines and verification notes: [`docs/design/review-flow.md`](../docs/design/review-flow.md). The older frontend document is provisional.
+The React, Vite, TypeScript and Tailwind front end for patient check-in and staff review. [`docs/design/review-flow.md`](../docs/design/review-flow.md) has the current visual guidelines.
 
 ## Run it
 
@@ -9,29 +9,60 @@ npm install
 npm run dev
 ```
 
-Open the address Vite prints (usually http://localhost:5173). There is no backend yet, so the app runs against typed in-memory mocks (`src/api/mocks`) built on the real question bank. State is saved in the browser, so a nurse tab and a patient tab on the same address see the same visits. Clear site data to reset the demo.
+Open the address that Vite shows, usually http://localhost:5173.
 
-### Try the loop
+By default, the app uses typed in-memory mocks (`src/api/mocks`) that use the real question bank. You do not need the API. The mocks keep their state in `localStorage`. Thus a nurse tab and a patient tab on the same address see the same visits. To reset the demo, clear the site data.
 
-1. Open `/` and choose **Triage nurse** (a labelled demo role picker; there is no real sign-in yet).
-2. **New visit**: pick a CTAS level and complaint, or type a CEDIS code (try `402`, `003` or `351`). A mapped code locks the complaint group, and an excluded complaint pre-selects "app not offered". Create it. Two QR codes appear, once. Each QR encodes a link such as `/v/<token>`.
-3. Open the **Patient** link in a second tab (or scan it with a phone on the same network). Answer a check-in, play the circle check, or use any of the four always-visible buttons.
-4. Back on the **Triage board**, the flag appears as a badge. The place-in-line numeral on the left does not change: the queue stays in CTAS then arrival order.
-5. Open the patient row, **Acknowledge**, then **Record assessment**. Acknowledging and assessing are separate steps. **Stop offering the app** signs the patient out.
+To use the real API, set `VITE_USE_MOCKS=false`. The mocks then do not load. Vite sends `/api` to FastAPI at `RECHECK_API_URL` (default `http://127.0.0.1:8000`). The Docker image always builds with the mocks off.
 
-Seeded demo patients, if you want to skip enrolment (each code opens once per browser):
+## Try the loop with the mocks
 
-| Case | Patient link | Companion link |
-| --- | --- | --- |
-| Worsening chest pain, CTAS 2, already flagged red | `/v/demo-patient-chest-token` | `/v/demo-companion-chest-token` |
-| Calm general visit, CTAS 3, no flag | `/v/demo-patient-general-token` | `/v/demo-companion-general-token` |
-| Head injury, CTAS 3, check-in missed (silent) | `/v/demo-patient-head-token` | `/v/demo-companion-head-token` |
-| Confused or drowsy, CTAS 3, companion-only check-in | `/v/demo-patient-confused-token` | `/v/demo-companion-confused-token` |
-| Child, CTAS 4, app not offered | no QR | no QR |
+1. Open `/` and choose **Triage nurse** in the demo role picker.
+2. Select **New visit**. Choose a CTAS level and a complaint, or type a CEDIS code (try `402`, `003` or `351`).
+   - A mapped code locks the complaint group.
+   - An excluded complaint selects "app not offered".
+3. Create the visit. One QR code appears. It encodes a link such as `/v/<token>`.
+4. Open the link in a second tab, or scan it with a phone on the same network. Choose patient or companion.
+5. Answer a check-in, do the circle check, or use one of the buttons that are always visible.
+6. Go back to the **Triage board**. The flag shows as a badge. The place-in-line number does not change, because the queue stays in CTAS order, then arrival order.
+7. Open the visit. Select **Acknowledge**, then **Record assessment**. These are two separate steps.
+8. To sign the patient out, select **Stop offering the app**.
 
-Companion on the general visit, then reporting "Speech is different or hard to understand", is the "new speech change on an unrelated complaint" case.
+The mocks have seeded visits, so you can skip enrolment. Each link opens one time in each browser.
 
-Set `VITE_USE_MOCKS=false` to call a real backend instead. The mocks then do not load.
+| Case | Link |
+| --- | --- |
+| Worsening chest pain, CTAS 2, red flag | `/v/demo-chest-token` |
+| Calm general visit, CTAS 3, no flag | `/v/demo-general-token` |
+| Head injury, CTAS 3, missed check-in (silent) | `/v/demo-head-token` |
+| Confused or drowsy, CTAS 3, check-in by companion only | `/v/demo-confused-token` |
+| Child, CTAS 4, app not offered | no QR |
+
+For the "new speech change on an unrelated complaint" case, sign in as companion on the general visit. Then report "Speech is different or hard to understand".
+
+### Physician worklist
+
+Choose **Physician** or **Charge nurse** in the role picker, then open `/staff/physician`. The worklist uses the rank from the server, which is independent of the triage board.
+
+1. Open a concern and acknowledge it.
+2. Choose an assessment outcome. The completed task goes off the worklist.
+
+Filters, search, refresh and retry work. The visit disclosure has the secondary vitals and visit actions.
+
+In the mocks, the selected role is only for demo navigation. The real app gets identity and permissions from the server session.
+
+## Routes
+
+| Route | Who |
+| --- | --- |
+| `/staff/sign-in` | anyone |
+| `/staff/physician` | physician, charge nurse |
+| `/staff/triage`, `/staff/visits/new` | triage nurse, charge nurse |
+| `/staff/visits/:id` (tabs: overview, `assessment`, `timeline`, `manage`) | signed-in staff |
+| `/v/:token` | QR holder |
+| `/check-in` | signed-in device |
+
+`src/routes.tsx` is the source of truth. The charge nurse escalation and handover screens are not built yet. The API routes for them exist (see [`api/README.md`](../api/README.md#routes)).
 
 ## Checks
 
@@ -39,33 +70,28 @@ Set `VITE_USE_MOCKS=false` to call a real backend instead. The mocks then do not
 npm run typecheck && npm run lint && npm test && npm run build && npm run check:contract
 ```
 
-## Everything the backend owns is copied, not retyped
+## Generated files
 
-`npm run gen:contract` generates from the backend:
+`npm run gen:contract` copies from the back end everything that the back end owns:
 
-- `src/api/contract.d.ts` and `contract.schema.json`, from the Pydantic models in `api/src/recheck/contract` (needs [uv](https://docs.astral.sh/uv/)).
+- `src/api/contract.d.ts` and `contract.schema.json`, from the Pydantic models in `api/src/recheck/contract`. This step needs [uv](https://docs.astral.sh/uv/).
 - `src/api/bank/questionnaire.json` and `cedis-groups.json`, copies of `question-bank/`.
 
-Do not edit them. Commit the outputs; running it again must not change them. `npm run check:contract` fails if they are out of date. Mocks and screens are typed by these types, so a contract change fails the type check where it matters.
+Do not edit these files. Commit the output. A second run must not change them. If they are out of date, `npm run check:contract` fails. The mocks and the screens use these types, so a contract change fails the type check where it has an effect.
 
-- `src/api/bank.ts` reads question wording, companion wording, options, "Not sure" rules and circle-check settings from the bank.
-- `src/api/cedis.ts` lists the CEDIS codes and mirrors the backend's `check_enrolment()`.
-- `src/api/enableWhen.ts` mirrors the backend's branching. The mock server and tests use it; screens render what the API returns.
+These files mirror back-end logic by hand:
 
-The contract defines no HTTP paths. `src/api/endpoints.ts` holds proposed ones; confirm them against the FastAPI routes when they exist.
+| File | Mirrors |
+| --- | --- |
+| `src/api/bank.ts` | Question wording, companion wording, options, "Not sure" rules and circle-check settings, read from the bank |
+| `src/api/cedis.ts` | The CEDIS codes and `check_enrolment()` |
+| `src/api/enableWhen.ts` | The branching. Only the mocks and the tests use it. The screens show what the API returns. |
+| `src/lib/findings.ts` | The urgent findings in `rules.py` |
 
-## Routes
-
-`/staff/sign-in`, `/staff/physician`, `/staff/triage`, `/staff/visits/new`, `/staff/visits/:id`, `/v/:token`, `/check-in`. They match `docs/recheck-project-plan.md`.
+The contract has no HTTP paths. `src/api/endpoints.ts` holds them. Keep it the same as the FastAPI routes.
 
 ## Notes
 
-- Patient screens are translated into 14 languages besides English: interface strings in `src/i18n/<code>.json` and question wording in `question-bank/translations/`. They are unreviewed drafts, so patients see a notice. Staff screens stay in English, and staff always see answers in English. Arabic and Urdu set the page to right to left.
-- The mocks are demo logic, not the rules engine. Task levels they assume where the contract is silent (a desk question, a wrong circle count) are listed in the design doc.
-- The font (Atkinson Hyperlegible Next) is self-hosted through `@fontsource-variable`, so the app works offline and makes no third-party request.
-
-## Physician demo
-
-Choose **Physician** in the demo role picker, or open `/staff/physician` after choosing a role. The worklist ranks active review tasks using the supplied server rank, independently of the triage board. Open a concern, acknowledge it, then choose an assessment outcome. A completed task disappears from the worklist. Filters, search, refresh and retry are functional. Secondary vitals and visit-management actions are available in the visit's disclosure.
-
-The selected role is demo navigation only. Browser mocks attribute physician acknowledgements and assessments to that role; production must derive identity and permissions from the authenticated server session.
+- The patient screens have 14 languages in addition to English. The interface text is in `src/i18n/<code>.json`. The question wording is in `question-bank/translations/`. These are drafts that nobody has reviewed, so patients see a notice. Staff screens stay in English, and staff always see answers in English. Arabic and Urdu set the page to right to left.
+- The mocks are demo logic, not the rules engine.
+- The font (Atkinson Hyperlegible Next) comes from `@fontsource-variable` and is part of the build. Thus the app works offline and sends no requests to other servers.
