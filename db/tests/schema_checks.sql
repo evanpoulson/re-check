@@ -23,21 +23,21 @@ SET LOCAL ROLE recheck_app;
 
 -- Writes without an actor fail.
 SELECT pg_temp.expect_error(
-    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext, token_expires_at)
-       VALUES ('demo', 3, 'general', 'en', 'phone', sha256('a'), sha256('b'), now() + interval '1 day')$q$,
+    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
+       VALUES ('demo', 3, 'general', 'en', 'phone', sha256('a'), sha256('b'))$q$,
     'app.actor is not set');
 
 SET LOCAL app.actor = 'test|nurse';
 
 -- CTAS 1 is rejected.
 SELECT pg_temp.expect_error(
-    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext, token_expires_at)
-       VALUES ('demo', 1, 'general', 'en', 'phone', sha256('c'), sha256('d'), now() + interval '1 day')$q$,
+    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
+       VALUES ('demo', 1, 'general', 'en', 'phone', sha256('c'), sha256('d'))$q$,
     'visit_ctas_check');
 
-INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext, token_expires_at)
+INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
 VALUES ('00000000-0000-0000-0000-000000000001', 'demo', 3, 'chest_back_pain', 'en', 'phone',
-        sha256('patient-token'), sha256('companion-token'), now() + interval '1 day');
+        sha256('patient-token'), sha256('companion-token'));
 
 -- Both timers start from the CTAS schedule.
 DO $$
@@ -63,8 +63,8 @@ SELECT pg_temp.expect_error(
     'visit_session_one_open_uq');
 
 -- A second visit where the companion signed in, for companion reports.
-INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext, token_expires_at)
-VALUES ('00000000-0000-0000-0000-000000000005', 'demo', 3, 'head_injury', 'en', 'phone', sha256('v5-token'), sha256('v5-cipher'), now() + interval '1 day');
+INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
+VALUES ('00000000-0000-0000-0000-000000000005', 'demo', 3, 'head_injury', 'en', 'phone', sha256('v5-token'), sha256('v5-cipher'));
 INSERT INTO visit_session (id, visit_id, role, session_hash)
 VALUES ('00000000-0000-0000-0000-0000000000d5', '00000000-0000-0000-0000-000000000005', 'companion', sha256('s5'));
 
@@ -98,8 +98,8 @@ END
 $$;
 
 SELECT pg_temp.expect_error(
-    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, app_exclusion, channel, token_hash, token_ciphertext, token_expires_at)
-       VALUES ('demo', 3, 'general', 'en', 'child', 'phone', sha256('e'), sha256('f'), now() + interval '1 day')$q$,
+    $q$INSERT INTO visit (site_id, ctas, complaint_group, language, app_exclusion, channel, token_hash, token_ciphertext)
+       VALUES ('demo', 3, 'general', 'en', 'child', 'phone', sha256('e'), sha256('f'))$q$,
     'no channel, pager or QR tokens');
 SELECT pg_temp.expect_error(
     $q$INSERT INTO visit (site_id, ctas, complaint_group, language)
@@ -184,9 +184,9 @@ SELECT pg_temp.expect_error(
     'report_attention_prompt_fk');
 
 -- Excluding a visit after enrolment stops prompts, signs out its devices and keeps token history.
-INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext, token_expires_at)
+INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
 VALUES ('00000000-0000-0000-0000-000000000003', 'demo', 4, 'general', 'en', 'phone',
-        sha256('late-token'), sha256('late-cipher'), now() + interval '1 day');
+        sha256('late-token'), sha256('late-cipher'));
 INSERT INTO visit_session (visit_id, role, session_hash)
 VALUES ('00000000-0000-0000-0000-000000000003', 'patient', sha256('late-session'));
 
@@ -217,9 +217,9 @@ SELECT pg_temp.expect_error(
     'cannot be removed or changed');
 
 -- Closing a visit signs out its device, and no one can sign in afterwards.
-INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext, token_expires_at)
+INSERT INTO visit (id, site_id, ctas, complaint_group, language, channel, token_hash, token_ciphertext)
 VALUES ('00000000-0000-0000-0000-000000000004', 'demo', 5, 'general', 'en', 'phone',
-        sha256('closed-token'), sha256('closed-cipher'), now() + interval '1 day');
+        sha256('closed-token'), sha256('closed-cipher'));
 INSERT INTO visit_session (visit_id, role, session_hash)
 VALUES ('00000000-0000-0000-0000-000000000004', 'companion', sha256('closed-session'));
 UPDATE visit SET status = 'roomed', closed_at = now() WHERE id = '00000000-0000-0000-0000-000000000004';
