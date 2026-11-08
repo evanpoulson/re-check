@@ -106,9 +106,9 @@
 
 .enrol-segment:hover { background: var(--color-surface); }
 .enrol-segment:has(:checked) {
-  background: var(--color-brand-50);
+  background: var(--color-brand-600);
   border-color: var(--color-brand-600);
-  color: var(--color-brand-700);
+  color: var(--color-surface);
   font-weight: 600;
 }
 .enrol-segment:has(:disabled) { cursor: not-allowed; }

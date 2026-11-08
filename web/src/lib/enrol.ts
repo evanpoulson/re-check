@@ -19,7 +19,7 @@ export type EnrolErrors = Partial<Record<'ctas' | 'cedis_code' | 'pager_no' | 'a
 }
 
 export const emptyEnrol: EnrolForm = {
-  ctas: null,
+  ctas: 2,
   complaint_group: 'general',
   cedis_code: '',
   complaint_detail: '',

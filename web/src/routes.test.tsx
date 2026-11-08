@@ -129,19 +129,22 @@ describe('staff sign-in', () => {
 })
 
 describe('triage nurse: enrolment and QR', () => {
-  it('focuses the validation summary and links back to the missing CTAS level', async () => {
+  it('defaults to CTAS 2 and links validation back to a missing pager number', async () => {
     signInAsNurse()
     const user = userEvent.setup()
     renderApp('/staff/visits/new')
 
-    await user.click(await screen.findByRole('button', { name: 'Create visit and QR code' }))
-    const error = await screen.findByRole('link', { name: 'Choose a CTAS level from 2 to 5.' })
+    expect(await screen.findByRole('radio', { name: '2' })).toBeChecked()
+    expect(screen.getByRole('radio', { name: 'Phone' })).toBeChecked()
+    await user.click(screen.getByRole('radio', { name: 'Pager' }))
+    await user.click(screen.getByRole('button', { name: 'Create visit and QR code' }))
+    const error = await screen.findByRole('link', { name: 'Enter a pager number of 1 to 6 digits.' })
     expect(screen.getByText('Check the visit details').parentElement).toHaveFocus()
     await user.click(error)
-    expect(screen.getByRole('radio', { name: '2' })).toHaveFocus()
+    expect(screen.getByLabelText('Pager number')).toHaveFocus()
     expect(screen.queryByRole('radio', { name: '1' })).not.toBeInTheDocument()
 
-    await user.click(screen.getByRole('radio', { name: '3' }))
+    await user.type(screen.getByLabelText('Pager number'), '007')
     expect(error).not.toBeInTheDocument()
   })
 
@@ -164,6 +167,8 @@ describe('triage nurse: enrolment and QR', () => {
     expect(visit.complaint_group).toBe('general')
     expect(screen.getByRole('link', { name: 'Open visit' })).toHaveAttribute('href', `/staff/visits/${visit.visit_id}`)
     expect(await screen.findByText('Staff reassessment due')).toBeVisible()
+    await user.click(screen.getByRole('button', { name: 'Enrol another patient' }))
+    expect(screen.getByRole('radio', { name: '2' })).toBeChecked()
   })
 
   it('the visit shows who is signed in and can show the same QR again', async () => {
