@@ -4,7 +4,8 @@
   The database stores only their SHA-256 hash (the same hash the synthetic loader uses).
 - The QR token is also stored encrypted, so the desk can show the same QR again.
   The key is derived from RECHECK_SECRET_KEY and never reaches the database.
-- The demo staff cookie is signed with HMAC so it can't be forged or edited.
+- The staff cookie and the short-lived Auth0 sign-in cookie are signed with HMAC
+  so they can't be forged or edited.
 """
 
 import base64
@@ -45,13 +46,18 @@ def decrypt_token(ciphertext: bytes) -> str | None:
         return None
 
 
-def sign(value: str) -> str:
-    mac = hmac.new(_derived(b"recheck staff-cookie v1"), value.encode(), hashlib.sha256).digest()
+STAFF_COOKIE_KEY = b"recheck staff-cookie v2"
+SIGN_IN_FLOW_KEY = b"recheck staff-sign-in-flow v1"
+
+
+def sign(value: str, purpose: bytes = STAFF_COOKIE_KEY) -> str:
+    """`value.mac`. Each purpose has its own key, so one signed value can't stand in for another."""
+    mac = hmac.new(_derived(purpose), value.encode(), hashlib.sha256).digest()
     return f"{value}.{base64.urlsafe_b64encode(mac).decode().rstrip('=')}"
 
 
-def unsign(signed: str) -> str | None:
+def unsign(signed: str, purpose: bytes = STAFF_COOKIE_KEY) -> str | None:
     value, _, _mac = signed.rpartition(".")
     if not value:
         return None
-    return value if hmac.compare_digest(sign(value), signed) else None
+    return value if hmac.compare_digest(sign(value, purpose), signed) else None
