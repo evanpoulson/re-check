@@ -5,6 +5,13 @@
  */
 
 /**
+ * Why the patient app was not offered. Staff watch these patients directly.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "AppExclusion".
+ */
+export type AppExclusion = ("child" | "pregnancy_over_20_weeks" | "self_harm_or_violence" | "major_trauma")
+/**
  * Outcome recorded when a task is completed (FR16, brief section 4).
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
@@ -12,12 +19,19 @@
  */
 export type Disposition = ("assessed_stable" | "tests_ordered" | "re_triaged" | "roomed" | "treated_and_released" | "left_before_assessment" | "not_located")
 /**
- * Pathway selected from the triage complaint (research brief, section 2).
+ * Why a question has no answer. Never treat any of these as a negative.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "MissingReason".
+ */
+export type MissingReason = ("unsure" | "unable_to_respond" | "not_asked" | "not_reached")
+/**
+ * Pathway selected from the triage CEDIS complaint (question-bank/cedis-groups.json).
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "ComplaintGroup".
  */
-export type ComplaintGroup = ("chest_back_pain" | "neuro_change" | "head_injury" | "general")
+export type ComplaintGroup = ("chest_back_pain" | "neuro_change" | "head_injury" | "confused_drowsy" | "general")
 /**
  * Escalation level, lowest first. A task's level can only go up.
  * 
@@ -45,12 +59,21 @@ export type StaffRole = ("triage_nurse" | "physician" | "charge_nurse" | "qualit
  */
 export type TaskStatus = ("open" | "acknowledged" | "completed")
 /**
- * Why a question has no answer. Never treat any of these as a negative.
+ * Wellness question 2: compared with when staff last checked. "Not sure" is a missing reason.
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
- * via the `definition` "MissingReason".
+ * via the `definition` "FeelingChange".
  */
-export type MissingReason = ("unsure" | "unable_to_respond" | "not_asked" | "not_reached")
+export type FeelingChange = ("much_better" | "better" | "same" | "worse" | "much_worse")
+/**
+ * Wellness question 1, adapted from the Patient Wellness Questionnaire (Martha's Rule).
+ * 
+ * "Not sure" is a missing reason.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "FeelingNow".
+ */
+export type FeelingNow = ("very_good" | "good" | "ok" | "poor" | "very_poor")
 /**
  * New warning signs a patient or companion can report (FR5, FR11, brief section 4).
  * 
@@ -59,17 +82,12 @@ export type MissingReason = ("unsure" | "unable_to_respond" | "not_asked" | "not
  */
 export type FindingCode = ("chest_pain" | "trouble_breathing" | "new_confusion" | "fainting" | "new_weakness_numbness" | "heavy_bleeding" | "vomiting" | "worst_headache" | "speech_change" | "facial_droop" | "drowsiness" | "vision_change" | "balance_change")
 /**
- * Better, same or worse than at triage. "Not sure" is a missing reason.
+ * Always-visible buttons. `desk_question` is non-clinical and goes to the triage nurse only.
  * 
- * This interface was referenced by `Contract`'s JSON-Schema
- * via the `definition` "Overall".
- */
-export type Overall = ("better" | "same" | "worse")
-/**
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "ConcernCode".
  */
-export type ConcernCode = ("worried" | "help_now")
+export type ConcernCode = ("worried" | "help_now" | "desk_question")
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "DashboardEventType".
@@ -122,7 +140,12 @@ export type TaskEventType = ("created" | "reason_added" | "level_raised" | "esca
 
 export interface Contract {
 AcknowledgeTask?: AcknowledgeTask
+AppExclusion?: AppExclusion
 AssessTask?: AssessTask
+AttentionAnswered?: AttentionAnswered
+AttentionMissing?: AttentionMissing
+AttentionPrompt?: AttentionPrompt
+AttentionStep?: AttentionStep
 BoardRow?: BoardRow
 Channel?: Channel
 ChargeNurseView?: ChargeNurseView
@@ -136,6 +159,10 @@ DashboardEvent?: DashboardEvent
 DashboardEventType?: DashboardEventType
 Disposition?: Disposition
 EvidenceRef?: EvidenceRef
+FeelingChange?: FeelingChange
+FeelingChangeAnswered?: FeelingChangeAnswered
+FeelingNow?: FeelingNow
+FeelingNowAnswered?: FeelingNowAnswered
 FindingCode?: FindingCode
 FindingReport?: FindingReport
 FindingsAnswered?: FindingsAnswered
@@ -150,8 +177,6 @@ LeavingReport?: LeavingReport
 Missing?: Missing
 MissingReason?: MissingReason
 MultiChoiceAnswered?: MultiChoiceAnswered
-Overall?: Overall
-OverallAnswered?: OverallAnswered
 PainAnswered?: PainAnswered
 PatientHome?: PatientHome
 PatientMessage?: PatientMessage
@@ -179,6 +204,7 @@ TriageBoard?: TriageBoard
 VisitCreate?: VisitCreate
 VisitDetail?: VisitDetail
 VisitEnrolled?: VisitEnrolled
+VisitExclusionUpdate?: VisitExclusionUpdate
 VisitStatus?: VisitStatus
 VisitStatusUpdate?: VisitStatusUpdate
 VisitSummary?: VisitSummary
@@ -214,6 +240,69 @@ disposition: Disposition
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
  */
 submission_id: string
+}
+/**
+ * The patient's count for a circle-counting prompt. The server scores it against what it issued.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "AttentionAnswered".
+ */
+export interface AttentionAnswered {
+count: number
+kind: "answered"
+/**
+ * The attention prompt the server issued for this check-in.
+ */
+prompt_id: string
+}
+/**
+ * No count. Carries the prompt ID when one was shown, so staff can tell "shown but not answered"
+ * from "never shown" (a companion check-in, for example).
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "AttentionMissing".
+ */
+export interface AttentionMissing {
+kind: "missing"
+prompt_id?: (string | null)
+reason: MissingReason
+}
+/**
+ * Circle-counting reliability check, generated and stored by the server for one check-in.
+ * 
+ * The patient counts the circles and ignores the squares. Shapes are distinguished
+ * by outline, not colour alone. Not a clinical test: a wrong or missing count only
+ * asks staff to check the patient in person.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "AttentionPrompt".
+ */
+export interface AttentionPrompt {
+expires_at: string
+/**
+ * Blank time between shapes.
+ */
+gap_ms: number
+prompt_id: string
+/**
+ * How long each shape stays on screen.
+ */
+show_ms: number
+/**
+ * @minItems 1
+ */
+steps: [AttentionStep, ...(AttentionStep)[]]
+}
+/**
+ * One shape shown during the circle-counting check. Positions are fractions of the play area.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "AttentionStep".
+ */
+export interface AttentionStep {
+shape: ("circle" | "square")
+x: number
+y: number
 }
 /**
  * Triage nurse's silent board (FR17).
@@ -314,10 +403,16 @@ kind: ("report" | "vitals" | "flag")
  */
 export interface CheckinReport {
 /**
+ * Circle-counting reliability check. Patient only; a companion sends it as missing.
+ */
+attention: (AttentionAnswered | AttentionMissing)
+/**
  * When the person answered on the device. The server records its own received time.
  */
 captured_at: string
 channel: ("phone" | "pager")
+feeling_change: (FeelingChangeAnswered | Missing)
+feeling_now: (FeelingNowAnswered | Missing)
 /**
  * Complaint-specific answers keyed by question bank item key.
  */
@@ -330,7 +425,6 @@ items?: {
 }
 kind: "checkin"
 new_findings: (FindingsAnswered | Missing)
-overall: (OverallAnswered | Missing)
 pain: (PainAnswered | Missing)
 questionnaire_version: string
 reporter: ("patient" | "companion")
@@ -338,6 +432,30 @@ reporter: ("patient" | "companion")
  * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
  */
 submission_id: string
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "FeelingChangeAnswered".
+ */
+export interface FeelingChangeAnswered {
+kind: "answered"
+value: FeelingChange
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "Missing".
+ */
+export interface Missing {
+kind: "missing"
+reason: MissingReason
+}
+/**
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "FeelingNowAnswered".
+ */
+export interface FeelingNowAnswered {
+kind: "answered"
+value: FeelingNow
 }
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
@@ -378,14 +496,6 @@ kind: "scale"
 value: number
 }
 /**
- * This interface was referenced by `Contract`'s JSON-Schema
- * via the `definition` "Missing".
- */
-export interface Missing {
-kind: "missing"
-reason: MissingReason
-}
-/**
  * An empty list means the person said none of these apply.
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
@@ -400,14 +510,6 @@ value: FindingCode[]
 }
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
- * via the `definition` "OverallAnswered".
- */
-export interface OverallAnswered {
-kind: "answered"
-value: Overall
-}
-/**
- * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "PainAnswered".
  */
 export interface PainAnswered {
@@ -418,7 +520,7 @@ kind: "answered"
 value: number
 }
 /**
- * "I'm worried" or "I need help now", available at any time.
+ * "I'm worried", "I need help now" or "Question about my wait or care", available at any time.
  * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "ConcernReport".
@@ -557,7 +659,8 @@ reporter: Reporter
  */
 export interface TrendPoint {
 at: string
-overall: (Overall | null)
+feeling_change: (FeelingChange | null)
+feeling_now: (FeelingNow | null)
 pain: (number | null)
 }
 /**
@@ -565,8 +668,9 @@ pain: (number | null)
  * via the `definition` "VisitSummary".
  */
 export interface VisitSummary {
+app_exclusion: (AppExclusion | null)
 cedis_code: (string | null)
-channel: ("phone" | "pager")
+channel: (("phone" | "pager") | null)
 closed_at: (string | null)
 complaint_group: ComplaintGroup
 /**
@@ -625,6 +729,10 @@ submission_id: string
  * via the `definition` "PatientHome".
  */
 export interface PatientHome {
+/**
+ * Present for the patient role on a due check-in; never for a companion.
+ */
+attention_prompt?: (AttentionPrompt | null)
 items: QuestionItem[]
 language: Language
 message: PatientMessage
@@ -640,6 +748,10 @@ wait_range: (WaitRange | null)
  * via the `definition` "QuestionItem".
  */
 export interface QuestionItem {
+/**
+ * Show a "Not sure" button, sent as missing: unsure.
+ */
+allow_unsure?: boolean
 input_type: ItemInputType
 key: string
 options?: QuestionOption[]
@@ -776,10 +888,17 @@ rows: BoardRow[]
  */
 export interface VisitCreate {
 /**
+ * Set when the patient app is not offered. The visit still appears on the staff list and the staff reassessment timer still runs, but no QR is issued and no prompts are sent.
+ */
+app_exclusion?: (AppExclusion | null)
+/**
  * CEDIS presenting complaint code, kept with its source vocabulary.
  */
 cedis_code?: (string | null)
-channel: ("phone" | "pager")
+/**
+ * Required unless the app is not offered.
+ */
+channel?: (("phone" | "pager") | null)
 complaint_group: ComplaintGroup
 /**
  * Initial CTAS level. CTAS 1 is never in the waiting room, so it is rejected.
@@ -825,21 +944,40 @@ vitals_id: string
 /**
  * Returned once at enrolment. The links carry the raw tokens and are never shown again.
  * 
+ * When the app is not offered, there are no links.
+ * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "VisitEnrolled".
  */
 export interface VisitEnrolled {
+app_exclusion?: (AppExclusion | null)
 /**
  * URL for the companion QR card (FR11). Single-use.
  */
-companion_link: string
-links_expire_at: string
+companion_link: (string | null)
+links_expire_at: (string | null)
 pager_no?: (string | null)
 /**
  * URL for the patient QR card. Single-use, binds the first device.
  */
-patient_link: string
+patient_link: (string | null)
 visit_id: string
+}
+/**
+ * Staff stop offering the app after enrolment.
+ * 
+ * The server revokes the visit's sessions and stops patient prompts. The staff
+ * timer keeps running. An exclusion can't be removed once set.
+ * 
+ * This interface was referenced by `Contract`'s JSON-Schema
+ * via the `definition` "VisitExclusionUpdate".
+ */
+export interface VisitExclusionUpdate {
+app_exclusion: AppExclusion
+/**
+ * Client-generated UUID. Create it before the first attempt and resend it unchanged on every retry, including after an offline queue syncs. The server uses it to drop duplicates and rejects a reused ID that arrives with different content.
+ */
+submission_id: string
 }
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
