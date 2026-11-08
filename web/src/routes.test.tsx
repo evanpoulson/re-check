@@ -403,13 +403,25 @@ describe('patient and companion check-in', () => {
     expect(await screen.findByRole('heading', { name: 'When were they last speaking and moving as usual?' })).toBeInTheDocument()
   })
 
-  it('shows an English-only notice for Punjabi and Tagalog until translations exist', async () => {
+  it('shows an English-only notice for other languages until translations exist', async () => {
     const user = userEvent.setup()
     await scanAs('chest', 'patient')
     await screen.findByRole('heading', { name: 'You are checked in' })
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
     await user.selectOptions(screen.getByRole('combobox', { name: 'Language' }), 'pa')
     expect(await screen.findByRole('note')).toHaveTextContent('Questions are shown in English for now')
+  })
+
+  it('switches the page to right to left for Arabic and back for English', async () => {
+    const user = userEvent.setup()
+    await scanAs('chest', 'patient')
+    await screen.findByRole('heading', { name: 'You are checked in' })
+    const picker = screen.getByRole('combobox', { name: 'Language' })
+    await user.selectOptions(picker, 'ar')
+    expect(document.documentElement).toHaveAttribute('dir', 'rtl')
+    expect(document.documentElement).toHaveAttribute('lang', 'ar')
+    await user.selectOptions(picker, 'en')
+    expect(document.documentElement).toHaveAttribute('dir', 'ltr')
   })
 })
 

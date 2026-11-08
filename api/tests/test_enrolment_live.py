@@ -67,6 +67,17 @@ def test_enrol_returns_link_and_stores_only_hash_and_ciphertext(live_client):
                    "prompt_due": True, "staff_due": True}
 
 
+@pytest.mark.parametrize("language", ["ko", "ar", "yue"])
+def test_enrol_and_sign_in_in_a_newer_language(live_client, language):
+    """The database accepts every contract language, and the patient's phone gets it."""
+    as_staff(live_client)
+    res, _ = enrol(live_client, language=language)
+    assert res.status_code == 201, res.text
+    signed_in = live_client.post("/api/session", json={"token": token_of(res.json()["link"]), "role": "patient"})
+    assert signed_in.status_code == 200, signed_in.text
+    assert signed_in.json()["language"] == language
+
+
 def test_enrol_retry_returns_same_visit_and_reused_id_is_refused(live_client):
     as_staff(live_client)
     first, body = enrol(live_client)

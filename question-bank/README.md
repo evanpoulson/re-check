@@ -49,7 +49,7 @@ Staff can also exclude a visit after enrolment. Patient prompts stop, the visit'
 - **Keys:** each `linkId` is the item key in `CheckinReport.items`, or names a base field through `urn:recheck:fhir:contract-field`. Option codes match the contract's code lists.
 - **Companion wording:** in `urn:recheck:fhir:companion-text`.
 - **"Not sure":** shown when `allow-unsure` is true, and sent as `missing: unsure`, never as "no".
-- **Languages:** English only for now. Punjabi and Tagalog are marked `translation-pending` and need professional translation.
+- **Languages:** English only for now. The other 14 contract languages (the most common mother tongues in Alberta, from the 2021 Census) are marked `translation-pending` and need professional translation.
 - **Rules live elsewhere:** branching only decides what to ask. Which answers create a staff task belongs in the rules, including two that rely on this bank:
   - In the neuro, head-injury and confused groups, a patient's "same" or "better" never cancels a staff check.
   - A wrong count, or a prompt shown but not answered, creates a non-urgent in-person staff check. A check-in with no prompt shown, such as from a companion, is not a missed check.

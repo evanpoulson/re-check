@@ -1,5 +1,7 @@
 import json
+import re
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -14,7 +16,7 @@ from recheck.contract import (
     patient_report_adapter,
 )
 from recheck.contract.answers import Missing, PainAnswered
-from recheck.contract.codes import Disposition, StaffRole, TaskLevel, TaskStatus
+from recheck.contract.codes import Disposition, Language, StaffRole, TaskLevel, TaskStatus
 from recheck.contract.reports import CheckinReport, ConcernReport
 from recheck.contract.staff import StaffRef
 from recheck.contract.tasks import EvidenceRef, Task, TaskReason
@@ -393,3 +395,10 @@ def test_patient_screens_cannot_see_staff_fields():
     schema = contract_json_schema()["$defs"]
     patient_fields = set(schema["PatientHome"]["properties"]) | set(schema["ReportReceipt"]["properties"])
     assert not patient_fields & {"level", "reasons", "routed_to", "task_id", "acknowledged_by"}
+
+
+def test_database_allows_exactly_the_contract_languages():
+    schema = (Path(__file__).parents[3] / "db" / "schema.sql").read_text()
+    check = re.search(r"language\s+text\s+NOT NULL CHECK \(language IN \(([^)]*)\)\)", schema)
+    assert check, "visit.language CHECK not found in db/schema.sql"
+    assert set(re.findall(r"'([a-z]+)'", check.group(1))) == {lang.value for lang in Language}

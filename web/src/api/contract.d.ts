@@ -101,10 +101,18 @@ export type DashboardEventType = ("report.received" | "vitals.recorded" | "task.
  */
 export type Reporter = ("patient" | "companion" | "staff")
 /**
+ * The patient's language: the 15 most common mother tongues in Alberta
+ * (2021 Census, Statistics Canada table 98-10-0175), in that order.
+ * 
+ * Codes are ISO 639 so staff can book the right interpreter. Mandarin and
+ * Cantonese are separate spoken languages; Mandarin text uses simplified
+ * characters and Cantonese text uses traditional characters. Keep in step with
+ * the CHECK on visit.language in db/schema.sql.
+ * 
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "Language".
  */
-export type Language = ("en" | "pa" | "tl")
+export type Language = ("en" | "tl" | "pa" | "fr" | "es" | "de" | "yue" | "zh" | "ar" | "ur" | "vi" | "ko" | "hi" | "ru" | "pl")
 /**
  * This interface was referenced by `Contract`'s JSON-Schema
  * via the `definition` "VisitStatus".

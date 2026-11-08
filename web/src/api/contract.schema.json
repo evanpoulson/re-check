@@ -1031,10 +1031,23 @@
       "type": "string"
     },
     "Language": {
+      "description": "The patient's language: the 15 most common mother tongues in Alberta\n(2021 Census, Statistics Canada table 98-10-0175), in that order.\n\nCodes are ISO 639 so staff can book the right interpreter. Mandarin and\nCantonese are separate spoken languages; Mandarin text uses simplified\ncharacters and Cantonese text uses traditional characters. Keep in step with\nthe CHECK on visit.language in db/schema.sql.",
       "enum": [
         "en",
+        "tl",
         "pa",
-        "tl"
+        "fr",
+        "es",
+        "de",
+        "yue",
+        "zh",
+        "ar",
+        "ur",
+        "vi",
+        "ko",
+        "hi",
+        "ru",
+        "pl"
       ],
       "title": "Language",
       "type": "string"

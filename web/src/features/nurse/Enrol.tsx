@@ -9,10 +9,10 @@ import type { AppExclusion, ComplaintGroup, Language, VisitEnrolled } from '@/ap
 import { QrCard } from '@/components/QrCard'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { LANGUAGES } from '@/i18n'
 import { emptyEnrol, validateEnrol, type EnrolErrors, type EnrolForm } from '@/lib/enrol'
 
 const COMPLAINTS: ComplaintGroup[] = ['chest_back_pain', 'neuro_change', 'head_injury', 'confused_drowsy', 'general']
-const LANGUAGES: Language[] = ['en', 'pa', 'tl']
 const EXCLUSIONS: AppExclusion[] = ['child', 'pregnancy_over_20_weeks', 'self_harm_or_violence', 'major_trauma']
 const FIELD = 'field'
 const LABEL = 'mb-1.5 block text-[0.9375rem] font-semibold'
@@ -185,7 +185,7 @@ export function Enrol() {
             <label htmlFor="language" className={LABEL}>{t('enrol.language')}</label>
             <select id="language" className={FIELD} value={form.language} onChange={(e) => set('language', e.target.value as Language)}>
               {LANGUAGES.map((l) => (
-                <option key={l} value={l}>{t(`language.${l}`)}</option>
+                <option key={l} value={l}>{t(`languageName.${l}`)}</option>
               ))}
             </select>
           </div>

@@ -12,6 +12,7 @@ from recheck.contract.codes import (
     FeelingChange,
     FeelingNow,
     FindingCode,
+    Language,
     Reporter,
 )
 from recheck.contract.answers import Missing, YesNoAnswered
@@ -108,7 +109,9 @@ def test_every_question_cites_evidence_listed_in_sources(bank):
 
 
 def test_translations_are_marked_pending(bank):
-    assert set(ext_values(bank.questionnaire, "translation-pending")) == {"pa", "tl"}
+    """Every contract language other than English is pending until translated."""
+    expected = {lang.value for lang in Language} - {"en"}
+    assert set(ext_values(bank.questionnaire, "translation-pending")) == expected
 
 
 # --- CEDIS mapping ---------------------------------------------------------
