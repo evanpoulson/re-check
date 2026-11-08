@@ -184,7 +184,7 @@ export function Triage() {
 
   const sheet = sheetOpen && (
     <Sheet labelledBy={ENROL_HEADING_ID} closeLabel={t('enrol.close')} onClose={closeSheet} returnFocus={() => document.getElementById(NEW_VISIT_BUTTON_ID)}>
-      <Enrol />
+      <Enrol onClose={closeSheet} />
     </Sheet>
   )
 
@@ -585,7 +585,7 @@ function Row({ item, place, now, columnOrder, widths, onFit }: {
         {place}
       </th>),
     ref: (<td>
-        <Link to={to} className="inline-flex min-h-6 items-center font-semibold text-brand-600 hover:underline underline-offset-4">
+        <Link to={to} state={{ from: '/staff/triage' }} className="inline-flex min-h-6 items-center font-semibold text-brand-600 hover:underline underline-offset-4">
           {visitRef(work)}
         </Link>
         {work.visit.pager_no && <div className="text-muted">{t('visit.pager', { pager: work.visit.pager_no })}</div>}

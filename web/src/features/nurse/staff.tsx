@@ -121,7 +121,7 @@ export function StaffLayout() {
           {role === 'charge_nurse' && (
             <NavLink to="/staff/escalations" className={link}><BellRing aria-hidden className="size-[1.125rem]" />{t('nav.escalations')}</NavLink>
           )}
-          {SEES_TRIAGE.includes(role) && !onTriage && (
+          {SEES_TRIAGE.includes(role) && (role === 'charge_nurse' || !onTriage) && (
             // New visit opens as a sheet from the board's own button.
             <NavLink to="/staff/triage" className={link}><LayoutList aria-hidden className="size-[1.125rem]" />{t('nav.triage')}</NavLink>
           )}
