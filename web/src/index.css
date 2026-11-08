@@ -1574,7 +1574,6 @@ html:has(.patient-shell.has-dock) {
 .board-scroll [data-column="pain"] {
   position: sticky;
   inset-inline-end: 0;
-  box-shadow: inset 1px 0 var(--color-line);
   user-select: none;
 }
 .board-row > [data-column="pain"] {
