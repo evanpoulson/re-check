@@ -394,6 +394,69 @@
     color: var(--color-muted);
     margin-top: 12px;
   }
+  /* Visit page tabs: the current page is a white tab with a blue rule underneath. */
+  .visit-tab {
+    display: flex;
+    align-items: center;
+    min-height: 56px;
+    padding: 0 24px;
+    border-radius: var(--radius-data) var(--radius-data) 0 0;
+    border-bottom: 3px solid transparent;
+    color: var(--color-muted);
+    font-size: 17px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 150ms, background 150ms;
+  }
+  .visit-tab:hover {
+    color: var(--color-ink);
+  }
+  .visit-tab.is-active {
+    background: var(--color-surface);
+    border-bottom-color: var(--color-brand-500);
+    color: var(--color-brand-600);
+    font-weight: 600;
+  }
+  .visit-tab:focus-visible {
+    outline-offset: -3px;
+  }
+  /* A list of radio choices: one hairline-separated row per option, each a 48px target. */
+  .choice-list {
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    overflow: clip;
+  }
+  .choice-list label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 14px;
+    cursor: pointer;
+  }
+  .choice-list label + label {
+    border-top: 1px solid var(--color-line);
+  }
+  .choice-list label:has(input:checked) {
+    background: var(--color-brand-50);
+    font-weight: 600;
+  }
+  .choice-list label:has(input:focus-visible) {
+    outline: 3px solid rgb(0 113 227 / 0.6);
+    outline-offset: -3px;
+  }
+  .choice-list input {
+    width: 20px;
+    height: 20px;
+    accent-color: var(--color-brand-500);
+  }
+  .choice-list input:focus-visible {
+    outline: none;
+  }
+  fieldset:disabled .choice-list label {
+    cursor: not-allowed;
+    color: var(--color-muted);
+  }
   .section-title {
     font-size: 19px;
     font-weight: 600;

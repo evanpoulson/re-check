@@ -7,9 +7,10 @@ Run locally from `api/`:
 `--loop` matters on Windows: async psycopg can't use the default ProactorEventLoop.
 """
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, suppress
 from typing import Literal
 
 from fastapi import FastAPI, Request
@@ -17,10 +18,11 @@ from fastapi.responses import JSONResponse
 from psycopg import errors
 from psycopg_pool import AsyncConnectionPool
 
+from . import scheduler
 from .contract.common import OutputModel
 from .db import make_pool
 from .routes import ROUTERS
-from .settings import database_url
+from .settings import database_url, scheduler_seconds
 
 log = logging.getLogger(__name__)
 
@@ -56,9 +58,16 @@ def create_app(pool: AsyncConnectionPool | None = None) -> FastAPI:
         app.state.pool = pool if pool is not None else make_pool(database_url())
         # Don't wait for a connection: the API still starts, and /health reports the outage.
         await app.state.pool.open(wait=False)
+        # Timers run only in the real server; tests that bring their own pool call run_checks directly.
+        every = scheduler_seconds() if pool is None else 0
+        timers = asyncio.create_task(scheduler.run_forever(app.state.pool, every)) if every > 0 else None
         try:
             yield
         finally:
+            if timers is not None:
+                timers.cancel()
+                with suppress(asyncio.CancelledError):
+                    await timers
             await app.state.pool.close()
 
     app = FastAPI(title="Recheck API", version="0.1.0", lifespan=lifespan)

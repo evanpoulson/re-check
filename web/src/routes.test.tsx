@@ -103,13 +103,63 @@ describe('triage nurse: enrolment and QR', () => {
     signInAsNurse()
     const visit = await visitWhere((r) => r.visit.complaint_group === 'confused_drowsy')
     const user = userEvent.setup()
-    renderApp(`/staff/visits/${visit.visit_id}`)
-    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(2) // header and phone card
-    await user.click(screen.getByRole('button', { name: 'Show QR' }))
+    renderApp(`/staff/visits/${visit.visit_id}/manage`)
+    expect(await screen.findAllByText(/Companion signed in since/)).toHaveLength(2) // visit details and QR card
+    await user.click(screen.getByRole('button', { name: 'Show visit QR' }))
     expect(await screen.findByRole('img', { name: 'QR code for Check-in code' })).toBeInTheDocument()
     expect(screen.getByText(/\/v\/demo-confused-token$/)).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Sign out the phone' }))
     expect(await screen.findAllByText('No one signed in')).toHaveLength(2)
+  })
+
+  it('splits the visit into four pages and keeps the concern and both clocks on each', async () => {
+    signInAsNurse()
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}`)
+    const tabs = await screen.findByRole('navigation', { name: 'Visit pages' })
+    const pages = [
+      ['Overview', "What's changed"],
+      ['Assessment', 'Assessment disposition'],
+      ['Timeline', 'Review task status'],
+      ['Visit management', 'Stop offering the app'],
+    ] as const
+    for (const [tab, section] of pages) {
+      await user.click(within(tabs).getByRole('link', { name: tab }))
+      expect(within(tabs).getByRole('link', { name: tab })).toHaveAttribute('aria-current', 'page')
+      expect(await screen.findByRole('heading', { name: section })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'New chest pain reported' })).toBeInTheDocument()
+      expect(screen.getByText('Staff reassessment due')).toBeInTheDocument()
+      expect(screen.getByText('Patient check-in due')).toBeInTheDocument()
+    }
+  })
+
+  it('lets the triage nurse acknowledge an urgent report routed to the physician, from the overview', async () => {
+    signInAsNurse()
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    expect((await getVisitDetail(visit.visit_id)).open_task?.routed_to).not.toContain('triage_nurse')
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}`)
+    await user.click(await screen.findByRole('button', { name: 'Acknowledge' }))
+    expect(await screen.findAllByText(/^Acknowledged \d/)).toHaveLength(2) // banner and card
+    const task = (await getVisitDetail(visit.visit_id)).open_task!
+    expect(task).toMatchObject({ status: 'acknowledged', acknowledged_by: { role: 'triage_nurse' } })
+  })
+
+  it('will not stop the app until a reason is chosen and the change is confirmed', async () => {
+    signInAsNurse()
+    const visit = await visitWhere((r) => r.visit.complaint_group === 'general' && r.visit.ctas === 3)
+    const user = userEvent.setup()
+    renderApp(`/staff/visits/${visit.visit_id}/manage`)
+    const stop = await screen.findByRole('button', { name: 'Stop offering the app' })
+    const confirm = screen.getByRole('checkbox', { name: 'I understand this cannot be undone.' })
+    expect(stop).toBeDisabled()
+    expect(confirm).toBeDisabled()
+    await user.click(screen.getByRole('radio', { name: 'Major trauma' }))
+    await user.click(confirm)
+    await user.click(stop)
+    expect(await screen.findAllByText('Not offered: Major trauma')).not.toHaveLength(0)
+    expect((await getVisitDetail(visit.visit_id)).visit.app_exclusion).toBe('major_trauma')
   })
 
   it('shows the pager field only for the pager channel', async () => {
@@ -519,15 +569,27 @@ describe('physician review flow', () => {
     sessionStorage.setItem('recheck-demo-role', 'physician')
     const user = userEvent.setup()
     const visit = await visitWhere((r) => r.open_task?.level === 'red')
-    renderApp(`/staff/visits/${visit.visit_id}`)
-    await user.click(await screen.findByRole('button', { name: 'Acknowledge' }))
+    renderApp(`/staff/visits/${visit.visit_id}/assessment`)
     const save = await screen.findByRole('button', { name: 'Record assessment' })
-    expect(save).toBeDisabled()
-    await user.selectOptions(screen.getByLabelText('Outcome of the assessment'), 'tests_ordered')
+    await user.click(screen.getByRole('radio', { name: 'Tests ordered' }))
+    expect(save).toBeDisabled() // not acknowledged yet
+    await user.click(screen.getByRole('button', { name: 'Acknowledge' }))
+    expect(await screen.findAllByText(/^Acknowledged \d/)).toHaveLength(2) // banner and card
+    expect(screen.getByRole('radio', { name: 'Assessed, stable' })).toHaveFocus()
+    expect(save).toBeEnabled()
     await user.click(save)
     expect(await screen.findByRole('heading', { name: 'Assessment recorded' })).toBeInTheDocument()
     expect((await getVisitDetail(visit.visit_id)).open_task).toBeNull()
 
+  })
+
+  it('keeps visit management to nurses and sends a physician back to the overview', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'physician')
+    const visit = await visitWhere((r) => r.open_task?.level === 'red')
+    renderApp(`/staff/visits/${visit.visit_id}/manage`)
+    const tabs = await screen.findByRole('navigation', { name: 'Visit pages' })
+    expect(within(tabs).queryByRole('link', { name: 'Visit management' })).not.toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Overview' })).toBeInTheDocument()
   })
 
   it('redirects a physician from nurse enrolment', async () => {
