@@ -8,7 +8,15 @@ from typing import Annotated, Literal, Self
 
 from pydantic import Field, model_validator
 
-from .answers import FindingsAnswer, ItemAnswer, Missing, OverallAnswer, PainAnswer
+from .answers import (
+    AttentionAnswer,
+    FeelingChangeAnswer,
+    FeelingNowAnswer,
+    FindingsAnswer,
+    ItemAnswer,
+    Missing,
+    PainAnswer,
+)
 from .codes import Channel, ConcernCode, FindingCode, PatientMessage, Reporter
 from .common import Code, InputModel, OutputModel, SubmissionId, Timestamp, Version, unique_list
 
@@ -30,22 +38,31 @@ class CheckinReport(_ReportBase):
 
     kind: Literal["checkin"]
     questionnaire_version: Version
-    overall: OverallAnswer
+    feeling_now: FeelingNowAnswer
+    feeling_change: FeelingChangeAnswer
     pain: PainAnswer
     new_findings: FindingsAnswer
+    attention: AttentionAnswer = Field(
+        description="Circle-counting reliability check. Patient only; a companion sends it as missing."
+    )
     items: dict[Code, ItemAnswer] = Field(
         default_factory=dict, description="Complaint-specific answers keyed by question bank item key."
     )
 
     @model_validator(mode="after")
-    def _companion_cannot_rate_pain(self) -> Self:
-        if self.reporter is Reporter.COMPANION and not isinstance(self.pain, Missing):
-            raise ValueError("pain is self-reported; a companion must send it as missing")
+    def _companion_cannot_answer_for_patient(self) -> Self:
+        if self.reporter is Reporter.COMPANION:
+            if not isinstance(self.pain, Missing):
+                raise ValueError("pain is self-reported; a companion must send it as missing")
+            if self.attention.kind != "missing" or self.attention.prompt_id is not None:
+                raise ValueError(
+                    "the attention check is done by the patient; a companion sends it as missing with no prompt"
+                )
         return self
 
 
 class ConcernReport(_ReportBase):
-    """"I'm worried" or "I need help now", available at any time."""
+    """"I'm worried", "I need help now" or "Question about my wait or care", available at any time."""
 
     kind: Literal["concern"]
     concern: ConcernCode
