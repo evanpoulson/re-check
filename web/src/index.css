@@ -71,6 +71,10 @@
     outline: 3px solid rgb(0 113 227 / 0.6);
     outline-offset: 2px;
   }
+  /* A page heading takes focus for screen readers on page change; it isn't a control, so no ring. */
+  h1[tabindex='-1']:focus {
+    outline: none;
+  }
   .tabular {
     font-variant-numeric: tabular-nums;
   }

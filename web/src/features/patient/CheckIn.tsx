@@ -59,7 +59,8 @@ export function CheckIn() {
       heading.focus()
       document.title = `${heading.textContent} · Recheck`
     }
-  }, [view.name])
+    // isPending: also on first load, once the page has its heading.
+  }, [view.name, isPending])
 
   if (isPending)
     return (

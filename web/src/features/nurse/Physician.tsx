@@ -8,6 +8,7 @@ import { PageState } from '@/components/PageState'
 import { Button } from '@/components/ui/button'
 import { shortRef } from '@/lib/board'
 import { clock, formatMinutes, useNow } from '@/lib/time'
+import { usePageTitle } from '@/lib/page'
 import { getPrimaryTaskReason } from '@/lib/taskLabels'
 import { useDashboardEvents } from './useDashboardEvents'
 
@@ -18,6 +19,7 @@ export function Physician() {
   const query = useQuery({ queryKey: ['worklist'], queryFn: getWorklist, retry: false })
   const [filter, setFilter] = useState<'all' | 'open' | 'acknowledged'>('all')
   const [search, setSearch] = useState('')
+  usePageTitle(t('review.title'))
   const active = [...(query.data?.rows ?? [])]
     .sort((a, b) => a.rank - b.rank)
     .flatMap((row) => {
