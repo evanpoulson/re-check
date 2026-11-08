@@ -23,7 +23,13 @@ from .common import Code, InputModel, OutputModel, SubmissionId, Timestamp, Vers
 
 class _ReportBase(InputModel):
     submission_id: SubmissionId
-    reporter: Literal[Reporter.PATIENT, Reporter.COMPANION]
+    reporter: Literal[Reporter.PATIENT, Reporter.COMPANION] = Field(
+        description=(
+            "For phone reports, must equal the role chosen at sign-in; the server rejects a mismatch "
+            "and the database checks it against the session. A signed-out device can't report, "
+            "including reports it queued offline before it was signed out."
+        )
+    )
     channel: Literal[Channel.PHONE, Channel.PAGER]
     captured_at: Timestamp = Field(
         description="When the person answered on the device. The server records its own received time."

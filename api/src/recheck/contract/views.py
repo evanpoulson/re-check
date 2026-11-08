@@ -2,17 +2,17 @@
 handover and the quality page.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Self
 from uuid import UUID
 
-from pydantic import Field
+from pydantic import Field, model_validator
 
-from .codes import ComplaintGroup, FeelingChange, FeelingNow, Reporter, Channel, TaskLevel
+from .codes import ComplaintGroup, FeelingChange, FeelingNow, Reporter, Channel, SessionEndReason, TaskLevel
 from .common import Ctas, OutputModel, Timestamp
 from .reports import PatientReport
 from .staff import FlagRecord, VitalsRecord
 from .tasks import Task, TaskEvent
-from .visits import VisitSummary
+from .visits import SignInRole, VisitSummary
 
 
 class ReportRecord(OutputModel):
@@ -23,7 +23,28 @@ class ReportRecord(OutputModel):
     report: PatientReport
 
 
-TimelineEntry = Annotated[ReportRecord | VitalsRecord | FlagRecord | TaskEvent, Field(discriminator="type")]
+class SessionRecord(OutputModel):
+    """Someone signed in on the visit's device, and when and why that ended."""
+
+    type: Literal["session"] = "session"
+    session_id: UUID
+    visit_id: UUID
+    role: SignInRole
+    started_at: Timestamp
+    ended_at: Timestamp | None
+    end_reason: SessionEndReason | None
+    replaces: UUID | None = Field(description="The session this one took over from.")
+
+    @model_validator(mode="after")
+    def _end_fields_pair(self) -> Self:
+        if (self.ended_at is None) != (self.end_reason is None):
+            raise ValueError("ended_at and end_reason are set together")
+        return self
+
+
+TimelineEntry = Annotated[
+    ReportRecord | VitalsRecord | FlagRecord | TaskEvent | SessionRecord, Field(discriminator="type")
+]
 
 
 class TrendPoint(OutputModel):
