@@ -115,6 +115,27 @@
     border-color: var(--color-brand-500);
     box-shadow: 0 0 0 4px rgb(0 113 227 / 0.25);
   }
+  .field[aria-invalid='true'] {
+    border-color: var(--color-level-red);
+  }
+  /* Locked fields (for example a group set by the CEDIS code) look locked. */
+  .field:disabled {
+    background: var(--color-canvas);
+    color: var(--color-muted);
+    cursor: not-allowed;
+  }
+  /* A select drawn like every other field, with room for its own chevron. */
+  .field.select {
+    appearance: none;
+    padding-inline-end: 2.25rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236e6e73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    text-overflow: ellipsis;
+  }
+  [dir='rtl'] .field.select {
+    background-position: left 0.75rem center;
+  }
   /* "Lead phrase. Grey continuation." headings. */
   .headline-split > em {
     font-style: normal;
@@ -212,6 +233,27 @@
     max-width: 1280px;
     padding: 28px 32px;
     margin: auto;
+  }
+  /* The triage board is a wide table, so its page is wider than the others. */
+  .staff-page-wide {
+    max-width: 1440px;
+  }
+  /*
+    A table that scrolls sideways in its own box. Edge shadows show on whichever
+    side has more columns (covers scroll with the content, shadows stay put).
+  */
+  .table-scroll {
+    /* Positioned, so screen-reader-only text inside can't widen the page. */
+    position: relative;
+    max-height: 75dvh;
+    overflow: auto;
+    overscroll-behavior-x: contain;
+    background:
+      linear-gradient(to right, var(--color-surface) 40%, rgb(255 255 255 / 0)) left / 32px 100% no-repeat local,
+      linear-gradient(to left, var(--color-surface) 40%, rgb(255 255 255 / 0)) right / 32px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) left / 14px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0)) right / 14px 100% no-repeat scroll,
+      var(--color-surface);
   }
   .page-heading {
     display: flex;
