@@ -53,29 +53,43 @@ class VisitCreate(InputModel):
         return self
 
 
-class VisitEnrolled(OutputModel):
-    """Returned once at enrolment. The links carry the raw tokens and are never shown again.
+SignInRole = Literal[Reporter.PATIENT, Reporter.COMPANION]
 
-    When the app is not offered, there are no links.
+
+class VisitEnrolled(OutputModel):
+    """Returned at enrolment. One QR per visit; whoever scans it chooses patient or companion.
+
+    When the app is not offered, there is no link.
     """
 
     visit_id: UUID
     app_exclusion: AppExclusion | None = None
-    patient_link: str | None = Field(
-        description="URL for the patient QR card. Single-use, binds the first device."
+    link: str | None = Field(
+        description=(
+            "URL for the visit's QR. Works while the visit is waiting; one device signed in at a time."
+        )
     )
-    companion_link: str | None = Field(description="URL for the companion QR card (FR11). Single-use.")
-    links_expire_at: Timestamp | None
     pager_no: PagerNumber | None = None
 
     @model_validator(mode="after")
-    def _links_match_offer(self) -> Self:
-        links = (self.patient_link, self.companion_link, self.links_expire_at)
-        if self.app_exclusion is None and any(v is None for v in links):
-            raise ValueError("an app visit needs both links and their expiry")
-        if self.app_exclusion is not None and any(v is not None for v in (*links, self.pager_no)):
-            raise ValueError("a visit without the app has no links or pager")
+    def _link_matches_offer(self) -> Self:
+        if self.app_exclusion is None and self.link is None:
+            raise ValueError("an app visit needs a link")
+        if self.app_exclusion is not None and any(v is not None for v in (self.link, self.pager_no)):
+            raise ValueError("a visit without the app has no link or pager")
         return self
+
+
+class VisitLink(OutputModel):
+    """The visit's QR again, for the desk to show from the staff app (for example to switch who is signed in).
+
+    The server decrypts the stored token to rebuild the same link, and records the
+    re-show with `log_qr_shown` in the same transaction. Refused for a visit that is
+    closed or doesn't offer the app.
+    """
+
+    visit_id: UUID
+    link: str
 
 
 class VisitExclusionUpdate(InputModel):
@@ -90,19 +104,55 @@ class VisitExclusionUpdate(InputModel):
 
 
 class TokenExchange(InputModel):
-    """A device opens a QR link and trades the one-time token for a session cookie."""
+    """A device scans the visit's QR, says who is using it, and gets a session cookie.
+
+    Only one device is signed in per visit. If one already is, the server answers
+    409 with `SignInConflict`. After the person confirms "This will sign out the
+    other device", the client resends with `takeover_session_id` from that 409.
+    The server signs out exactly that session; if it is no longer the open one
+    (someone else took over meanwhile), or two sign-ins race, it answers 409
+    again with the current state.
+    """
 
     token: Annotated[str, StringConstraints(min_length=22, max_length=128, pattern=r"^[A-Za-z0-9_-]+$")] = Field(
         description="URL-safe random token, at least 128 bits."
     )
+    role: SignInRole = Field(description='"I\'m the patient" or "I\'m with the patient".')
+    takeover_session_id: UUID | None = Field(
+        default=None,
+        description="The session named in the 409, sent only after the person confirms signing it out.",
+    )
+
+
+class SignInConflict(OutputModel):
+    """409 body: someone is already signed in for this visit. Ask before taking over."""
+
+    session_id: UUID = Field(description="Send back as `takeover_session_id` to confirm.")
+    signed_in_as: SignInRole
+    signed_in_since: Timestamp
+
+
+class SignOut(InputModel):
+    """The person signs this device out. The visit's QR still works for the next sign-in."""
+
+    submission_id: SubmissionId
+
+
+class StaffSignOut(InputModel):
+    """Staff sign out whichever device is signed in to a visit (for example a lost phone).
+
+    The visit comes from the path and the staff member from the staff session.
+    """
+
+    submission_id: SubmissionId
 
 
 class SessionInfo(OutputModel):
     """Body returned with the session cookie. The session itself is an HttpOnly cookie."""
 
-    role: Literal[Reporter.PATIENT, Reporter.COMPANION]
+    role: SignInRole
     language: Language
-    expires_at: Timestamp
+    replaced_other_device: bool = Field(description="True if signing in signed another device out.")
 
 
 class VisitStatusUpdate(InputModel):
@@ -128,3 +178,11 @@ class VisitSummary(OutputModel):
         description="Staff reassessment deadline. A patient report never moves this."
     )
     last_staff_check_at: Timestamp | None
+    signed_in_as: SignInRole | None = Field(description="Who is signed in on the visit's device, if anyone.")
+    signed_in_since: Timestamp | None
+
+    @model_validator(mode="after")
+    def _signed_in_fields_pair(self) -> Self:
+        if (self.signed_in_as is None) != (self.signed_in_since is None):
+            raise ValueError("signed_in_as and signed_in_since are set together")
+        return self

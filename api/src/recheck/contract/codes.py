@@ -32,6 +32,16 @@ class AppExclusion(StrEnum):
     MAJOR_TRAUMA = "major_trauma"
 
 
+class SessionEndReason(StrEnum):
+    """Why a signed-in device was signed out. Sessions have no timer."""
+
+    TAKEOVER = "takeover"
+    SIGNED_OUT = "signed_out"
+    STAFF_SIGNED_OUT = "staff_signed_out"
+    VISIT_CLOSED = "visit_closed"
+    APP_EXCLUDED = "app_excluded"
+
+
 class VisitStatus(StrEnum):
     WAITING = "waiting"
     ROOMED = "roomed"

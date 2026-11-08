@@ -14,7 +14,6 @@ The fixed, versioned questions Recheck asks patients and companions, as FHIR R4 
 
 1. **Always-visible buttons:** "I need help now", "I'm worried", "Question about my wait or care" and "I'm leaving". Each sends its own report; "Question about my wait or care" goes to the triage nurse only.
 2. **Base check-in (everyone):**
-   - who is answering
    - two wellness questions adapted from Martha's Rule
    - pain 0–10 (patient only)
    - new warning signs
@@ -43,7 +42,7 @@ These visits stay on the staff list with the staff timer running. No QR is issue
 
 Staff can also exclude a visit after enrolment. Patient prompts stop, the visit's devices are signed out and the token history is kept. An exclusion can't be removed.
 
-**Companions:** a companion can submit a check-in without the patient. Pain and the circle check apply only when the patient is answering (`enableWhen answerer = patient`).
+**Patient or companion:** chosen when the person scans the visit's QR, so the check-in doesn't ask. The hidden `session_role` item carries it, and pain and the circle check appear only when the patient signed in (`enableWhen session_role = patient`). A companion can submit a check-in on their own.
 
 ## Conventions
 
