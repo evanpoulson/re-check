@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http, HttpResponse } from 'msw'
 import { RouterProvider } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import {
@@ -9,6 +10,7 @@ import {
   enrolVisit,
   exchangeToken,
   getPatientHome,
+  getStaffSession,
   getTriageBoard,
   getVisitDetail,
   getVisitLink,
@@ -20,6 +22,8 @@ import {
 } from './api/api'
 import { translations } from './api/bank'
 import { ApiError, newSubmissionId } from './api/client'
+import { endpoints } from './api/endpoints'
+import { server } from './api/mocks/server'
 import type { CheckinReport, PatientReport } from './api/types'
 import './i18n'
 import zhUi from './i18n/zh.json'
@@ -71,14 +75,56 @@ function checkin(over: Partial<CheckinReport> & Pick<CheckinReport, 'reporter'>,
 }
 
 describe('routes', () => {
-  it('/ goes to the demo role picker', async () => {
+  it('/ goes to staff sign-in', async () => {
     renderApp('/')
-    expect(await screen.findByRole('heading', { name: 'Choose a demo role' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument()
   })
 
   it('an unknown path says so', () => {
     renderApp('/nope')
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
+  })
+})
+
+describe('staff sign-in', () => {
+  it('a signed-out staff page goes to sign-in', async () => {
+    renderApp('/staff/triage')
+    expect(await screen.findByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument()
+  })
+
+  it('the demo picker signs in through the server session and opens the role home', async () => {
+    const user = userEvent.setup()
+    renderApp('/staff/sign-in')
+    expect(screen.queryByRole('button', { name: /^Sign in/ })).not.toBeInTheDocument() // mocks have no Auth0
+    await user.click(await screen.findByRole('button', { name: 'Open physician worklist' }))
+    expect(await screen.findByRole('link', { name: /Review worklist/ })).toBeInTheDocument()
+    expect(await getStaffSession()).toMatchObject({ user_id: 'demo|physician', role: 'physician' })
+  })
+
+  it('a charge nurse can open both the triage board and the worklist', async () => {
+    sessionStorage.setItem('recheck-demo-role', 'charge_nurse')
+    renderApp('/staff/physician')
+    const nav = await screen.findByRole('navigation', { name: 'Staff' })
+    expect(within(nav).getByRole('link', { name: /Triage board/ })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: /New visit/ })).toBeInTheDocument()
+    expect(within(nav).getByRole('link', { name: /Review worklist/ })).toBeInTheDocument()
+  })
+
+  it('signing out clears the server session', async () => {
+    signInAsNurse()
+    const user = userEvent.setup()
+    renderApp('/staff/triage')
+    await user.click(await screen.findByRole('button', { name: 'Sign out' }))
+    expect(await screen.findByRole('heading', { name: 'Staff sign-in' })).toBeInTheDocument()
+    await expect(getStaffSession()).rejects.toMatchObject({ status: 401 })
+  })
+
+  it('shows the Auth0 button when the server offers it, and explains a refused account', async () => {
+    server.use(http.get(endpoints.staffSignInOptions(), () => HttpResponse.json({ auth0: true, demo: false })))
+    renderApp('/staff/sign-in?error=access_denied')
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument()
+    expect(screen.getByRole('alert')).toHaveTextContent("isn't on the Recheck staff list")
+    expect(screen.queryByRole('button', { name: 'Open triage board' })).not.toBeInTheDocument()
   })
 })
 

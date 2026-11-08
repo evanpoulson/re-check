@@ -38,10 +38,11 @@ export function VisitLayout() {
     }
   }, [task])
 
+  const toTriage = role !== 'physician'
   const back = (
-    <Link to={isNurse ? '/staff/triage' : '/staff/physician'} className="back-link mb-0!">
+    <Link to={toTriage ? '/staff/triage' : '/staff/physician'} className="back-link mb-0!">
       <ArrowLeft aria-hidden size={18} />
-      {isNurse ? t('visit.back') : t('visit.backToReview')}
+      {toTriage ? t('visit.back') : t('visit.backToReview')}
     </Link>
   )
 

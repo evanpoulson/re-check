@@ -27,10 +27,10 @@ export const routes: RouteObject[] = [
       {
         element: <StaffLayout />,
         children: [
-          { element: <RequireStaffRole role="physician" />, children: [
+          { element: <RequireStaffRole roles={['physician', 'charge_nurse']} />, children: [
             { path: '/staff/physician', element: <Physician /> },
           ] },
-          { element: <RequireStaffRole role="triage_nurse" />, children: [
+          { element: <RequireStaffRole roles={['triage_nurse', 'charge_nurse']} />, children: [
             { path: '/staff/triage', element: <Triage /> },
             { path: '/staff/visits/new', element: <Enrol /> },
           ] },

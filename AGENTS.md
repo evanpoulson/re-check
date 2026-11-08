@@ -22,14 +22,7 @@ Use the contract for request and response shapes and keep database constraints a
 
 Staff sign in with Auth0: Google, Microsoft, or GitHub single sign-on for the team, and demo email-and-password accounts for judges. Each account has one fixed role. The API is the OAuth client and sets the signed `recheck_staff` cookie. Patients and companions never use Auth0; they sign in with the visit's QR token. The no-account demo role picker works only when `RECHECK_DEMO_STAFF=true`.
 
-**The front end still needs updating for this.** Until then, set `RECHECK_DEMO_STAFF=true` to keep the current role picker working.
-
-- Make `/api` same-origin with the web app. In development, add a Vite proxy from `/api` to FastAPI. The Auth0 callback and cookies depend on it.
-- On the sign-in page, call `GET /api/staff/sign-in-options`. Show a "Sign in" button that navigates (not fetch) to `/api/staff/login?return_to=<staff home>`. Show the role picker only when `demo` is true.
-- Show the `?error=` code from the callback (`access_denied`, `no_staff_role`, `expired`, `sign_in_failed`) as a plain message.
-- Read the signed-in user from `GET /api/staff/session`. It now returns `user_id`, `name`, `role` and `site_id`. Choose the staff home from `role`, not from the picker button.
-- Sign out by navigating to `/api/staff/logout`, which also ends the Auth0 session.
-- Update the MSW mocks for these routes.
+The web app reads the signed-in user from `GET /api/staff/session` and never stores a role itself. The sign-in page asks `GET /api/staff/sign-in-options` which buttons to show. "Sign in" navigates to `/api/staff/login`; sign-out navigates to `/api/staff/logout` for Auth0 users and calls `DELETE /api/staff/session` for demo users. The charge nurse can open the triage board and the worklist. In development, Vite proxies `/api` to FastAPI (`RECHECK_API_URL`, default `http://127.0.0.1:8000`), so cookies and the Auth0 callback stay same-origin. The mocks offer only the demo picker.
 
 ## Demo scope
 

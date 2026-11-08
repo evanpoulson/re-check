@@ -22,8 +22,28 @@ import type {
   VisitStatusUpdate,
   VitalsCreate,
   VitalsRecord,
+  StaffRole,
   Worklist,
 } from './types'
+
+// Staff sign-in. These shapes come from api/src/recheck/routes/staff_session.py,
+// which keeps them out of the shared contract.
+export interface StaffSessionInfo {
+  /** Auth0 user ID, or `demo|<role>` from the demo role picker. */
+  user_id: string
+  name: string | null
+  role: StaffRole
+  site_id: string
+}
+export interface SignInOptions {
+  auth0: boolean
+  demo: boolean
+}
+
+export const getStaffSession = () => request<StaffSessionInfo>('GET', endpoints.staffSession())
+export const demoStaffSignIn = (role: StaffRole) => request<StaffSessionInfo>('POST', endpoints.staffSession(), { role })
+export const clearStaffSession = () => request<undefined>('DELETE', endpoints.staffSession())
+export const getSignInOptions = () => request<SignInOptions>('GET', endpoints.staffSignInOptions())
 
 // Nurse
 export const enrolVisit = (body: VisitCreate) => request<VisitEnrolled>('POST', endpoints.enrolVisit(), body)

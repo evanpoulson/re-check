@@ -23,7 +23,7 @@ def level_rank(row):
 def test_who_can_see_which_screen(live_client):
     as_staff(live_client, "triage_nurse")
     assert live_client.get("/api/triage-board").status_code == 200
-    assert live_client.get("/api/worklist").status_code == 403
+    assert live_client.get("/api/worklist").status_code == 200  # the triage page joins worklist rows
     as_staff(live_client, "physician")
     assert live_client.get("/api/worklist").status_code == 200
     assert live_client.get("/api/triage-board").status_code == 403

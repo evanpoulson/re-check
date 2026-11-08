@@ -136,7 +136,7 @@ Live tests use `RollbackPool` (`tests/conftest.py`): every request runs inside o
 | `POST /api/visits/{id}/sign-out` | triage or charge nurse | `StaffSignOut` → 204 |
 | `POST /api/session` | QR holder | `TokenExchange` → `SessionInfo` + HttpOnly `recheck_session` cookie; 409 `SignInConflict`, 404 unknown QR, 410 closed visit |
 | `POST /api/session/sign-out` | signed-in device | `SignOut` → 204, clears the cookie |
-| `GET /api/worklist` | physician or charge nurse | `Worklist`: waiting visits ranked by open task level (red first), then longest wait |
+| `GET /api/worklist` | triage nurse, physician or charge nurse | `Worklist`: waiting visits ranked by open task level (red first), then longest wait |
 | `GET /api/triage-board` | triage or charge nurse | `TriageBoard`: task colour and staff reassessment timers, no reasons |
 | `GET /api/escalations` | charge nurse | `ChargeNurseView`: escalated tasks, tasks routed to the charge nurse, nurse flags, and every open task while no triage liaison physician is on duty; highest level first |
 | `GET /api/handover` | triage nurse, physician or charge nurse | `Handover`: current shift window, every waiting patient ranked as on the worklist, open tasks, overdue staff reassessments |

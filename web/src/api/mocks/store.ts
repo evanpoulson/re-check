@@ -103,6 +103,38 @@ function demoStaff(): StaffRef {
   return NURSE
 }
 
+// Staff sign-in. The mocks have no Auth0, only the demo role picker; the role
+// lives in sessionStorage, standing in for the HttpOnly staff cookie.
+const DEMO_ROLE_KEY = 'recheck-demo-role'
+const STAFF_ROLES: StaffRef['role'][] = ['triage_nurse', 'physician', 'charge_nurse', 'quality']
+
+export const signInOptions = () => ({ auth0: false, demo: true })
+
+export function staffSession() {
+  let role: string | null = null
+  try {
+    role = sessionStorage.getItem(DEMO_ROLE_KEY)
+  } catch { /* no storage: signed out */ }
+  const known = STAFF_ROLES.find((r) => r === role)
+  if (!known) throw new MockError(401, 'staff sign-in required')
+  return { user_id: `demo|${known}`, name: null, role: known, site_id: 'foothills-demo' }
+}
+
+export function demoStaffSignIn(role: StaffRef['role']) {
+  if (!STAFF_ROLES.includes(role)) throw new MockError(422, 'unknown role')
+  try {
+    sessionStorage.setItem(DEMO_ROLE_KEY, role)
+  } catch { /* in memory only */ }
+  return staffSession()
+}
+
+export function clearStaffSession(): undefined {
+  try {
+    sessionStorage.removeItem(DEMO_ROLE_KEY)
+  } catch { /* ignore */ }
+  return undefined
+}
+
 const LEVELS: TaskLevel[] = ['overdue', 'leave_risk', 'silent', 'amber', 'red']
 const MIN = 60_000
 const INTERVAL_MIN: Record<number, number> = { 2: 15, 3: 30, 4: 60, 5: 120 }
